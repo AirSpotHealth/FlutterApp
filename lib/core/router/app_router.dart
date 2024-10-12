@@ -1,4 +1,5 @@
 import 'package:airspothealth/core/router/route_names.dart';
+import 'package:airspothealth/features/devices/devices_page.dart';
 import 'package:airspothealth/features/home/homepage.dart';
 import 'package:go_router/go_router.dart';
 
@@ -12,6 +13,10 @@ class AppRouter {
       GoRoute(
         path: RouteNames.home,
         builder: (context, state) => const HomePage(),
+      ),
+      GoRoute(
+        path: RouteNames.devices,
+        builder: (context, state) => const DevicesPage(),
       ),
     ],
   );
