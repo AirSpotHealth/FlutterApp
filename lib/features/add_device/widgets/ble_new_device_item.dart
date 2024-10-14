@@ -1,13 +1,13 @@
 import 'package:airspothealth/core/theme/app_colors.dart';
 import 'package:airspothealth/core/utils/extensions.dart';
-import 'package:airspothealth/features/devices/providers/ble_device_connection_provider.dart';
+import 'package:airspothealth/features/add_device/providers/ble_device_connection_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_blue_plus/flutter_blue_plus.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
-class BleDeviceItem extends ConsumerWidget {
-  const BleDeviceItem({required this.device, super.key});
+class BleNewDeviceItem extends ConsumerWidget {
+  const BleNewDeviceItem({required this.device, super.key});
 
   final BluetoothDevice device;
 

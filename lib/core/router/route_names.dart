@@ -6,4 +6,13 @@ class RouteNames {
 
   // Devices route
   static const String devices = '/devices';
+
+  // Add device route
+  static const String addDevice = '/add-device';
+
+  // Device details route
+  static const String deviceSettings = '/device-settings';
+
+  // Device data route
+  static const String deviceData = '/device-data';
 }

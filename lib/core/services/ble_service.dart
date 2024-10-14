@@ -1,7 +1,9 @@
 import 'dart:async';
-import 'dart:io';
 
+import 'package:airspothealth/core/models/ble_device.dart';
+import 'package:airspothealth/core/services/isar_service.dart';
 import 'package:flutter_blue_plus/flutter_blue_plus.dart';
+import 'package:isar/isar.dart';
 
 /// A service class related to Bluetooth.
 /// This class provides methods to interact with Bluetooth.
@@ -24,7 +26,7 @@ class BLEService {
   Future<void> enable() async {
     // handle bluetooth on & off
     final adapterState = FlutterBluePlus.adapterStateNow;
-    if (adapterState == BluetoothAdapterState.off && Platform.isAndroid) {
+    if (adapterState == BluetoothAdapterState.off) {
       await FlutterBluePlus.turnOn();
     }
   }
@@ -49,10 +51,18 @@ class BLEService {
   Future<void> disconnect() async {}
 
   /// Get the stream of Bluetooth devices.
-  Stream<List<BluetoothDevice>> get devices =>
-      FlutterBluePlus.scanResults.asyncMap(
-        (List<ScanResult> scanResults) => scanResults
-            .map((ScanResult scanResult) => scanResult.device)
-            .toList(),
-      );
+  Stream<List<BluetoothDevice>> get scanResults {
+    final IsarService isarService = IsarService();
+
+    final List<BleDevice> connectedDevices = isarService.read<List<BleDevice>>(
+        (Isar isar) => isar.bleDevices.where().findAll());
+
+    return FlutterBluePlus.scanResults.asyncMap(
+      (List<ScanResult> scanResults) => scanResults
+          .map((ScanResult scanResult) => scanResult.device)
+          .where((BluetoothDevice bd) => !connectedDevices.any(
+              (BleDevice bleDevice) => bleDevice.deviceId == bd.remoteId.str))
+          .toList(),
+    );
+  }
 }

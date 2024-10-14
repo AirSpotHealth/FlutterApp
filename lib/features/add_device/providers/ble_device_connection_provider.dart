@@ -1,6 +1,8 @@
 import 'dart:async';
 
-import 'package:airspothealth/core/providers/ble_active_device_provider.dart';
+import 'package:airspothealth/core/models/ble_device.dart';
+import 'package:airspothealth/core/providers/ble_connected_devices_provider.dart';
+import 'package:airspothealth/core/providers/ble_saved_devices_provider.dart';
 import 'package:airspothealth/core/services/ble_service.dart';
 import 'package:flutter_blue_plus/flutter_blue_plus.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -18,7 +20,11 @@ class _BleDeviceConnectionNotifier
 
   @override
   BluetoothBondState build(String arg) {
-    return BluetoothBondState.none;
+    return _bleService.connectedDevices
+            .firstWhere((device) => device.remoteId.str == arg)
+            .isConnected
+        ? BluetoothBondState.bonded
+        : BluetoothBondState.none;
   }
 
   void connect(BluetoothDevice device) {
@@ -32,7 +38,13 @@ class _BleDeviceConnectionNotifier
 
       if (bState == BluetoothConnectionState.connected) {
         _bleService.stopScan();
-        ref.read(bleActiveDeviceProvider.notifier).setActiveDevice(device);
+        ref.read(bleConnectedDevicesProvider.notifier).refresh();
+        ref.read(bleSavedDevicesProvider.notifier).addDevice(BleDevice(
+              deviceId: device.remoteId.str,
+              name: device.advName,
+              platform: device.platformName,
+              address: device.remoteId.str,
+            ));
       }
     });
 

@@ -13,14 +13,6 @@ class BleDataUtils {
     return stringBuilder.toString();
   }
 
-  //  fun parse(data: ByteArray) {
-  //       val type = data[2]
-  //       when (type) {
-  //           CmdType.TypeGetCo2 -> {
-  //               val co2Value = data[4] * 256 + (data[5].toInt() and 0xff)
-
-  //           }
-
   /// method to parse data
   static dynamic parse(List<int> data) {
     if (data.length < 6) {
