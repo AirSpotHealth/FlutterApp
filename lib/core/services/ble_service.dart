@@ -1,0 +1,58 @@
+import 'dart:async';
+import 'dart:io';
+
+import 'package:flutter_blue_plus/flutter_blue_plus.dart';
+
+/// A service class related to Bluetooth.
+/// This class provides methods to interact with Bluetooth.
+/// This class is a singleton class. This class uses flutter_blue_plus package to interact with Bluetooth.
+class BLEService {
+  /// Private constructor to restrict the instantiation of this class.
+  BLEService._();
+
+  /// Singleton instance of this class.
+  static final BLEService instance = BLEService._();
+
+  /// Method to check if Bluetooth is available on the device.
+  Future<bool> isAvailable() async => FlutterBluePlus.isSupported;
+
+  /// Method to check if Bluetooth is enabled on the device.
+  Future<bool> isEnabled() async =>
+      FlutterBluePlus.adapterStateNow == BluetoothAdapterState.on;
+
+  /// Method to enable Bluetooth on the device.
+  Future<void> enable() async {
+    // handle bluetooth on & off
+    final adapterState = FlutterBluePlus.adapterStateNow;
+    if (adapterState == BluetoothAdapterState.off && Platform.isAndroid) {
+      await FlutterBluePlus.turnOn();
+    }
+  }
+
+  /// Method to start scanning for Bluetooth devices.
+  Future<void> startScan() async => FlutterBluePlus.startScan(withKeywords: [
+        'AirSpot-',
+      ], timeout: const Duration(seconds: 10));
+
+  /// Method to stop scanning for Bluetooth devices.
+  Future<void> stopScan() async => FlutterBluePlus.stopScan();
+
+  /// Method to get the list of connected devices.
+  List<BluetoothDevice> get connectedDevices =>
+      FlutterBluePlus.connectedDevices;
+
+  /// Method to connect to a Bluetooth device.
+  Future<void> connect(BluetoothDevice device) async =>
+      device.connect(autoConnect: true, mtu: null);
+
+  /// Method to disconnect from a Bluetooth device.
+  Future<void> disconnect() async {}
+
+  /// Get the stream of Bluetooth devices.
+  Stream<List<BluetoothDevice>> get devices =>
+      FlutterBluePlus.scanResults.asyncMap(
+        (List<ScanResult> scanResults) => scanResults
+            .map((ScanResult scanResult) => scanResult.device)
+            .toList(),
+      );
+}

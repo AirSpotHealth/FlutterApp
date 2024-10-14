@@ -12,10 +12,12 @@ class AppRouter {
     routes: [
       GoRoute(
         path: RouteNames.home,
+        name: RouteNames.home,
         builder: (context, state) => const HomePage(),
       ),
       GoRoute(
         path: RouteNames.devices,
+        name: RouteNames.devices,
         builder: (context, state) => const DevicesPage(),
       ),
     ],
