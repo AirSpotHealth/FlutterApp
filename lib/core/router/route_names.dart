@@ -27,4 +27,13 @@ class RouteNames {
 
   /// find my device route
   static const String findMyDevice = '/find-my-device';
+
+  /// latest news route
+  static const String latestNews = '/latest-news';
+
+  /// app updates route
+  static const String appUpdates = '/app-updates';
+
+  /// privacy policy route
+  static const String privacyPolicy = '/privacy-policy';
 }

@@ -1,6 +1,9 @@
 import 'package:airspothealth/core/router/route_names.dart';
 import 'package:airspothealth/features/add_device/add_device_page.dart';
 import 'package:airspothealth/features/app_setup/app_setup_page.dart';
+import 'package:airspothealth/features/app_setup/app_updates_page.dart';
+import 'package:airspothealth/features/app_setup/latest_news_page.dart';
+import 'package:airspothealth/features/app_setup/privacy_policy_page.dart';
 import 'package:airspothealth/features/device_graph/device_graph_page.dart';
 import 'package:airspothealth/features/device_settings/device_settings_page.dart';
 import 'package:airspothealth/features/devices/devices_page.dart';
@@ -72,6 +75,21 @@ class AppRouter {
         name: RouteNames.solutions,
         path: RouteNames.solutions,
         builder: (context, state) => const SolutionsPage(),
+      ),
+      GoRoute(
+        name: RouteNames.appUpdates,
+        path: RouteNames.appUpdates,
+        builder: (context, state) => const AppUpdatesPage(),
+      ),
+      GoRoute(
+        name: RouteNames.privacyPolicy,
+        path: RouteNames.privacyPolicy,
+        builder: (context, state) => const PrivacyPolicyPage(),
+      ),
+      GoRoute(
+        name: RouteNames.latestNews,
+        path: RouteNames.latestNews,
+        builder: (context, state) => const LatestNewsPage(),
       ),
     ],
   );

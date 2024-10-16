@@ -19,7 +19,7 @@ class DevicesPage extends ConsumerWidget {
       body: savedDevicesList.isEmpty
           ? const Center(child: Text('No devices connected'))
           : ListView.separated(
-              separatorBuilder: (context, index) => const Divider(),
+              separatorBuilder: (context, index) => const SizedBox(height: 12),
               itemCount: savedDevicesList.length,
               padding: const EdgeInsets.all(16),
               itemBuilder: (context, index) =>

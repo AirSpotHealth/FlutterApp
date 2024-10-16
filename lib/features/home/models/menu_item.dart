@@ -1,14 +1,14 @@
 /// MenuItem model
 class MenuItem {
   final String title;
-  final String description;
+  final String? description;
   final String iconAsset;
   final String? route;
   final String? externalUrl;
 
   MenuItem({
     required this.title,
-    required this.description,
+    this.description,
     required this.iconAsset,
     this.route,
     this.externalUrl,

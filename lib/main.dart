@@ -24,6 +24,7 @@ class AirspotApp extends StatelessWidget {
     return MaterialApp.router(
       theme: AppTheme.theme,
       routerConfig: AppRouter.router,
+      debugShowCheckedModeBanner: false,
     );
   }
 }

@@ -11,4 +11,11 @@ class Assets {
   static const String news = 'assets/images/news_icon.png';
   static const String shop = 'assets/images/shop_icon.png';
   static const String appSetup = 'assets/images/settings_icon.png';
+
+  static const String latestNews = 'assets/images/latest_news_icon.png';
+  static const String deviceUpdate = 'assets/images/device_update.png';
+  static const String privayPolicy = 'assets/images/policy_icon.png';
+
+  static const String deviceGraph = 'assets/images/device_graph_icon.png';
+  static const String deviceSettings = 'assets/images/device_settings_icon.png';
 }

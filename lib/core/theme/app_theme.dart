@@ -24,6 +24,16 @@ class AppTheme {
       textTheme: ButtonTextTheme.primary,
     ),
     visualDensity: VisualDensity.adaptivePlatformDensity,
+    appBarTheme: const AppBarTheme(
+      backgroundColor: AppColors.primaryColor,
+      titleTextStyle: TextStyle(fontSize: 16),
+      centerTitle: true,
+      iconTheme: IconThemeData(color: Colors.white),
+    ),
+    floatingActionButtonTheme: const FloatingActionButtonThemeData(
+      backgroundColor: AppColors.primaryColor,
+      foregroundColor: Colors.white,
+    ),
   );
 
   static ThemeData get theme => _theme;

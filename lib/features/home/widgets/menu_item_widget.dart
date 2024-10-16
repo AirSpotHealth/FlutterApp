@@ -10,9 +10,15 @@ class MenuItemWidget extends StatelessWidget {
   const MenuItemWidget({
     super.key,
     required this.menuItem,
+    this.iconSize = 32,
+    this.dense = false,
   });
 
   final MenuItem menuItem;
+
+  final double iconSize;
+
+  final bool dense;
 
   @override
   Widget build(BuildContext context) {
@@ -20,11 +26,13 @@ class MenuItemWidget extends StatelessWidget {
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.all(Radius.circular(10)),
       ),
-      contentPadding: const EdgeInsets.all(16),
+      contentPadding: dense ? null : const EdgeInsets.all(16),
       tileColor: Colors.white,
       title:
           Text(menuItem.title, style: context.textTheme.bodyMedium?.weight600),
-      subtitle: Text(menuItem.description, style: context.textTheme.bodySmall),
+      subtitle: menuItem.description != null
+          ? Text(menuItem.description!, style: context.textTheme.bodySmall)
+          : null,
       leading: Image.asset(menuItem.iconAsset, width: 32),
       trailing: const Icon(Icons.arrow_forward_ios, size: 16),
       onTap: () {

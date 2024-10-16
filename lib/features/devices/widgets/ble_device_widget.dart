@@ -1,10 +1,10 @@
 import 'package:airspothealth/core/models/ble_device.dart';
 import 'package:airspothealth/core/router/route_names.dart';
 import 'package:airspothealth/core/theme/app_colors.dart';
+import 'package:airspothealth/core/utils/assets.dart';
 import 'package:airspothealth/core/utils/extensions.dart';
 import 'package:airspothealth/features/add_device/providers/ble_device_connection_provider.dart';
 import 'package:airspothealth/features/devices/widgets/device_value_widget.dart';
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_blue_plus/flutter_blue_plus.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -23,17 +23,18 @@ class BleDeviceWidget extends ConsumerWidget {
     final deviceConnected = deviceConnectionState == BluetoothBondState.bonded;
 
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(10),
         border: Border.all(
-          color: AppColors.primaryColorLight,
+          color: AppColors.primaryColor,
           width: 1,
         ),
       ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             children: [
@@ -41,10 +42,7 @@ class BleDeviceWidget extends ConsumerWidget {
                 Icons.edit_outlined,
                 color: AppColors.primaryColor,
               ),
-              Text(
-                bleDevice.name,
-                style: context.textTheme.labelLarge,
-              ),
+              const Spacer(),
               if (deviceConnected)
                 ..._getConnectedWidgets(context)
               else if (deviceConnectionState == BluetoothBondState.bonding)
@@ -53,24 +51,37 @@ class BleDeviceWidget extends ConsumerWidget {
                 _buildConnectButton(ref),
             ],
           ),
+          Text(
+            bleDevice.name,
+            style: context.textTheme.labelLarge,
+          ),
           if (deviceConnected) ...[
-            const Divider(),
             const SizedBox(height: 16),
-            DeviceValueWidget(deviceId: bleDevice.deviceId)
+            Align(
+              alignment: Alignment.center,
+              child: DeviceValueWidget(deviceId: bleDevice.deviceId),
+            )
           ],
         ],
       ),
     );
   }
 
-  ElevatedButton _buildConnectButton(WidgetRef ref) {
-    return ElevatedButton(
-      onPressed: () {
+  Widget _buildConnectButton(WidgetRef ref) {
+    return GestureDetector(
+      onTap: () {
         ref
             .read(bleDeviceConnectionProvider(bleDevice.deviceId).notifier)
             .connect(BluetoothDevice.fromId(bleDevice.deviceId));
       },
-      child: const Text('Connect'),
+      child: const Row(
+        children: [
+          Text(
+            'Unavailable/Disconnected',
+            style: TextStyle(color: AppColors.neutralGrey),
+          ),
+        ],
+      ),
     );
   }
 
@@ -81,34 +92,33 @@ class BleDeviceWidget extends ConsumerWidget {
         style: context.textTheme.labelLarge
             ?.copyWith(color: AppColors.brandColorGreen),
       ),
-      Flexible(
-        child: IconButton(
-          onPressed: () {
-            context.pushNamed(
-              RouteNames.deviceGraph,
-              extra: bleDevice.deviceId,
-            );
-          },
-          icon: const Icon(
-            CupertinoIcons.graph_circle,
-            color: Colors.green,
-          ),
+      const SizedBox(width: 8),
+      GestureDetector(
+        onTap: () {
+          context.pushNamed(
+            RouteNames.deviceGraph,
+            extra: bleDevice.deviceId,
+          );
+        },
+        child: Image.asset(
+          Assets.deviceGraph,
+          width: 28,
         ),
       ),
-      Flexible(
-        child: IconButton(
-          onPressed: () {
-            context.pushNamed(
-              RouteNames.deviceSettings,
-              extra: bleDevice.deviceId,
-            );
-          },
-          icon: const Icon(
-            CupertinoIcons.settings,
-            color: AppColors.neutralGreyDark,
-          ),
+      const SizedBox(width: 12),
+      GestureDetector(
+        onTap: () {
+          context.pushNamed(
+            RouteNames.deviceSettings,
+            extra: bleDevice.deviceId,
+          );
+        },
+        child: Image.asset(
+          Assets.deviceSettings,
+          width: 28,
         ),
       ),
+      const SizedBox(width: 8),
     ];
   }
 }
