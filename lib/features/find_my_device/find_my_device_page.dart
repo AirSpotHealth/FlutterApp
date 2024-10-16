@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 class FindMyDevicePage extends ConsumerWidget {
-  const FindMyDevicePage({super.key});
+  const FindMyDevicePage({required this.deviceId, super.key});
+
+  final String deviceId;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {

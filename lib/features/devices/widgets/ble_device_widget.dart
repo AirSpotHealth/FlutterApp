@@ -110,7 +110,7 @@ class BleDeviceWidget extends ConsumerWidget {
         onTap: () {
           context.pushNamed(
             RouteNames.deviceSettings,
-            extra: bleDevice.deviceId,
+            pathParameters: {'deviceId': bleDevice.deviceId},
           );
         },
         child: Image.asset(

@@ -31,6 +31,9 @@ class DeviceSettings {
   /// Whether the high CO2 alarm is enabled or not
   final bool highCo2AlarmEnabled;
 
+  /// auto sync time
+  final bool autoSyncTime;
+
   DeviceSettings({
     required this.alarmEnabled,
     required this.vibrationEnabled,
@@ -40,6 +43,7 @@ class DeviceSettings {
     required this.version,
     required this.deviceId,
     required this.highCo2AlarmEnabled,
+    this.autoSyncTime = true,
   });
 
   DeviceSettings.empty({required this.deviceId})
@@ -52,7 +56,8 @@ class DeviceSettings {
           Constants.yellowUpperLimit: Constants.defaultYellowUpperLimit,
         },
         version = '',
-        highCo2AlarmEnabled = false;
+        highCo2AlarmEnabled = false,
+        autoSyncTime = true;
 
   DeviceSettings copyWith({
     bool? alarmEnabled,
@@ -63,6 +68,7 @@ class DeviceSettings {
     String? version,
     String? deviceId,
     bool? highCo2AlarmEnabled,
+    bool? autoSyncTime,
   }) {
     return DeviceSettings(
       alarmEnabled: alarmEnabled ?? this.alarmEnabled,
@@ -74,6 +80,7 @@ class DeviceSettings {
       version: version ?? this.version,
       deviceId: deviceId ?? this.deviceId,
       highCo2AlarmEnabled: highCo2AlarmEnabled ?? this.highCo2AlarmEnabled,
+      autoSyncTime: autoSyncTime ?? this.autoSyncTime,
     );
   }
 }

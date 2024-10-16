@@ -57,6 +57,10 @@ class AppTheme {
         },
       ),
     ),
+    dividerTheme: DividerThemeData(
+      color: Colors.grey.shade200,
+      thickness: 1,
+    ),
   );
 
   static ThemeData get theme => _theme;

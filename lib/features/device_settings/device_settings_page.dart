@@ -67,7 +67,8 @@ class DeviceSettingsPage extends ConsumerWidget {
                   if (item.suffixWidget != null) return;
 
                   if (item.route != null) {
-                    context.pushNamed(item.route!);
+                    context.pushNamed(item.route!,
+                        pathParameters: {'deviceId': deviceId});
                   }
                 },
               )),

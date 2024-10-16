@@ -10,7 +10,10 @@ class RouteNames {
   // Add device route
   static const String addDevice = '/add-device';
 
-  // Device details route
+  /// device details route
+  static const String deviceDetails = '/device-details';
+
+  // Device settings route
   static const String deviceSettings = '/device-settings';
 
   // Device data route
@@ -39,12 +42,6 @@ class RouteNames {
 
   /// time settings route
   static const String timeSettings = '/time-settings';
-
-  /// alarm settings route
-  static const String alarmSettings = '/alarm-settings';
-
-  /// vibrate settings route
-  static const String vibrateSettings = '/vibrate-settings';
 
   /// power mode settings route
   static const String powerModeSettings = '/power-mode-settings';
