@@ -35,7 +35,11 @@ class _BleDeviceConnectionNotifier
   void connect(BluetoothDevice device) {
     state = BluetoothBondState.bonding;
 
+    debugPrint('Connecting to device: ${device.advName}');
+
     _deviceSubscription = device.connectionState.listen((bState) {
+      debugPrint('Device connection state: $bState');
+
       state = switch (bState) {
         BluetoothConnectionState.connected => BluetoothBondState.bonded,
         _ => BluetoothBondState.none,
@@ -50,6 +54,10 @@ class _BleDeviceConnectionNotifier
               platform: device.platformName,
               address: device.remoteId.str,
             ));
+      }
+
+      if (bState == BluetoothConnectionState.disconnected) {
+        state = BluetoothBondState.none;
       }
     });
 

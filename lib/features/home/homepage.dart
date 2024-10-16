@@ -4,7 +4,7 @@ import 'package:airspothealth/core/providers/bluetooth_state_provider.dart';
 import 'package:airspothealth/core/router/route_names.dart';
 import 'package:airspothealth/core/utils/assets.dart';
 import 'package:airspothealth/core/utils/extensions.dart';
-import 'package:airspothealth/core/widgets/app_logo.dart';
+import 'package:airspothealth/core/widgets/airspot_bar.dart';
 import 'package:airspothealth/features/add_device/providers/ble_device_connection_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_blue_plus/flutter_blue_plus.dart';
@@ -21,22 +21,9 @@ class HomePage extends ConsumerStatefulWidget {
 class _HomePageState extends ConsumerState<HomePage> {
   @override
   void initState() {
-    _connectToDevices();
     _listenToBluetoothState();
+    _connectToDevices();
     super.initState();
-  }
-
-  void _listenToBluetoothState() {
-    ref.listenManual<BluetoothAdapterState>(
-      bluetoothStateProvider,
-      (oldState, newState) {
-        debugPrint('BluetoothAdapterState: $newState');
-        if (newState == BluetoothAdapterState.on &&
-            oldState != BluetoothAdapterState.on) {
-          _connectToDevices();
-        }
-      },
-    );
   }
 
   void _connectToDevices() {
@@ -44,7 +31,7 @@ class _HomePageState extends ConsumerState<HomePage> {
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
       for (final device in savedDevicesList) {
-        debugPrint('Connecting to device: ${device.name}');
+        debugPrint('Connecting to device from homepage: ${device.name}');
         ref
             .read(bleDeviceConnectionProvider(device.deviceId).notifier)
             .connect(BluetoothDevice.fromId(device.deviceId));
@@ -52,14 +39,14 @@ class _HomePageState extends ConsumerState<HomePage> {
     });
   }
 
+  void _listenToBluetoothState() {
+    ref.read(bluetoothStateProvider);
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        backgroundColor: Colors.white,
-        title: const AppLogo(),
-        centerTitle: true,
-      ),
+      appBar: const AirspotBar(),
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [

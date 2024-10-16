@@ -1,6 +1,7 @@
 import 'package:airspothealth/core/models/ble_device.dart';
 import 'package:airspothealth/core/providers/ble_saved_devices_provider.dart';
 import 'package:airspothealth/core/router/route_names.dart';
+import 'package:airspothealth/core/widgets/airspot_bar.dart';
 import 'package:airspothealth/features/devices/widgets/ble_device_widget.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -14,9 +15,7 @@ class DevicesPage extends ConsumerWidget {
     final List<BleDevice> savedDevicesList = ref.watch(bleSavedDevicesProvider);
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Devices'),
-      ),
+      appBar: const AirspotBar(),
       body: savedDevicesList.isEmpty
           ? const Center(child: Text('No devices connected'))
           : ListView.separated(
