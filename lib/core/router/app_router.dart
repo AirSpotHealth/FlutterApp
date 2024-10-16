@@ -8,6 +8,7 @@ import 'package:airspothealth/features/device_settings/device_settings_page.dart
 import 'package:airspothealth/features/device_settings/pages/co2_alert_settings_page.dart';
 import 'package:airspothealth/features/device_settings/pages/co2_ppm_settings_page.dart';
 import 'package:airspothealth/features/device_settings/pages/powe_mode_settings_page.dart';
+import 'package:airspothealth/features/device_settings/pages/recalibrate_device_page.dart';
 import 'package:airspothealth/features/device_settings/pages/time_settings_page.dart';
 import 'package:airspothealth/features/devices/devices_page.dart';
 import 'package:airspothealth/features/find_my_device/find_my_device_page.dart';
@@ -103,6 +104,17 @@ class AppRouter {
                         throw ErrorDescription('Device ID is required');
                       }
                       return Co2AlertSettingsPage(deviceId: deviceId);
+                    },
+                  ), // Route for recalibrate settings within device settings
+                  GoRoute(
+                    path: 'recalibrate-settings',
+                    name: RouteNames.recalibrateSettings,
+                    builder: (context, state) {
+                      final deviceId = state.pathParameters['deviceId'];
+                      if (deviceId == null) {
+                        throw ErrorDescription('Device ID is required');
+                      }
+                      return RecalibrateDevicePage(deviceId: deviceId);
                     },
                   ),
                 ],
