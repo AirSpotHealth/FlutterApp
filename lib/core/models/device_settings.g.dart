@@ -51,8 +51,8 @@ const DeviceSettingsSchema = IsarGeneratedSchema(
         type: IsarType.string,
       ),
       IsarPropertySchema(
-        name: 'highCo2AlarmEnabled',
-        type: IsarType.bool,
+        name: 'co2AlertThreshold',
+        type: IsarType.long,
       ),
       IsarPropertySchema(
         name: 'autoSyncTime',
@@ -78,7 +78,8 @@ int serializeDeviceSettings(IsarWriter writer, DeviceSettings object) {
   IsarCore.writeString(writer, 5, isarJsonEncode(object.thresholds));
   IsarCore.writeString(writer, 6, object.version);
   IsarCore.writeString(writer, 7, object.deviceId);
-  IsarCore.writeBool(writer, 8, object.highCo2AlarmEnabled);
+  IsarCore.writeLong(
+      writer, 8, object.co2AlertThreshold ?? -9223372036854775808);
   IsarCore.writeBool(writer, 9, object.autoSyncTime);
   return Isar.fastHash(object.deviceId);
 }
@@ -113,8 +114,15 @@ DeviceSettings deserializeDeviceSettings(IsarReader reader) {
   _version = IsarCore.readString(reader, 6) ?? '';
   final String _deviceId;
   _deviceId = IsarCore.readString(reader, 7) ?? '';
-  final bool _highCo2AlarmEnabled;
-  _highCo2AlarmEnabled = IsarCore.readBool(reader, 8);
+  final int? _co2AlertThreshold;
+  {
+    final value = IsarCore.readLong(reader, 8);
+    if (value == -9223372036854775808) {
+      _co2AlertThreshold = null;
+    } else {
+      _co2AlertThreshold = value;
+    }
+  }
   final bool _autoSyncTime;
   {
     if (IsarCore.readNull(reader, 9)) {
@@ -131,7 +139,7 @@ DeviceSettings deserializeDeviceSettings(IsarReader reader) {
     thresholds: _thresholds,
     version: _version,
     deviceId: _deviceId,
-    highCo2AlarmEnabled: _highCo2AlarmEnabled,
+    co2AlertThreshold: _co2AlertThreshold,
     autoSyncTime: _autoSyncTime,
   );
   return object;
@@ -169,7 +177,14 @@ dynamic deserializeDeviceSettingsProp(IsarReader reader, int property) {
     case 7:
       return IsarCore.readString(reader, 7) ?? '';
     case 8:
-      return IsarCore.readBool(reader, 8);
+      {
+        final value = IsarCore.readLong(reader, 8);
+        if (value == -9223372036854775808) {
+          return null;
+        } else {
+          return value;
+        }
+      }
     case 9:
       {
         if (IsarCore.readNull(reader, 9)) {
@@ -191,7 +206,7 @@ sealed class _DeviceSettingsUpdate {
     PowerMode? powerMode,
     bool? continuosScreenEnabled,
     String? version,
-    bool? highCo2AlarmEnabled,
+    int? co2AlertThreshold,
     bool? autoSyncTime,
   });
 }
@@ -209,7 +224,7 @@ class _DeviceSettingsUpdateImpl implements _DeviceSettingsUpdate {
     Object? powerMode = ignore,
     Object? continuosScreenEnabled = ignore,
     Object? version = ignore,
-    Object? highCo2AlarmEnabled = ignore,
+    Object? co2AlertThreshold = ignore,
     Object? autoSyncTime = ignore,
   }) {
     return collection.updateProperties([
@@ -221,7 +236,7 @@ class _DeviceSettingsUpdateImpl implements _DeviceSettingsUpdate {
           if (continuosScreenEnabled != ignore)
             4: continuosScreenEnabled as bool?,
           if (version != ignore) 6: version as String?,
-          if (highCo2AlarmEnabled != ignore) 8: highCo2AlarmEnabled as bool?,
+          if (co2AlertThreshold != ignore) 8: co2AlertThreshold as int?,
           if (autoSyncTime != ignore) 9: autoSyncTime as bool?,
         }) >
         0;
@@ -236,7 +251,7 @@ sealed class _DeviceSettingsUpdateAll {
     PowerMode? powerMode,
     bool? continuosScreenEnabled,
     String? version,
-    bool? highCo2AlarmEnabled,
+    int? co2AlertThreshold,
     bool? autoSyncTime,
   });
 }
@@ -254,7 +269,7 @@ class _DeviceSettingsUpdateAllImpl implements _DeviceSettingsUpdateAll {
     Object? powerMode = ignore,
     Object? continuosScreenEnabled = ignore,
     Object? version = ignore,
-    Object? highCo2AlarmEnabled = ignore,
+    Object? co2AlertThreshold = ignore,
     Object? autoSyncTime = ignore,
   }) {
     return collection.updateProperties(deviceId, {
@@ -263,7 +278,7 @@ class _DeviceSettingsUpdateAllImpl implements _DeviceSettingsUpdateAll {
       if (powerMode != ignore) 3: powerMode as PowerMode?,
       if (continuosScreenEnabled != ignore) 4: continuosScreenEnabled as bool?,
       if (version != ignore) 6: version as String?,
-      if (highCo2AlarmEnabled != ignore) 8: highCo2AlarmEnabled as bool?,
+      if (co2AlertThreshold != ignore) 8: co2AlertThreshold as int?,
       if (autoSyncTime != ignore) 9: autoSyncTime as bool?,
     });
   }
@@ -282,7 +297,7 @@ sealed class _DeviceSettingsQueryUpdate {
     PowerMode? powerMode,
     bool? continuosScreenEnabled,
     String? version,
-    bool? highCo2AlarmEnabled,
+    int? co2AlertThreshold,
     bool? autoSyncTime,
   });
 }
@@ -300,7 +315,7 @@ class _DeviceSettingsQueryUpdateImpl implements _DeviceSettingsQueryUpdate {
     Object? powerMode = ignore,
     Object? continuosScreenEnabled = ignore,
     Object? version = ignore,
-    Object? highCo2AlarmEnabled = ignore,
+    Object? co2AlertThreshold = ignore,
     Object? autoSyncTime = ignore,
   }) {
     return query.updateProperties(limit: limit, {
@@ -309,7 +324,7 @@ class _DeviceSettingsQueryUpdateImpl implements _DeviceSettingsQueryUpdate {
       if (powerMode != ignore) 3: powerMode as PowerMode?,
       if (continuosScreenEnabled != ignore) 4: continuosScreenEnabled as bool?,
       if (version != ignore) 6: version as String?,
-      if (highCo2AlarmEnabled != ignore) 8: highCo2AlarmEnabled as bool?,
+      if (co2AlertThreshold != ignore) 8: co2AlertThreshold as int?,
       if (autoSyncTime != ignore) 9: autoSyncTime as bool?,
     });
   }
@@ -337,7 +352,7 @@ class _DeviceSettingsQueryBuilderUpdateImpl
     Object? powerMode = ignore,
     Object? continuosScreenEnabled = ignore,
     Object? version = ignore,
-    Object? highCo2AlarmEnabled = ignore,
+    Object? co2AlertThreshold = ignore,
     Object? autoSyncTime = ignore,
   }) {
     final q = query.build();
@@ -349,7 +364,7 @@ class _DeviceSettingsQueryBuilderUpdateImpl
         if (continuosScreenEnabled != ignore)
           4: continuosScreenEnabled as bool?,
         if (version != ignore) 6: version as String?,
-        if (highCo2AlarmEnabled != ignore) 8: highCo2AlarmEnabled as bool?,
+        if (co2AlertThreshold != ignore) 8: co2AlertThreshold as int?,
         if (autoSyncTime != ignore) 9: autoSyncTime as bool?,
       });
     } finally {
@@ -864,14 +879,100 @@ extension DeviceSettingsQueryFilter
   }
 
   QueryBuilder<DeviceSettings, DeviceSettings, QAfterFilterCondition>
-      highCo2AlarmEnabledEqualTo(
-    bool value,
+      co2AlertThresholdIsNull() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(const IsNullCondition(property: 8));
+    });
+  }
+
+  QueryBuilder<DeviceSettings, DeviceSettings, QAfterFilterCondition>
+      co2AlertThresholdIsNotNull() {
+    return QueryBuilder.apply(not(), (query) {
+      return query.addFilterCondition(const IsNullCondition(property: 8));
+    });
+  }
+
+  QueryBuilder<DeviceSettings, DeviceSettings, QAfterFilterCondition>
+      co2AlertThresholdEqualTo(
+    int? value,
   ) {
     return QueryBuilder.apply(this, (query) {
       return query.addFilterCondition(
         EqualCondition(
           property: 8,
           value: value,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<DeviceSettings, DeviceSettings, QAfterFilterCondition>
+      co2AlertThresholdGreaterThan(
+    int? value,
+  ) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        GreaterCondition(
+          property: 8,
+          value: value,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<DeviceSettings, DeviceSettings, QAfterFilterCondition>
+      co2AlertThresholdGreaterThanOrEqualTo(
+    int? value,
+  ) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        GreaterOrEqualCondition(
+          property: 8,
+          value: value,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<DeviceSettings, DeviceSettings, QAfterFilterCondition>
+      co2AlertThresholdLessThan(
+    int? value,
+  ) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        LessCondition(
+          property: 8,
+          value: value,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<DeviceSettings, DeviceSettings, QAfterFilterCondition>
+      co2AlertThresholdLessThanOrEqualTo(
+    int? value,
+  ) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        LessOrEqualCondition(
+          property: 8,
+          value: value,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<DeviceSettings, DeviceSettings, QAfterFilterCondition>
+      co2AlertThresholdBetween(
+    int? lower,
+    int? upper,
+  ) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        BetweenCondition(
+          property: 8,
+          lower: lower,
+          upper: upper,
         ),
       );
     });
@@ -1009,14 +1110,14 @@ extension DeviceSettingsQuerySortBy
   }
 
   QueryBuilder<DeviceSettings, DeviceSettings, QAfterSortBy>
-      sortByHighCo2AlarmEnabled() {
+      sortByCo2AlertThreshold() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(8);
     });
   }
 
   QueryBuilder<DeviceSettings, DeviceSettings, QAfterSortBy>
-      sortByHighCo2AlarmEnabledDesc() {
+      sortByCo2AlertThresholdDesc() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(8, sort: Sort.desc);
     });
@@ -1137,14 +1238,14 @@ extension DeviceSettingsQuerySortThenBy
   }
 
   QueryBuilder<DeviceSettings, DeviceSettings, QAfterSortBy>
-      thenByHighCo2AlarmEnabled() {
+      thenByCo2AlertThreshold() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(8);
     });
   }
 
   QueryBuilder<DeviceSettings, DeviceSettings, QAfterSortBy>
-      thenByHighCo2AlarmEnabledDesc() {
+      thenByCo2AlertThresholdDesc() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(8, sort: Sort.desc);
     });
@@ -1210,7 +1311,7 @@ extension DeviceSettingsQueryWhereDistinct
   }
 
   QueryBuilder<DeviceSettings, DeviceSettings, QAfterDistinct>
-      distinctByHighCo2AlarmEnabled() {
+      distinctByCo2AlertThreshold() {
     return QueryBuilder.apply(this, (query) {
       return query.addDistinctBy(8);
     });
@@ -1271,8 +1372,8 @@ extension DeviceSettingsQueryProperty1
     });
   }
 
-  QueryBuilder<DeviceSettings, bool, QAfterProperty>
-      highCo2AlarmEnabledProperty() {
+  QueryBuilder<DeviceSettings, int?, QAfterProperty>
+      co2AlertThresholdProperty() {
     return QueryBuilder.apply(this, (query) {
       return query.addProperty(8);
     });
@@ -1334,8 +1435,8 @@ extension DeviceSettingsQueryProperty2<R>
     });
   }
 
-  QueryBuilder<DeviceSettings, (R, bool), QAfterProperty>
-      highCo2AlarmEnabledProperty() {
+  QueryBuilder<DeviceSettings, (R, int?), QAfterProperty>
+      co2AlertThresholdProperty() {
     return QueryBuilder.apply(this, (query) {
       return query.addProperty(8);
     });
@@ -1400,8 +1501,8 @@ extension DeviceSettingsQueryProperty3<R1, R2>
     });
   }
 
-  QueryBuilder<DeviceSettings, (R1, R2, bool), QOperations>
-      highCo2AlarmEnabledProperty() {
+  QueryBuilder<DeviceSettings, (R1, R2, int?), QOperations>
+      co2AlertThresholdProperty() {
     return QueryBuilder.apply(this, (query) {
       return query.addProperty(8);
     });

@@ -29,7 +29,7 @@ class DeviceSettings {
   final String deviceId;
 
   /// Whether the high CO2 alarm is enabled or not
-  final bool highCo2AlarmEnabled;
+  final int? co2AlertThreshold;
 
   /// auto sync time
   final bool autoSyncTime;
@@ -42,7 +42,7 @@ class DeviceSettings {
     required this.thresholds,
     required this.version,
     required this.deviceId,
-    required this.highCo2AlarmEnabled,
+    required this.co2AlertThreshold,
     this.autoSyncTime = true,
   });
 
@@ -56,7 +56,7 @@ class DeviceSettings {
           Constants.yellowUpperLimit: Constants.defaultYellowUpperLimit,
         },
         version = '',
-        highCo2AlarmEnabled = false,
+        co2AlertThreshold = null,
         autoSyncTime = true;
 
   DeviceSettings copyWith({
@@ -67,7 +67,7 @@ class DeviceSettings {
     Map<String, int>? thresholds,
     String? version,
     String? deviceId,
-    bool? highCo2AlarmEnabled,
+    int? co2AlertThreshold,
     bool? autoSyncTime,
   }) {
     return DeviceSettings(
@@ -79,7 +79,7 @@ class DeviceSettings {
       thresholds: thresholds ?? this.thresholds,
       version: version ?? this.version,
       deviceId: deviceId ?? this.deviceId,
-      highCo2AlarmEnabled: highCo2AlarmEnabled ?? this.highCo2AlarmEnabled,
+      co2AlertThreshold: co2AlertThreshold ?? this.co2AlertThreshold,
       autoSyncTime: autoSyncTime ?? this.autoSyncTime,
     );
   }
