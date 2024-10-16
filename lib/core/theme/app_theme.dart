@@ -34,6 +34,17 @@ class AppTheme {
       backgroundColor: AppColors.primaryColor,
       foregroundColor: Colors.white,
     ),
+    elevatedButtonTheme: ElevatedButtonThemeData(
+      style: ButtonStyle(
+        backgroundColor: WidgetStateProperty.all(AppColors.primaryColor),
+        foregroundColor: WidgetStateProperty.all(Colors.white),
+        shape: WidgetStateProperty.all(
+          RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(8),
+          ),
+        ),
+      ),
+    ),
     switchTheme: SwitchThemeData(
       trackOutlineWidth: const WidgetStatePropertyAll(0),
       thumbColor: WidgetStateProperty.all(Colors.white),

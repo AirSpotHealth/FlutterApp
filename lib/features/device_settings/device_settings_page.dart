@@ -6,6 +6,7 @@ import 'package:airspothealth/features/device_settings/widgets/setting_item_widg
 import 'package:airspothealth/features/device_settings/widgets/vibrate_setting_widget.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
 class DeviceSettingsPage extends ConsumerWidget {
   const DeviceSettingsPage({required this.deviceId, super.key});
@@ -54,9 +55,30 @@ class DeviceSettingsPage extends ConsumerWidget {
       ),
       body: ListView(
         children: [
-          const AlarmSettingWidget(),
-          const VibrateSettingWidget(),
-          ..._deviceSettingsList.map((item) => SettingItemWidget(item: item)),
+          AlarmSettingWidget(
+            deviceId: deviceId,
+          ),
+          VibrateSettingWidget(
+            deviceId: deviceId,
+          ),
+          ..._deviceSettingsList.map((item) => SettingItemWidget(
+                item: item,
+                onTap: () {
+                  if (item.suffixWidget != null) return;
+
+                  if (item.route != null) {
+                    context.pushNamed(item.route!);
+                  }
+                },
+              )),
+          const SizedBox(height: 8),
+          Container(
+            margin: const EdgeInsets.all(16),
+            child: ElevatedButton(
+              onPressed: () {},
+              child: const Text('Forget This Device'),
+            ),
+          ),
         ],
       ),
     );

@@ -1,25 +1,21 @@
 import 'package:airspothealth/features/device_settings/models/setting_item.dart';
 import 'package:flutter/material.dart';
-import 'package:go_router/go_router.dart';
 
 class SettingItemWidget extends StatelessWidget {
   const SettingItemWidget({
     super.key,
     required this.item,
+    required this.onTap,
   });
 
   final SettingItem item;
 
+  final VoidCallback onTap;
+
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
-      onTap: () {
-        if (item.suffixWidget != null) return;
-
-        if (item.route != null) {
-          context.pushNamed(item.route!);
-        }
-      },
+      onTap: onTap,
       child: Container(
         padding: const EdgeInsets.only(left: 16, right: 16, bottom: 8),
         color: Colors.white,

@@ -1,5 +1,4 @@
 import 'package:airspothealth/core/theme/app_colors.dart';
-import 'package:airspothealth/core/utils/constants.dart';
 import 'package:flutter/material.dart';
 
 class AppUtils {
@@ -9,12 +8,11 @@ class AppUtils {
       return Colors.black;
     }
 
-    if (value > 0 && value < Constants.greenThreshold) {
+    if (value > 0 && value < 800) {
       return AppColors.brandColorGreen;
-    } else if (value >= Constants.greenThreshold &&
-        value < Constants.yellowThreshold) {
+    } else if (value >= 800 && value < 1000) {
       return AppColors.brandColorAmber;
-    } else if (value >= Constants.yellowThreshold) {
+    } else if (value >= 1000) {
       return AppColors.brandColorRed;
     } else {
       return Colors.black;
