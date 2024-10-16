@@ -15,4 +15,16 @@ class RouteNames {
 
   // Device data route
   static const String deviceGraph = '/device-graph';
+
+  /// airgraph route
+  static const String airgraph = '/airgraph';
+
+  /// app setup route
+  static const String appSetup = '/app-setup';
+
+  /// solutions route
+  static const String solutions = '/solutions';
+
+  /// find my device route
+  static const String findMyDevice = '/find-my-device';
 }

@@ -52,5 +52,10 @@
 	<string>This app needs Bluetooth to function</string>
 	<key>NSLocationUsageDescription</key>
 	<string>This app needs location services to function</string>
+	<key>LSApplicationQueriesSchemes</key>
+	<array>
+	<string>sms</string>
+	<string>tel</string>
+	</array>
 </dict>
 </plist>

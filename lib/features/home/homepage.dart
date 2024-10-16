@@ -1,15 +1,12 @@
 import 'package:airspothealth/core/models/ble_device.dart';
 import 'package:airspothealth/core/providers/ble_saved_devices_provider.dart';
 import 'package:airspothealth/core/providers/bluetooth_state_provider.dart';
-import 'package:airspothealth/core/router/route_names.dart';
-import 'package:airspothealth/core/utils/assets.dart';
-import 'package:airspothealth/core/utils/extensions.dart';
 import 'package:airspothealth/core/widgets/airspot_bar.dart';
 import 'package:airspothealth/features/add_device/providers/ble_device_connection_provider.dart';
+import 'package:airspothealth/features/home/widgets/menu_item_widget.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_blue_plus/flutter_blue_plus.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_router/go_router.dart';
 
 class HomePage extends ConsumerStatefulWidget {
   const HomePage({super.key});
@@ -47,23 +44,14 @@ class _HomePageState extends ConsumerState<HomePage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: const AirspotBar(),
-      body: ListView(
+      body: ListView.separated(
         padding: const EdgeInsets.all(16),
-        children: [
-          ListTile(
-            dense: true,
-            shape: const RoundedRectangleBorder(
-              borderRadius: BorderRadius.all(Radius.circular(10)),
-            ),
-            tileColor: Colors.white,
-            title:
-                Text('Devices', style: context.textTheme.labelLarge?.weight600),
-            subtitle: const Text('Manage your devices'),
-            leading: Image.asset(Assets.icDevice, width: 24),
-            trailing: const Icon(Icons.arrow_forward_ios),
-            onTap: () => context.pushNamed(RouteNames.devices),
-          ),
-        ],
+        separatorBuilder: (context, index) => const SizedBox(height: 12),
+        itemCount: MenuItems.items.length,
+        itemBuilder: (context, index) {
+          final menuItem = MenuItems.items[index];
+          return MenuItemWidget(menuItem: menuItem);
+        },
       ),
     );
   }

@@ -3,5 +3,12 @@
 class Assets {
   static const String logo = 'assets/images/airspot_logo.png';
 
-  static const String icDevice = 'assets/images/ic_device.png';
+  static const String device = 'assets/images/ic_device.png';
+  static const String airMap = 'assets/images/air_map_icon.png';
+  static const String airGraph = 'assets/images/air_graph_icon.png';
+  static const String solutions = 'assets/images/solutions_icon.png';
+  static const String findMyDevice = 'assets/images/find_my_icon.png';
+  static const String news = 'assets/images/news_icon.png';
+  static const String shop = 'assets/images/shop_icon.png';
+  static const String appSetup = 'assets/images/settings_icon.png';
 }

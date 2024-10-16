@@ -1,9 +1,12 @@
 import 'package:airspothealth/core/router/route_names.dart';
 import 'package:airspothealth/features/add_device/add_device_page.dart';
+import 'package:airspothealth/features/app_setup/app_setup_page.dart';
 import 'package:airspothealth/features/device_graph/device_graph_page.dart';
 import 'package:airspothealth/features/device_settings/device_settings_page.dart';
 import 'package:airspothealth/features/devices/devices_page.dart';
+import 'package:airspothealth/features/find_my_device/find_my_device_page.dart';
 import 'package:airspothealth/features/home/homepage.dart';
+import 'package:airspothealth/features/solutions/solutions_page.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
@@ -54,6 +57,21 @@ class AppRouter {
 
           return DeviceGraphPage(deviceId: deviceId);
         },
+      ),
+      GoRoute(
+        path: RouteNames.findMyDevice,
+        name: RouteNames.findMyDevice,
+        builder: (context, state) => const FindMyDevicePage(),
+      ),
+      GoRoute(
+        name: RouteNames.appSetup,
+        path: RouteNames.appSetup,
+        builder: (context, state) => const AppSetupPage(),
+      ),
+      GoRoute(
+        name: RouteNames.solutions,
+        path: RouteNames.solutions,
+        builder: (context, state) => const SolutionsPage(),
       ),
     ],
   );

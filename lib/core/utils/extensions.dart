@@ -1,6 +1,7 @@
 // Extension file for managing the extensions of the app
 
 import 'package:flutter/material.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 /// extension on [BuildContext]
 extension ContextExtension on BuildContext {
@@ -10,6 +11,14 @@ extension ContextExtension on BuildContext {
   ThemeData get theme => Theme.of(this);
 
   TextTheme get textTheme => theme.textTheme;
+
+  /// launch url
+  void tryLaunchUrl(String url) async {
+    final Uri uri = Uri.parse(url);
+    await canLaunchUrl(uri)
+        ? launchUrl(uri)
+        : debugPrint('Could not launch $url');
+  }
 }
 
 /// extension on [TextStyle]
