@@ -27,4 +27,8 @@ class Assets {
   static const String co2Settings = 'assets/images/high_co2.png';
   static const String recalibrateSettings =
       'assets/images/recalibrate_icon.png';
+
+  static const String highBattery = 'assets/images/hi_icon.png';
+  static const String lowBattery = 'assets/images/low_icon.png';
+  static const String mediumBattery = 'assets/images/med_icon.png';
 }
