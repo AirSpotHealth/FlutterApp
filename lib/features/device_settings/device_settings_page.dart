@@ -1,3 +1,9 @@
+import 'package:airspothealth/core/router/route_names.dart';
+import 'package:airspothealth/core/utils/assets.dart';
+import 'package:airspothealth/features/device_settings/models/setting_item.dart';
+import 'package:airspothealth/features/device_settings/widgets/alarm_setting_widget.dart';
+import 'package:airspothealth/features/device_settings/widgets/setting_item_widget.dart';
+import 'package:airspothealth/features/device_settings/widgets/vibrate_setting_widget.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -6,19 +12,52 @@ class DeviceSettingsPage extends ConsumerWidget {
 
   final String deviceId;
 
+  static final _deviceSettingsList = <SettingItem>[
+    SettingItem(
+      title: 'Time Settings',
+      assetIcon: Assets.timeSettings,
+      route: RouteNames.timeSettings,
+    ),
+    SettingItem(
+      title: 'Power mode',
+      assetIcon: Assets.powerModeSettings,
+      route: RouteNames.powerModeSettings,
+    ),
+    SettingItem(
+      title: 'CO2 PPM Settings',
+      assetIcon: Assets.ppmSettings,
+      route: RouteNames.ppmSettings,
+    ),
+    SettingItem(
+      title: 'High CO2 Alert',
+      assetIcon: Assets.co2Settings,
+      route: RouteNames.co2Settings,
+    ),
+    SettingItem(
+      title: 'AirSpot Device Update',
+      assetIcon: Assets.deviceUpdate,
+      route: RouteNames.deviceUpdate,
+    ),
+    SettingItem(
+      title: 'Recalibrate Device',
+      assetIcon: Assets.recalibrateSettings,
+      route: RouteNames.recalibrateSettings,
+    ),
+  ];
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     return Scaffold(
+      backgroundColor: Colors.white,
       appBar: AppBar(
         title: const Text('Device Settings'),
       ),
-      body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Text('Device ID: $deviceId'),
-          ],
-        ),
+      body: ListView(
+        children: [
+          const AlarmSettingWidget(),
+          const VibrateSettingWidget(),
+          ..._deviceSettingsList.map((item) => SettingItemWidget(item: item)),
+        ],
       ),
     );
   }

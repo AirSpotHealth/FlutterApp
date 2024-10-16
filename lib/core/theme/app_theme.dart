@@ -34,6 +34,18 @@ class AppTheme {
       backgroundColor: AppColors.primaryColor,
       foregroundColor: Colors.white,
     ),
+    switchTheme: SwitchThemeData(
+      trackOutlineWidth: const WidgetStatePropertyAll(0),
+      thumbColor: WidgetStateProperty.all(Colors.white),
+      trackColor: WidgetStateProperty.resolveWith(
+        (states) {
+          if (states.contains(WidgetState.selected)) {
+            return Colors.green;
+          }
+          return Colors.grey.shade300;
+        },
+      ),
+    ),
   );
 
   static ThemeData get theme => _theme;

@@ -36,4 +36,28 @@ class RouteNames {
 
   /// privacy policy route
   static const String privacyPolicy = '/privacy-policy';
+
+  /// time settings route
+  static const String timeSettings = '/time-settings';
+
+  /// alarm settings route
+  static const String alarmSettings = '/alarm-settings';
+
+  /// vibrate settings route
+  static const String vibrateSettings = '/vibrate-settings';
+
+  /// power mode settings route
+  static const String powerModeSettings = '/power-mode-settings';
+
+  /// ppm settings route
+  static const String ppmSettings = '/ppm-settings';
+
+  /// co2 settings route
+  static const String co2Settings = '/co2-settings';
+
+  /// recalibrate settings route
+  static const String recalibrateSettings = '/recalibrate-settings';
+
+  /// device update route
+  static const String deviceUpdate = '/device-update';
 }

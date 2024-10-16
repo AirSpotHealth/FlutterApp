@@ -18,4 +18,13 @@ class Assets {
 
   static const String deviceGraph = 'assets/images/device_graph_icon.png';
   static const String deviceSettings = 'assets/images/device_settings_icon.png';
+
+  static const String timeSettings = 'assets/images/time_settings_icon.png';
+  static const String alarmSettings = 'assets/images/icon_alarm.png';
+  static const String vibrateSettings = 'assets/images/icon_vibrate.png';
+  static const String powerModeSettings = 'assets/images/power_mode_icon.png';
+  static const String ppmSettings = 'assets/images/ppm_icon.png';
+  static const String co2Settings = 'assets/images/high_co2.png';
+  static const String recalibrateSettings =
+      'assets/images/recalibrate_icon.png';
 }
