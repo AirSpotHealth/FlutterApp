@@ -83,6 +83,21 @@ class DeviceSettings {
       autoSyncTime: autoSyncTime ?? this.autoSyncTime,
     );
   }
+
+  @ignore
+  bool get isLowPowerMode => powerMode == PowerMode.low;
+
+  @ignore
+  bool get isMediumPowerMode => powerMode == PowerMode.medium;
+
+  @ignore
+  bool get isHighPowerMode => powerMode == PowerMode.high;
+
+  @ignore
+  int get greenUpperLimit => thresholds[Constants.greenUpperLimit];
+
+  @ignore
+  int get yellowUpperLimit => thresholds[Constants.yellowUpperLimit];
 }
 
 enum PowerMode { low, medium, high }

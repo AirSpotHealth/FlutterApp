@@ -19,6 +19,13 @@ extension ContextExtension on BuildContext {
         ? launchUrl(uri)
         : debugPrint('Could not launch $url');
   }
+
+  /// show snack bar
+  void showSnackBar(String message) {
+    ScaffoldMessenger.of(this).showSnackBar(SnackBar(
+      content: Text(message),
+    ));
+  }
 }
 
 /// extension on [TextStyle]
