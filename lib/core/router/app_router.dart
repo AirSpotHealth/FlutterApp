@@ -7,6 +7,7 @@ import 'package:airspothealth/features/device_graph/device_graph_page.dart';
 import 'package:airspothealth/features/device_settings/device_settings_page.dart';
 import 'package:airspothealth/features/device_settings/pages/co2_alert_settings_page.dart';
 import 'package:airspothealth/features/device_settings/pages/co2_ppm_settings_page.dart';
+import 'package:airspothealth/features/device_settings/pages/device_update_page.dart';
 import 'package:airspothealth/features/device_settings/pages/powe_mode_settings_page.dart';
 import 'package:airspothealth/features/device_settings/pages/recalibrate_device_page.dart';
 import 'package:airspothealth/features/device_settings/pages/time_settings_page.dart';
@@ -105,7 +106,8 @@ class AppRouter {
                       }
                       return Co2AlertSettingsPage(deviceId: deviceId);
                     },
-                  ), // Route for recalibrate settings within device settings
+                  ),
+                  // Route for recalibrate settings within device settings
                   GoRoute(
                     path: 'recalibrate-settings',
                     name: RouteNames.recalibrateSettings,
@@ -115,6 +117,18 @@ class AppRouter {
                         throw ErrorDescription('Device ID is required');
                       }
                       return RecalibrateDevicePage(deviceId: deviceId);
+                    },
+                  ),
+                  // Route for device update settings within device settings
+                  GoRoute(
+                    path: 'device-update',
+                    name: RouteNames.deviceUpdate,
+                    builder: (context, state) {
+                      final deviceId = state.pathParameters['deviceId'];
+                      if (deviceId == null) {
+                        throw ErrorDescription('Device ID is required');
+                      }
+                      return DeviceUpdatePage(deviceId: deviceId);
                     },
                   ),
                 ],
