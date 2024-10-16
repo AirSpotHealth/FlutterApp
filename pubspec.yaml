@@ -20,6 +20,7 @@ dependencies:
   flutter_blue_plus: ^1.33.4
   freezed_annotation: ^2.4.4
   path_provider: ^2.1.4
+  fl_chart: ^0.69.0
 
 dev_dependencies:
   flutter_test:

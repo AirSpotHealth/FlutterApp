@@ -4,6 +4,8 @@ import 'package:airspothealth/core/models/ble_device.dart';
 import 'package:airspothealth/core/providers/ble_connected_devices_provider.dart';
 import 'package:airspothealth/core/providers/ble_saved_devices_provider.dart';
 import 'package:airspothealth/core/services/ble_service.dart';
+import 'package:airspothealth/core/utils/extensions.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter_blue_plus/flutter_blue_plus.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -20,9 +22,12 @@ class _BleDeviceConnectionNotifier
 
   @override
   BluetoothBondState build(String arg) {
-    return _bleService.connectedDevices
-            .firstWhere((device) => device.remoteId.str == arg)
-            .isConnected
+    debugPrint('bleDeviceConnectionProvider build $arg');
+    return _bleService
+                .connectedDevices()
+                .firstWhereOrNull((device) => device.remoteId.str == arg)
+                ?.isConnected ==
+            true
         ? BluetoothBondState.bonded
         : BluetoothBondState.none;
   }

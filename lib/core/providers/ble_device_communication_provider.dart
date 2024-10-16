@@ -99,8 +99,10 @@ class _BleDeviceCommunicationNotifier extends FamilyNotifier<dynamic, String> {
     _notificationStream = notifyCharacteristic.lastValueStream;
 
     _notificationStream!.listen((data) {
-      debugPrint('Data received: $data');
+      debugPrint('Data received: $arg, $data');
       final value = BleDataUtils.parse(data);
+
+      debugPrint('Parsed value: $value');
       state = value;
       _isarService.write((isar) {
         isar.deviceDatas.put(DeviceData(

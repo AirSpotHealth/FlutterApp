@@ -1,5 +1,6 @@
 import 'package:airspothealth/core/models/ble_device.dart';
 import 'package:airspothealth/core/providers/ble_saved_devices_provider.dart';
+import 'package:airspothealth/core/providers/bluetooth_state_provider.dart';
 import 'package:airspothealth/core/router/route_names.dart';
 import 'package:airspothealth/core/utils/assets.dart';
 import 'package:airspothealth/core/utils/extensions.dart';
@@ -20,8 +21,22 @@ class HomePage extends ConsumerStatefulWidget {
 class _HomePageState extends ConsumerState<HomePage> {
   @override
   void initState() {
-    super.initState();
     _connectToDevices();
+    _listenToBluetoothState();
+    super.initState();
+  }
+
+  void _listenToBluetoothState() {
+    ref.listenManual<BluetoothAdapterState>(
+      bluetoothStateProvider,
+      (oldState, newState) {
+        debugPrint('BluetoothAdapterState: $newState');
+        if (newState == BluetoothAdapterState.on &&
+            oldState != BluetoothAdapterState.on) {
+          _connectToDevices();
+        }
+      },
+    );
   }
 
   void _connectToDevices() {
@@ -29,6 +44,7 @@ class _HomePageState extends ConsumerState<HomePage> {
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
       for (final device in savedDevicesList) {
+        debugPrint('Connecting to device: ${device.name}');
         ref
             .read(bleDeviceConnectionProvider(device.deviceId).notifier)
             .connect(BluetoothDevice.fromId(device.deviceId));

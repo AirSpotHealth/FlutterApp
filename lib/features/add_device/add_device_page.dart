@@ -36,6 +36,8 @@ class _DevicesPageState extends ConsumerState<AddDevicePage> {
               return const Center(child: Text('No devices found'));
             }
 
+            debugPrint('Devices found: ${snapshot.data!.length}');
+
             return ListView(
               padding: const EdgeInsets.all(16),
               children: [

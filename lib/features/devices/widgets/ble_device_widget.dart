@@ -41,49 +41,16 @@ class BleDeviceWidget extends ConsumerWidget {
                 Icons.edit_outlined,
                 color: AppColors.primaryColor,
               ),
-              if (deviceConnected) ...[
-                const Spacer(),
-                Text(
-                  'connected',
-                  style: context.textTheme.labelLarge
-                      ?.copyWith(color: AppColors.brandColorGreen),
-                ),
-                IconButton(
-                  onPressed: () {
-                    context.pushNamed(
-                      RouteNames.deviceData,
-                      pathParameters: {'deviceId': bleDevice.deviceId},
-                    );
-                  },
-                  icon: const Icon(
-                    CupertinoIcons.graph_circle,
-                    color: Colors.green,
-                  ),
-                ),
-                IconButton(
-                  onPressed: () {
-                    context.pushNamed(
-                      RouteNames.deviceSettings,
-                      pathParameters: {'deviceId': bleDevice.deviceId},
-                    );
-                  },
-                  icon: const Icon(
-                    CupertinoIcons.settings,
-                    color: AppColors.neutralGreyDark,
-                  ),
-                ),
-              ] else if (deviceConnectionState == BluetoothBondState.bonding)
+              Text(
+                bleDevice.name,
+                style: context.textTheme.labelLarge,
+              ),
+              if (deviceConnected)
+                ..._getConnectedWidgets(context)
+              else if (deviceConnectionState == BluetoothBondState.bonding)
                 const CircularProgressIndicator()
               else
-                ElevatedButton(
-                  onPressed: () {
-                    ref
-                        .read(bleDeviceConnectionProvider(bleDevice.deviceId)
-                            .notifier)
-                        .connect(BluetoothDevice.fromId(bleDevice.deviceId));
-                  },
-                  child: const Text('Connect'),
-                ),
+                _buildConnectButton(ref),
             ],
           ),
           if (deviceConnected) ...[
@@ -94,5 +61,54 @@ class BleDeviceWidget extends ConsumerWidget {
         ],
       ),
     );
+  }
+
+  ElevatedButton _buildConnectButton(WidgetRef ref) {
+    return ElevatedButton(
+      onPressed: () {
+        ref
+            .read(bleDeviceConnectionProvider(bleDevice.deviceId).notifier)
+            .connect(BluetoothDevice.fromId(bleDevice.deviceId));
+      },
+      child: const Text('Connect'),
+    );
+  }
+
+  List<Widget> _getConnectedWidgets(BuildContext context) {
+    return [
+      Text(
+        'connected',
+        style: context.textTheme.labelLarge
+            ?.copyWith(color: AppColors.brandColorGreen),
+      ),
+      Flexible(
+        child: IconButton(
+          onPressed: () {
+            context.pushNamed(
+              RouteNames.deviceGraph,
+              extra: bleDevice.deviceId,
+            );
+          },
+          icon: const Icon(
+            CupertinoIcons.graph_circle,
+            color: Colors.green,
+          ),
+        ),
+      ),
+      Flexible(
+        child: IconButton(
+          onPressed: () {
+            context.pushNamed(
+              RouteNames.deviceSettings,
+              extra: bleDevice.deviceId,
+            );
+          },
+          icon: const Icon(
+            CupertinoIcons.settings,
+            color: AppColors.neutralGreyDark,
+          ),
+        ),
+      ),
+    ];
   }
 }

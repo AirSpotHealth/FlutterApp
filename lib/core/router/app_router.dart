@@ -1,6 +1,6 @@
 import 'package:airspothealth/core/router/route_names.dart';
 import 'package:airspothealth/features/add_device/add_device_page.dart';
-import 'package:airspothealth/features/device_data/device_data_page.dart';
+import 'package:airspothealth/features/device_graph/device_graph_page.dart';
 import 'package:airspothealth/features/device_settings/device_settings_page.dart';
 import 'package:airspothealth/features/devices/devices_page.dart';
 import 'package:airspothealth/features/home/homepage.dart';
@@ -33,7 +33,7 @@ class AppRouter {
         path: RouteNames.deviceSettings,
         name: RouteNames.deviceSettings,
         builder: (context, state) {
-          final deviceId = state.pathParameters['deviceId'];
+          final deviceId = state.extra as String?;
 
           if (deviceId == null) {
             throw ErrorDescription('Device ID is required');
@@ -43,16 +43,16 @@ class AppRouter {
         },
       ),
       GoRoute(
-        path: RouteNames.deviceData,
-        name: RouteNames.deviceData,
+        path: RouteNames.deviceGraph,
+        name: RouteNames.deviceGraph,
         builder: (context, state) {
-          final deviceId = state.pathParameters['deviceId'];
+          final deviceId = state.extra as String?;
 
           if (deviceId == null) {
             throw ErrorDescription('Device ID is required');
           }
 
-          return DeviceDataPage(deviceId: deviceId);
+          return DeviceGraphPage(deviceId: deviceId);
         },
       ),
     ],

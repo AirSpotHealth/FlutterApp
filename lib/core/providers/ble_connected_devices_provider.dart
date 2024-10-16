@@ -10,9 +10,9 @@ class _BleConnectedDevicesNotifier extends Notifier<List<BluetoothDevice>> {
   final BLEService _bleService = BLEService.instance;
 
   @override
-  List<BluetoothDevice> build() => _bleService.connectedDevices;
+  List<BluetoothDevice> build() => _bleService.connectedDevices();
 
   void refresh() {
-    state = _bleService.connectedDevices;
+    state = _bleService.connectedDevices();
   }
 }

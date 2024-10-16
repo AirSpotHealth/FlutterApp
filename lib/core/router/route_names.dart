@@ -14,5 +14,5 @@ class RouteNames {
   static const String deviceSettings = '/device-settings';
 
   // Device data route
-  static const String deviceData = '/device-data';
+  static const String deviceGraph = '/device-graph';
 }

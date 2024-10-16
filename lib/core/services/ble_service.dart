@@ -19,8 +19,7 @@ class BLEService {
   Future<bool> isAvailable() async => FlutterBluePlus.isSupported;
 
   /// Method to check if Bluetooth is enabled on the device.
-  Future<bool> isEnabled() async =>
-      FlutterBluePlus.adapterStateNow == BluetoothAdapterState.on;
+  BluetoothAdapterState get adapterStateNow => FlutterBluePlus.adapterStateNow;
 
   /// Method to enable Bluetooth on the device.
   Future<void> enable() async {
@@ -31,6 +30,10 @@ class BLEService {
     }
   }
 
+  /// Bluetooth adapter state listener.
+  Stream<BluetoothAdapterState> get adapterState =>
+      FlutterBluePlus.adapterState;
+
   /// Method to start scanning for Bluetooth devices.
   Future<void> startScan() async => FlutterBluePlus.startScan(withKeywords: [
         'AirSpot-',
@@ -40,8 +43,7 @@ class BLEService {
   Future<void> stopScan() async => FlutterBluePlus.stopScan();
 
   /// Method to get the list of connected devices.
-  List<BluetoothDevice> get connectedDevices =>
-      FlutterBluePlus.connectedDevices;
+  List<BluetoothDevice> connectedDevices() => FlutterBluePlus.connectedDevices;
 
   /// Method to connect to a Bluetooth device.
   Future<void> connect(BluetoothDevice device) async =>
