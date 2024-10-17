@@ -40,7 +40,8 @@ const DeviceSettingsSchema = IsarGeneratedSchema(
       ),
       IsarPropertySchema(
         name: 'thresholds',
-        type: IsarType.json,
+        type: IsarType.object,
+        target: 'DeviceThresholds',
       ),
       IsarPropertySchema(
         name: 'version',
@@ -66,7 +67,7 @@ const DeviceSettingsSchema = IsarGeneratedSchema(
     deserialize: deserializeDeviceSettings,
     deserializeProperty: deserializeDeviceSettingsProp,
   ),
-  embeddedSchemas: [],
+  embeddedSchemas: [DeviceThresholdsSchema],
 );
 
 @isarProtected
@@ -75,7 +76,12 @@ int serializeDeviceSettings(IsarWriter writer, DeviceSettings object) {
   IsarCore.writeBool(writer, 2, object.vibrationEnabled);
   IsarCore.writeByte(writer, 3, object.powerMode.index);
   IsarCore.writeBool(writer, 4, object.continuosScreenEnabled);
-  IsarCore.writeString(writer, 5, isarJsonEncode(object.thresholds));
+  {
+    final value = object.thresholds;
+    final objectWriter = IsarCore.beginObject(writer, 5);
+    serializeDeviceThresholds(objectWriter, value);
+    IsarCore.endObject(writer, objectWriter);
+  }
   IsarCore.writeString(writer, 6, object.version);
   IsarCore.writeString(writer, 7, object.deviceId);
   IsarCore.writeLong(
@@ -101,13 +107,18 @@ DeviceSettings deserializeDeviceSettings(IsarReader reader) {
   }
   final bool _continuosScreenEnabled;
   _continuosScreenEnabled = IsarCore.readBool(reader, 4);
-  final Map<String, dynamic> _thresholds;
+  final DeviceThresholds _thresholds;
   {
-    final json = isarJsonDecode(IsarCore.readString(reader, 5) ?? 'null');
-    if (json is Map<String, dynamic>) {
-      _thresholds = json;
+    final objectReader = IsarCore.readObject(reader, 5);
+    if (objectReader.isNull) {
+      _thresholds = DeviceThresholds(
+        greenUpperLimit: -9223372036854775808,
+        yellowUpperLimit: -9223372036854775808,
+      );
     } else {
-      _thresholds = const <String, dynamic>{};
+      final embedded = deserializeDeviceThresholds(objectReader);
+      IsarCore.freeReader(objectReader);
+      _thresholds = embedded;
     }
   }
   final String _version;
@@ -165,11 +176,16 @@ dynamic deserializeDeviceSettingsProp(IsarReader reader, int property) {
       return IsarCore.readBool(reader, 4);
     case 5:
       {
-        final json = isarJsonDecode(IsarCore.readString(reader, 5) ?? 'null');
-        if (json is Map<String, dynamic>) {
-          return json;
+        final objectReader = IsarCore.readObject(reader, 5);
+        if (objectReader.isNull) {
+          return DeviceThresholds(
+            greenUpperLimit: -9223372036854775808,
+            yellowUpperLimit: -9223372036854775808,
+          );
         } else {
-          return const <String, dynamic>{};
+          final embedded = deserializeDeviceThresholds(objectReader);
+          IsarCore.freeReader(objectReader);
+          return embedded;
         }
       }
     case 6:
@@ -994,7 +1010,14 @@ extension DeviceSettingsQueryFilter
 }
 
 extension DeviceSettingsQueryObject
-    on QueryBuilder<DeviceSettings, DeviceSettings, QFilterCondition> {}
+    on QueryBuilder<DeviceSettings, DeviceSettings, QFilterCondition> {
+  QueryBuilder<DeviceSettings, DeviceSettings, QAfterFilterCondition>
+      thresholds(FilterQuery<DeviceThresholds> q) {
+    return QueryBuilder.apply(this, (query) {
+      return query.object(q, 5);
+    });
+  }
+}
 
 extension DeviceSettingsQuerySortBy
     on QueryBuilder<DeviceSettings, DeviceSettings, QSortBy> {
@@ -1050,20 +1073,6 @@ extension DeviceSettingsQuerySortBy
       sortByContinuosScreenEnabledDesc() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(4, sort: Sort.desc);
-    });
-  }
-
-  QueryBuilder<DeviceSettings, DeviceSettings, QAfterSortBy>
-      sortByThresholds() {
-    return QueryBuilder.apply(this, (query) {
-      return query.addSortBy(5);
-    });
-  }
-
-  QueryBuilder<DeviceSettings, DeviceSettings, QAfterSortBy>
-      sortByThresholdsDesc() {
-    return QueryBuilder.apply(this, (query) {
-      return query.addSortBy(5, sort: Sort.desc);
     });
   }
 
@@ -1195,20 +1204,6 @@ extension DeviceSettingsQuerySortThenBy
     });
   }
 
-  QueryBuilder<DeviceSettings, DeviceSettings, QAfterSortBy>
-      thenByThresholds() {
-    return QueryBuilder.apply(this, (query) {
-      return query.addSortBy(5);
-    });
-  }
-
-  QueryBuilder<DeviceSettings, DeviceSettings, QAfterSortBy>
-      thenByThresholdsDesc() {
-    return QueryBuilder.apply(this, (query) {
-      return query.addSortBy(5, sort: Sort.desc);
-    });
-  }
-
   QueryBuilder<DeviceSettings, DeviceSettings, QAfterSortBy> thenByVersion(
       {bool caseSensitive = true}) {
     return QueryBuilder.apply(this, (query) {
@@ -1297,13 +1292,6 @@ extension DeviceSettingsQueryWhereDistinct
   }
 
   QueryBuilder<DeviceSettings, DeviceSettings, QAfterDistinct>
-      distinctByThresholds() {
-    return QueryBuilder.apply(this, (query) {
-      return query.addDistinctBy(5);
-    });
-  }
-
-  QueryBuilder<DeviceSettings, DeviceSettings, QAfterDistinct>
       distinctByVersion({bool caseSensitive = true}) {
     return QueryBuilder.apply(this, (query) {
       return query.addDistinctBy(6, caseSensitive: caseSensitive);
@@ -1353,7 +1341,7 @@ extension DeviceSettingsQueryProperty1
     });
   }
 
-  QueryBuilder<DeviceSettings, Map<String, dynamic>, QAfterProperty>
+  QueryBuilder<DeviceSettings, DeviceThresholds, QAfterProperty>
       thresholdsProperty() {
     return QueryBuilder.apply(this, (query) {
       return query.addProperty(5);
@@ -1416,7 +1404,7 @@ extension DeviceSettingsQueryProperty2<R>
     });
   }
 
-  QueryBuilder<DeviceSettings, (R, Map<String, dynamic>), QAfterProperty>
+  QueryBuilder<DeviceSettings, (R, DeviceThresholds), QAfterProperty>
       thresholdsProperty() {
     return QueryBuilder.apply(this, (query) {
       return query.addProperty(5);
@@ -1480,7 +1468,7 @@ extension DeviceSettingsQueryProperty3<R1, R2>
     });
   }
 
-  QueryBuilder<DeviceSettings, (R1, R2, Map<String, dynamic>), QOperations>
+  QueryBuilder<DeviceSettings, (R1, R2, DeviceThresholds), QOperations>
       thresholdsProperty() {
     return QueryBuilder.apply(this, (query) {
       return query.addProperty(5);
@@ -1515,3 +1503,231 @@ extension DeviceSettingsQueryProperty3<R1, R2>
     });
   }
 }
+
+// **************************************************************************
+// _IsarEmbeddedGenerator
+// **************************************************************************
+
+// coverage:ignore-file
+// ignore_for_file: duplicate_ignore, invalid_use_of_protected_member, lines_longer_than_80_chars, constant_identifier_names, avoid_js_rounded_ints, no_leading_underscores_for_local_identifiers, require_trailing_commas, unnecessary_parenthesis, unnecessary_raw_strings, unnecessary_null_in_if_null_operators, library_private_types_in_public_api, prefer_const_constructors
+// ignore_for_file: type=lint
+
+const DeviceThresholdsSchema = IsarGeneratedSchema(
+  schema: IsarSchema(
+    name: 'DeviceThresholds',
+    embedded: true,
+    properties: [
+      IsarPropertySchema(
+        name: 'greenUpperLimit',
+        type: IsarType.long,
+      ),
+      IsarPropertySchema(
+        name: 'yellowUpperLimit',
+        type: IsarType.long,
+      ),
+    ],
+    indexes: [],
+  ),
+  converter: IsarObjectConverter<void, DeviceThresholds>(
+    serialize: serializeDeviceThresholds,
+    deserialize: deserializeDeviceThresholds,
+  ),
+);
+
+@isarProtected
+int serializeDeviceThresholds(IsarWriter writer, DeviceThresholds object) {
+  IsarCore.writeLong(writer, 1, object.greenUpperLimit);
+  IsarCore.writeLong(writer, 2, object.yellowUpperLimit);
+  return 0;
+}
+
+@isarProtected
+DeviceThresholds deserializeDeviceThresholds(IsarReader reader) {
+  final int _greenUpperLimit;
+  _greenUpperLimit = IsarCore.readLong(reader, 1);
+  final int _yellowUpperLimit;
+  _yellowUpperLimit = IsarCore.readLong(reader, 2);
+  final object = DeviceThresholds(
+    greenUpperLimit: _greenUpperLimit,
+    yellowUpperLimit: _yellowUpperLimit,
+  );
+  return object;
+}
+
+extension DeviceThresholdsQueryFilter
+    on QueryBuilder<DeviceThresholds, DeviceThresholds, QFilterCondition> {
+  QueryBuilder<DeviceThresholds, DeviceThresholds, QAfterFilterCondition>
+      greenUpperLimitEqualTo(
+    int value,
+  ) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        EqualCondition(
+          property: 1,
+          value: value,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<DeviceThresholds, DeviceThresholds, QAfterFilterCondition>
+      greenUpperLimitGreaterThan(
+    int value,
+  ) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        GreaterCondition(
+          property: 1,
+          value: value,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<DeviceThresholds, DeviceThresholds, QAfterFilterCondition>
+      greenUpperLimitGreaterThanOrEqualTo(
+    int value,
+  ) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        GreaterOrEqualCondition(
+          property: 1,
+          value: value,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<DeviceThresholds, DeviceThresholds, QAfterFilterCondition>
+      greenUpperLimitLessThan(
+    int value,
+  ) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        LessCondition(
+          property: 1,
+          value: value,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<DeviceThresholds, DeviceThresholds, QAfterFilterCondition>
+      greenUpperLimitLessThanOrEqualTo(
+    int value,
+  ) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        LessOrEqualCondition(
+          property: 1,
+          value: value,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<DeviceThresholds, DeviceThresholds, QAfterFilterCondition>
+      greenUpperLimitBetween(
+    int lower,
+    int upper,
+  ) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        BetweenCondition(
+          property: 1,
+          lower: lower,
+          upper: upper,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<DeviceThresholds, DeviceThresholds, QAfterFilterCondition>
+      yellowUpperLimitEqualTo(
+    int value,
+  ) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        EqualCondition(
+          property: 2,
+          value: value,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<DeviceThresholds, DeviceThresholds, QAfterFilterCondition>
+      yellowUpperLimitGreaterThan(
+    int value,
+  ) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        GreaterCondition(
+          property: 2,
+          value: value,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<DeviceThresholds, DeviceThresholds, QAfterFilterCondition>
+      yellowUpperLimitGreaterThanOrEqualTo(
+    int value,
+  ) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        GreaterOrEqualCondition(
+          property: 2,
+          value: value,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<DeviceThresholds, DeviceThresholds, QAfterFilterCondition>
+      yellowUpperLimitLessThan(
+    int value,
+  ) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        LessCondition(
+          property: 2,
+          value: value,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<DeviceThresholds, DeviceThresholds, QAfterFilterCondition>
+      yellowUpperLimitLessThanOrEqualTo(
+    int value,
+  ) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        LessOrEqualCondition(
+          property: 2,
+          value: value,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<DeviceThresholds, DeviceThresholds, QAfterFilterCondition>
+      yellowUpperLimitBetween(
+    int lower,
+    int upper,
+  ) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        BetweenCondition(
+          property: 2,
+          lower: lower,
+          upper: upper,
+        ),
+      );
+    });
+  }
+}
+
+extension DeviceThresholdsQueryObject
+    on QueryBuilder<DeviceThresholds, DeviceThresholds, QFilterCondition> {}

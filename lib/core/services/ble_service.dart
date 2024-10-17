@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:airspothealth/core/models/ble_device.dart';
 import 'package:airspothealth/core/services/isar_service.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_blue_plus/flutter_blue_plus.dart';
 import 'package:isar/isar.dart';
 
@@ -35,9 +36,13 @@ class BLEService {
       FlutterBluePlus.adapterState;
 
   /// Method to start scanning for Bluetooth devices.
-  Future<void> startScan() async => FlutterBluePlus.startScan(withKeywords: [
-        'AirSpot-',
-      ], timeout: const Duration(seconds: 10));
+  void startScan() => FlutterBluePlus.startScan(
+        withKeywords: [
+          'AirSpot-',
+        ],
+        timeout: const Duration(seconds: 10),
+        continuousUpdates: true,
+      );
 
   /// Method to stop scanning for Bluetooth devices.
   Future<void> stopScan() async => FlutterBluePlus.stopScan();
@@ -61,7 +66,10 @@ class BLEService {
 
     return FlutterBluePlus.scanResults.asyncMap(
       (List<ScanResult> scanResults) => scanResults
-          .map((ScanResult scanResult) => scanResult.device)
+          .map((ScanResult scanResult) {
+            debugPrint('ScanDevice: ${scanResult.device.advName}');
+            return scanResult.device;
+          })
           .where((BluetoothDevice bd) => !connectedDevices.any(
               (BleDevice bleDevice) => bleDevice.deviceId == bd.remoteId.str))
           .toList(),

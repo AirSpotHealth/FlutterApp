@@ -1,4 +1,7 @@
+import 'dart:typed_data';
+
 import 'package:airspothealth/core/utils/constants.dart';
+import 'package:airspothealth/core/utils/device_cmd_utils.dart';
 import 'package:isar/isar.dart';
 
 part 'device_settings.g.dart';
@@ -19,7 +22,7 @@ class DeviceSettings {
   final bool continuosScreenEnabled;
 
   /// The thresholds for the device
-  final Map<String, dynamic> thresholds;
+  final DeviceThresholds thresholds;
 
   /// The firmware version of the device
   final String version;
@@ -51,10 +54,7 @@ class DeviceSettings {
         vibrationEnabled = false,
         powerMode = PowerMode.low,
         continuosScreenEnabled = false,
-        thresholds = const {
-          Constants.greenUpperLimit: Constants.defaultGreenUpperLimit,
-          Constants.yellowUpperLimit: Constants.defaultYellowUpperLimit,
-        },
+        thresholds = DeviceThresholds.empty(),
         version = '',
         co2AlertThreshold = null,
         autoSyncTime = true;
@@ -64,7 +64,7 @@ class DeviceSettings {
     bool? vibrationEnabled,
     PowerMode? powerMode,
     bool? continuosScreenEnabled,
-    Map<String, int>? thresholds,
+    DeviceThresholds? thresholds,
     String? version,
     String? deviceId,
     int? co2AlertThreshold,
@@ -94,10 +94,119 @@ class DeviceSettings {
   bool get isHighPowerMode => powerMode == PowerMode.high;
 
   @ignore
-  int get greenUpperLimit => thresholds[Constants.greenUpperLimit];
+  int get greenUpperLimit => thresholds.greenUpperLimit;
 
   @ignore
-  int get yellowUpperLimit => thresholds[Constants.yellowUpperLimit];
+  int get yellowUpperLimit => thresholds.yellowUpperLimit;
+
+  set greenUpperLimit(int value) {
+    thresholds.copyWith(greenUpperLimit: value);
+  }
+
+  set yellowUpperLimit(int value) {
+    thresholds.copyWith(yellowUpperLimit: value);
+  }
+
+  @ignore
+  Uint8List get powerModeCmd => powerMode._deviceCmd;
+
+  @ignore
+  Uint8List get alarmCmd =>
+      alarmEnabled ? DeviceCmdUtils.openAlarm() : DeviceCmdUtils.closeAlarm();
+
+  @ignore
+  Uint8List get vibrationCmd => vibrationEnabled
+      ? DeviceCmdUtils.openVibration()
+      : DeviceCmdUtils.closeVibration();
+
+  @ignore
+  Uint8List get co2Cmd => DeviceCmdUtils.getCO2();
+
+  @ignore
+  Uint8List get firmVersionCmd => DeviceCmdUtils.getFirmVersion();
+
+  @ignore
+  Uint8List get continuousScreenCmd => continuosScreenEnabled
+      ? DeviceCmdUtils.keepDeviceLight()
+      : DeviceCmdUtils.closeDeviceLight();
+
+  @ignore
+  Uint8List get autoSyncTimeCmd => DeviceCmdUtils.setTime();
+
+  @ignore
+  Uint8List get thresholdsCmd =>
+      DeviceCmdUtils.setCo2PPM(greenUpperLimit, yellowUpperLimit);
 }
 
-enum PowerMode { low, medium, high }
+@Embedded(ignore: {'copyWith'})
+class DeviceThresholds {
+  final int greenUpperLimit;
+  final int yellowUpperLimit;
+
+  DeviceThresholds({
+    required this.greenUpperLimit,
+    required this.yellowUpperLimit,
+  });
+
+  DeviceThresholds.empty()
+      : greenUpperLimit = Constants.defaultGreenUpperLimit,
+        yellowUpperLimit = Constants.defaultYellowUpperLimit;
+
+  DeviceThresholds copyWith({
+    int? greenUpperLimit,
+    int? yellowUpperLimit,
+  }) {
+    return DeviceThresholds(
+      greenUpperLimit: greenUpperLimit ?? this.greenUpperLimit,
+      yellowUpperLimit: yellowUpperLimit ?? this.yellowUpperLimit,
+    );
+  }
+
+  Map<String, int> toMap() {
+    return {
+      Constants.greenUpperLimit: greenUpperLimit,
+      Constants.yellowUpperLimit: yellowUpperLimit,
+    };
+  }
+
+  @override
+  bool operator ==(Object other) {
+    if (identical(this, other)) return true;
+
+    return other is DeviceThresholds &&
+        other.greenUpperLimit == greenUpperLimit &&
+        other.yellowUpperLimit == yellowUpperLimit;
+  }
+
+  @override
+  @ignore
+  int get hashCode => greenUpperLimit.hashCode ^ yellowUpperLimit.hashCode;
+
+  DeviceThresholds.fromJson(Map<String, dynamic> json)
+      : greenUpperLimit = json[Constants.greenUpperLimit],
+        yellowUpperLimit = json[Constants.yellowUpperLimit];
+
+  Map<String, dynamic> toJson() {
+    return {
+      Constants.greenUpperLimit: greenUpperLimit,
+      Constants.yellowUpperLimit: yellowUpperLimit,
+    };
+  }
+}
+
+enum PowerMode {
+  low,
+  medium,
+  high;
+
+  Uint8List get _deviceCmd {
+    switch (this) {
+      case PowerMode.low:
+        return DeviceCmdUtils.setPowerLow();
+      case PowerMode.medium:
+        return DeviceCmdUtils.setPowerMed();
+      case PowerMode.high:
+        return DeviceCmdUtils.setPowerHi();
+    }
+  }
+}

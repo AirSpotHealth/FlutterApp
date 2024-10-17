@@ -8,7 +8,7 @@ class RouteNames {
   static const String devices = '/devices';
 
   // Add device route
-  static const String addDevice = '/add-device';
+  static const String addDevice = 'add-device';
 
   /// device details route
   static const String deviceDetails = '/device-details';

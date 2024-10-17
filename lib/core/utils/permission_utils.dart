@@ -8,7 +8,7 @@ class PermissionUtils {
     Permission.bluetoothConnect,
     Permission.bluetoothScan
   ];
-  static Future<void> requestPermissions() async {
+  static void requestPermissions() {
     _permissionList.request().then((statuses) {
       if (statuses.containsValue(PermissionStatus.denied)) {
         debugPrint('Permissions denied');
@@ -17,6 +17,7 @@ class PermissionUtils {
       if (statuses.values
           .every((element) => element == PermissionStatus.granted)) {
         BLEService.instance.enable().then((_) {
+          debugPrint('Bluetooth enabled');
           BLEService.instance.startScan();
         });
       }

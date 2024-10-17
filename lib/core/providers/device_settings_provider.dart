@@ -1,4 +1,5 @@
 import 'package:airspothealth/core/models/device_settings.dart';
+import 'package:airspothealth/core/providers/ble_device_communication_provider.dart';
 import 'package:airspothealth/core/services/isar_service.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:isar/isar.dart';
@@ -24,7 +25,42 @@ class _DeviceSettingsNotifier extends FamilyNotifier<DeviceSettings, String> {
   }
 
   void updateSettings(DeviceSettings settings) {
-    // ref.read(bleDeviceCommunicationProvider(arg).notifier).writeData();
+    // check which settings are changed and send the command to the device
+    if (settings.alarmEnabled != state.alarmEnabled) {
+      ref
+          .read(bleDeviceCommunicationProvider(settings.deviceId).notifier)
+          .sendCommand(settings.alarmCmd);
+    }
+
+    if (settings.vibrationEnabled != state.vibrationEnabled) {
+      ref
+          .read(bleDeviceCommunicationProvider(settings.deviceId).notifier)
+          .sendCommand(settings.vibrationCmd);
+    }
+
+    if (settings.powerMode != state.powerMode) {
+      ref
+          .read(bleDeviceCommunicationProvider(settings.deviceId).notifier)
+          .sendCommand(settings.powerModeCmd);
+    }
+
+    if (settings.continuosScreenEnabled != state.continuosScreenEnabled) {
+      ref
+          .read(bleDeviceCommunicationProvider(settings.deviceId).notifier)
+          .sendCommand(settings.continuousScreenCmd);
+    }
+
+    if (settings.autoSyncTime != state.autoSyncTime) {
+      ref
+          .read(bleDeviceCommunicationProvider(settings.deviceId).notifier)
+          .sendCommand(settings.autoSyncTimeCmd);
+    }
+
+    if (settings.thresholds != state.thresholds) {
+      ref
+          .read(bleDeviceCommunicationProvider(settings.deviceId).notifier)
+          .sendCommand(settings.thresholdsCmd);
+    }
 
     _isarService.write((isar) {
       isar.deviceSettings.put(settings);

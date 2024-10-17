@@ -76,27 +76,15 @@ class _Co2PpmSettingsPageState extends ConsumerState<Co2PpmSettingsPage> {
               debugPrint('Green upper limit: $selectedGreenUpperLimit');
               debugPrint('Amber upper limit: $selectedAmberUpperLimit');
 
-              _updatePpm(
-                ref,
-                deviceSettings.copyWith(
-                  thresholds: {
-                    Constants.greenUpperLimit: selectedGreenUpperLimit,
-                    Constants.yellowUpperLimit: selectedAmberUpperLimit,
-                  },
-                ),
-              );
+              ref
+                  .read(deviceSettingsProvider(widget.deviceId).notifier)
+                  .updateSettings(deviceSettings);
             },
             child: const Text('Confirm'),
           ),
         ],
       ),
     );
-  }
-
-  void _updatePpm(WidgetRef ref, DeviceSettings deviceSettings) {
-    ref
-        .read(deviceSettingsProvider(widget.deviceId).notifier)
-        .updateSettings(deviceSettings);
   }
 }
 
@@ -117,7 +105,7 @@ class PpmRangePicker extends StatelessWidget {
 
   final Function(int) onChanged;
 
-  get _range => Constants.co2PPMValues;
+  List<int> get _range => Constants.co2PPMValues;
 
   @override
   Widget build(BuildContext context) {

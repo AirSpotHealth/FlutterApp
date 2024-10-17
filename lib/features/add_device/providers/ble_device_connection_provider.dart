@@ -2,8 +2,10 @@ import 'dart:async';
 
 import 'package:airspothealth/core/models/ble_device.dart';
 import 'package:airspothealth/core/providers/ble_connected_devices_provider.dart';
+import 'package:airspothealth/core/providers/ble_device_communication_provider.dart';
 import 'package:airspothealth/core/providers/ble_saved_devices_provider.dart';
 import 'package:airspothealth/core/services/ble_service.dart';
+import 'package:airspothealth/core/utils/device_cmd_utils.dart';
 import 'package:airspothealth/core/utils/extensions.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter_blue_plus/flutter_blue_plus.dart';
@@ -46,7 +48,6 @@ class _BleDeviceConnectionNotifier
       };
 
       if (bState == BluetoothConnectionState.connected) {
-        _bleService.stopScan();
         ref.read(bleConnectedDevicesProvider.notifier).refresh();
         ref.read(bleSavedDevicesProvider.notifier).addDevice(BleDevice(
               deviceId: device.remoteId.str,
@@ -54,6 +55,10 @@ class _BleDeviceConnectionNotifier
               platform: device.platformName,
               address: device.remoteId.str,
             ));
+
+        ref
+            .read(bleDeviceCommunicationProvider(arg).notifier)
+            .sendCommand(DeviceCmdUtils.getFirmVersion());
       }
 
       if (bState == BluetoothConnectionState.disconnected) {

@@ -14,6 +14,10 @@ class TimeSettingsPage extends ConsumerStatefulWidget {
 }
 
 class _TimeSettingsPageState extends ConsumerState<TimeSettingsPage> {
+  int _selectedHour = DateTime.now().hour;
+
+  int _selectedMinute = DateTime.now().minute;
+
   @override
   Widget build(BuildContext context) {
     final bool autoSyncTime =
@@ -49,11 +53,15 @@ class _TimeSettingsPageState extends ConsumerState<TimeSettingsPage> {
                 const SizedBox(width: 16),
                 Expanded(
                   child: CupertinoTimerPicker(
-                    onTimerDurationChanged: (value) {},
+                    onTimerDurationChanged: (value) {
+                      _selectedHour = value.inHours;
+                      _selectedMinute = value.inMinutes.remainder(60);
+                    },
                     mode: CupertinoTimerPickerMode.hm,
                     initialTimerDuration: Duration(
-                        hours: DateTime.now().hour,
-                        minutes: DateTime.now().minute),
+                      hours: _selectedHour,
+                      minutes: _selectedMinute,
+                    ),
                   ),
                 ),
               ],

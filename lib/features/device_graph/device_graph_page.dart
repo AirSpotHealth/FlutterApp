@@ -61,7 +61,6 @@ class _AirGraph extends StatefulWidget {
 class _AirGraphState extends State<_AirGraph> {
   late final WebViewController controller = WebViewController()
     ..setJavaScriptMode(JavaScriptMode.unrestricted)
-    ..enableZoom(true)
     ..loadFlutterAsset('assets/html/echarts.html')
     ..setNavigationDelegate(NavigationDelegate(
       onPageFinished: (url) {

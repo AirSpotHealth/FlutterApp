@@ -1,4 +1,5 @@
 import 'package:airspothealth/core/router/route_names.dart';
+import 'package:airspothealth/features/add_device/add_device_page.dart';
 import 'package:airspothealth/features/app_setup/app_setup_page.dart';
 import 'package:airspothealth/features/app_setup/app_updates_page.dart';
 import 'package:airspothealth/features/app_setup/latest_news_page.dart';
@@ -35,6 +36,12 @@ class AppRouter {
         name: RouteNames.devices,
         builder: (context, state) => const DevicesPage(),
         routes: [
+          // Route for adding a device
+          GoRoute(
+            path: RouteNames.addDevice,
+            name: RouteNames.addDevice,
+            builder: (context, state) => const AddDevicePage(),
+          ),
           // Route for a specific device by ID
           GoRoute(
             path: ':deviceId',

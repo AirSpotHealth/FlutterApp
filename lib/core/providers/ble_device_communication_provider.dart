@@ -99,7 +99,7 @@ class _BleDeviceCommunicationNotifier extends FamilyNotifier<dynamic, String> {
     _notificationStream = notifyCharacteristic.lastValueStream;
 
     _notificationStream!.listen((data) {
-      debugPrint('Data received: $arg, $data');
+      debugPrint('Data received: $arg, ${BleDataUtils.bytesToHexStr(data)}');
       final value = BleDataUtils.parse(data);
 
       debugPrint('Parsed value: $value');
@@ -126,12 +126,31 @@ class _BleDeviceCommunicationNotifier extends FamilyNotifier<dynamic, String> {
   }
 
   // Write data to the BLE device
-  Future<void> writeData(List<int> data) async {
-    if (_writeCharacteristic != null) {
-      await _writeCharacteristic!.write(data);
-      debugPrint('Data written: $data');
-    } else {
-      debugPrint('Write characteristic not available');
+  Future<bool> sendCommand(List<int> data) async {
+    try {
+      await _write(data);
+      return true;
+    } catch (e) {
+      return false;
     }
+  }
+
+  Future<void> _write(List<int> data) async {
+    if (device == null) {
+      debugPrint('Device not found');
+      return;
+    }
+
+    if (device!.isConnected == false) {
+      debugPrint('Device not connected');
+      return;
+    }
+
+    if (_writeCharacteristic == null) {
+      debugPrint('Write characteristic not found');
+      return;
+    }
+
+    await _writeCharacteristic!.write(data);
   }
 }
