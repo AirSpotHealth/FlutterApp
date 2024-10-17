@@ -1,3 +1,4 @@
+import 'package:airspothealth/core/models/ble_device.dart';
 import 'package:airspothealth/core/models/device_settings.dart';
 import 'package:airspothealth/core/providers/ble_device_communication_provider.dart';
 import 'package:airspothealth/core/services/isar_service.dart';
@@ -72,6 +73,12 @@ class _DeviceSettingsNotifier extends FamilyNotifier<DeviceSettings, String> {
   void removeSettings() {
     _isarService.write((isar) {
       isar.deviceSettings.delete(arg);
+    });
+  }
+
+  void updateDevice(BleDevice device) {
+    _isarService.write((isar) {
+      _isarService.bleDevices.put(device);
     });
   }
 }

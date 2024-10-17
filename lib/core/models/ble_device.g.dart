@@ -44,6 +44,10 @@ const BleDeviceSchema = IsarGeneratedSchema(
         name: 'platform',
         type: IsarType.string,
       ),
+      IsarPropertySchema(
+        name: 'alias',
+        type: IsarType.string,
+      ),
     ],
     indexes: [
       IsarIndexSchema(
@@ -82,6 +86,14 @@ int serializeBleDevice(IsarWriter writer, BleDevice object) {
   IsarCore.writeLong(
       writer, 5, object.lastConnectedAt.toUtc().microsecondsSinceEpoch);
   IsarCore.writeString(writer, 6, object.platform);
+  {
+    final value = object.alias;
+    if (value == null) {
+      IsarCore.writeNull(writer, 7);
+    } else {
+      IsarCore.writeString(writer, 7, value);
+    }
+  }
   return Isar.fastHash(object.deviceId);
 }
 
@@ -95,11 +107,14 @@ BleDevice deserializeBleDevice(IsarReader reader) {
   _address = IsarCore.readString(reader, 3) ?? '';
   final String _platform;
   _platform = IsarCore.readString(reader, 6) ?? '';
+  final String? _alias;
+  _alias = IsarCore.readString(reader, 7);
   final object = BleDevice(
     deviceId: _deviceId,
     name: _name,
     address: _address,
     platform: _platform,
+    alias: _alias,
   );
   return object;
 }
@@ -135,6 +150,8 @@ dynamic deserializeBleDeviceProp(IsarReader reader, int property) {
       }
     case 6:
       return IsarCore.readString(reader, 6) ?? '';
+    case 7:
+      return IsarCore.readString(reader, 7);
     default:
       throw ArgumentError('Unknown property: $property');
   }
@@ -148,6 +165,7 @@ sealed class _BleDeviceUpdate {
     DateTime? createdAt,
     DateTime? lastConnectedAt,
     String? platform,
+    String? alias,
   });
 }
 
@@ -164,6 +182,7 @@ class _BleDeviceUpdateImpl implements _BleDeviceUpdate {
     Object? createdAt = ignore,
     Object? lastConnectedAt = ignore,
     Object? platform = ignore,
+    Object? alias = ignore,
   }) {
     return collection.updateProperties([
           deviceId
@@ -173,6 +192,7 @@ class _BleDeviceUpdateImpl implements _BleDeviceUpdate {
           if (createdAt != ignore) 4: createdAt as DateTime?,
           if (lastConnectedAt != ignore) 5: lastConnectedAt as DateTime?,
           if (platform != ignore) 6: platform as String?,
+          if (alias != ignore) 7: alias as String?,
         }) >
         0;
   }
@@ -186,6 +206,7 @@ sealed class _BleDeviceUpdateAll {
     DateTime? createdAt,
     DateTime? lastConnectedAt,
     String? platform,
+    String? alias,
   });
 }
 
@@ -202,6 +223,7 @@ class _BleDeviceUpdateAllImpl implements _BleDeviceUpdateAll {
     Object? createdAt = ignore,
     Object? lastConnectedAt = ignore,
     Object? platform = ignore,
+    Object? alias = ignore,
   }) {
     return collection.updateProperties(deviceId, {
       if (name != ignore) 2: name as String?,
@@ -209,6 +231,7 @@ class _BleDeviceUpdateAllImpl implements _BleDeviceUpdateAll {
       if (createdAt != ignore) 4: createdAt as DateTime?,
       if (lastConnectedAt != ignore) 5: lastConnectedAt as DateTime?,
       if (platform != ignore) 6: platform as String?,
+      if (alias != ignore) 7: alias as String?,
     });
   }
 }
@@ -226,6 +249,7 @@ sealed class _BleDeviceQueryUpdate {
     DateTime? createdAt,
     DateTime? lastConnectedAt,
     String? platform,
+    String? alias,
   });
 }
 
@@ -242,6 +266,7 @@ class _BleDeviceQueryUpdateImpl implements _BleDeviceQueryUpdate {
     Object? createdAt = ignore,
     Object? lastConnectedAt = ignore,
     Object? platform = ignore,
+    Object? alias = ignore,
   }) {
     return query.updateProperties(limit: limit, {
       if (name != ignore) 2: name as String?,
@@ -249,6 +274,7 @@ class _BleDeviceQueryUpdateImpl implements _BleDeviceQueryUpdate {
       if (createdAt != ignore) 4: createdAt as DateTime?,
       if (lastConnectedAt != ignore) 5: lastConnectedAt as DateTime?,
       if (platform != ignore) 6: platform as String?,
+      if (alias != ignore) 7: alias as String?,
     });
   }
 }
@@ -273,6 +299,7 @@ class _BleDeviceQueryBuilderUpdateImpl implements _BleDeviceQueryUpdate {
     Object? createdAt = ignore,
     Object? lastConnectedAt = ignore,
     Object? platform = ignore,
+    Object? alias = ignore,
   }) {
     final q = query.build();
     try {
@@ -282,6 +309,7 @@ class _BleDeviceQueryBuilderUpdateImpl implements _BleDeviceQueryUpdate {
         if (createdAt != ignore) 4: createdAt as DateTime?,
         if (lastConnectedAt != ignore) 5: lastConnectedAt as DateTime?,
         if (platform != ignore) 6: platform as String?,
+        if (alias != ignore) 7: alias as String?,
       });
     } finally {
       q.close();
@@ -1166,6 +1194,192 @@ extension BleDeviceQueryFilter
       );
     });
   }
+
+  QueryBuilder<BleDevice, BleDevice, QAfterFilterCondition> aliasIsNull() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(const IsNullCondition(property: 7));
+    });
+  }
+
+  QueryBuilder<BleDevice, BleDevice, QAfterFilterCondition> aliasIsNotNull() {
+    return QueryBuilder.apply(not(), (query) {
+      return query.addFilterCondition(const IsNullCondition(property: 7));
+    });
+  }
+
+  QueryBuilder<BleDevice, BleDevice, QAfterFilterCondition> aliasEqualTo(
+    String? value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        EqualCondition(
+          property: 7,
+          value: value,
+          caseSensitive: caseSensitive,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<BleDevice, BleDevice, QAfterFilterCondition> aliasGreaterThan(
+    String? value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        GreaterCondition(
+          property: 7,
+          value: value,
+          caseSensitive: caseSensitive,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<BleDevice, BleDevice, QAfterFilterCondition>
+      aliasGreaterThanOrEqualTo(
+    String? value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        GreaterOrEqualCondition(
+          property: 7,
+          value: value,
+          caseSensitive: caseSensitive,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<BleDevice, BleDevice, QAfterFilterCondition> aliasLessThan(
+    String? value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        LessCondition(
+          property: 7,
+          value: value,
+          caseSensitive: caseSensitive,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<BleDevice, BleDevice, QAfterFilterCondition>
+      aliasLessThanOrEqualTo(
+    String? value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        LessOrEqualCondition(
+          property: 7,
+          value: value,
+          caseSensitive: caseSensitive,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<BleDevice, BleDevice, QAfterFilterCondition> aliasBetween(
+    String? lower,
+    String? upper, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        BetweenCondition(
+          property: 7,
+          lower: lower,
+          upper: upper,
+          caseSensitive: caseSensitive,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<BleDevice, BleDevice, QAfterFilterCondition> aliasStartsWith(
+    String value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        StartsWithCondition(
+          property: 7,
+          value: value,
+          caseSensitive: caseSensitive,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<BleDevice, BleDevice, QAfterFilterCondition> aliasEndsWith(
+    String value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        EndsWithCondition(
+          property: 7,
+          value: value,
+          caseSensitive: caseSensitive,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<BleDevice, BleDevice, QAfterFilterCondition> aliasContains(
+      String value,
+      {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        ContainsCondition(
+          property: 7,
+          value: value,
+          caseSensitive: caseSensitive,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<BleDevice, BleDevice, QAfterFilterCondition> aliasMatches(
+      String pattern,
+      {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        MatchesCondition(
+          property: 7,
+          wildcard: pattern,
+          caseSensitive: caseSensitive,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<BleDevice, BleDevice, QAfterFilterCondition> aliasIsEmpty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        const EqualCondition(
+          property: 7,
+          value: '',
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<BleDevice, BleDevice, QAfterFilterCondition> aliasIsNotEmpty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        const GreaterCondition(
+          property: 7,
+          value: '',
+        ),
+      );
+    });
+  }
 }
 
 extension BleDeviceQueryObject
@@ -1279,6 +1493,27 @@ extension BleDeviceQuerySortBy on QueryBuilder<BleDevice, BleDevice, QSortBy> {
       );
     });
   }
+
+  QueryBuilder<BleDevice, BleDevice, QAfterSortBy> sortByAlias(
+      {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(
+        7,
+        caseSensitive: caseSensitive,
+      );
+    });
+  }
+
+  QueryBuilder<BleDevice, BleDevice, QAfterSortBy> sortByAliasDesc(
+      {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(
+        7,
+        sort: Sort.desc,
+        caseSensitive: caseSensitive,
+      );
+    });
+  }
 }
 
 extension BleDeviceQuerySortThenBy
@@ -1362,6 +1597,20 @@ extension BleDeviceQuerySortThenBy
       return query.addSortBy(6, sort: Sort.desc, caseSensitive: caseSensitive);
     });
   }
+
+  QueryBuilder<BleDevice, BleDevice, QAfterSortBy> thenByAlias(
+      {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(7, caseSensitive: caseSensitive);
+    });
+  }
+
+  QueryBuilder<BleDevice, BleDevice, QAfterSortBy> thenByAliasDesc(
+      {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(7, sort: Sort.desc, caseSensitive: caseSensitive);
+    });
+  }
 }
 
 extension BleDeviceQueryWhereDistinct
@@ -1397,6 +1646,13 @@ extension BleDeviceQueryWhereDistinct
       {bool caseSensitive = true}) {
     return QueryBuilder.apply(this, (query) {
       return query.addDistinctBy(6, caseSensitive: caseSensitive);
+    });
+  }
+
+  QueryBuilder<BleDevice, BleDevice, QAfterDistinct> distinctByAlias(
+      {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addDistinctBy(7, caseSensitive: caseSensitive);
     });
   }
 }
@@ -1436,6 +1692,12 @@ extension BleDeviceQueryProperty1
   QueryBuilder<BleDevice, String, QAfterProperty> platformProperty() {
     return QueryBuilder.apply(this, (query) {
       return query.addProperty(6);
+    });
+  }
+
+  QueryBuilder<BleDevice, String?, QAfterProperty> aliasProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addProperty(7);
     });
   }
 }
@@ -1478,6 +1740,12 @@ extension BleDeviceQueryProperty2<R>
       return query.addProperty(6);
     });
   }
+
+  QueryBuilder<BleDevice, (R, String?), QAfterProperty> aliasProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addProperty(7);
+    });
+  }
 }
 
 extension BleDeviceQueryProperty3<R1, R2>
@@ -1516,6 +1784,12 @@ extension BleDeviceQueryProperty3<R1, R2>
   QueryBuilder<BleDevice, (R1, R2, String), QOperations> platformProperty() {
     return QueryBuilder.apply(this, (query) {
       return query.addProperty(6);
+    });
+  }
+
+  QueryBuilder<BleDevice, (R1, R2, String?), QOperations> aliasProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addProperty(7);
     });
   }
 }

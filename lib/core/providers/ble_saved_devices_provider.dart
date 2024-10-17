@@ -47,4 +47,18 @@ class _BleSavedDevicesNotifier extends Notifier<List<BleDevice>> {
 
     state = state.where((d) => d.deviceId != device.deviceId).toList();
   }
+
+  void updateDevice(BleDevice device) {
+    // check if device exists
+    if (!state.any((d) => d.deviceId == device.deviceId)) {
+      return;
+    }
+
+    ref.read(isarServiceProvider).write((isar) {
+      isar.bleDevices.put(device);
+    });
+
+    state =
+        state.map((d) => d.deviceId == device.deviceId ? device : d).toList();
+  }
 }

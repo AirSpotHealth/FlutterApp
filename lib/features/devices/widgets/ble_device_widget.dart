@@ -1,4 +1,5 @@
 import 'package:airspothealth/core/models/ble_device.dart';
+import 'package:airspothealth/core/providers/ble_saved_devices_provider.dart';
 import 'package:airspothealth/core/router/route_names.dart';
 import 'package:airspothealth/core/theme/app_colors.dart';
 import 'package:airspothealth/core/utils/assets.dart';
@@ -38,9 +39,14 @@ class BleDeviceWidget extends ConsumerWidget {
         children: [
           Row(
             children: [
-              const Icon(
-                Icons.edit_outlined,
-                color: AppColors.primaryColor,
+              GestureDetector(
+                onTap: () {
+                  _showDeviceAliasDialog(ref, bleDevice.deviceId);
+                },
+                child: const Icon(
+                  Icons.edit_outlined,
+                  color: AppColors.primaryColor,
+                ),
               ),
               const Spacer(),
               if (deviceConnected)
@@ -52,7 +58,7 @@ class BleDeviceWidget extends ConsumerWidget {
             ],
           ),
           Text(
-            bleDevice.name,
+            bleDevice.alias ?? bleDevice.name,
             style: context.textTheme.labelLarge,
           ),
           if (deviceConnected) ...[
@@ -120,5 +126,33 @@ class BleDeviceWidget extends ConsumerWidget {
       ),
       const SizedBox(width: 8),
     ];
+  }
+
+  void _showDeviceAliasDialog(WidgetRef ref, String deviceId) {
+    showAdaptiveDialog(
+        context: ref.context,
+        builder: (context) {
+          final TextEditingController controller = TextEditingController();
+          return AlertDialog(
+            title: const Text('Edit Device Alias'),
+            content: TextField(
+              controller: controller,
+              decoration: const InputDecoration(
+                hintText: 'Enter device alias',
+              ),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () {
+                  ref
+                      .read(bleSavedDevicesProvider.notifier)
+                      .updateDevice(bleDevice.copyWith(alias: controller.text));
+                  Navigator.of(context).pop();
+                },
+                child: const Text('Save'),
+              ),
+            ],
+          );
+        });
   }
 }
