@@ -40,8 +40,9 @@ class BLEService {
         withKeywords: [
           'AirSpot-',
         ],
+        oneByOne: true,
+        androidUsesFineLocation: true,
         timeout: const Duration(seconds: 10),
-        continuousUpdates: true,
       );
 
   /// Method to stop scanning for Bluetooth devices.
@@ -56,6 +57,12 @@ class BLEService {
 
   /// Method to disconnect from a Bluetooth device.
   Future<void> disconnect() async {}
+
+  /// Get the stream of isScanning.
+  Stream<bool> get isScanning => FlutterBluePlus.isScanning;
+
+  /// get is scanning now
+  bool get isScanningNow => FlutterBluePlus.isScanningNow;
 
   /// Get the stream of Bluetooth devices.
   Stream<List<BluetoothDevice>> get scanResults {

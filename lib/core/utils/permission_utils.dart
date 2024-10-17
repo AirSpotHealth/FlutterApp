@@ -1,5 +1,3 @@
-import 'package:airspothealth/core/services/ble_service.dart';
-import 'package:flutter/material.dart';
 import 'package:permission_handler/permission_handler.dart';
 
 class PermissionUtils {
@@ -8,20 +6,14 @@ class PermissionUtils {
     Permission.bluetoothConnect,
     Permission.bluetoothScan
   ];
-  static void requestPermissions() {
-    _permissionList.request().then((statuses) {
-      if (statuses.containsValue(PermissionStatus.denied)) {
-        debugPrint('Permissions denied');
-      }
+  static Future<bool> requestPermissions() async {
+    final statuses = await _permissionList.request();
 
-      if (statuses.values
-          .every((element) => element == PermissionStatus.granted)) {
-        BLEService.instance.enable().then((_) {
-          debugPrint('Bluetooth enabled');
-          BLEService.instance.startScan();
-        });
-      }
-    });
+    if (statuses.containsValue(PermissionStatus.denied)) {
+      return false;
+    }
+
+    return true;
   }
 
   static Future<bool> checkPermission(Permission permission) async {
