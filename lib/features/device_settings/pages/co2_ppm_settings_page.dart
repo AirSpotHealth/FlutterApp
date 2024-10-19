@@ -78,7 +78,16 @@ class _Co2PpmSettingsPageState extends ConsumerState<Co2PpmSettingsPage> {
 
               ref
                   .read(deviceSettingsProvider(widget.deviceId).notifier)
-                  .updateSettings(deviceSettings);
+                  .updateSettings(deviceSettings.copyWith(
+                    thresholds: DeviceThresholds(
+                      greenUpperLimit: selectedGreenUpperLimit,
+                      yellowUpperLimit: selectedAmberUpperLimit,
+                    ),
+                  ));
+
+              context.showSnackBar('Settings updated');
+
+              Navigator.of(context).pop();
             },
             child: const Text('Confirm'),
           ),

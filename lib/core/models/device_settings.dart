@@ -37,6 +37,9 @@ class DeviceSettings {
   /// auto sync time
   final bool autoSyncTime;
 
+  /// auto calibration
+  final bool autoCalibration;
+
   DeviceSettings({
     required this.alarmEnabled,
     required this.vibrationEnabled,
@@ -47,6 +50,7 @@ class DeviceSettings {
     required this.deviceId,
     required this.co2AlertThreshold,
     this.autoSyncTime = true,
+    this.autoCalibration = true,
   });
 
   DeviceSettings.empty({required this.deviceId})
@@ -57,7 +61,8 @@ class DeviceSettings {
         thresholds = DeviceThresholds.empty(),
         version = '',
         co2AlertThreshold = null,
-        autoSyncTime = true;
+        autoSyncTime = true,
+        autoCalibration = true;
 
   DeviceSettings copyWith({
     bool? alarmEnabled,
@@ -69,6 +74,7 @@ class DeviceSettings {
     String? deviceId,
     int? co2AlertThreshold,
     bool? autoSyncTime,
+    bool? autoCalibration,
   }) {
     return DeviceSettings(
       alarmEnabled: alarmEnabled ?? this.alarmEnabled,
@@ -81,6 +87,7 @@ class DeviceSettings {
       deviceId: deviceId ?? this.deviceId,
       co2AlertThreshold: co2AlertThreshold ?? this.co2AlertThreshold,
       autoSyncTime: autoSyncTime ?? this.autoSyncTime,
+      autoCalibration: autoCalibration ?? this.autoCalibration,
     );
   }
 
@@ -137,6 +144,11 @@ class DeviceSettings {
   Uint8List get thresholdsCmd =>
       DeviceCmdUtils.setCo2PPM(greenUpperLimit, yellowUpperLimit);
 
+  @ignore
+  Uint8List get autoCalibrationCmd => autoCalibration
+      ? DeviceCmdUtils.setCalibrationAuto()
+      : DeviceCmdUtils.setCalibrationManual();
+
   Map<String, dynamic> toJson() {
     return {
       'alarmEnabled': alarmEnabled,
@@ -148,7 +160,43 @@ class DeviceSettings {
       'deviceId': deviceId,
       'co2AlertThreshold': co2AlertThreshold,
       'autoSyncTime': autoSyncTime,
+      'autoCalibration': autoCalibration,
     };
+  }
+
+  @override
+  bool operator ==(Object other) {
+    if (identical(this, other)) return true;
+
+    return other is DeviceSettings &&
+        other.alarmEnabled == alarmEnabled &&
+        other.vibrationEnabled == vibrationEnabled &&
+        other.powerMode == powerMode &&
+        other.continuosScreenEnabled == continuosScreenEnabled &&
+        other.thresholds == thresholds &&
+        other.version == version &&
+        other.deviceId == deviceId &&
+        other.co2AlertThreshold == co2AlertThreshold &&
+        other.autoSyncTime == autoSyncTime &&
+        other.autoCalibration == autoCalibration;
+  }
+
+  @override
+  int get hashCode =>
+      alarmEnabled.hashCode ^
+      vibrationEnabled.hashCode ^
+      powerMode.hashCode ^
+      continuosScreenEnabled.hashCode ^
+      thresholds.hashCode ^
+      version.hashCode ^
+      deviceId.hashCode ^
+      co2AlertThreshold.hashCode ^
+      autoSyncTime.hashCode ^
+      autoCalibration.hashCode;
+
+  @override
+  String toString() {
+    return 'DeviceSettings(alarmEnabled: $alarmEnabled, vibrationEnabled: $vibrationEnabled, powerMode: $powerMode, continuosScreenEnabled: $continuosScreenEnabled, thresholds: $thresholds, version: $version, deviceId: $deviceId, co2AlertThreshold: $co2AlertThreshold, autoSyncTime: $autoSyncTime, autoCalibration: $autoCalibration)';
   }
 }
 
@@ -205,6 +253,11 @@ class DeviceThresholds {
       Constants.greenUpperLimit: greenUpperLimit,
       Constants.yellowUpperLimit: yellowUpperLimit,
     };
+  }
+
+  @override
+  String toString() {
+    return 'DeviceThresholds(greenUpperLimit: $greenUpperLimit, yellowUpperLimit: $yellowUpperLimit)';
   }
 }
 

@@ -52,7 +52,7 @@ class BleNewDeviceItem extends ConsumerWidget {
                 onPressed: () => ref
                     .read(bleDeviceConnectionProvider(device.remoteId.str)
                         .notifier)
-                    .connect(device),
+                    .connect(),
                 child: const Text('Connect'),
               ),
           BluetoothBondState.bonding: () => const CupertinoActivityIndicator(),

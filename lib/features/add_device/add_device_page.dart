@@ -102,7 +102,7 @@ class _AddDevicePageState extends ConsumerState<AddDevicePage> {
     for (final device in devices) {
       ref
           .read(bleDeviceConnectionProvider(device.remoteId.str).notifier)
-          .connect(device);
+          .connect();
     }
   }
 }

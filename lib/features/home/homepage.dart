@@ -5,7 +5,6 @@ import 'package:airspothealth/core/widgets/airspot_bar.dart';
 import 'package:airspothealth/features/add_device/providers/ble_device_connection_provider.dart';
 import 'package:airspothealth/features/home/widgets/menu_item_widget.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_blue_plus/flutter_blue_plus.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 class HomePage extends ConsumerStatefulWidget {
@@ -31,7 +30,7 @@ class _HomePageState extends ConsumerState<HomePage> {
         debugPrint('Connecting to device from homepage: ${device.name}');
         ref
             .read(bleDeviceConnectionProvider(device.deviceId).notifier)
-            .connect(BluetoothDevice.fromId(device.deviceId));
+            .connect();
       }
     });
   }

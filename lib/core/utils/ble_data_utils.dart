@@ -12,8 +12,8 @@ class BleDataUtils {
       bytes?.map((byt) => byt.toRadixString(16).padLeft(2, '0')).join();
 
   /// Parses the response command based on device ID and data
-  static dynamic parseResponseCommand(String deviceId, List<int> data) {
-    if (data.length < 6) return;
+  static int? parseResponseCommand(String deviceId, List<int> data) {
+    if (data.length < 6) return null;
 
     final responseCommand = ResponseCommand.fromValue(data[2]);
     final parser = ResponseCommandParser(deviceId);
@@ -36,12 +36,13 @@ class BleDataUtils {
       ResponseCommand.setContinuosDisplayResult:
           parser.parseSetContinuosDisplay,
       ResponseCommand.firmwareVersion: parser.parseFirmwareVersion,
+      ResponseCommand.recalibrationTime: parser.parseRecalibrationTime,
     };
 
     final result = responseParsers[responseCommand]?.call(data);
 
     if (responseCommand == ResponseCommand.co2Value) {
-      return result;
+      return result as int;
     }
 
     return null;
@@ -55,7 +56,7 @@ class ResponseCommandParser {
 
   final String deviceId;
   final IsarService isarService = IsarService();
-  int parseCo2Value(List<int> data) => data[4] * 256 + (data[5] & 0xff);
+  int parseCo2Value(List<int> data) => (data[4] * 256 + (data[5] & 0xff));
 
   bool parseAlarm(List<int> data) => _parseBoolean(data, 4);
 
@@ -130,9 +131,11 @@ class ResponseCommandParser {
 
   bool parseSetContinuosDisplay(List<int> data) => _parseBoolean(data, 4);
 
+  int parseRecalibrationTime(List<int> data) => data[4];
+
   // Helper Methods
   int _parseTwoBytesToInt(List<int> data, int startIndex) =>
-      256 + (data[startIndex] & 0xff);
+      _byteArrayToInt(data, startIndex, startIndex + 1);
 
   bool _parseBoolean(List<int> data, int index) => data[index] == 0x01;
 
@@ -149,6 +152,24 @@ class ResponseCommandParser {
       isar.deviceSettings
           .put(update(settings ?? DeviceSettings.empty(deviceId: deviceId)));
     });
+  }
+
+  int _byteArrayToInt(List<int> data, int startIndex, int endIndex) {
+    // var result = 0
+    // for (i in byteArray.indices) {
+    //     result = result shl 8 // 将结果左移 8 位
+    //     result = result or (byteArray[i].toInt() and 0xFF) // 将当前 byte 与 0xFF 进行按位与运算，确保取得正确的值
+    // }
+    // result -= 400
+    // result /= 100
+    // return result
+
+    dynamic result = 0;
+    for (var i = startIndex; i <= endIndex; i++) {
+      result = result << 8;
+      result = result | (data[i] & 0xFF);
+    }
+    return result.toInt();
   }
 }
 
@@ -188,9 +209,10 @@ enum ResponseCommand {
   alias(0x09),
   setAliasResult(0x0A),
   getCo2History(0x0C),
-  calibrateSensors(0x0D),
+  calibrateSensors(0x11),
   setContinuosDisplayResult(0x0E),
-  firmwareVersion(0x13);
+  firmwareVersion(0x13),
+  recalibrationTime(0x0F);
 
   const ResponseCommand(this.value);
   final int value;

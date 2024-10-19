@@ -37,7 +37,7 @@ class _BluetoothStateNotifier extends Notifier<BluetoothAdapterState> {
         debugPrint('Connecting to device: ${device.name}');
         ref
             .read(bleDeviceConnectionProvider(device.deviceId).notifier)
-            .connect(BluetoothDevice.fromId(device.deviceId));
+            .connect();
       }
     });
   }

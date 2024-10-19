@@ -73,6 +73,7 @@ class _DeviceVersionUpdateWidgetState
               ),
             ),
             if (remoteVersion is AsyncData &&
+                remoteVersion.value != null &&
                 AppUtils.isVersionGreater(
                     currentVersion, remoteVersion.value!.versionId)) ...[
               const SizedBox(width: 16),

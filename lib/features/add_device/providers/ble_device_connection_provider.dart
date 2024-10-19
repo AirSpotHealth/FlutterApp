@@ -20,6 +20,8 @@ class _BleDeviceConnectionNotifier
 
   StreamSubscription<BluetoothConnectionState>? _deviceSubscription;
 
+  BluetoothDevice get device => BluetoothDevice.fromId(arg);
+
   @override
   BluetoothBondState build(String arg) {
     debugPrint('bleDeviceConnectionProvider build $arg');
@@ -32,7 +34,7 @@ class _BleDeviceConnectionNotifier
         : BluetoothBondState.none;
   }
 
-  void connect(BluetoothDevice device) {
+  void connect() {
     state = BluetoothBondState.bonding;
 
     debugPrint('Connecting to device: ${device.advName}');
@@ -70,6 +72,6 @@ class _BleDeviceConnectionNotifier
   }
 
   Future<void> disconnect() async {
-    await _bleService.disconnect();
+    await _bleService.disconnect(device);
   }
 }

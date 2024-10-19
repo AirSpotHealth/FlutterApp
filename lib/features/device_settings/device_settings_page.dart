@@ -1,5 +1,7 @@
 import 'package:airspothealth/core/router/route_names.dart';
+import 'package:airspothealth/core/theme/app_colors.dart';
 import 'package:airspothealth/core/utils/assets.dart';
+import 'package:airspothealth/features/add_device/providers/ble_device_connection_provider.dart';
 import 'package:airspothealth/features/device_settings/models/setting_item.dart';
 import 'package:airspothealth/features/device_settings/widgets/alarm_setting_widget.dart';
 import 'package:airspothealth/features/device_settings/widgets/setting_item_widget.dart';
@@ -72,10 +74,26 @@ class DeviceSettingsPage extends ConsumerWidget {
                   }
                 },
               )),
-          const SizedBox(height: 8),
+          const SizedBox(height: 16),
           Container(
-            margin: const EdgeInsets.all(16),
+            margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
             child: ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.primaryColorDark),
+              onPressed: () {
+                ref
+                    .read(bleDeviceConnectionProvider(deviceId).notifier)
+                    .disconnect();
+                context.pop();
+              },
+              child: const Text('Disconnect Device'),
+            ),
+          ),
+          Container(
+            margin: const EdgeInsets.symmetric(horizontal: 16),
+            child: ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.primaryColor),
               onPressed: () {},
               child: const Text('Forget This Device'),
             ),

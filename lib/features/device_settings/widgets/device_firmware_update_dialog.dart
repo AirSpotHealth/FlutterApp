@@ -1,6 +1,9 @@
 import 'package:airspothealth/core/utils/extensions.dart';
 import 'package:airspothealth/core/widgets/app_logo.dart';
+import 'package:airspothealth/features/add_device/providers/ble_device_connection_provider.dart';
+import 'package:airspothealth/features/device_settings/models/progress_model.dart';
 import 'package:airspothealth/features/device_settings/models/remote_version.dart';
+import 'package:airspothealth/features/device_settings/providers/dfu_update_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -14,6 +17,27 @@ class DeviceFirmwareUpdateDialog extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    ref.listen(dfuUpdateProvider, (oldState, newState) {
+      if (newState is AsyncFailure && oldState is AsyncFailure) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to update firmware, ${newState.error}'),
+          ),
+        );
+      }
+
+      if (newState is AsyncSuccess) {
+        context.showSnackBar('Firmware updated successfully');
+
+        ref.read(bleDeviceConnectionProvider(deviceId).notifier).connect();
+
+        Navigator.of(context).pop();
+        Navigator.of(context).pop();
+      }
+    });
+
+    final AsyncProgressValue updateState = ref.watch(dfuUpdateProvider);
+
     return AlertDialog.adaptive(
       surfaceTintColor: Colors.white,
       backgroundColor: Colors.white,
@@ -36,19 +60,35 @@ class DeviceFirmwareUpdateDialog extends ConsumerWidget {
           const SizedBox(height: 16),
           Text(remoteVersion.updateContent),
           const SizedBox(height: 16),
-          ElevatedButton(
-            style: ElevatedButton.styleFrom(backgroundColor: Colors.green),
-            onPressed: () {
-              Navigator.of(context).pop();
-            },
-            child: const Text(
-              'Update Now',
-              style: TextStyle(
-                color: Colors.white,
-                fontWeight: FontWeight.bold,
+          if (updateState is AsyncInProgress) ...[
+            LinearProgressIndicator(
+              value: updateState.progress,
+              backgroundColor: Colors.grey.shade300,
+              valueColor: const AlwaysStoppedAnimation(Colors.green),
+            ),
+            const SizedBox(height: 8),
+            if (updateState.message != null)
+              Text(updateState.message!, style: context.textTheme.bodySmall),
+          ] else if (updateState is AsyncNone || updateState is AsyncFailure)
+            ElevatedButton(
+              style: ElevatedButton.styleFrom(backgroundColor: Colors.green),
+              onPressed: () {
+                ref.read(dfuUpdateProvider.notifier).updateFirmware(
+                    url: remoteVersion.downloadUrl, deviceId: deviceId);
+              },
+              child: const Text(
+                'Update Now',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.bold,
+                ),
               ),
             ),
-          ),
+          if (updateState is AsyncFailure)
+            Text(
+              updateState.error.toString(),
+              style: context.textTheme.bodySmall?.copyWith(color: Colors.red),
+            ),
         ],
       ),
     );

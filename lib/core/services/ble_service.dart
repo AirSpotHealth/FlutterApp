@@ -54,7 +54,7 @@ class BLEService {
       device.connect(autoConnect: true, mtu: null);
 
   /// Method to disconnect from a Bluetooth device.
-  Future<void> disconnect() async {}
+  Future<void> disconnect(BluetoothDevice device) async => device.disconnect();
 
   /// Get the stream of isScanning.
   Stream<bool> get isScanning => FlutterBluePlus.isScanning;

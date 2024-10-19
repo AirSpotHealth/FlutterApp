@@ -70,7 +70,7 @@ class BleDeviceWidget extends ConsumerWidget {
       onTap: () {
         ref
             .read(bleDeviceConnectionProvider(bleDevice.deviceId).notifier)
-            .connect(BluetoothDevice.fromId(bleDevice.deviceId));
+            .connect();
       },
       child: const Row(
         children: [

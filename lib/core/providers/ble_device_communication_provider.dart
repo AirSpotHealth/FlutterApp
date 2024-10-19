@@ -5,6 +5,7 @@ import 'package:airspothealth/core/utils/ble_data_utils.dart';
 import 'package:airspothealth/core/utils/constants.dart';
 import 'package:airspothealth/core/utils/device_cmd_utils.dart';
 import 'package:airspothealth/core/utils/extensions.dart';
+import 'package:airspothealth/features/device_settings/providers/recalibration_time_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_blue_plus/flutter_blue_plus.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -124,6 +125,13 @@ class _BleDeviceCommunicationNotifier extends FamilyNotifier<dynamic, String> {
 
     if (value == null) return;
 
+    if (data[2] == ResponseCommand.recalibrationTime.value) {
+      ref
+          .read(recalibrationTimeProvider(deviceId).notifier)
+          .setRecalibrationTime(value);
+      return;
+    }
+
     _isarService.write((isar) {
       isar.deviceDatas.put(DeviceData(
         deviceId: device!.remoteId.str,
@@ -140,7 +148,7 @@ class _BleDeviceCommunicationNotifier extends FamilyNotifier<dynamic, String> {
       DeviceCmdUtils.getCO2(),
       DeviceCmdUtils.getInitialData(),
       DeviceCmdUtils.getFirmVersion(),
-      DeviceCmdUtils.getAlias()
+      // DeviceCmdUtils.getAlias()
     ];
 
     for (final command in commands) {
@@ -161,6 +169,7 @@ class _BleDeviceCommunicationNotifier extends FamilyNotifier<dynamic, String> {
 
     try {
       await _writeCharacteristic!.write(data);
+      debugPrint('Command sent: ${BleDataUtils.bytesToHexStr(data)}');
       return true;
     } catch (e) {
       debugPrint('Error sending command: $e');

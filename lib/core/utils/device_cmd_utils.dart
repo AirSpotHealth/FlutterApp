@@ -12,11 +12,6 @@ class DeviceCmdUtils {
     return Uint8List.fromList([...commandWithoutChecksum, checksum]);
   }
 
-  // Helper method for combining byte arrays
-  static Uint8List _combine(Uint8List prefix, Uint8List data) {
-    return Uint8List.fromList([...prefix, ...data]);
-  }
-
   // Helper method to calculate checksum
   static int _calculateChecksum(Uint8List data) {
     int checksum = 0;
@@ -210,6 +205,23 @@ class DeviceCmdUtils {
     ]);
   }
 
+  // ======= Get Initial Data =======
+  static Uint8List getInitialData() {
+    return _buildCommand([prefixHigh, prefixLow, 0x08, 1, 1, 0xb3]);
+  }
+
+  // ======= Device Calibration Commands =======
+  static Uint8List setCalibrationAuto() {
+    return _buildCommand([prefixHigh, prefixLow, 0x11, 1, 1, 0xBC]);
+  }
+
+  static Uint8List setCalibrationManual() {
+    return _buildCommand([prefixHigh, prefixLow, 0x11, 1, 0, 0xBB]);
+  }
+
+  static Uint8List startRecalibration() {
+    return _buildCommand([prefixHigh, prefixLow, 0x0D, 1, 1, 0xB8]);
+  }
   // ======= Helper Functions =======
 
   static Uint8List _getHex2Bytes(int value) {
@@ -217,10 +229,5 @@ class DeviceCmdUtils {
     byteArray[0] = (value >> 8) & 0xFF;
     byteArray[1] = value & 0xFF;
     return byteArray;
-  }
-
-  // ======= Get Initial Data =======
-  static Uint8List getInitialData() {
-    return _buildCommand([prefixHigh, prefixLow, 0x08, 1, 1, 0xb3]);
   }
 }

@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:io';
 
 import 'package:airspothealth/core/services/network_service.dart';
 import 'package:airspothealth/core/utils/api_endpoints.dart';
@@ -25,9 +24,8 @@ class _FirmwareRemoteVersionNotifier
     state = const AsyncLoading();
 
     try {
-      final Response<dynamic> result = await _networkService.get(
-          ApiEndpoints.versionCheck,
-          {'system': "2", 'software': Platform.isAndroid ? "2" : "1"});
+      final Response<dynamic> result = await _networkService
+          .get(ApiEndpoints.versionCheck, {'system': "2", 'software': "2"});
 
       if (result.statusCode == 200) {
         final RemoteVersion remoteVersion =

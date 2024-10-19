@@ -33,4 +33,9 @@ class NetworkService {
   Future<Response> delete(String url) async {
     return _dio.delete(url);
   }
+
+  Future<Response> download(String url, String savePath,
+      {ProgressCallback? onReceiveProgress}) {
+    return _dio.download(url, savePath, onReceiveProgress: onReceiveProgress);
+  }
 }
