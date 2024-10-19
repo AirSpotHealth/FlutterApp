@@ -14,6 +14,16 @@ class RecalibrateDevicePage extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    ref.listen(recalibrationTimeProvider(deviceId), (oldState, newState) {
+      if (newState == -1 && oldState != -1) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Recalibration completed successfully'),
+          ),
+        );
+      }
+    });
+
     final DeviceSettings deviceSettings =
         ref.watch(deviceSettingsProvider(deviceId));
 
@@ -44,13 +54,22 @@ class RecalibrateDevicePage extends ConsumerWidget {
             const Text(
                 'If your AirSpot requires forced calibration then place it in a well-ventilated outdoor space, stand at least 1.5 meters away from it, and press the calibration icon above.'),
             const Spacer(),
-            if (recalibrationTime != null) ...[
+            if (recalibrationTime != null && recalibrationTime > 0) ...[
               const SizedBox(height: 16),
-              Text(
-                'Calibration in Progress: Remaining Time: $recalibrationTime seconds',
-                style:
-                    const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+              Text.rich(
+                TextSpan(
+                  text: 'Calibration in Progress\n',
+                  children: [
+                    TextSpan(
+                      text: 'Remaining Time: $recalibrationTime seconds',
+                      style: const TextStyle(
+                          fontWeight: FontWeight.bold, fontSize: 14),
+                    ),
+                  ],
+                ),
+                textAlign: TextAlign.center,
               ),
+              const SizedBox(height: 16),
             ] else
               SwitchListTile(
                 title: const Text('Auto Calibration',

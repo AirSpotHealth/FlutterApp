@@ -15,6 +15,8 @@ class BleDataUtils {
   static int? parseResponseCommand(String deviceId, List<int> data) {
     if (data.length < 6) return null;
 
+    debugPrint('Data[2]: ${data[2]}');
+
     final responseCommand = ResponseCommand.fromValue(data[2]);
     final parser = ResponseCommandParser(deviceId);
 
@@ -37,11 +39,20 @@ class BleDataUtils {
           parser.parseSetContinuosDisplay,
       ResponseCommand.firmwareVersion: parser.parseFirmwareVersion,
       ResponseCommand.recalibrationTime: parser.parseRecalibrationTime,
+      ResponseCommand.recalibrationDone: parser.parseRecalibrationTime,
     };
 
     final result = responseParsers[responseCommand]?.call(data);
 
     if (responseCommand == ResponseCommand.co2Value) {
+      return result as int;
+    }
+
+    if (responseCommand == ResponseCommand.recalibrationTime) {
+      return result as int;
+    }
+
+    if (responseCommand == ResponseCommand.recalibrationDone) {
       return result as int;
     }
 
@@ -212,7 +223,8 @@ enum ResponseCommand {
   calibrateSensors(0x11),
   setContinuosDisplayResult(0x0E),
   firmwareVersion(0x13),
-  recalibrationTime(0x0F);
+  recalibrationTime(0x0F),
+  recalibrationDone(0x0D);
 
   const ResponseCommand(this.value);
   final int value;

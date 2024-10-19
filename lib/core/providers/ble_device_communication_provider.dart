@@ -132,6 +132,13 @@ class _BleDeviceCommunicationNotifier extends FamilyNotifier<dynamic, String> {
       return;
     }
 
+    if (data[2] == ResponseCommand.recalibrationDone.value) {
+      ref
+          .read(recalibrationTimeProvider(deviceId).notifier)
+          .setRecalibrationTime(-1);
+      return;
+    }
+
     _isarService.write((isar) {
       isar.deviceDatas.put(DeviceData(
         deviceId: device!.remoteId.str,
