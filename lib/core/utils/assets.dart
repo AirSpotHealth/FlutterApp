@@ -46,4 +46,6 @@ class Assets {
   static const String successStoriesIcon =
       'assets/images/success_stories_icon.png';
   static const String uvLightIcon = 'assets/images/uv_light_icon.png';
+
+  static const String airSpotBg = 'assets/images/airspot_bg.png';
 }

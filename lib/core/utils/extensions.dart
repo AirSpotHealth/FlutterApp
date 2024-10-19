@@ -70,3 +70,23 @@ extension IterableExtension<T> on Iterable<T>? {
     return null;
   }
 }
+
+/// extension on [String]
+extension StringExtension on String {
+  /// check if the string is null or empty
+  bool get isNullOrEmpty => isEmpty;
+
+  /// check if the string is not null or empty
+  bool get isNotNullOrEmpty => isNotEmpty;
+
+  /// check if the string is null or empty
+  bool get isNullOrBlank => trim().isEmpty;
+
+  /// check if the string is not null or empty
+  bool get isNotNullOrBlank => trim().isNotEmpty;
+
+  /// capitalize the first letter of the string
+  String capitalize() {
+    return isNullOrEmpty ? this : '${this[0].toUpperCase()}${substring(1)}';
+  }
+}
