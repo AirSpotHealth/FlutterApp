@@ -9,14 +9,26 @@ class LatestNewsPage extends StatelessWidget {
       appBar: AppBar(
         title: const Text('Latest News'),
       ),
-      body: const Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Text('Welcome to Airspot Health'),
-            Text('Please wait while we set up your app'),
-          ],
-        ),
+      body: ListView(
+        padding: const EdgeInsets.all(16),
+        children: [
+          Row(
+            children: [
+              Expanded(
+                child: ElevatedButton(
+                    style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.red.shade800),
+                    onPressed: () {},
+                    child: const Text('Latest News')),
+              ),
+              const SizedBox(width: 24),
+              Switch(
+                value: false,
+                onChanged: (value) {},
+              ),
+            ],
+          ),
+        ],
       ),
     );
   }
