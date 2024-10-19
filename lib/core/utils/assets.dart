@@ -33,4 +33,17 @@ class Assets {
   static const String mediumBattery = 'assets/images/med_icon.png';
 
   static const String recalibrateImage = 'assets/images/recalibrate_image.png';
+
+  static const String airFiltersIcon = 'assets/images/air_filters_icon.png';
+  static const String co2MonitorIcon = 'assets/images/co2_monitors_icon.png';
+  static const String linksIcon = 'assets/images/links_icon.png';
+  static const String masksIcon = 'assets/images/masks_icon.png';
+  static const String mechanicalVentIcon =
+      'assets/images/mechanical_vent_icon.png';
+  static const String naturalVentIcon = 'assets/images/natural_vent_icon.png';
+  static const String protectionIcon = 'assets/images/protection_icon.png';
+  static const String regulationsIcon = 'assets/images/regulations_cion.png';
+  static const String successStoriesIcon =
+      'assets/images/success_stories_icon.png';
+  static const String uvLightIcon = 'assets/images/uv_light_icon.png';
 }

@@ -33,4 +33,7 @@ class Constants {
     1900,
     2000
   ];
+
+  static const String solutionsUrl =
+      'https://airspothealth.com/a/blog/category/';
 }
