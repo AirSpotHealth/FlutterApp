@@ -1,3 +1,4 @@
+import 'package:airspothealth/core/models/ble_device.dart';
 import 'package:airspothealth/core/models/device_settings.dart';
 import 'package:airspothealth/core/services/isar_service.dart';
 import 'package:flutter/material.dart';
@@ -101,7 +102,17 @@ class ResponseCommandParser {
 
   String parseAlias(List<int> data) {
     final alias = _parseString(data, 3);
-    _updateDeviceSettings((settings) => settings.copyWith(version: alias));
+    isarService.write((isar) {
+      final settings =
+          isar.bleDevices.where().deviceIdEqualTo(deviceId).findFirst();
+
+      if (settings == null) {
+        return;
+      }
+
+      isar.bleDevices.put(settings.copyWith(alias: alias));
+    });
+
     return alias;
   }
 

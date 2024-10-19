@@ -127,4 +127,9 @@ class RemoteVersion {
         img.hashCode ^
         updateContent.hashCode;
   }
+
+  @override
+  String toString() {
+    return 'RemoteVersion(id: $id, versionId: $versionId, systemType: $systemType, updateType: $updateType, noticeType: $noticeType, createTime: $createTime, createId: $createId, updateTime: $updateTime, updateId: $updateId, status: $status, img: $img, updateContent: $updateContent)';
+  }
 }

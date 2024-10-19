@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:io';
 
 import 'package:airspothealth/core/services/network_service.dart';
 import 'package:airspothealth/core/utils/api_endpoints.dart';
@@ -7,30 +8,34 @@ import 'package:dio/dio.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-final firmwareRemoteVersionProvider =
-    AsyncNotifierProvider.autoDispose<_FirmwareRemoteVersionNotifier, String>(
-        _FirmwareRemoteVersionNotifier.new);
+final firmwareRemoteVersionProvider = AsyncNotifierProvider.autoDispose<
+    _FirmwareRemoteVersionNotifier,
+    RemoteVersion?>(_FirmwareRemoteVersionNotifier.new);
 
-class _FirmwareRemoteVersionNotifier extends AutoDisposeAsyncNotifier<String> {
+class _FirmwareRemoteVersionNotifier
+    extends AutoDisposeAsyncNotifier<RemoteVersion?> {
   final NetworkService _networkService = NetworkService.instance;
 
   @override
-  FutureOr<String> build() {
-    return '--';
+  FutureOr<RemoteVersion?> build() {
+    return null;
   }
 
   Future<void> fetchRemoteVersion() async {
     state = const AsyncLoading();
 
     try {
-      final Response<dynamic> result = await _networkService
-          .get(ApiEndpoints.versionCheck, {'system': "2", 'software': "2"});
+      final Response<dynamic> result = await _networkService.get(
+          ApiEndpoints.versionCheck,
+          {'system': "2", 'software': Platform.isAndroid ? "2" : "1"});
 
       if (result.statusCode == 200) {
         final RemoteVersion remoteVersion =
             RemoteVersion.fromJson(result.data['data'] as Map<String, dynamic>);
 
-        state = AsyncData(remoteVersion.versionId);
+        debugPrint('Remote Version: ${remoteVersion.toString()}');
+
+        state = AsyncData(remoteVersion);
       } else {
         debugPrint('Version Update Check Error: ${result.data}');
         state =

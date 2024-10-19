@@ -1,4 +1,9 @@
+import 'package:airspothealth/core/providers/device_settings_provider.dart';
+import 'package:airspothealth/core/theme/app_colors.dart';
+import 'package:airspothealth/core/utils/app_utils.dart';
+import 'package:airspothealth/features/device_settings/models/remote_version.dart';
 import 'package:airspothealth/features/device_settings/providers/firmware_remote_version_provider.dart';
+import 'package:airspothealth/features/device_settings/widgets/device_firmware_update_dialog.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -26,7 +31,7 @@ class _DeviceVersionUpdateWidgetState
   @override
   Widget build(BuildContext context) {
     ref.listen(firmwareRemoteVersionProvider, (oldState, newState) {
-      if (newState is AsyncError && oldState is AsyncLoading) {
+      if (newState is AsyncError && oldState is AsyncError) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Failed to fetch remote version, ${newState.error}'),
@@ -35,8 +40,11 @@ class _DeviceVersionUpdateWidgetState
       }
     });
 
-    final AsyncValue<String> remoteVersion =
+    final AsyncValue<RemoteVersion?> remoteVersion =
         ref.watch(firmwareRemoteVersionProvider);
+
+    final String currentVersion =
+        ref.read(deviceSettingsProvider(widget.deviceId)).version;
 
     return Container(
         padding: const EdgeInsets.all(16),
@@ -49,18 +57,42 @@ class _DeviceVersionUpdateWidgetState
             const Text('Latest Version: '),
             const Spacer(),
             remoteVersion.when(
-              data: (version) => Text(version),
+              data: (version) => Text(
+                remoteVersion.value?.versionId ?? 'N/A',
+                style: const TextStyle(
+                  color: AppColors.brandColorAmber,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
               loading: () => const CupertinoActivityIndicator(),
               error: (error, stackTrace) => IconButton(
                 icon: const Icon(Icons.refresh),
-                onPressed: () {
-                  ref
-                      .read(firmwareRemoteVersionProvider.notifier)
-                      .fetchRemoteVersion();
-                },
+                onPressed: () => ref
+                    .read(firmwareRemoteVersionProvider.notifier)
+                    .fetchRemoteVersion(),
               ),
             ),
+            if (remoteVersion is AsyncData &&
+                AppUtils.isVersionGreater(
+                    currentVersion, remoteVersion.value!.versionId)) ...[
+              const SizedBox(width: 16),
+              ElevatedButton(
+                onPressed: () {
+                  _showUpdateDialog(context, remoteVersion.value!);
+                },
+                child: const Text('Update'),
+              ),
+            ]
           ],
         ));
+  }
+
+  void _showUpdateDialog(BuildContext context, RemoteVersion remoteVersion) {
+    showAdaptiveDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => DeviceFirmwareUpdateDialog(
+          deviceId: widget.deviceId, remoteVersion: remoteVersion),
+    );
   }
 }
