@@ -6,6 +6,7 @@ import 'package:airspothealth/core/utils/assets.dart';
 import 'package:airspothealth/core/utils/extensions.dart';
 import 'package:airspothealth/features/add_device/providers/ble_device_connection_provider.dart';
 import 'package:airspothealth/features/devices/widgets/device_value_widget.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_blue_plus/flutter_blue_plus.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -40,20 +41,10 @@ class BleDeviceWidget extends ConsumerWidget {
         children: [
           Row(
             children: [
-              GestureDetector(
-                onTap: () {
-                  _showDeviceAliasDialog(ref, bleDevice.deviceId);
-                },
-                child: const Icon(
-                  Icons.edit_outlined,
-                  color: AppColors.primaryColor,
-                ),
-              ),
-              const Spacer(),
               if (deviceConnected)
-                ..._getConnectedWidgets(context)
+                ..._getConnectedWidgets(ref)
               else if (deviceConnectionState == BluetoothBondState.bonding)
-                const CircularProgressIndicator()
+                const CupertinoActivityIndicator()
               else
                 _buildConnectButton(ref),
             ],
@@ -92,17 +83,27 @@ class BleDeviceWidget extends ConsumerWidget {
     );
   }
 
-  List<Widget> _getConnectedWidgets(BuildContext context) {
+  List<Widget> _getConnectedWidgets(WidgetRef ref) {
     return [
+      GestureDetector(
+        onTap: () {
+          _showDeviceAliasDialog(ref, bleDevice.deviceId);
+        },
+        child: const Icon(
+          Icons.edit_outlined,
+          color: AppColors.primaryColor,
+        ),
+      ),
+      const Spacer(),
       Text(
         'connected',
-        style: context.textTheme.labelLarge
+        style: ref.context.textTheme.labelLarge
             ?.copyWith(color: AppColors.brandColorGreen),
       ),
       const SizedBox(width: 8),
       GestureDetector(
         onTap: () {
-          context.pushNamed(
+          ref.context.pushNamed(
             RouteNames.deviceGraph,
             pathParameters: {'deviceId': bleDevice.deviceId},
           );
@@ -115,7 +116,7 @@ class BleDeviceWidget extends ConsumerWidget {
       const SizedBox(width: 12),
       GestureDetector(
         onTap: () {
-          context.pushNamed(
+          ref.context.pushNamed(
             RouteNames.deviceSettings,
             pathParameters: {'deviceId': bleDevice.deviceId},
           );
@@ -147,7 +148,7 @@ class BleDeviceWidget extends ConsumerWidget {
                 onPressed: () {
                   ref
                       .read(bleSavedDevicesProvider.notifier)
-                      .updateDevice(bleDevice.copyWith(alias: controller.text));
+                      .updateDeviceAlias(deviceId, controller.text);
                   Navigator.of(context).pop();
                 },
                 child: const Text('Save'),

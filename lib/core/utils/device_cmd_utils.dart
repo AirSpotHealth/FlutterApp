@@ -62,6 +62,27 @@ class DeviceCmdUtils {
     return combinedArrayWithChecksum;
   }
 
+  // ======= Alias Commands =======
+  static Uint8List setAlias(String alias) {
+    var nameBytes = utf8.encode(alias);
+    Uint8List prefixData =
+        Uint8List.fromList([prefixHigh, prefixLow, 0x0A, nameBytes.length]);
+
+    Uint8List combinedArrayWithoutChecksum =
+        Uint8List.fromList([...prefixData, ...nameBytes]);
+
+    int checksum = _calculateChecksum(combinedArrayWithoutChecksum);
+
+    Uint8List combinedArrayWithChecksum =
+        Uint8List.fromList([...combinedArrayWithoutChecksum, checksum]);
+
+    return combinedArrayWithChecksum;
+  }
+
+  static Uint8List getAlias() {
+    return _buildCommand([prefixHigh, prefixLow, 0x09, 1, 1, 0xb4]);
+  }
+
   // Helper method to convert hours and minutes to total seconds
   static int _convertToSeconds(int hours, int minutes) {
     return (hours * 3600) + (minutes * 60);

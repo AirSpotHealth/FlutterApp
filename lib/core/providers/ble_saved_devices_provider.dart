@@ -1,6 +1,8 @@
 import 'package:airspothealth/core/models/ble_device.dart';
+import 'package:airspothealth/core/providers/ble_device_communication_provider.dart';
 import 'package:airspothealth/core/providers/isar_service_provider.dart';
 import 'package:airspothealth/core/services/isar_service.dart';
+import 'package:airspothealth/core/utils/device_cmd_utils.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:isar/isar.dart';
 
@@ -48,11 +50,17 @@ class _BleSavedDevicesNotifier extends Notifier<List<BleDevice>> {
     state = state.where((d) => d.deviceId != device.deviceId).toList();
   }
 
-  void updateDevice(BleDevice device) {
+  void updateDeviceAlias(String deviceId, String alias) {
     // check if device exists
-    if (!state.any((d) => d.deviceId == device.deviceId)) {
+    if (!state.any((d) => d.deviceId == deviceId)) {
       return;
     }
+
+    final device = state.firstWhere((d) => d.deviceId == deviceId);
+
+    ref
+        .read(bleDeviceCommunicationProvider(deviceId).notifier)
+        .sendCommand(DeviceCmdUtils.setAlias(alias));
 
     ref.read(isarServiceProvider).write((isar) {
       isar.bleDevices.put(device);
