@@ -37,7 +37,13 @@ class BleDataUtils {
       ResponseCommand.firmwareVersion: parser.parseFirmwareVersion,
     };
 
-    return responseParsers[responseCommand]?.call(data);
+    final result = responseParsers[responseCommand]?.call(data);
+
+    if (responseCommand == ResponseCommand.co2Value) {
+      return result;
+    }
+
+    return null;
   }
 }
 
@@ -48,8 +54,7 @@ class ResponseCommandParser {
 
   final String deviceId;
   final IsarService isarService = IsarService();
-
-  int parseCo2Value(List<int> data) => _parseTwoBytesToInt(data, 5);
+  int parseCo2Value(List<int> data) => data[4] * 256 + (data[5] & 0xff);
 
   bool parseAlarm(List<int> data) => _parseBoolean(data, 4);
 
@@ -61,17 +66,19 @@ class ResponseCommandParser {
 
   bool parseDisconnect(List<int> data) => _parseBoolean(data, 4);
 
-  int parseSetCo2Ppm(List<int> data) => _parseTwoBytesToInt(data, 5);
+  bool parseSetCo2Ppm(List<int> data) => _parseBoolean(data, 4);
 
-  void parseFirmwareVersion(List<int> data) {
+  String parseFirmwareVersion(List<int> data) {
     final firmwareVersion = _parseString(data, 3);
     debugPrint('Firmware Version: $firmwareVersion');
 
     _updateDeviceSettings(
         (settings) => settings.copyWith(version: firmwareVersion));
+
+    return firmwareVersion;
   }
 
-  void parseInitialData(List<int> data) {
+  Map<String, dynamic> parseInitialData(List<int> data) {
     final settings = DeviceSettings(
       deviceId: deviceId,
       alarmEnabled: _parseBoolean(data, 4),
@@ -88,6 +95,8 @@ class ResponseCommandParser {
 
     debugPrint('Initial Data: ${settings.toString()}');
     _updateDeviceSettings((_) => settings);
+
+    return settings.toJson();
   }
 
   String parseAlias(List<int> data) {
@@ -98,8 +107,12 @@ class ResponseCommandParser {
 
   bool parseSetAlias(List<int> data) => _parseBoolean(data, 4);
 
-  void parseGetCo2History(List<int> data) {
+  String parseGetCo2History(List<int> data) {
     // Implement the logic if needed
+
+    debugPrint('Get CO2 History: ${data.toString()}');
+
+    return '';
   }
 
   bool parseCalibrateSensors(List<int> data) => _parseBoolean(data, 4);

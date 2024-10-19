@@ -136,6 +136,20 @@ class DeviceSettings {
   @ignore
   Uint8List get thresholdsCmd =>
       DeviceCmdUtils.setCo2PPM(greenUpperLimit, yellowUpperLimit);
+
+  Map<String, dynamic> toJson() {
+    return {
+      'alarmEnabled': alarmEnabled,
+      'vibrationEnabled': vibrationEnabled,
+      'powerMode': powerMode.index,
+      'continuosScreenEnabled': continuosScreenEnabled,
+      'thresholds': thresholds.toMap(),
+      'version': version,
+      'deviceId': deviceId,
+      'co2AlertThreshold': co2AlertThreshold,
+      'autoSyncTime': autoSyncTime,
+    };
+  }
 }
 
 @Embedded(ignore: {'copyWith'})

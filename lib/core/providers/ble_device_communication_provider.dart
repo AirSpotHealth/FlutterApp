@@ -1,5 +1,3 @@
-import 'dart:ffi';
-
 import 'package:airspothealth/core/models/device_data.dart';
 import 'package:airspothealth/core/providers/ble_connected_devices_provider.dart';
 import 'package:airspothealth/core/services/isar_service.dart';
@@ -122,9 +120,9 @@ class _BleDeviceCommunicationNotifier extends FamilyNotifier<dynamic, String> {
     debugPrint('Data received: $deviceId, ${BleDataUtils.bytesToHexStr(data)}');
     final dynamic value = BleDataUtils.parseResponseCommand(deviceId, data);
 
-    if (value == null || value is Void) {
-      return;
-    }
+    debugPrint('Parsed value: $value');
+
+    if (value == null) return;
 
     _isarService.write((isar) {
       isar.deviceDatas.put(DeviceData(
