@@ -50,7 +50,7 @@ class BleDeviceWidget extends ConsumerWidget {
             ],
           ),
           Text(
-            bleDevice.alias ?? bleDevice.name,
+            bleDevice.name,
             style: context.textTheme.labelLarge,
           ),
           if (deviceConnected) ...[
@@ -87,12 +87,18 @@ class BleDeviceWidget extends ConsumerWidget {
     return [
       GestureDetector(
         onTap: () {
-          _showDeviceAliasDialog(ref, bleDevice.deviceId);
+          _showDeviceAliasDialog(ref, bleDevice.deviceId, bleDevice.alias);
         },
         child: const Icon(
           Icons.edit_outlined,
           color: AppColors.primaryColor,
+          size: 24,
         ),
+      ),
+      const SizedBox(width: 8),
+      Text(
+        bleDevice.alias ?? 'No Alias',
+        style: ref.context.textTheme.labelLarge,
       ),
       const Spacer(),
       Text(
@@ -130,21 +136,50 @@ class BleDeviceWidget extends ConsumerWidget {
     ];
   }
 
-  void _showDeviceAliasDialog(WidgetRef ref, String deviceId) {
+  void _showDeviceAliasDialog(WidgetRef ref, String deviceId, String? alias) {
     showAdaptiveDialog(
         context: ref.context,
+        barrierDismissible: true,
         builder: (context) {
-          final TextEditingController controller = TextEditingController();
+          final TextEditingController controller =
+              TextEditingController(text: alias);
           return AlertDialog(
-            title: const Text('Edit Device Alias'),
-            content: TextField(
-              controller: controller,
-              decoration: const InputDecoration(
-                hintText: 'Enter device alias',
-              ),
+            backgroundColor: Colors.white,
+            surfaceTintColor: Colors.white,
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  'Change Device Nickname',
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                const SizedBox(height: 16),
+                TextFormField(
+                  controller: controller,
+                  decoration: const InputDecoration(
+                    hintText: 'Enter device alias',
+                    border: OutlineInputBorder(
+                        borderSide: BorderSide(color: AppColors.primaryColor)),
+                    enabledBorder: OutlineInputBorder(
+                        borderSide: BorderSide(color: AppColors.primaryColor)),
+                    focusedBorder: OutlineInputBorder(
+                        borderSide: BorderSide(color: AppColors.primaryColor)),
+                  ),
+                ),
+              ],
             ),
             actions: [
               TextButton(
+                onPressed: () {
+                  Navigator.of(context).pop();
+                },
+                child: const Text('Cancel'),
+              ),
+              ElevatedButton(
                 onPressed: () {
                   ref
                       .read(bleSavedDevicesProvider.notifier)
