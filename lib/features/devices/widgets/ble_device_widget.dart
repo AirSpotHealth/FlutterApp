@@ -23,7 +23,8 @@ class BleDeviceWidget extends ConsumerWidget {
 
     final deviceConnected = deviceConnectionState == BluetoothBondState.bonded;
 
-    return Container(
+    return AnimatedContainer(
+      duration: const Duration(milliseconds: 300),
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
         color: Colors.white,

@@ -1,4 +1,5 @@
 import 'package:airspothealth/features/device_settings/providers/firmware_remote_version_provider.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -34,7 +35,7 @@ class _DeviceVersionUpdateWidgetState
       }
     });
 
-    final AsyncValue<String> deviceVersion =
+    final AsyncValue<String> remoteVersion =
         ref.watch(firmwareRemoteVersionProvider);
 
     return Container(
@@ -47,9 +48,9 @@ class _DeviceVersionUpdateWidgetState
           children: [
             const Text('Latest Version: '),
             const Spacer(),
-            deviceVersion.when(
+            remoteVersion.when(
               data: (version) => Text(version),
-              loading: () => const CircularProgressIndicator.adaptive(),
+              loading: () => const CupertinoActivityIndicator(),
               error: (error, stackTrace) => IconButton(
                 icon: const Icon(Icons.refresh),
                 onPressed: () {

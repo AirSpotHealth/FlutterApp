@@ -2,7 +2,6 @@ import 'dart:async';
 
 import 'package:airspothealth/core/models/ble_device.dart';
 import 'package:airspothealth/core/services/isar_service.dart';
-import 'package:flutter/material.dart';
 import 'package:flutter_blue_plus/flutter_blue_plus.dart';
 import 'package:isar/isar.dart';
 
@@ -40,7 +39,6 @@ class BLEService {
         withKeywords: [
           'AirSpot-',
         ],
-        oneByOne: true,
         androidUsesFineLocation: true,
         timeout: const Duration(seconds: 10),
       );
@@ -73,10 +71,7 @@ class BLEService {
 
     return FlutterBluePlus.scanResults.asyncMap(
       (List<ScanResult> scanResults) => scanResults
-          .map((ScanResult scanResult) {
-            debugPrint('ScanDevice: ${scanResult.device.advName}');
-            return scanResult.device;
-          })
+          .map((ScanResult scanResult) => scanResult.device)
           .where((BluetoothDevice bd) => !connectedDevices.any(
               (BleDevice bleDevice) => bleDevice.deviceId == bd.remoteId.str))
           .toList(),

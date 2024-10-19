@@ -341,6 +341,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "2.3.2"
+  home_widget:
+    dependency: "direct main"
+    description:
+      name: home_widget
+      sha256: b313e3304c0429669fddf1286e1fbf61a64b873f38ba30b3eb890ef0d7560b12
+      url: "https://pub.dev"
+    source: hosted
+    version: "0.7.0"
   http_multi_server:
     dependency: transitive
     description:
@@ -485,6 +493,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "2.0.0"
+  nordic_dfu:
+    dependency: "direct main"
+    description:
+      name: nordic_dfu
+      sha256: "498c18e7587f8aabb478fccfb93c2687ee2338595e3f81c26f82c8c8782c49ca"
+      url: "https://pub.dev"
+    source: hosted
+    version: "6.2.0"
   package_config:
     dependency: transitive
     description:

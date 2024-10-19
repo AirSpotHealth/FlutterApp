@@ -1,5 +1,6 @@
 import 'package:airspothealth/core/utils/extensions.dart';
 import 'package:airspothealth/core/utils/permission_utils.dart';
+import 'package:airspothealth/features/add_device/providers/ble_device_connection_provider.dart';
 import 'package:airspothealth/features/add_device/providers/ble_search_results_provider.dart';
 import 'package:airspothealth/features/add_device/widgets/ble_new_device_item.dart';
 import 'package:flutter/cupertino.dart';
@@ -35,35 +36,73 @@ class _AddDevicePageState extends ConsumerState<AddDevicePage> {
     final (bool isScanning, List<BluetoothDevice> devices) =
         ref.watch(bluetoothSearchResultsProvider);
 
+    debugPrint('Number of devices found: ${devices.length}');
+
     return Scaffold(
-        appBar: AppBar(
-          title: const Text('Add Device'),
-        ),
-        body: Column(
+      appBar: AppBar(
+        title: const Text('Add Device'),
+      ),
+      body: RefreshIndicator.adaptive(
+        onRefresh: () async {
+          ref.read(bluetoothSearchResultsProvider.notifier).startScan();
+        },
+        child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
             if (isScanning)
-              const Align(
+              const Padding(
+                padding: EdgeInsets.only(top: 16, bottom: 8),
+                child: Align(
                   alignment: Alignment.topCenter,
-                  child: Padding(
-                      padding: EdgeInsets.only(top: 16),
-                      child: CupertinoActivityIndicator())),
-            devices.isEmpty
-                ? const Align(
-                    alignment: Alignment.center,
-                    child: Text('No devices found'))
-                : Expanded(
-                    child: ListView(
-                      padding: const EdgeInsets.all(16),
-                      children: [
-                        for (var device in devices) _buildDevice(device),
-                      ],
-                    ),
-                  ),
+                  child: CupertinoActivityIndicator(),
+                ),
+              ),
+            if (devices.isEmpty && !isScanning)
+              Container(
+                  alignment: Alignment.center,
+                  height: 200,
+                  padding: const EdgeInsets.all(16),
+                  child: const Text(
+                    'No devices found, swipe down to refresh',
+                  ))
+            else
+              Expanded(
+                child: ListView.separated(
+                  padding: const EdgeInsets.all(16),
+                  itemCount: devices.length,
+                  separatorBuilder: (context, index) =>
+                      const SizedBox(height: 12),
+                  itemBuilder: (context, index) =>
+                      BleNewDeviceItem(device: devices[index]),
+                ),
+              ),
+            const SizedBox(height: 16),
           ],
-        ));
+        ),
+      ),
+      floatingActionButton: devices.length > 1 &&
+              devices.every((dev) => !dev.isConnected)
+          ? FloatingActionButton.extended(
+              backgroundColor: Colors.blueGrey,
+              label: const Text('Connect All'),
+              onPressed: () {
+                if (isScanning) {
+                  ref.read(bluetoothSearchResultsProvider.notifier).stopScan();
+                }
+
+                _connectAllDevices(devices);
+              },
+              icon: const Icon(Icons.bluetooth_searching),
+            )
+          : null,
+    );
   }
 
-  Widget _buildDevice(BluetoothDevice device) =>
-      BleNewDeviceItem(device: device);
+  void _connectAllDevices(List<BluetoothDevice> devices) {
+    for (final device in devices) {
+      ref
+          .read(bleDeviceConnectionProvider(device.remoteId.str).notifier)
+          .connect(device);
+    }
+  }
 }

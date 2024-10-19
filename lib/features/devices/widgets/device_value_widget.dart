@@ -14,7 +14,7 @@ class DeviceValueWidget extends ConsumerWidget {
     final deviceValue = ref.watch(bleDeviceCommunicationProvider(deviceId));
 
     return Text(
-      deviceValue != null ? "CO2 $deviceValue ppm" : 'N/A',
+      deviceValue != null ? "CO2 $deviceValue ppm" : '------',
       style: context.textTheme.titleLarge?.copyWith(
         color: AppUtils.getDataColorFromValue(deviceValue),
         fontWeight: FontWeight.bold,

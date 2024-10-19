@@ -209,4 +209,17 @@ enum PowerMode {
         return DeviceCmdUtils.setPowerHi();
     }
   }
+
+  static PowerMode fromValue(int value) {
+    switch (value) {
+      case 0:
+        return PowerMode.low;
+      case 1:
+        return PowerMode.medium;
+      case 2:
+        return PowerMode.high;
+      default:
+        return PowerMode.low;
+    }
+  }
 }

@@ -41,4 +41,8 @@ class _BleScanResultsNotifier
 
     _bleService.startScan();
   }
+
+  void stopScan() {
+    _bleService.stopScan();
+  }
 }

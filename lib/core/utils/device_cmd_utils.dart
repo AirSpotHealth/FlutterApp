@@ -197,4 +197,9 @@ class DeviceCmdUtils {
     byteArray[1] = value & 0xFF;
     return byteArray;
   }
+
+  // ======= Get Initial Data =======
+  static Uint8List getInitialData() {
+    return _buildCommand([prefixHigh, prefixLow, 0x08, 1, 1, 0xb3]);
+  }
 }
