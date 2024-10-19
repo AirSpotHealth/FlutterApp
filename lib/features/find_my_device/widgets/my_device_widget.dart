@@ -1,9 +1,11 @@
+import 'package:airspothealth/core/models/ble_device.dart';
 import 'package:airspothealth/core/models/device_settings.dart';
 import 'package:airspothealth/core/providers/ble_device_communication_provider.dart';
 import 'package:airspothealth/core/providers/device_settings_provider.dart';
 import 'package:airspothealth/core/theme/app_colors.dart';
 import 'package:airspothealth/core/utils/assets.dart';
 import 'package:airspothealth/core/utils/extensions.dart';
+import 'package:airspothealth/features/add_device/providers/ble_device_connection_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_blue_plus/flutter_blue_plus.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -11,15 +13,19 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 class MyDeviceWidget extends ConsumerWidget {
   const MyDeviceWidget({required this.device, super.key});
 
-  final BluetoothDevice device;
+  final BleDevice device;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final DeviceSettings deviceSettings =
-        ref.read(deviceSettingsProvider(device.remoteId.str));
+        ref.read(deviceSettingsProvider(device.deviceId));
 
-    final co2Value =
-        ref.read(bleDeviceCommunicationProvider(device.remoteId.str));
+    final dynamic co2Value =
+        ref.watch(bleDeviceCommunicationProvider(device.deviceId));
+
+    final bool isConnected =
+        ref.watch(bleDeviceConnectionProvider(device.deviceId)) ==
+            BluetoothBondState.bonded;
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 20),
@@ -62,18 +68,18 @@ class MyDeviceWidget extends ConsumerWidget {
               textAlign: TextAlign.center,
             ),
           ),
-          const Padding(
-            padding: EdgeInsets.symmetric(horizontal: 4),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 4),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text('CO2',
+                const Text('CO2',
                     style: TextStyle(color: Colors.white, fontSize: 12)),
-                Text('PPM',
+                const Text('PPM',
                     style: TextStyle(color: Colors.white, fontSize: 12)),
                 Icon(
                   Icons.bluetooth,
-                  color: AppColors.primaryColor,
+                  color: isConnected ? AppColors.primaryColor : Colors.white,
                   size: 16,
                 ),
               ],

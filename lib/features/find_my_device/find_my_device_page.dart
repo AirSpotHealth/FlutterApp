@@ -1,4 +1,4 @@
-import 'package:airspothealth/core/providers/ble_connected_devices_provider.dart';
+import 'package:airspothealth/core/providers/ble_saved_devices_provider.dart';
 import 'package:airspothealth/features/find_my_device/widgets/my_device_widget.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -8,7 +8,7 @@ class FindMyDevicePage extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final devices = ref.watch(bleConnectedDevicesProvider);
+    final devices = ref.watch(bleSavedDevicesProvider);
 
     return Scaffold(
       appBar: AppBar(
