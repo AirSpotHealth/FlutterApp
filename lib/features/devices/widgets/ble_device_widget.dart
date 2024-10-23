@@ -97,7 +97,7 @@ class BleDeviceWidget extends ConsumerWidget {
       ),
       const SizedBox(width: 8),
       Text(
-        bleDevice.alias ?? bleDevice.name,
+        bleDevice.alias ?? 'Airspot',
         style: ref.context.textTheme.labelLarge,
       ),
       const Spacer(),

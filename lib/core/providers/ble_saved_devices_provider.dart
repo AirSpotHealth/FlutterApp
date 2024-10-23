@@ -37,17 +37,17 @@ class _BleSavedDevicesNotifier extends Notifier<List<BleDevice>> {
     state = [...state, device];
   }
 
-  void removeDevice(BleDevice device) {
+  void removeDeviceById(String deviceId) {
     // check if device exists
-    if (!state.any((d) => d.deviceId == device.deviceId)) {
+    if (!state.any((d) => d.deviceId == deviceId)) {
       return;
     }
 
     ref.read(isarServiceProvider).write((isar) {
-      isar.bleDevices.delete(device.deviceId);
+      isar.bleDevices.delete(deviceId);
     });
 
-    state = state.where((d) => d.deviceId != device.deviceId).toList();
+    state = state.where((d) => d.deviceId != deviceId).toList();
   }
 
   void updateDeviceAlias(String deviceId, String alias) {
