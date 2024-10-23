@@ -62,7 +62,7 @@ class MenuItems {
       title: 'AirGraph',
       description: 'Review your AirSpots CO2 levels with time.',
       iconAsset: Assets.airGraph,
-      route: RouteNames.deviceGraph,
+      route: RouteNames.airgraph,
     ),
     MenuItem(
       title: 'Devices',

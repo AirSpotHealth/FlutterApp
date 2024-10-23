@@ -1,5 +1,6 @@
 import 'package:airspothealth/core/router/route_names.dart';
 import 'package:airspothealth/features/add_device/add_device_page.dart';
+import 'package:airspothealth/features/airgraph/airgraph_page.dart';
 import 'package:airspothealth/features/app_setup/app_setup_page.dart';
 import 'package:airspothealth/features/app_setup/app_updates_page.dart';
 import 'package:airspothealth/features/app_setup/latest_news_page.dart';
@@ -42,6 +43,7 @@ class AppRouter {
             name: RouteNames.addDevice,
             builder: (context, state) => const AddDevicePage(),
           ),
+
           // Route for a specific device by ID
           GoRoute(
             path: ':deviceId',
@@ -152,21 +154,14 @@ class AppRouter {
                   return DeviceGraphPage(deviceId: deviceId);
                 },
               ),
-              // // Route for finding a specific device
-              // GoRoute(
-              //   path: 'find-my-device',
-              //   name: RouteNames.findMyDevice,
-              //   builder: (context, state) {
-              //     final deviceId = state.pathParameters['deviceId'];
-              //     if (deviceId == null) {
-              //       throw ErrorDescription('Device ID is required');
-              //     }
-              //     return FindMyDevicePage(deviceId: deviceId);
-              //   },
-              // ),
             ],
           ),
         ],
+      ),
+      GoRoute(
+        path: RouteNames.airgraph,
+        name: RouteNames.airgraph,
+        builder: (context, state) => const AirgraphPage(),
       ),
 
       // Other routes (app setup, privacy policy, latest news, etc.)
