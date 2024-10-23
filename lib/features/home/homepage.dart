@@ -1,11 +1,13 @@
 import 'package:airspothealth/core/models/ble_device.dart';
 import 'package:airspothealth/core/providers/ble_saved_devices_provider.dart';
 import 'package:airspothealth/core/providers/bluetooth_state_provider.dart';
+import 'package:airspothealth/core/utils/constants.dart';
 import 'package:airspothealth/core/widgets/airspot_bar.dart';
 import 'package:airspothealth/features/add_device/providers/ble_device_connection_provider.dart';
 import 'package:airspothealth/features/home/widgets/menu_item_widget.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:home_widget/home_widget.dart';
 
 class HomePage extends ConsumerStatefulWidget {
   const HomePage({super.key});
@@ -19,15 +21,17 @@ class _HomePageState extends ConsumerState<HomePage> {
   void initState() {
     _listenToBluetoothState();
     _connectToDevices();
+    _setAppGroupId();
     super.initState();
   }
+
+  void _setAppGroupId() => HomeWidget.setAppGroupId(Constants.appGroupId);
 
   void _connectToDevices() {
     final List<BleDevice> savedDevicesList = ref.read(bleSavedDevicesProvider);
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
       for (final device in savedDevicesList) {
-        debugPrint('Connecting to device from homepage: ${device.name}');
         ref
             .read(bleDeviceConnectionProvider(device.deviceId).notifier)
             .connect();
@@ -35,9 +39,7 @@ class _HomePageState extends ConsumerState<HomePage> {
     });
   }
 
-  void _listenToBluetoothState() {
-    ref.read(bluetoothStateProvider);
-  }
+  void _listenToBluetoothState() => ref.read(bluetoothStateProvider);
 
   @override
   Widget build(BuildContext context) {
@@ -47,10 +49,8 @@ class _HomePageState extends ConsumerState<HomePage> {
         padding: const EdgeInsets.all(16),
         separatorBuilder: (context, index) => const SizedBox(height: 12),
         itemCount: MenuItems.items.length,
-        itemBuilder: (context, index) {
-          final menuItem = MenuItems.items[index];
-          return MenuItemWidget(menuItem: menuItem);
-        },
+        itemBuilder: (context, index) =>
+            MenuItemWidget(menuItem: MenuItems.items[index]),
       ),
     );
   }

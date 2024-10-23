@@ -36,4 +36,9 @@ class Constants {
 
   static const String solutionsUrl =
       'https://airspothealth.com/a/blog/category/';
+
+  static const String homeWidgetKey = 'airspot_home_widget';
+  static const String appGroupId = 'com.air.spot.airspothealth';
+  static const String iOSWidgetName = 'IosHomeWidget';
+  static const String androidWidgetName = 'AndroidHomeWidget';
 }
