@@ -7,10 +7,10 @@ import 'package:nordic_dfu/nordic_dfu.dart';
 import 'package:path_provider/path_provider.dart';
 
 final dfuUpdateProvider =
-    NotifierProvider<_DfuUpdateNotifier, AsyncProgressValue>(
+    NotifierProvider.autoDispose<_DfuUpdateNotifier, AsyncProgressValue>(
         _DfuUpdateNotifier.new);
 
-class _DfuUpdateNotifier extends Notifier<AsyncProgressValue> {
+class _DfuUpdateNotifier extends AutoDisposeNotifier<AsyncProgressValue> {
   @override
   AsyncProgressValue build() {
     return const AsyncNone();
@@ -19,8 +19,17 @@ class _DfuUpdateNotifier extends Notifier<AsyncProgressValue> {
   void updateFirmware({
     required String url,
     required String deviceId,
+    bool isLocal = false,
   }) async {
     try {
+      if (isLocal) {
+        state = const AsyncInProgress(0.0, message: 'Updating firmware...');
+
+        await _uploadDfu(deviceId, url);
+
+        return;
+      }
+
       state = const AsyncInProgress(0.0, message: 'Downloading firmware...');
 
       final Directory path = await getApplicationDocumentsDirectory();
@@ -39,44 +48,46 @@ class _DfuUpdateNotifier extends Notifier<AsyncProgressValue> {
 
       state = const AsyncInProgress(0.0, message: 'Updating firmware...');
 
-      await NordicDfu().startDfu(
-        deviceId,
-        filePath,
-        onProgressChanged:
-            (address, percent, speed, avgSpeed, currentPart, totalParts) {
-          state =
-              AsyncInProgress(percent / 100, message: 'Updating firmware...');
-        },
-        iosSpecialParameter: const IosSpecialParameter(
-          connectionTimeout: 30,
-          forceScanningForNewAddressInLegacyDfu: true,
-          alternativeAdvertisingNameEnabled: true,
-        ),
-        onDeviceDisconnected: (error) {
-          state = AsyncFailure('Device disconnected, update failed $error');
-        },
-        onDfuAborted: (error) {
-          state = AsyncFailure('DFU aborted, update failed $error');
-        },
-        onDfuCompleted: (res) {
-          state = const AsyncSuccess(null);
-        },
-        onFirmwareValidating: (address) {
-          state = const AsyncInProgress(1.0, message: 'Validating firmware...');
-        },
-        onDfuProcessStarting: (address) {
-          state =
-              const AsyncInProgress(0.0, message: 'Starting DFU process...');
-        },
-        onDfuProcessStarted: (address) {
-          state = const AsyncInProgress(0.0, message: 'DFU process started...');
-        },
-        onError: (address, error, errorType, message) {
-          state = AsyncFailure('Update failed: $error');
-        },
-      );
+      await _uploadDfu(deviceId, filePath);
     } catch (e) {
       state = AsyncFailure("Update failed: $e");
     }
+  }
+
+  Future<void> _uploadDfu(String deviceId, String filePath) async {
+    await NordicDfu().startDfu(
+      deviceId,
+      filePath,
+      onProgressChanged:
+          (address, percent, speed, avgSpeed, currentPart, totalParts) {
+        state = AsyncInProgress(percent / 100, message: 'Updating firmware...');
+      },
+      iosSpecialParameter: const IosSpecialParameter(
+        connectionTimeout: 30,
+        forceScanningForNewAddressInLegacyDfu: true,
+        alternativeAdvertisingNameEnabled: false,
+      ),
+      onDeviceDisconnected: (error) {
+        state = AsyncFailure('Device disconnected, update failed $error');
+      },
+      onDfuAborted: (error) {
+        state = AsyncFailure('DFU aborted, update failed $error');
+      },
+      onDfuCompleted: (res) {
+        state = const AsyncSuccess(null);
+      },
+      onFirmwareValidating: (address) {
+        state = const AsyncInProgress(1.0, message: 'Validating firmware...');
+      },
+      onDfuProcessStarting: (address) {
+        state = const AsyncInProgress(0.0, message: 'Starting DFU process...');
+      },
+      onDfuProcessStarted: (address) {
+        state = const AsyncInProgress(0.0, message: 'DFU process started...');
+      },
+      onError: (address, error, errorType, message) {
+        state = AsyncFailure('Update failed: $error');
+      },
+    );
   }
 }

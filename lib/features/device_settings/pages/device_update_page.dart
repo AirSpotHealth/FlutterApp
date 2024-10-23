@@ -1,7 +1,13 @@
+// ignore_for_file: use_build_context_synchronously
+
 import 'package:airspothealth/core/models/device_settings.dart';
 import 'package:airspothealth/core/providers/device_settings_provider.dart';
+import 'package:airspothealth/core/utils/extensions.dart';
 import 'package:airspothealth/core/widgets/app_logo.dart';
+import 'package:airspothealth/core/widgets/tappable_widget.dart';
+import 'package:airspothealth/features/device_settings/widgets/device_firmware_update_dialog.dart';
 import 'package:airspothealth/features/device_settings/widgets/device_version_update_widget.dart';
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -21,7 +27,14 @@ class DeviceUpdatePage extends ConsumerWidget {
         title: const Text('AirSpot Device Update'),
       ),
       body: ListView(padding: const EdgeInsets.all(16), children: [
-        const SizedBox(height: 64, child: AppLogo()),
+        TappableWidget(
+          onTap: () => _showLocalFilePicker(ref, deviceId),
+          tapCount: 8,
+          child: const SizedBox(
+            height: 64,
+            child: AppLogo(),
+          ),
+        ),
         const SizedBox(height: 16),
         CurrentDeviceVersionWidget(
           version: deviceSettings.version,
@@ -30,6 +43,27 @@ class DeviceUpdatePage extends ConsumerWidget {
         DeviceVersionUpdateWidget(deviceId: deviceId),
       ]),
     );
+  }
+
+  // allow zip file to be uploaded
+  void _showLocalFilePicker(WidgetRef ref, String deviceId) {
+    FilePicker.platform.pickFiles(
+      type: FileType.custom,
+      allowedExtensions: ['zip'],
+    ).then((result) {
+      if (result != null) {
+        showAdaptiveDialog(
+          context: ref.context,
+          barrierDismissible: false,
+          builder: (context) => DeviceFirmwareUpdateDialog.local(
+              deviceId: deviceId, localFilePath: result.files.single.path),
+        );
+      } else {
+        ref.context.showSnackBar('No file selected');
+      }
+    }).catchError((e) {
+      ref.context.showSnackBar('Error selecting file: $e');
+    });
   }
 }
 
