@@ -91,10 +91,11 @@ extension StringExtension on String {
   }
 }
 
-/// date time extension
 extension DateTimeExtension on DateTime {
-  /// format time in 10/20 01:20 format
+  /// Format time in 10/20 01:20 format
   String formatTime() {
-    return '$month/$day $hour:$minute';
+    final formattedHour = hour.toString().padLeft(2, '0');
+    final formattedMinute = minute.toString().padLeft(2, '0');
+    return '$month/$day $formattedHour:$formattedMinute';
   }
 }

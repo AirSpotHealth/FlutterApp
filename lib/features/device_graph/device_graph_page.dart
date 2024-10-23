@@ -1,4 +1,5 @@
 import 'package:airspothealth/core/models/ble_device.dart';
+import 'package:airspothealth/core/models/device_data.dart';
 import 'package:airspothealth/core/theme/app_colors.dart';
 import 'package:airspothealth/core/utils/extensions.dart';
 import 'package:airspothealth/core/widgets/app_logo.dart';
@@ -61,11 +62,28 @@ class DeviceGraphPage extends ConsumerWidget {
                 .read(deviceHistoricalDataProvider(deviceId).notifier)
                 .setDuration(value),
           ),
-          const DataGraphWidget(
-            deviceDataList: [],
-          ),
+          DataGraphWrapper(deviceId: device.deviceId),
         ],
       ),
+    );
+  }
+}
+
+class DataGraphWrapper extends ConsumerWidget {
+  const DataGraphWrapper({
+    super.key,
+    required this.deviceId,
+  });
+
+  final String deviceId;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final List<DeviceData> deviceDataList =
+        ref.watch(deviceHistoricalDataProvider(deviceId));
+
+    return DataGraphWidget(
+      deviceDataList: deviceDataList,
     );
   }
 }

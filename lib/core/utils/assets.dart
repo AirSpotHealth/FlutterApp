@@ -3,6 +3,8 @@
 class Assets {
   static const String logo = 'assets/images/airspot_logo.png';
 
+  static const String chartHtml = 'assets/html/echarts.html';
+
   static const String device = 'assets/images/ic_device.png';
   static const String airMap = 'assets/images/air_map_icon.png';
   static const String airGraph = 'assets/images/air_graph_icon.png';

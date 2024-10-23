@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import 'package:airspothealth/core/models/device_data.dart';
+import 'package:airspothealth/core/utils/assets.dart';
 import 'package:airspothealth/core/utils/extensions.dart';
 import 'package:flutter/material.dart';
 import 'package:webview_flutter/webview_flutter.dart';
@@ -17,7 +18,7 @@ class DataGraphWidget extends StatefulWidget {
 class _DataGraphWidgetState extends State<DataGraphWidget> {
   late final WebViewController controller = WebViewController()
     ..setJavaScriptMode(JavaScriptMode.unrestricted)
-    ..loadFlutterAsset('assets/html/echarts.html')
+    ..loadFlutterAsset(Assets.chartHtml)
     ..setNavigationDelegate(NavigationDelegate(
       onPageFinished: (url) => _buildGraph(),
     ));
@@ -71,7 +72,7 @@ class _DataGraphWidgetState extends State<DataGraphWidget> {
   }
 
   String _formatDate(DateTime dateTime) {
-    // Format the DateTime to a string representation (dd-MM-yyyy)
-    return "${dateTime.day}-${dateTime.month}-${dateTime.year}";
+    // Format the DateTime to a string representation (20.10.24 01:00)
+    return '${dateTime.year.toString().substring(2)}.${dateTime.month}.${dateTime.day} ${dateTime.hour.toString().padLeft(2, '0')}:00';
   }
 }
