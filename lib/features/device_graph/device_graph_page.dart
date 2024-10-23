@@ -1,9 +1,14 @@
 import 'dart:convert';
 
+import 'package:airspothealth/core/models/ble_device.dart';
 import 'package:airspothealth/core/models/device_data.dart';
+import 'package:airspothealth/core/providers/ble_device_communication_provider.dart';
 import 'package:airspothealth/core/providers/isar_service_provider.dart';
+import 'package:airspothealth/core/theme/app_colors.dart';
+import 'package:airspothealth/core/utils/app_utils.dart';
 import 'package:airspothealth/core/utils/extensions.dart';
-import 'package:airspothealth/core/widgets/airspot_bar.dart';
+import 'package:airspothealth/core/widgets/app_logo.dart';
+import 'package:airspothealth/features/device_graph/providers/device_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:isar/isar.dart';
@@ -24,28 +29,112 @@ class DeviceGraphPage extends ConsumerWidget {
         .sortByDateTime()
         .watch(fireImmediately: true);
 
+    final BleDevice device = ref.read(bleDeviceProvider(deviceId));
+
     return Scaffold(
-      appBar: const AirspotBar(),
-      body: StreamBuilder<List<DeviceData>>(
-        stream: deviceDataList,
-        builder: (context, snapshot) {
-          if (!snapshot.hasData) {
-            return const Center(child: CircularProgressIndicator.adaptive());
-          }
+      appBar: AppBar(
+        title: const Text('Air Graph'),
+      ),
+      body: ListView(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(16),
+            width: double.infinity,
+            color: AppColors.primaryColor,
+            alignment: Alignment.center,
+            child: const AppLogo(
+              width: 100,
+            ),
+          ),
+          const SizedBox(height: 16),
+          Align(
+            alignment: Alignment.center,
+            child: Text(
+              device.name,
+              style: context.textTheme.bodyMedium?.weight600,
+            ),
+          ),
+          const SizedBox(height: 10),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            child: Text('Carbon dioxide',
+                style: context.textTheme.labelLarge?.weight600),
+          ),
+          DeviceCurrentValueWidget(deviceId: device.deviceId),
+          const SizedBox(height: 16),
 
-          if (snapshot.data!.isEmpty) {
-            return const Center(child: Text('No data found'));
-          }
+          // StreamBuilder<List<DeviceData>>(
+          //   stream: deviceDataList,
+          //   builder: (context, snapshot) {
+          //     if (!snapshot.hasData) {
+          //       return const Center(
+          //           child: CircularProgressIndicator.adaptive());
+          //     }
 
-          return _buildDeviceDataChart(
-              snapshot.data!.where((data) => data.value != null).toList());
-        },
+          //     if (snapshot.data!.isEmpty) {
+          //       return const Center(child: Text('No data found'));
+          //     }
+
+          //     return _buildDeviceDataChart(
+          //         snapshot.data!.where((data) => data.value != null).toList());
+          //   },
+          // ),
+        ],
       ),
     );
   }
 
   Widget _buildDeviceDataChart(List<DeviceData> deviceDataList) {
     return _AirGraph(deviceDataList: deviceDataList);
+  }
+}
+
+class DeviceCurrentValueWidget extends ConsumerWidget {
+  const DeviceCurrentValueWidget({
+    super.key,
+    required this.deviceId,
+  });
+
+  final String deviceId;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final deviceValue = ref.watch(bleDeviceCommunicationProvider(deviceId));
+
+    return Card(
+      margin: const EdgeInsets.all(16),
+      child: Padding(
+        padding: const EdgeInsets.all(8),
+        child: Row(
+          children: [
+            Text(
+              'Current:',
+              style: context.textTheme.bodyMedium?.weight500,
+            ),
+            const Spacer(),
+            RichText(
+              text: TextSpan(
+                text: deviceValue != null ? "$deviceValue" : '------',
+                style: context.textTheme.titleLarge?.copyWith(
+                  color: AppUtils.getDataColorFromValue(deviceValue),
+                  fontWeight: FontWeight.bold,
+                ),
+                children: const [
+                  TextSpan(
+                    text: ' ppm',
+                    style: TextStyle(
+                      color: AppColors.neutralGrey,
+                      fontWeight: FontWeight.normal,
+                      fontSize: 12,
+                    ),
+                  )
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 }
 
@@ -63,15 +152,13 @@ class _AirGraphState extends State<_AirGraph> {
     ..setJavaScriptMode(JavaScriptMode.unrestricted)
     ..loadFlutterAsset('assets/html/echarts.html')
     ..setNavigationDelegate(NavigationDelegate(
-      onPageFinished: (url) {
-        _buildGraph(widget.deviceDataList);
-      },
+      onPageFinished: (url) => _buildGraph(),
     ));
 
   @override
-  didUpdateWidget(_AirGraph oldWidget) {
+  void didUpdateWidget(_AirGraph oldWidget) {
     super.didUpdateWidget(oldWidget);
-    _buildGraph(widget.deviceDataList);
+    _buildGraph();
   }
 
   @override
@@ -85,7 +172,10 @@ class _AirGraphState extends State<_AirGraph> {
     );
   }
 
-  void _buildGraph(List<DeviceData> data) {
+  void _buildGraph() {
+    final List<DeviceData> data = widget.deviceDataList
+      ..where((data) => data.value != null && data.value is num);
+
     // Prepare data for graph
     List<String> xAxisData = [];
     List<num> yAxisData = [];

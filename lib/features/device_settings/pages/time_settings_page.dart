@@ -19,6 +19,25 @@ class _TimeSettingsPageState extends ConsumerState<TimeSettingsPage> {
   int _selectedMinute = DateTime.now().minute;
 
   @override
+  void initState() {
+    super.initState();
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (ref.watch(deviceSettingsProvider(widget.deviceId)).autoSyncTime) {
+        _syncTime();
+      }
+    });
+  }
+
+  void _syncTime() {
+    ref.read(deviceSettingsProvider(widget.deviceId).notifier).updateSettings(
+          ref.read(deviceSettingsProvider(widget.deviceId)).copyWith(
+                autoSyncTime: true,
+              ),
+        );
+  }
+
+  @override
   Widget build(BuildContext context) {
     final bool autoSyncTime =
         ref.watch(deviceSettingsProvider(widget.deviceId)).autoSyncTime;

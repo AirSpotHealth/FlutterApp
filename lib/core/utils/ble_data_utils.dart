@@ -166,15 +166,6 @@ class ResponseCommandParser {
   }
 
   int _byteArrayToInt(List<int> data, int startIndex, int endIndex) {
-    // var result = 0
-    // for (i in byteArray.indices) {
-    //     result = result shl 8 // 将结果左移 8 位
-    //     result = result or (byteArray[i].toInt() and 0xFF) // 将当前 byte 与 0xFF 进行按位与运算，确保取得正确的值
-    // }
-    // result -= 400
-    // result /= 100
-    // return result
-
     dynamic result = 0;
     for (var i = startIndex; i <= endIndex; i++) {
       result = result << 8;

@@ -61,6 +61,14 @@ class AppTheme {
       color: Colors.grey.shade200,
       thickness: 1,
     ),
+    cardTheme: CardTheme(
+      color: Colors.white,
+      elevation: 0,
+      surfaceTintColor: Colors.white,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(8),
+      ),
+    ),
   );
 
   static ThemeData get theme => _theme;
