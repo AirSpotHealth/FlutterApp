@@ -5,7 +5,7 @@ class AppUtils {
   /// get color from value
   static Color getDataColorFromValue(dynamic value) {
     if (value is! num) {
-      return Colors.black;
+      return AppColors.brandColorGreen;
     }
 
     if (value > 0 && value < 800) {
@@ -15,7 +15,7 @@ class AppUtils {
     } else if (value >= 1000) {
       return AppColors.brandColorRed;
     } else {
-      return Colors.black;
+      return AppColors.brandColorGreen;
     }
   }
 

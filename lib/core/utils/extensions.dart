@@ -90,3 +90,11 @@ extension StringExtension on String {
     return isNullOrEmpty ? this : '${this[0].toUpperCase()}${substring(1)}';
   }
 }
+
+/// date time extension
+extension DateTimeExtension on DateTime {
+  /// format time in 10/20 01:20 format
+  String formatTime() {
+    return '$month/$day $hour:$minute';
+  }
+}
