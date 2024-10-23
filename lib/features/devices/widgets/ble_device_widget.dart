@@ -97,7 +97,7 @@ class BleDeviceWidget extends ConsumerWidget {
       ),
       const SizedBox(width: 8),
       Text(
-        bleDevice.alias ?? 'No Alias',
+        bleDevice.alias ?? bleDevice.name,
         style: ref.context.textTheme.labelLarge,
       ),
       const Spacer(),
