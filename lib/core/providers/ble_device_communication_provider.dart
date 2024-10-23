@@ -1,5 +1,7 @@
 import 'package:airspothealth/core/models/device_data.dart';
+import 'package:airspothealth/core/models/device_settings.dart';
 import 'package:airspothealth/core/providers/ble_connected_devices_provider.dart';
+import 'package:airspothealth/core/providers/device_settings_provider.dart';
 import 'package:airspothealth/core/services/isar_service.dart';
 import 'package:airspothealth/core/utils/ble_data_utils.dart';
 import 'package:airspothealth/core/utils/constants.dart';
@@ -151,7 +153,11 @@ class _BleDeviceCommunicationNotifier extends FamilyNotifier<dynamic, String> {
   }
 
   Future<void> _getInitialData() async {
+    final DeviceSettings? deviceSettings =
+        ref.read(deviceSettingsProvider(deviceId));
+
     final commands = [
+      if (deviceSettings?.autoSyncTime == true) DeviceCmdUtils.setTime(),
       DeviceCmdUtils.getCO2(),
       DeviceCmdUtils.getInitialData(),
       DeviceCmdUtils.getFirmVersion(),
