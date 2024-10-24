@@ -14,31 +14,38 @@ class FindMyDevicePage extends ConsumerWidget {
       appBar: AppBar(
         title: const Text('Find My Device'),
       ),
-      body: ListView(
-        padding: const EdgeInsets.all(16),
-        children: [
-          const SizedBox(height: 16),
-          GridView.builder(
-            shrinkWrap: true,
-            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-              crossAxisCount: 2,
-              crossAxisSpacing: 16,
-              mainAxisSpacing: 16,
-              childAspectRatio: 0.8,
+      body: devices.isEmpty
+          ? const Center(
+              child: Text('No devices found.'),
+            )
+          : Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Flexible(
+                  child: GridView.builder(
+                    shrinkWrap: true,
+                    padding: const EdgeInsets.all(16),
+                    gridDelegate:
+                        const SliverGridDelegateWithFixedCrossAxisCount(
+                      crossAxisCount: 2,
+                      crossAxisSpacing: 16,
+                      mainAxisSpacing: 16,
+                      childAspectRatio: 0.75,
+                    ),
+                    itemCount: devices.length,
+                    itemBuilder: (context, index) {
+                      final device = devices[index];
+                      return MyDeviceWidget(device: device);
+                    },
+                  ),
+                ),
+                const SizedBox(height: 32),
+                const Text(
+                  'Tap on a device to find it. It will deliver a 5-second alarm to your Bluetooth-linked device.',
+                  textAlign: TextAlign.center,
+                ),
+              ],
             ),
-            itemCount: devices.length,
-            itemBuilder: (context, index) {
-              final device = devices[index];
-              return MyDeviceWidget(device: device);
-            },
-          ),
-          const SizedBox(height: 32),
-          const Text(
-            'Tap on a device to find it. It will deliver a 5-second alarm to your Bluetooth-linked device.',
-            textAlign: TextAlign.center,
-          ),
-        ],
-      ),
     );
   }
 }

@@ -97,6 +97,13 @@ class DeviceCmdUtils {
     return _buildCommand([prefixHigh, prefixLow, 2, 1, 0, 0xAC]);
   }
 
+  static Uint8List findDevice() {
+    final combinedArrayWithoutChecksum =
+        Uint8List.fromList([prefixHigh, prefixLow, 0x19, 1, 1]);
+    int checksum = _calculateChecksum(combinedArrayWithoutChecksum);
+    return _buildCommand([...combinedArrayWithoutChecksum, checksum]);
+  }
+
   // Get firmware version
   static Uint8List getFirmVersion() {
     return _buildCommand([prefixHigh, prefixLow, 0x13, 1, 1, 0xBE]);
