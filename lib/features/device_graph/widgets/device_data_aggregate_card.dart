@@ -70,8 +70,8 @@ class DeviceDataAggregateCard extends ConsumerWidget {
             textAlign: TextAlign.end,
             text: TextSpan(
               text: data != null ? data.value.toString() : '------',
-              style: context.textTheme.bodyMedium
-                  ?.copyWith(color: AppUtils.getDataColorFromValue(data)),
+              style: context.textTheme.bodyMedium?.copyWith(
+                  color: AppUtils.getDataColorFromValue(data?.value)),
               children: const [
                 TextSpan(
                   text: ' ppm',

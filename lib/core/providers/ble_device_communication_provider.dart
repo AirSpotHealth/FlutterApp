@@ -172,7 +172,7 @@ class _BleDeviceCommunicationNotifier extends FamilyNotifier<dynamic, String> {
       DeviceCmdUtils.getCO2(),
       DeviceCmdUtils.getInitialData(),
       DeviceCmdUtils.getFirmVersion(),
-      DeviceCmdUtils.getAlias()
+      DeviceCmdUtils.getAlias(),
     ];
 
     for (final command in commands) {

@@ -5,6 +5,7 @@ import 'package:airspothealth/core/theme/app_colors.dart';
 import 'package:airspothealth/core/utils/assets.dart';
 import 'package:airspothealth/core/utils/extensions.dart';
 import 'package:airspothealth/features/add_device/providers/ble_device_connection_provider.dart';
+import 'package:airspothealth/features/add_device/providers/ble_search_results_provider.dart';
 import 'package:airspothealth/features/devices/widgets/device_value_widget.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
@@ -22,7 +23,15 @@ class BleDeviceWidget extends ConsumerWidget {
     final BluetoothBondState deviceConnectionState =
         ref.watch(bleDeviceConnectionProvider(bleDevice.deviceId));
 
-    final deviceConnected = deviceConnectionState == BluetoothBondState.bonded;
+    final bool deviceConnected =
+        deviceConnectionState == BluetoothBondState.bonded;
+
+    final bool deviceAvailable = deviceConnected
+        ? true
+        : ref
+            .read(bluetoothSearchResultsProvider)
+            .$2
+            .any((device) => device.remoteId.str == bleDevice.deviceId);
 
     return AnimatedContainer(
       duration: const Duration(milliseconds: 300),
@@ -46,7 +55,7 @@ class BleDeviceWidget extends ConsumerWidget {
               else if (deviceConnectionState == BluetoothBondState.bonding)
                 const CupertinoActivityIndicator()
               else
-                _buildConnectButton(ref),
+                _buildConnectButton(ref, deviceAvailable),
             ],
           ),
           Text(
@@ -65,21 +74,26 @@ class BleDeviceWidget extends ConsumerWidget {
     );
   }
 
-  Widget _buildConnectButton(WidgetRef ref) {
-    return GestureDetector(
-      onTap: () {
-        ref
-            .read(bleDeviceConnectionProvider(bleDevice.deviceId).notifier)
-            .connect();
-      },
-      child: const Row(
-        children: [
-          Text(
-            'Unavailable/Disconnected',
-            style: TextStyle(color: AppColors.neutralGrey),
+  Widget _buildConnectButton(WidgetRef ref, bool deviceAvailable) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Text(
+          deviceAvailable ? 'Not Connected' : 'Unavailable',
+          style: const TextStyle(color: AppColors.neutralGrey),
+        ),
+        if (deviceAvailable)
+          IconButton(
+            onPressed: () => ref
+                .read(bleDeviceConnectionProvider(bleDevice.deviceId).notifier)
+                .connect(),
+            icon: const Icon(
+              CupertinoIcons.bluetooth,
+              color: AppColors.primaryColor,
+            ),
           ),
-        ],
-      ),
+      ],
     );
   }
 

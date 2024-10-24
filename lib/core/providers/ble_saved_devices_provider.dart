@@ -56,7 +56,8 @@ class _BleSavedDevicesNotifier extends Notifier<List<BleDevice>> {
       return;
     }
 
-    final device = state.firstWhere((d) => d.deviceId == deviceId);
+    final device =
+        state.firstWhere((d) => d.deviceId == deviceId).copyWith(alias: alias);
 
     ref
         .read(bleDeviceCommunicationProvider(deviceId).notifier)
