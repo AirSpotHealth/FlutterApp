@@ -91,25 +91,24 @@ class ResponseCommandParser {
     return firmwareVersion;
   }
 
-  Map<String, dynamic> parseInitialData(List<int> data) {
-    final settings = DeviceSettings(
-      deviceId: deviceId,
-      alarmEnabled: _parseBoolean(data, 4),
-      vibrationEnabled: _parseBoolean(data, 5),
-      powerMode: PowerMode.fromValue(data[6]),
-      continuosScreenEnabled: _parseBoolean(data, 11),
-      thresholds: DeviceThresholds(
-        greenUpperLimit: _parseTwoBytesToInt(data, 7),
-        yellowUpperLimit: _parseTwoBytesToInt(data, 9),
-      ),
-      version: '',
-      co2AlertThreshold: null,
+  void parseInitialData(List<int> data) {
+    debugPrint('Initial Data: ${data.toString()}');
+    _updateDeviceSettings(
+      (settings) {
+        debugPrint('AutoConnect: ${settings.autoConnect}');
+        return settings.copyWith(
+          deviceId: deviceId,
+          alarmEnabled: _parseBoolean(data, 4),
+          vibrationEnabled: _parseBoolean(data, 5),
+          powerMode: PowerMode.fromValue(data[6]),
+          continuosScreenEnabled: _parseBoolean(data, 11),
+          thresholds: DeviceThresholds(
+            greenUpperLimit: _parseTwoBytesToInt(data, 7),
+            yellowUpperLimit: _parseTwoBytesToInt(data, 9),
+          ),
+        );
+      },
     );
-
-    debugPrint('Initial Data: ${settings.toString()}');
-    _updateDeviceSettings((_) => settings);
-
-    return settings.toJson();
   }
 
   String parseAlias(List<int> data) {

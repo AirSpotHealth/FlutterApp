@@ -98,10 +98,7 @@ class DeviceCmdUtils {
   }
 
   static Uint8List findDevice() {
-    final combinedArrayWithoutChecksum =
-        Uint8List.fromList([prefixHigh, prefixLow, 0x19, 1, 1]);
-    int checksum = _calculateChecksum(combinedArrayWithoutChecksum);
-    return _buildCommand([...combinedArrayWithoutChecksum, checksum]);
+    return _buildCommand([prefixHigh, prefixLow, 0x10, 1, 1, 0xBB]);
   }
 
   // Get firmware version
@@ -175,12 +172,31 @@ class DeviceCmdUtils {
     return _buildCommand([prefixHigh, prefixLow, 6, 1, 1, 0x6f]);
   }
 
-  static Uint8List getCo2History(int totalSeconds) {
-    totalSeconds = totalSeconds ~/ 1000;
-    var byteArray = ByteData(4)..setInt32(0, totalSeconds, Endian.big);
+  static int calculateSecondsSince2000(DateTime targetDate) {
+    DateTime startDate2000 = DateTime(2000, 1, 1);
+    return targetDate.difference(startDate2000).inSeconds;
+  }
+
+  static Uint8List getCo2History() {
+    DateTime currentDate = DateTime.now();
+    DateTime todayStart =
+        DateTime(currentDate.year, currentDate.month, currentDate.day);
+
+    // Calculate the total seconds since January 1, 2000, to today start and current time
+    int since2000ToYesterday0 = calculateSecondsSince2000(todayStart);
+    int since2000ToYesterdayNow = calculateSecondsSince2000(currentDate);
+
+    // Convert the calculated seconds to byte arrays
+    var byteArrayStart = ByteData(4)
+      ..setInt32(0, since2000ToYesterday0, Endian.big);
+    var byteArrayNow = ByteData(4)
+      ..setInt32(0, since2000ToYesterdayNow, Endian.big);
+
+    // Construct the BLE command
     return _buildCommand([
       ...[prefixHigh, prefixLow, 0x0C, 0x08],
-      ...byteArray.buffer.asUint8List()
+      ...byteArrayStart.buffer.asUint8List(),
+      ...byteArrayNow.buffer.asUint8List()
     ]);
   }
 

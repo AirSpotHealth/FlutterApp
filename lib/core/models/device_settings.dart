@@ -40,6 +40,9 @@ class DeviceSettings {
   /// auto calibration
   final bool autoCalibration;
 
+  /// auto connect
+  final bool autoConnect;
+
   DeviceSettings({
     required this.alarmEnabled,
     required this.vibrationEnabled,
@@ -51,6 +54,7 @@ class DeviceSettings {
     required this.co2AlertThreshold,
     this.autoSyncTime = true,
     this.autoCalibration = true,
+    this.autoConnect = true,
   });
 
   DeviceSettings.empty({required this.deviceId})
@@ -62,7 +66,8 @@ class DeviceSettings {
         version = '',
         co2AlertThreshold = null,
         autoSyncTime = true,
-        autoCalibration = true;
+        autoCalibration = true,
+        autoConnect = true;
 
   DeviceSettings copyWith({
     bool? alarmEnabled,
@@ -75,6 +80,7 @@ class DeviceSettings {
     int? co2AlertThreshold,
     bool? autoSyncTime,
     bool? autoCalibration,
+    bool? autoConnect,
   }) {
     return DeviceSettings(
       alarmEnabled: alarmEnabled ?? this.alarmEnabled,
@@ -88,6 +94,7 @@ class DeviceSettings {
       co2AlertThreshold: co2AlertThreshold ?? this.co2AlertThreshold,
       autoSyncTime: autoSyncTime ?? this.autoSyncTime,
       autoCalibration: autoCalibration ?? this.autoCalibration,
+      autoConnect: autoConnect ?? this.autoConnect,
     );
   }
 
@@ -161,6 +168,7 @@ class DeviceSettings {
       'co2AlertThreshold': co2AlertThreshold,
       'autoSyncTime': autoSyncTime,
       'autoCalibration': autoCalibration,
+      'autoConnect': autoConnect,
     };
   }
 
@@ -178,7 +186,8 @@ class DeviceSettings {
         other.deviceId == deviceId &&
         other.co2AlertThreshold == co2AlertThreshold &&
         other.autoSyncTime == autoSyncTime &&
-        other.autoCalibration == autoCalibration;
+        other.autoCalibration == autoCalibration &&
+        other.autoConnect == autoConnect;
   }
 
   @override
@@ -192,11 +201,12 @@ class DeviceSettings {
       deviceId.hashCode ^
       co2AlertThreshold.hashCode ^
       autoSyncTime.hashCode ^
-      autoCalibration.hashCode;
+      autoCalibration.hashCode ^
+      autoConnect.hashCode;
 
   @override
   String toString() {
-    return 'DeviceSettings(alarmEnabled: $alarmEnabled, vibrationEnabled: $vibrationEnabled, powerMode: $powerMode, continuosScreenEnabled: $continuosScreenEnabled, thresholds: $thresholds, version: $version, deviceId: $deviceId, co2AlertThreshold: $co2AlertThreshold, autoSyncTime: $autoSyncTime, autoCalibration: $autoCalibration)';
+    return 'DeviceSettings(alarmEnabled: $alarmEnabled, vibrationEnabled: $vibrationEnabled, powerMode: $powerMode, continuosScreenEnabled: $continuosScreenEnabled, thresholds: $thresholds, version: $version, deviceId: $deviceId, co2AlertThreshold: $co2AlertThreshold, autoSyncTime: $autoSyncTime, autoCalibration: $autoCalibration, autoConnect: $autoConnect)';
   }
 }
 

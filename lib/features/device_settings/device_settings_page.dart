@@ -6,6 +6,7 @@ import 'package:airspothealth/features/add_device/providers/ble_device_connectio
 import 'package:airspothealth/features/device_settings/models/setting_item.dart';
 import 'package:airspothealth/features/device_settings/providers/device_forget_status_provider.dart';
 import 'package:airspothealth/features/device_settings/widgets/alarm_setting_widget.dart';
+import 'package:airspothealth/features/device_settings/widgets/auto_connect_setting_widget.dart';
 import 'package:airspothealth/features/device_settings/widgets/setting_item_widget.dart';
 import 'package:airspothealth/features/device_settings/widgets/vibrate_setting_widget.dart';
 import 'package:flutter/material.dart';
@@ -59,12 +60,9 @@ class DeviceSettingsPage extends ConsumerWidget {
       ),
       body: ListView(
         children: [
-          AlarmSettingWidget(
-            deviceId: deviceId,
-          ),
-          VibrateSettingWidget(
-            deviceId: deviceId,
-          ),
+          AlarmSettingWidget(deviceId: deviceId),
+          VibrateSettingWidget(deviceId: deviceId),
+          AutoConnectSettingWidget(deviceId: deviceId),
           ..._deviceSettingsList.map((item) => SettingItemWidget(
                 item: item,
                 onTap: () {

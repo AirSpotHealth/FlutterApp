@@ -34,7 +34,10 @@ class _BluetoothStateNotifier extends Notifier<BluetoothAdapterState> {
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
       for (final device in savedDevicesList) {
-        debugPrint('Connecting to device: ${device.name}');
+        debugPrint(
+            'State: Connecting to device: ${device.name}, ${device.settings.toString()} ');
+
+        if (device.settings?.autoConnect == false) continue;
         ref
             .read(bleDeviceConnectionProvider(device.deviceId).notifier)
             .connect();

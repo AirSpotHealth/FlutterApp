@@ -1,7 +1,6 @@
 import 'package:airspothealth/core/theme/app_colors.dart';
-import 'package:airspothealth/core/utils/extensions.dart';
 import 'package:airspothealth/features/add_device/providers/ble_device_connection_provider.dart';
-import 'package:flutter/cupertino.dart';
+import 'package:airspothealth/features/devices/widgets/device_connect_button.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_blue_plus/flutter_blue_plus.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -46,24 +45,7 @@ class BleNewDeviceItem extends ConsumerWidget {
       title: Text(device.platformName),
       subtitle: Text(device.advName),
       leading: const Icon(Icons.bluetooth, color: AppColors.primaryColor),
-      trailing: deviceStatus.when(
-        cases: {
-          BluetoothBondState.none: () => ElevatedButton(
-                onPressed: () => ref
-                    .read(bleDeviceConnectionProvider(device.remoteId.str)
-                        .notifier)
-                    .connect(),
-                child: const Text('Connect'),
-              ),
-          BluetoothBondState.bonding: () => const CupertinoActivityIndicator(),
-          BluetoothBondState.bonded: () => const Text(
-                'Connected',
-                style:
-                    TextStyle(color: AppColors.brandColorGreen, fontSize: 14),
-              ),
-        },
-        orElse: () => const Icon(Icons.error),
-      ),
+      trailing: DeviceConnectButton(deviceId: device.remoteId.str),
     );
   }
 }

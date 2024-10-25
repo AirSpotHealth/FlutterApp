@@ -35,6 +35,9 @@ class _BleDeviceConnectionNotifier
   }
 
   void connect() {
+    if (state == BluetoothBondState.bonded ||
+        state == BluetoothBondState.bonding) return;
+
     state = BluetoothBondState.bonding;
 
     debugPrint('Connecting to device: ${device.advName}');

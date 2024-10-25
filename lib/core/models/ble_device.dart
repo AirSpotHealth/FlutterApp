@@ -1,3 +1,5 @@
+import 'package:airspothealth/core/models/device_settings.dart';
+import 'package:airspothealth/core/services/isar_service.dart';
 import 'package:isar/isar.dart';
 
 part 'ble_device.g.dart';
@@ -44,4 +46,8 @@ class BleDevice {
       alias: alias ?? this.alias,
     );
   }
+
+  @ignore
+  DeviceSettings? get settings => IsarService().read<DeviceSettings?>((isar) =>
+      isar.deviceSettings.where().deviceIdEqualTo(deviceId).findFirst());
 }

@@ -1,4 +1,6 @@
+import 'package:airspothealth/core/providers/ble_device_communication_provider.dart';
 import 'package:airspothealth/core/providers/device_settings_provider.dart';
+import 'package:airspothealth/core/utils/device_cmd_utils.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -23,18 +25,16 @@ class _TimeSettingsPageState extends ConsumerState<TimeSettingsPage> {
     super.initState();
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (ref.watch(deviceSettingsProvider(widget.deviceId)).autoSyncTime) {
+      if (ref.read(deviceSettingsProvider(widget.deviceId)).autoSyncTime) {
         _syncTime();
       }
     });
   }
 
   void _syncTime() {
-    ref.read(deviceSettingsProvider(widget.deviceId).notifier).updateSettings(
-          ref.read(deviceSettingsProvider(widget.deviceId)).copyWith(
-                autoSyncTime: true,
-              ),
-        );
+    ref
+        .read(bleDeviceCommunicationProvider(widget.deviceId).notifier)
+        .sendCommand(DeviceCmdUtils.setTime());
   }
 
   @override

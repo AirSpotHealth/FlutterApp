@@ -59,6 +59,14 @@ const DeviceSettingsSchema = IsarGeneratedSchema(
         name: 'autoSyncTime',
         type: IsarType.bool,
       ),
+      IsarPropertySchema(
+        name: 'autoCalibration',
+        type: IsarType.bool,
+      ),
+      IsarPropertySchema(
+        name: 'autoConnect',
+        type: IsarType.bool,
+      ),
     ],
     indexes: [],
   ),
@@ -87,6 +95,8 @@ int serializeDeviceSettings(IsarWriter writer, DeviceSettings object) {
   IsarCore.writeLong(
       writer, 8, object.co2AlertThreshold ?? -9223372036854775808);
   IsarCore.writeBool(writer, 9, object.autoSyncTime);
+  IsarCore.writeBool(writer, 10, object.autoCalibration);
+  IsarCore.writeBool(writer, 11, object.autoConnect);
   return Isar.fastHash(object.deviceId);
 }
 
@@ -142,6 +152,22 @@ DeviceSettings deserializeDeviceSettings(IsarReader reader) {
       _autoSyncTime = IsarCore.readBool(reader, 9);
     }
   }
+  final bool _autoCalibration;
+  {
+    if (IsarCore.readNull(reader, 10)) {
+      _autoCalibration = true;
+    } else {
+      _autoCalibration = IsarCore.readBool(reader, 10);
+    }
+  }
+  final bool _autoConnect;
+  {
+    if (IsarCore.readNull(reader, 11)) {
+      _autoConnect = true;
+    } else {
+      _autoConnect = IsarCore.readBool(reader, 11);
+    }
+  }
   final object = DeviceSettings(
     alarmEnabled: _alarmEnabled,
     vibrationEnabled: _vibrationEnabled,
@@ -152,6 +178,8 @@ DeviceSettings deserializeDeviceSettings(IsarReader reader) {
     deviceId: _deviceId,
     co2AlertThreshold: _co2AlertThreshold,
     autoSyncTime: _autoSyncTime,
+    autoCalibration: _autoCalibration,
+    autoConnect: _autoConnect,
   );
   return object;
 }
@@ -209,6 +237,22 @@ dynamic deserializeDeviceSettingsProp(IsarReader reader, int property) {
           return IsarCore.readBool(reader, 9);
         }
       }
+    case 10:
+      {
+        if (IsarCore.readNull(reader, 10)) {
+          return true;
+        } else {
+          return IsarCore.readBool(reader, 10);
+        }
+      }
+    case 11:
+      {
+        if (IsarCore.readNull(reader, 11)) {
+          return true;
+        } else {
+          return IsarCore.readBool(reader, 11);
+        }
+      }
     default:
       throw ArgumentError('Unknown property: $property');
   }
@@ -224,6 +268,8 @@ sealed class _DeviceSettingsUpdate {
     String? version,
     int? co2AlertThreshold,
     bool? autoSyncTime,
+    bool? autoCalibration,
+    bool? autoConnect,
   });
 }
 
@@ -242,6 +288,8 @@ class _DeviceSettingsUpdateImpl implements _DeviceSettingsUpdate {
     Object? version = ignore,
     Object? co2AlertThreshold = ignore,
     Object? autoSyncTime = ignore,
+    Object? autoCalibration = ignore,
+    Object? autoConnect = ignore,
   }) {
     return collection.updateProperties([
           deviceId
@@ -254,6 +302,8 @@ class _DeviceSettingsUpdateImpl implements _DeviceSettingsUpdate {
           if (version != ignore) 6: version as String?,
           if (co2AlertThreshold != ignore) 8: co2AlertThreshold as int?,
           if (autoSyncTime != ignore) 9: autoSyncTime as bool?,
+          if (autoCalibration != ignore) 10: autoCalibration as bool?,
+          if (autoConnect != ignore) 11: autoConnect as bool?,
         }) >
         0;
   }
@@ -269,6 +319,8 @@ sealed class _DeviceSettingsUpdateAll {
     String? version,
     int? co2AlertThreshold,
     bool? autoSyncTime,
+    bool? autoCalibration,
+    bool? autoConnect,
   });
 }
 
@@ -287,6 +339,8 @@ class _DeviceSettingsUpdateAllImpl implements _DeviceSettingsUpdateAll {
     Object? version = ignore,
     Object? co2AlertThreshold = ignore,
     Object? autoSyncTime = ignore,
+    Object? autoCalibration = ignore,
+    Object? autoConnect = ignore,
   }) {
     return collection.updateProperties(deviceId, {
       if (alarmEnabled != ignore) 1: alarmEnabled as bool?,
@@ -296,6 +350,8 @@ class _DeviceSettingsUpdateAllImpl implements _DeviceSettingsUpdateAll {
       if (version != ignore) 6: version as String?,
       if (co2AlertThreshold != ignore) 8: co2AlertThreshold as int?,
       if (autoSyncTime != ignore) 9: autoSyncTime as bool?,
+      if (autoCalibration != ignore) 10: autoCalibration as bool?,
+      if (autoConnect != ignore) 11: autoConnect as bool?,
     });
   }
 }
@@ -315,6 +371,8 @@ sealed class _DeviceSettingsQueryUpdate {
     String? version,
     int? co2AlertThreshold,
     bool? autoSyncTime,
+    bool? autoCalibration,
+    bool? autoConnect,
   });
 }
 
@@ -333,6 +391,8 @@ class _DeviceSettingsQueryUpdateImpl implements _DeviceSettingsQueryUpdate {
     Object? version = ignore,
     Object? co2AlertThreshold = ignore,
     Object? autoSyncTime = ignore,
+    Object? autoCalibration = ignore,
+    Object? autoConnect = ignore,
   }) {
     return query.updateProperties(limit: limit, {
       if (alarmEnabled != ignore) 1: alarmEnabled as bool?,
@@ -342,6 +402,8 @@ class _DeviceSettingsQueryUpdateImpl implements _DeviceSettingsQueryUpdate {
       if (version != ignore) 6: version as String?,
       if (co2AlertThreshold != ignore) 8: co2AlertThreshold as int?,
       if (autoSyncTime != ignore) 9: autoSyncTime as bool?,
+      if (autoCalibration != ignore) 10: autoCalibration as bool?,
+      if (autoConnect != ignore) 11: autoConnect as bool?,
     });
   }
 }
@@ -370,6 +432,8 @@ class _DeviceSettingsQueryBuilderUpdateImpl
     Object? version = ignore,
     Object? co2AlertThreshold = ignore,
     Object? autoSyncTime = ignore,
+    Object? autoCalibration = ignore,
+    Object? autoConnect = ignore,
   }) {
     final q = query.build();
     try {
@@ -382,6 +446,8 @@ class _DeviceSettingsQueryBuilderUpdateImpl
         if (version != ignore) 6: version as String?,
         if (co2AlertThreshold != ignore) 8: co2AlertThreshold as int?,
         if (autoSyncTime != ignore) 9: autoSyncTime as bool?,
+        if (autoCalibration != ignore) 10: autoCalibration as bool?,
+        if (autoConnect != ignore) 11: autoConnect as bool?,
       });
     } finally {
       q.close();
@@ -1007,6 +1073,34 @@ extension DeviceSettingsQueryFilter
       );
     });
   }
+
+  QueryBuilder<DeviceSettings, DeviceSettings, QAfterFilterCondition>
+      autoCalibrationEqualTo(
+    bool value,
+  ) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        EqualCondition(
+          property: 10,
+          value: value,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<DeviceSettings, DeviceSettings, QAfterFilterCondition>
+      autoConnectEqualTo(
+    bool value,
+  ) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        EqualCondition(
+          property: 11,
+          value: value,
+        ),
+      );
+    });
+  }
 }
 
 extension DeviceSettingsQueryObject
@@ -1145,6 +1239,34 @@ extension DeviceSettingsQuerySortBy
       return query.addSortBy(9, sort: Sort.desc);
     });
   }
+
+  QueryBuilder<DeviceSettings, DeviceSettings, QAfterSortBy>
+      sortByAutoCalibration() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(10);
+    });
+  }
+
+  QueryBuilder<DeviceSettings, DeviceSettings, QAfterSortBy>
+      sortByAutoCalibrationDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(10, sort: Sort.desc);
+    });
+  }
+
+  QueryBuilder<DeviceSettings, DeviceSettings, QAfterSortBy>
+      sortByAutoConnect() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(11);
+    });
+  }
+
+  QueryBuilder<DeviceSettings, DeviceSettings, QAfterSortBy>
+      sortByAutoConnectDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(11, sort: Sort.desc);
+    });
+  }
 }
 
 extension DeviceSettingsQuerySortThenBy
@@ -1259,6 +1381,34 @@ extension DeviceSettingsQuerySortThenBy
       return query.addSortBy(9, sort: Sort.desc);
     });
   }
+
+  QueryBuilder<DeviceSettings, DeviceSettings, QAfterSortBy>
+      thenByAutoCalibration() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(10);
+    });
+  }
+
+  QueryBuilder<DeviceSettings, DeviceSettings, QAfterSortBy>
+      thenByAutoCalibrationDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(10, sort: Sort.desc);
+    });
+  }
+
+  QueryBuilder<DeviceSettings, DeviceSettings, QAfterSortBy>
+      thenByAutoConnect() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(11);
+    });
+  }
+
+  QueryBuilder<DeviceSettings, DeviceSettings, QAfterSortBy>
+      thenByAutoConnectDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(11, sort: Sort.desc);
+    });
+  }
 }
 
 extension DeviceSettingsQueryWhereDistinct
@@ -1309,6 +1459,20 @@ extension DeviceSettingsQueryWhereDistinct
       distinctByAutoSyncTime() {
     return QueryBuilder.apply(this, (query) {
       return query.addDistinctBy(9);
+    });
+  }
+
+  QueryBuilder<DeviceSettings, DeviceSettings, QAfterDistinct>
+      distinctByAutoCalibration() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addDistinctBy(10);
+    });
+  }
+
+  QueryBuilder<DeviceSettings, DeviceSettings, QAfterDistinct>
+      distinctByAutoConnect() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addDistinctBy(11);
     });
   }
 }
@@ -1370,6 +1534,18 @@ extension DeviceSettingsQueryProperty1
   QueryBuilder<DeviceSettings, bool, QAfterProperty> autoSyncTimeProperty() {
     return QueryBuilder.apply(this, (query) {
       return query.addProperty(9);
+    });
+  }
+
+  QueryBuilder<DeviceSettings, bool, QAfterProperty> autoCalibrationProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addProperty(10);
+    });
+  }
+
+  QueryBuilder<DeviceSettings, bool, QAfterProperty> autoConnectProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addProperty(11);
     });
   }
 }
@@ -1436,6 +1612,20 @@ extension DeviceSettingsQueryProperty2<R>
       return query.addProperty(9);
     });
   }
+
+  QueryBuilder<DeviceSettings, (R, bool), QAfterProperty>
+      autoCalibrationProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addProperty(10);
+    });
+  }
+
+  QueryBuilder<DeviceSettings, (R, bool), QAfterProperty>
+      autoConnectProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addProperty(11);
+    });
+  }
 }
 
 extension DeviceSettingsQueryProperty3<R1, R2>
@@ -1500,6 +1690,20 @@ extension DeviceSettingsQueryProperty3<R1, R2>
       autoSyncTimeProperty() {
     return QueryBuilder.apply(this, (query) {
       return query.addProperty(9);
+    });
+  }
+
+  QueryBuilder<DeviceSettings, (R1, R2, bool), QOperations>
+      autoCalibrationProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addProperty(10);
+    });
+  }
+
+  QueryBuilder<DeviceSettings, (R1, R2, bool), QOperations>
+      autoConnectProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addProperty(11);
     });
   }
 }

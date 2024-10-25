@@ -30,7 +30,7 @@ class DeviceCurrentValueWidget extends ConsumerWidget {
             const Spacer(),
             RichText(
               text: TextSpan(
-                text: deviceValue != null ? "$deviceValue" : '------',
+                text: deviceValue != null ? "$deviceValue" : '0000',
                 style: context.textTheme.titleLarge?.copyWith(
                   color: AppUtils.getDataColorFromValue(deviceValue),
                   fontWeight: FontWeight.bold,

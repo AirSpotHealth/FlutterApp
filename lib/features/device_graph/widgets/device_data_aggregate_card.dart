@@ -59,7 +59,7 @@ class DeviceDataAggregateCard extends ConsumerWidget {
         ),
         Expanded(
           child: Text(
-            data != null ? data.dateTime.formatTime() : '------',
+            data != null ? data.dateTime.formatTime() : '00/00 00:00',
             style: context.textTheme.bodyMedium
                 ?.copyWith(color: AppColors.neutralGrey),
             textAlign: TextAlign.center,
@@ -69,7 +69,7 @@ class DeviceDataAggregateCard extends ConsumerWidget {
           child: RichText(
             textAlign: TextAlign.end,
             text: TextSpan(
-              text: data != null ? data.value.toString() : '------',
+              text: data != null ? data.value.toString() : '0000',
               style: context.textTheme.bodyMedium?.copyWith(
                   color: AppUtils.getDataColorFromValue(data?.value)),
               children: const [

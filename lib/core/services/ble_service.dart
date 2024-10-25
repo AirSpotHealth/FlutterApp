@@ -49,6 +49,10 @@ class BLEService {
   /// Method to get the list of connected devices.
   List<BluetoothDevice> connectedDevices() => FlutterBluePlus.connectedDevices;
 
+  /// Bonded devices getter.
+  Future<List<BluetoothDevice>> get bondedDevices =>
+      FlutterBluePlus.bondedDevices;
+
   /// Method to connect to a Bluetooth device.
   Future<void> connect(BluetoothDevice device) async =>
       device.connect(autoConnect: true, mtu: null);

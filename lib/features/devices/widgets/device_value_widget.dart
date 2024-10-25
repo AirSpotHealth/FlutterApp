@@ -1,5 +1,6 @@
 import 'package:airspothealth/core/providers/ble_device_communication_provider.dart';
 import 'package:airspothealth/core/utils/app_utils.dart';
+import 'package:airspothealth/core/utils/constants.dart';
 import 'package:airspothealth/core/utils/extensions.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -13,8 +14,12 @@ class DeviceValueWidget extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final deviceValue = ref.watch(bleDeviceCommunicationProvider(deviceId));
 
+    debugPrint('DeviceValueWidget: $deviceValue');
+
     return Text(
-      deviceValue != null ? "CO2 $deviceValue ppm" : '------',
+      deviceValue != null
+          ? "CO${Constants.subscript2} $deviceValue ppm"
+          : '------',
       style: context.textTheme.titleLarge?.copyWith(
         color: AppUtils.getDataColorFromValue(deviceValue),
         fontWeight: FontWeight.bold,
