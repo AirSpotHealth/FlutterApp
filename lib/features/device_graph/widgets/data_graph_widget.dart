@@ -19,9 +19,9 @@ class _DataGraphWidgetState extends State<DataGraphWidget> {
   late final WebViewController controller = WebViewController()
     ..setJavaScriptMode(JavaScriptMode.unrestricted)
     ..loadFlutterAsset(Assets.chartHtml)
-    ..setNavigationDelegate(NavigationDelegate(
-      onPageFinished: (url) => _buildGraph(),
-    ));
+    ..setNavigationDelegate(
+        NavigationDelegate(onPageFinished: (url) => _buildGraph()))
+    ..setBackgroundColor(Colors.white);
 
   @override
   void didUpdateWidget(DataGraphWidget oldWidget) {
