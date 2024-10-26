@@ -62,12 +62,9 @@ class _DeviceFirmwareUpdateDialogState
   @override
   Widget build(BuildContext context) {
     ref.listen(dfuUpdateProvider, (oldState, newState) {
-      if (newState is AsyncFailure && oldState is AsyncFailure) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Failed to update firmware, ${newState.error}'),
-          ),
-        );
+      if (newState is AsyncFailure && newState != oldState) {
+        context.showSnackBar('Failed to update firmware, ${newState.error}');
+        return;
       }
 
       if (newState is AsyncSuccess) {

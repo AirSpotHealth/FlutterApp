@@ -35,6 +35,8 @@ class _BleDeviceConnectionNotifier
   }
 
   void connect() {
+    debugPrint('bleDeviceConnectionProvider connect $arg, $state');
+
     if (state == BluetoothBondState.bonded ||
         state == BluetoothBondState.bonding) return;
 

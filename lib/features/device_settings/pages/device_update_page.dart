@@ -1,10 +1,9 @@
 // ignore_for_file: use_build_context_synchronously
 
-import 'package:airspothealth/core/models/device_settings.dart';
-import 'package:airspothealth/core/providers/device_settings_provider.dart';
 import 'package:airspothealth/core/utils/extensions.dart';
 import 'package:airspothealth/core/widgets/app_logo.dart';
 import 'package:airspothealth/core/widgets/tappable_widget.dart';
+import 'package:airspothealth/features/device_settings/providers/ble_device_version_provider.dart';
 import 'package:airspothealth/features/device_settings/widgets/device_firmware_update_dialog.dart';
 import 'package:airspothealth/features/device_settings/widgets/device_version_update_widget.dart';
 import 'package:file_picker/file_picker.dart';
@@ -18,9 +17,6 @@ class DeviceUpdatePage extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final DeviceSettings deviceSettings =
-        ref.watch(deviceSettingsProvider(deviceId));
-
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: AppBar(
@@ -36,9 +32,7 @@ class DeviceUpdatePage extends ConsumerWidget {
           ),
         ),
         const SizedBox(height: 16),
-        CurrentDeviceVersionWidget(
-          version: deviceSettings.version,
-        ),
+        CurrentDeviceVersionWidget(deviceId: deviceId),
         const SizedBox(height: 16),
         DeviceVersionUpdateWidget(deviceId: deviceId),
       ]),
@@ -67,13 +61,17 @@ class DeviceUpdatePage extends ConsumerWidget {
   }
 }
 
-class CurrentDeviceVersionWidget extends StatelessWidget {
-  const CurrentDeviceVersionWidget({required this.version, super.key});
+class CurrentDeviceVersionWidget extends ConsumerWidget {
+  const CurrentDeviceVersionWidget({required this.deviceId, super.key});
 
-  final String version;
+  final String deviceId;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final String version = ref.read(bleDeviceVersionProvider(deviceId));
+
+    debugPrint('CurrentDeviceVersionWidget: $version');
+
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(

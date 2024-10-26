@@ -48,6 +48,10 @@ const BleDeviceSchema = IsarGeneratedSchema(
         name: 'alias',
         type: IsarType.string,
       ),
+      IsarPropertySchema(
+        name: 'firmwareVersion',
+        type: IsarType.string,
+      ),
     ],
     indexes: [
       IsarIndexSchema(
@@ -94,6 +98,7 @@ int serializeBleDevice(IsarWriter writer, BleDevice object) {
       IsarCore.writeString(writer, 7, value);
     }
   }
+  IsarCore.writeString(writer, 8, object.firmwareVersion);
   return Isar.fastHash(object.deviceId);
 }
 
@@ -109,12 +114,15 @@ BleDevice deserializeBleDevice(IsarReader reader) {
   _platform = IsarCore.readString(reader, 6) ?? '';
   final String? _alias;
   _alias = IsarCore.readString(reader, 7);
+  final String _firmwareVersion;
+  _firmwareVersion = IsarCore.readString(reader, 8) ?? '-.-.-';
   final object = BleDevice(
     deviceId: _deviceId,
     name: _name,
     address: _address,
     platform: _platform,
     alias: _alias,
+    firmwareVersion: _firmwareVersion,
   );
   return object;
 }
@@ -152,6 +160,8 @@ dynamic deserializeBleDeviceProp(IsarReader reader, int property) {
       return IsarCore.readString(reader, 6) ?? '';
     case 7:
       return IsarCore.readString(reader, 7);
+    case 8:
+      return IsarCore.readString(reader, 8) ?? '-.-.-';
     default:
       throw ArgumentError('Unknown property: $property');
   }
@@ -166,6 +176,7 @@ sealed class _BleDeviceUpdate {
     DateTime? lastConnectedAt,
     String? platform,
     String? alias,
+    String? firmwareVersion,
   });
 }
 
@@ -183,6 +194,7 @@ class _BleDeviceUpdateImpl implements _BleDeviceUpdate {
     Object? lastConnectedAt = ignore,
     Object? platform = ignore,
     Object? alias = ignore,
+    Object? firmwareVersion = ignore,
   }) {
     return collection.updateProperties([
           deviceId
@@ -193,6 +205,7 @@ class _BleDeviceUpdateImpl implements _BleDeviceUpdate {
           if (lastConnectedAt != ignore) 5: lastConnectedAt as DateTime?,
           if (platform != ignore) 6: platform as String?,
           if (alias != ignore) 7: alias as String?,
+          if (firmwareVersion != ignore) 8: firmwareVersion as String?,
         }) >
         0;
   }
@@ -207,6 +220,7 @@ sealed class _BleDeviceUpdateAll {
     DateTime? lastConnectedAt,
     String? platform,
     String? alias,
+    String? firmwareVersion,
   });
 }
 
@@ -224,6 +238,7 @@ class _BleDeviceUpdateAllImpl implements _BleDeviceUpdateAll {
     Object? lastConnectedAt = ignore,
     Object? platform = ignore,
     Object? alias = ignore,
+    Object? firmwareVersion = ignore,
   }) {
     return collection.updateProperties(deviceId, {
       if (name != ignore) 2: name as String?,
@@ -232,6 +247,7 @@ class _BleDeviceUpdateAllImpl implements _BleDeviceUpdateAll {
       if (lastConnectedAt != ignore) 5: lastConnectedAt as DateTime?,
       if (platform != ignore) 6: platform as String?,
       if (alias != ignore) 7: alias as String?,
+      if (firmwareVersion != ignore) 8: firmwareVersion as String?,
     });
   }
 }
@@ -250,6 +266,7 @@ sealed class _BleDeviceQueryUpdate {
     DateTime? lastConnectedAt,
     String? platform,
     String? alias,
+    String? firmwareVersion,
   });
 }
 
@@ -267,6 +284,7 @@ class _BleDeviceQueryUpdateImpl implements _BleDeviceQueryUpdate {
     Object? lastConnectedAt = ignore,
     Object? platform = ignore,
     Object? alias = ignore,
+    Object? firmwareVersion = ignore,
   }) {
     return query.updateProperties(limit: limit, {
       if (name != ignore) 2: name as String?,
@@ -275,6 +293,7 @@ class _BleDeviceQueryUpdateImpl implements _BleDeviceQueryUpdate {
       if (lastConnectedAt != ignore) 5: lastConnectedAt as DateTime?,
       if (platform != ignore) 6: platform as String?,
       if (alias != ignore) 7: alias as String?,
+      if (firmwareVersion != ignore) 8: firmwareVersion as String?,
     });
   }
 }
@@ -300,6 +319,7 @@ class _BleDeviceQueryBuilderUpdateImpl implements _BleDeviceQueryUpdate {
     Object? lastConnectedAt = ignore,
     Object? platform = ignore,
     Object? alias = ignore,
+    Object? firmwareVersion = ignore,
   }) {
     final q = query.build();
     try {
@@ -310,6 +330,7 @@ class _BleDeviceQueryBuilderUpdateImpl implements _BleDeviceQueryUpdate {
         if (lastConnectedAt != ignore) 5: lastConnectedAt as DateTime?,
         if (platform != ignore) 6: platform as String?,
         if (alias != ignore) 7: alias as String?,
+        if (firmwareVersion != ignore) 8: firmwareVersion as String?,
       });
     } finally {
       q.close();
@@ -1380,6 +1401,186 @@ extension BleDeviceQueryFilter
       );
     });
   }
+
+  QueryBuilder<BleDevice, BleDevice, QAfterFilterCondition>
+      firmwareVersionEqualTo(
+    String value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        EqualCondition(
+          property: 8,
+          value: value,
+          caseSensitive: caseSensitive,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<BleDevice, BleDevice, QAfterFilterCondition>
+      firmwareVersionGreaterThan(
+    String value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        GreaterCondition(
+          property: 8,
+          value: value,
+          caseSensitive: caseSensitive,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<BleDevice, BleDevice, QAfterFilterCondition>
+      firmwareVersionGreaterThanOrEqualTo(
+    String value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        GreaterOrEqualCondition(
+          property: 8,
+          value: value,
+          caseSensitive: caseSensitive,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<BleDevice, BleDevice, QAfterFilterCondition>
+      firmwareVersionLessThan(
+    String value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        LessCondition(
+          property: 8,
+          value: value,
+          caseSensitive: caseSensitive,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<BleDevice, BleDevice, QAfterFilterCondition>
+      firmwareVersionLessThanOrEqualTo(
+    String value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        LessOrEqualCondition(
+          property: 8,
+          value: value,
+          caseSensitive: caseSensitive,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<BleDevice, BleDevice, QAfterFilterCondition>
+      firmwareVersionBetween(
+    String lower,
+    String upper, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        BetweenCondition(
+          property: 8,
+          lower: lower,
+          upper: upper,
+          caseSensitive: caseSensitive,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<BleDevice, BleDevice, QAfterFilterCondition>
+      firmwareVersionStartsWith(
+    String value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        StartsWithCondition(
+          property: 8,
+          value: value,
+          caseSensitive: caseSensitive,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<BleDevice, BleDevice, QAfterFilterCondition>
+      firmwareVersionEndsWith(
+    String value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        EndsWithCondition(
+          property: 8,
+          value: value,
+          caseSensitive: caseSensitive,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<BleDevice, BleDevice, QAfterFilterCondition>
+      firmwareVersionContains(String value, {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        ContainsCondition(
+          property: 8,
+          value: value,
+          caseSensitive: caseSensitive,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<BleDevice, BleDevice, QAfterFilterCondition>
+      firmwareVersionMatches(String pattern, {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        MatchesCondition(
+          property: 8,
+          wildcard: pattern,
+          caseSensitive: caseSensitive,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<BleDevice, BleDevice, QAfterFilterCondition>
+      firmwareVersionIsEmpty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        const EqualCondition(
+          property: 8,
+          value: '',
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<BleDevice, BleDevice, QAfterFilterCondition>
+      firmwareVersionIsNotEmpty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        const GreaterCondition(
+          property: 8,
+          value: '',
+        ),
+      );
+    });
+  }
 }
 
 extension BleDeviceQueryObject
@@ -1514,6 +1715,27 @@ extension BleDeviceQuerySortBy on QueryBuilder<BleDevice, BleDevice, QSortBy> {
       );
     });
   }
+
+  QueryBuilder<BleDevice, BleDevice, QAfterSortBy> sortByFirmwareVersion(
+      {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(
+        8,
+        caseSensitive: caseSensitive,
+      );
+    });
+  }
+
+  QueryBuilder<BleDevice, BleDevice, QAfterSortBy> sortByFirmwareVersionDesc(
+      {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(
+        8,
+        sort: Sort.desc,
+        caseSensitive: caseSensitive,
+      );
+    });
+  }
 }
 
 extension BleDeviceQuerySortThenBy
@@ -1611,6 +1833,20 @@ extension BleDeviceQuerySortThenBy
       return query.addSortBy(7, sort: Sort.desc, caseSensitive: caseSensitive);
     });
   }
+
+  QueryBuilder<BleDevice, BleDevice, QAfterSortBy> thenByFirmwareVersion(
+      {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(8, caseSensitive: caseSensitive);
+    });
+  }
+
+  QueryBuilder<BleDevice, BleDevice, QAfterSortBy> thenByFirmwareVersionDesc(
+      {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(8, sort: Sort.desc, caseSensitive: caseSensitive);
+    });
+  }
 }
 
 extension BleDeviceQueryWhereDistinct
@@ -1653,6 +1889,13 @@ extension BleDeviceQueryWhereDistinct
       {bool caseSensitive = true}) {
     return QueryBuilder.apply(this, (query) {
       return query.addDistinctBy(7, caseSensitive: caseSensitive);
+    });
+  }
+
+  QueryBuilder<BleDevice, BleDevice, QAfterDistinct> distinctByFirmwareVersion(
+      {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addDistinctBy(8, caseSensitive: caseSensitive);
     });
   }
 }
@@ -1698,6 +1941,12 @@ extension BleDeviceQueryProperty1
   QueryBuilder<BleDevice, String?, QAfterProperty> aliasProperty() {
     return QueryBuilder.apply(this, (query) {
       return query.addProperty(7);
+    });
+  }
+
+  QueryBuilder<BleDevice, String, QAfterProperty> firmwareVersionProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addProperty(8);
     });
   }
 }
@@ -1746,6 +1995,13 @@ extension BleDeviceQueryProperty2<R>
       return query.addProperty(7);
     });
   }
+
+  QueryBuilder<BleDevice, (R, String), QAfterProperty>
+      firmwareVersionProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addProperty(8);
+    });
+  }
 }
 
 extension BleDeviceQueryProperty3<R1, R2>
@@ -1790,6 +2046,13 @@ extension BleDeviceQueryProperty3<R1, R2>
   QueryBuilder<BleDevice, (R1, R2, String?), QOperations> aliasProperty() {
     return QueryBuilder.apply(this, (query) {
       return query.addProperty(7);
+    });
+  }
+
+  QueryBuilder<BleDevice, (R1, R2, String), QOperations>
+      firmwareVersionProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addProperty(8);
     });
   }
 }

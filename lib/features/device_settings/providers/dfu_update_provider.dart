@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:airspothealth/core/services/network_service.dart';
 import 'package:airspothealth/features/device_settings/models/progress_model.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:nordic_dfu/nordic_dfu.dart';
 import 'package:path_provider/path_provider.dart';
@@ -25,7 +26,7 @@ class _DfuUpdateNotifier extends AutoDisposeNotifier<AsyncProgressValue> {
       if (isLocal) {
         state = const AsyncInProgress(0.0, message: 'Updating firmware...');
 
-        await _uploadDfu(deviceId, url);
+        _uploadDfu(deviceId, url);
 
         return;
       }
@@ -48,14 +49,14 @@ class _DfuUpdateNotifier extends AutoDisposeNotifier<AsyncProgressValue> {
 
       state = const AsyncInProgress(0.0, message: 'Updating firmware...');
 
-      await _uploadDfu(deviceId, filePath);
+      _uploadDfu(deviceId, filePath);
     } catch (e) {
       state = AsyncFailure("Update failed: $e");
     }
   }
 
-  Future<void> _uploadDfu(String deviceId, String filePath) async {
-    await NordicDfu().startDfu(
+  void _uploadDfu(String deviceId, String filePath) {
+    NordicDfu().startDfu(
       deviceId,
       filePath,
       onProgressChanged:
@@ -64,16 +65,35 @@ class _DfuUpdateNotifier extends AutoDisposeNotifier<AsyncProgressValue> {
       },
       iosSpecialParameter: const IosSpecialParameter(
         connectionTimeout: 30,
-        forceScanningForNewAddressInLegacyDfu: true,
         alternativeAdvertisingNameEnabled: false,
       ),
       onDeviceDisconnected: (error) {
-        state = AsyncFailure('Device disconnected, update failed $error');
+        debugPrint('Device disconnected, update failed $error');
+        state = state is AsyncInProgress
+            ? (state as AsyncInProgress).copyWithMessage('Device disconnected')
+            : const AsyncInProgress(0.0, message: 'Device disconnected');
+      },
+      onDeviceConnected: (address) {
+        state = state is AsyncInProgress
+            ? (state as AsyncInProgress).copyWithMessage('Device connected')
+            : const AsyncInProgress(0.0, message: 'Device connected');
+      },
+      onDeviceConnecting: (address) {
+        state = const AsyncInProgress(0.0, message: 'Connecting to device...');
+      },
+      onDeviceDisconnecting: (address) {
+        state = state is AsyncInProgress
+            ? (state as AsyncInProgress).copyWithMessage('Disconnecting device')
+            : const AsyncInProgress(0.0, message: 'Disconnecting device...');
+      },
+      onEnablingDfuMode: (address) {
+        state = const AsyncInProgress(0.0, message: 'Enabling DFU mode...');
       },
       onDfuAborted: (error) {
         state = AsyncFailure('DFU aborted, update failed $error');
       },
       onDfuCompleted: (res) {
+        debugPrint('DFU completed: $res');
         state = const AsyncSuccess(null);
       },
       onFirmwareValidating: (address) {
@@ -86,7 +106,8 @@ class _DfuUpdateNotifier extends AutoDisposeNotifier<AsyncProgressValue> {
         state = const AsyncInProgress(0.0, message: 'DFU process started...');
       },
       onError: (address, error, errorType, message) {
-        state = AsyncFailure('Update failed: $error');
+        debugPrint('ErrorWhileDFU: $errorType, $message');
+        state = AsyncFailure('Update failed: $message');
       },
     );
   }

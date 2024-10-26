@@ -26,43 +26,62 @@ class BleDeviceWidget extends ConsumerWidget {
     final bool deviceConnected =
         deviceConnectionState == BluetoothBondState.bonded;
 
-    return AnimatedContainer(
-      duration: const Duration(milliseconds: 300),
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(10),
-        border: Border.all(
-          color: AppColors.primaryColor,
-          width: 1,
-        ),
-      ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              if (deviceConnected)
-                ..._getConnectedWidgets(ref)
-              else if (deviceConnectionState == BluetoothBondState.bonding)
-                const CupertinoActivityIndicator()
-              else
-                Expanded(child: _buildConnectButton(ref)),
-            ],
+    return GestureDetector(
+      onLongPress: () {
+        if (deviceConnected) return;
+
+        ref
+            .read(bleSavedDevicesProvider.notifier)
+            .removeDeviceById(bleDevice.deviceId);
+      },
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 300),
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(10),
+          border: Border.all(
+            color: deviceConnected
+                ? AppColors.primaryColor
+                : AppColors.neutralGrey,
+            width: 1,
           ),
-          Text(
-            bleDevice.name,
-            style: context.textTheme.labelLarge,
-          ),
-          if (deviceConnected) ...[
-            const SizedBox(height: 16),
-            Align(
-              alignment: Alignment.center,
-              child: DeviceValueWidget(deviceId: bleDevice.deviceId),
-            )
+          boxShadow: [
+            if (deviceConnected)
+              BoxShadow(
+                color: AppColors.primaryColor.withOpacity(0.2),
+                blurRadius: 10,
+                offset: const Offset(0, 2),
+              ),
           ],
-        ],
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                if (deviceConnected)
+                  ..._getConnectedWidgets(ref)
+                else if (deviceConnectionState == BluetoothBondState.bonding)
+                  const CupertinoActivityIndicator()
+                else
+                  Expanded(child: _buildConnectButton(ref)),
+              ],
+            ),
+            Text(
+              bleDevice.name,
+              style: context.textTheme.labelLarge,
+            ),
+            if (deviceConnected) ...[
+              const SizedBox(height: 16),
+              Align(
+                alignment: Alignment.center,
+                child: DeviceValueWidget(deviceId: bleDevice.deviceId),
+              )
+            ],
+          ],
+        ),
       ),
     );
   }

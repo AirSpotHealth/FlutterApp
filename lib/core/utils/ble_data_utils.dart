@@ -1,4 +1,5 @@
 import 'package:airspothealth/core/models/ble_device.dart';
+import 'package:airspothealth/core/models/device_data.dart';
 import 'package:airspothealth/core/models/device_settings.dart';
 import 'package:airspothealth/core/services/isar_service.dart';
 import 'package:flutter/material.dart';
@@ -12,15 +13,11 @@ class BleDataUtils {
       bytes?.map((byt) => byt.toRadixString(16).padLeft(2, '0')).join();
 
   /// Parses the response command based on device ID and data
-  static int? parseResponseCommand(String deviceId, List<int> data) {
+  static dynamic parseResponseCommand(String deviceId, List<int> data) {
     if (data.length < 6) return null;
-
-    debugPrint('Data[2]: ${data[2]}');
 
     final responseCommand = ResponseCommand.fromValue(data[2]);
     final parser = ResponseCommandParser(deviceId);
-
-    debugPrint('ResponseCommand: $responseCommand');
 
     final responseParsers = {
       ResponseCommand.co2Value: parser.parseCo2Value,
@@ -39,7 +36,7 @@ class BleDataUtils {
           parser.parseSetContinuosDisplay,
       ResponseCommand.firmwareVersion: parser.parseFirmwareVersion,
       ResponseCommand.recalibrationTime: parser.parseRecalibrationTime,
-      ResponseCommand.recalibrationDone: parser.parseRecalibrationTime,
+      ResponseCommand.recalibrationConfirm: parser.parseRecalibrationTime,
     };
 
     final result = responseParsers[responseCommand]?.call(data);
@@ -52,8 +49,12 @@ class BleDataUtils {
       return result as int;
     }
 
-    if (responseCommand == ResponseCommand.recalibrationDone) {
+    if (responseCommand == ResponseCommand.recalibrationConfirm) {
       return result as int;
+    }
+
+    if (responseCommand == ResponseCommand.firmwareVersion) {
+      return result as String;
     }
 
     return null;
@@ -85,8 +86,16 @@ class ResponseCommandParser {
     final firmwareVersion = _parseString(data, 3);
     debugPrint('Firmware Version: $firmwareVersion');
 
-    _updateDeviceSettings(
-        (settings) => settings.copyWith(version: firmwareVersion));
+    isarService.write((isar) {
+      final device =
+          isar.bleDevices.where().deviceIdEqualTo(deviceId).findFirst();
+      if (device == null) {
+        return;
+      }
+
+      debugPrint('Got version $firmwareVersion for device: ${device.name}');
+      isar.bleDevices.put(device.copyWith(firmwareVersion: firmwareVersion));
+    });
 
     return firmwareVersion;
   }
@@ -129,12 +138,93 @@ class ResponseCommandParser {
 
   bool parseSetAlias(List<int> data) => _parseBoolean(data, 4);
 
-  String parseGetCo2History(List<int> data) {
-    // Implement the logic if needed
+  /// Parses CO2 history data
+  List<Map<String, dynamic>> parseGetCo2History(List<int> data) {
+    List<Map<String, dynamic>> co2Data = [];
 
-    debugPrint('Get CO2 History: ${data.toString()}');
+    // Check if the data length is at least 6 bytes (minimum valid length)
+    if (data.length < 6) return co2Data;
 
-    return '';
+    // Extract the initial timestamp (first 4 bytes)
+    int baseTimestamp = _byteArrayToInt(data, 0, 3);
+
+    // Calculate the timestamp from 2000-01-01 00:00:00 UTC
+    DateTime timestampFrom2000 =
+        DateTime.utc(2000, 1, 1, 0, 0, 0).add(Duration(seconds: baseTimestamp));
+
+    // Manually adjust the timestamp to align with the current date
+    timestampFrom2000 =
+        timestampFrom2000.subtract(const Duration(days: (365 * 111) + 66));
+
+    // Extract the sampling rate (5th byte)
+    int samplingRate = data[4];
+    String mode = _getSamplingMode(samplingRate);
+
+    // If the sampling rate is unrecognized, default to "HI power mode"
+    if (mode == 'Unknown mode') {
+      samplingRate = 0x02; // Default to HI power mode
+      mode = 'HI power mode';
+    }
+
+    // Extract the CO2 samples (from 6th byte onward)
+    for (int i = 5; i < data.length - 1; i += 2) {
+      int highByte = data[i];
+      int lowByte = data[i + 1];
+      int ppmValue = (highByte << 8) | lowByte;
+
+      // Add the parsed CO2 sample to the list
+      co2Data.add({
+        'timestamp': timestampFrom2000,
+        'samplingRate': mode,
+        'ppmValue': ppmValue,
+      });
+
+      // Update the timestamp based on the sampling rate
+      timestampFrom2000 = timestampFrom2000
+          .add(Duration(seconds: _getIntervalInSeconds(samplingRate)));
+    }
+
+    final List<DeviceData> dd = co2Data.map((e) {
+      return DeviceData(
+        deviceId: deviceId,
+        dateTime: e['timestamp'],
+        value: e['ppmValue'],
+      );
+    }).toList();
+
+    isarService.write((isar) {
+      isar.deviceDatas.putAll(dd);
+    });
+
+    return co2Data;
+  }
+
+  /// Helper method to convert sampling rate to mode description
+  String _getSamplingMode(int samplingRate) {
+    switch (samplingRate) {
+      case 0x00:
+        return 'LOW power mode';
+      case 0x01:
+        return 'MED power mode';
+      case 0x02:
+        return 'HI power mode';
+      default:
+        return 'Unknown mode';
+    }
+  }
+
+  /// Helper method to get the interval in seconds based on sampling rate
+  int _getIntervalInSeconds(int samplingRate) {
+    switch (samplingRate) {
+      case 0x00:
+        return 180; // 3 minutes for LOW power mode
+      case 0x01:
+        return 60; // 1 minute for MED power mode
+      case 0x02:
+        return 5; // 5 seconds for HI power mode
+      default:
+        return 5; // Default to HI power mode interval
+    }
   }
 
   bool parseCalibrateSensors(List<int> data) => _parseBoolean(data, 4);
@@ -214,7 +304,7 @@ enum ResponseCommand {
   setContinuosDisplayResult(0x0E),
   firmwareVersion(0x13),
   recalibrationTime(0x0F),
-  recalibrationDone(0x0D);
+  recalibrationConfirm(0x0D);
 
   const ResponseCommand(this.value);
   final int value;

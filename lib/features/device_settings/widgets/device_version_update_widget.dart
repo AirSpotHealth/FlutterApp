@@ -1,7 +1,8 @@
-import 'package:airspothealth/core/providers/device_settings_provider.dart';
 import 'package:airspothealth/core/theme/app_colors.dart';
 import 'package:airspothealth/core/utils/app_utils.dart';
+import 'package:airspothealth/core/utils/extensions.dart';
 import 'package:airspothealth/features/device_settings/models/remote_version.dart';
+import 'package:airspothealth/features/device_settings/providers/ble_device_version_provider.dart';
 import 'package:airspothealth/features/device_settings/providers/firmware_remote_version_provider.dart';
 import 'package:airspothealth/features/device_settings/widgets/device_firmware_update_dialog.dart';
 import 'package:flutter/cupertino.dart';
@@ -31,12 +32,9 @@ class _DeviceVersionUpdateWidgetState
   @override
   Widget build(BuildContext context) {
     ref.listen(firmwareRemoteVersionProvider, (oldState, newState) {
-      if (newState is AsyncError && oldState is AsyncError) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Failed to fetch remote version, ${newState.error}'),
-          ),
-        );
+      if (newState is AsyncError) {
+        context
+            .showSnackBar('Failed to fetch remote version, ${newState.error}');
       }
     });
 
@@ -44,7 +42,7 @@ class _DeviceVersionUpdateWidgetState
         ref.watch(firmwareRemoteVersionProvider);
 
     final String currentVersion =
-        ref.read(deviceSettingsProvider(widget.deviceId)).version;
+        ref.read(bleDeviceVersionProvider(widget.deviceId));
 
     return Container(
         padding: const EdgeInsets.all(16),

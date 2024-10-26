@@ -1,12 +1,14 @@
 import 'package:airspothealth/core/models/device_data.dart';
 import 'package:airspothealth/core/models/device_settings.dart';
 import 'package:airspothealth/core/providers/ble_connected_devices_provider.dart';
+import 'package:airspothealth/core/providers/ble_saved_devices_provider.dart';
 import 'package:airspothealth/core/providers/device_settings_provider.dart';
 import 'package:airspothealth/core/services/isar_service.dart';
 import 'package:airspothealth/core/utils/ble_data_utils.dart';
 import 'package:airspothealth/core/utils/constants.dart';
 import 'package:airspothealth/core/utils/device_cmd_utils.dart';
 import 'package:airspothealth/core/utils/extensions.dart';
+import 'package:airspothealth/features/device_graph/providers/ble_device_provider.dart';
 import 'package:airspothealth/features/device_settings/providers/recalibration_time_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_blue_plus/flutter_blue_plus.dart';
@@ -123,9 +125,13 @@ class _BleDeviceCommunicationNotifier extends FamilyNotifier<dynamic, String> {
     debugPrint('Data received: $deviceId, ${BleDataUtils.bytesToHexStr(data)}');
     final dynamic value = BleDataUtils.parseResponseCommand(deviceId, data);
 
-    debugPrint('Parsed value: $value');
-
     if (value == null) return;
+
+    if (data[2] == ResponseCommand.firmwareVersion.value) {
+      ref.read(bleSavedDevicesProvider.notifier).reloadDevices();
+      ref.invalidate(bleDeviceProvider(deviceId));
+      return;
+    }
 
     if (data[2] == ResponseCommand.recalibrationTime.value) {
       ref
@@ -134,9 +140,13 @@ class _BleDeviceCommunicationNotifier extends FamilyNotifier<dynamic, String> {
       return;
     }
 
-    if (data[2] == ResponseCommand.recalibrationDone.value) {
+    // Recalibration done confirmation
+    // value is 0x02 for start confirmation and 0x03 for end confirmation
+    if (data[2] == ResponseCommand.recalibrationConfirm.value &&
+        value == 0x03) {
       ref
           .read(recalibrationTimeProvider(deviceId).notifier)
+          // set recalibration time to -1 to indicate that the recalibration is done
           .setRecalibrationTime(-1);
       return;
     }

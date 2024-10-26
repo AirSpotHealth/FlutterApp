@@ -10,6 +10,10 @@ class AsyncInProgress implements AsyncProgressValue {
   final double progress;
 
   final String? message;
+
+  AsyncInProgress copyWithMessage(String message) {
+    return AsyncInProgress(progress, message: message);
+  }
 }
 
 class AsyncSuccess implements AsyncProgressValue {

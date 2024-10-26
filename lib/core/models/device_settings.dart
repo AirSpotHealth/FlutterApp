@@ -24,9 +24,6 @@ class DeviceSettings {
   /// The thresholds for the device
   final DeviceThresholds thresholds;
 
-  /// The firmware version of the device
-  final String version;
-
   /// The device id
   @Id()
   final String deviceId;
@@ -49,7 +46,6 @@ class DeviceSettings {
     required this.powerMode,
     required this.continuosScreenEnabled,
     required this.thresholds,
-    required this.version,
     required this.deviceId,
     required this.co2AlertThreshold,
     this.autoSyncTime = true,
@@ -63,7 +59,6 @@ class DeviceSettings {
         powerMode = PowerMode.low,
         continuosScreenEnabled = false,
         thresholds = DeviceThresholds.empty(),
-        version = '',
         co2AlertThreshold = null,
         autoSyncTime = true,
         autoCalibration = true,
@@ -89,7 +84,6 @@ class DeviceSettings {
       continuosScreenEnabled:
           continuosScreenEnabled ?? this.continuosScreenEnabled,
       thresholds: thresholds ?? this.thresholds,
-      version: version ?? this.version,
       deviceId: deviceId ?? this.deviceId,
       co2AlertThreshold: co2AlertThreshold ?? this.co2AlertThreshold,
       autoSyncTime: autoSyncTime ?? this.autoSyncTime,
@@ -163,7 +157,6 @@ class DeviceSettings {
       'powerMode': powerMode.index,
       'continuosScreenEnabled': continuosScreenEnabled,
       'thresholds': thresholds.toMap(),
-      'version': version,
       'deviceId': deviceId,
       'co2AlertThreshold': co2AlertThreshold,
       'autoSyncTime': autoSyncTime,
@@ -182,7 +175,6 @@ class DeviceSettings {
         other.powerMode == powerMode &&
         other.continuosScreenEnabled == continuosScreenEnabled &&
         other.thresholds == thresholds &&
-        other.version == version &&
         other.deviceId == deviceId &&
         other.co2AlertThreshold == co2AlertThreshold &&
         other.autoSyncTime == autoSyncTime &&
@@ -197,7 +189,6 @@ class DeviceSettings {
       powerMode.hashCode ^
       continuosScreenEnabled.hashCode ^
       thresholds.hashCode ^
-      version.hashCode ^
       deviceId.hashCode ^
       co2AlertThreshold.hashCode ^
       autoSyncTime.hashCode ^
@@ -206,7 +197,7 @@ class DeviceSettings {
 
   @override
   String toString() {
-    return 'DeviceSettings(alarmEnabled: $alarmEnabled, vibrationEnabled: $vibrationEnabled, powerMode: $powerMode, continuosScreenEnabled: $continuosScreenEnabled, thresholds: $thresholds, version: $version, deviceId: $deviceId, co2AlertThreshold: $co2AlertThreshold, autoSyncTime: $autoSyncTime, autoCalibration: $autoCalibration, autoConnect: $autoConnect)';
+    return 'DeviceSettings(alarmEnabled: $alarmEnabled, vibrationEnabled: $vibrationEnabled, powerMode: $powerMode, continuosScreenEnabled: $continuosScreenEnabled, thresholds: $thresholds, deviceId: $deviceId, co2AlertThreshold: $co2AlertThreshold, autoSyncTime: $autoSyncTime, autoCalibration: $autoCalibration, autoConnect: $autoConnect)';
   }
 }
 

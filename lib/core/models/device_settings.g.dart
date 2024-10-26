@@ -44,10 +44,6 @@ const DeviceSettingsSchema = IsarGeneratedSchema(
         target: 'DeviceThresholds',
       ),
       IsarPropertySchema(
-        name: 'version',
-        type: IsarType.string,
-      ),
-      IsarPropertySchema(
         name: 'deviceId',
         type: IsarType.string,
       ),
@@ -90,13 +86,12 @@ int serializeDeviceSettings(IsarWriter writer, DeviceSettings object) {
     serializeDeviceThresholds(objectWriter, value);
     IsarCore.endObject(writer, objectWriter);
   }
-  IsarCore.writeString(writer, 6, object.version);
-  IsarCore.writeString(writer, 7, object.deviceId);
+  IsarCore.writeString(writer, 6, object.deviceId);
   IsarCore.writeLong(
-      writer, 8, object.co2AlertThreshold ?? -9223372036854775808);
-  IsarCore.writeBool(writer, 9, object.autoSyncTime);
-  IsarCore.writeBool(writer, 10, object.autoCalibration);
-  IsarCore.writeBool(writer, 11, object.autoConnect);
+      writer, 7, object.co2AlertThreshold ?? -9223372036854775808);
+  IsarCore.writeBool(writer, 8, object.autoSyncTime);
+  IsarCore.writeBool(writer, 9, object.autoCalibration);
+  IsarCore.writeBool(writer, 10, object.autoConnect);
   return Isar.fastHash(object.deviceId);
 }
 
@@ -131,13 +126,11 @@ DeviceSettings deserializeDeviceSettings(IsarReader reader) {
       _thresholds = embedded;
     }
   }
-  final String _version;
-  _version = IsarCore.readString(reader, 6) ?? '';
   final String _deviceId;
-  _deviceId = IsarCore.readString(reader, 7) ?? '';
+  _deviceId = IsarCore.readString(reader, 6) ?? '';
   final int? _co2AlertThreshold;
   {
-    final value = IsarCore.readLong(reader, 8);
+    final value = IsarCore.readLong(reader, 7);
     if (value == -9223372036854775808) {
       _co2AlertThreshold = null;
     } else {
@@ -146,26 +139,26 @@ DeviceSettings deserializeDeviceSettings(IsarReader reader) {
   }
   final bool _autoSyncTime;
   {
-    if (IsarCore.readNull(reader, 9)) {
+    if (IsarCore.readNull(reader, 8)) {
       _autoSyncTime = true;
     } else {
-      _autoSyncTime = IsarCore.readBool(reader, 9);
+      _autoSyncTime = IsarCore.readBool(reader, 8);
     }
   }
   final bool _autoCalibration;
   {
-    if (IsarCore.readNull(reader, 10)) {
+    if (IsarCore.readNull(reader, 9)) {
       _autoCalibration = true;
     } else {
-      _autoCalibration = IsarCore.readBool(reader, 10);
+      _autoCalibration = IsarCore.readBool(reader, 9);
     }
   }
   final bool _autoConnect;
   {
-    if (IsarCore.readNull(reader, 11)) {
+    if (IsarCore.readNull(reader, 10)) {
       _autoConnect = true;
     } else {
-      _autoConnect = IsarCore.readBool(reader, 11);
+      _autoConnect = IsarCore.readBool(reader, 10);
     }
   }
   final object = DeviceSettings(
@@ -174,7 +167,6 @@ DeviceSettings deserializeDeviceSettings(IsarReader reader) {
     powerMode: _powerMode,
     continuosScreenEnabled: _continuosScreenEnabled,
     thresholds: _thresholds,
-    version: _version,
     deviceId: _deviceId,
     co2AlertThreshold: _co2AlertThreshold,
     autoSyncTime: _autoSyncTime,
@@ -219,14 +211,20 @@ dynamic deserializeDeviceSettingsProp(IsarReader reader, int property) {
     case 6:
       return IsarCore.readString(reader, 6) ?? '';
     case 7:
-      return IsarCore.readString(reader, 7) ?? '';
-    case 8:
       {
-        final value = IsarCore.readLong(reader, 8);
+        final value = IsarCore.readLong(reader, 7);
         if (value == -9223372036854775808) {
           return null;
         } else {
           return value;
+        }
+      }
+    case 8:
+      {
+        if (IsarCore.readNull(reader, 8)) {
+          return true;
+        } else {
+          return IsarCore.readBool(reader, 8);
         }
       }
     case 9:
@@ -245,14 +243,6 @@ dynamic deserializeDeviceSettingsProp(IsarReader reader, int property) {
           return IsarCore.readBool(reader, 10);
         }
       }
-    case 11:
-      {
-        if (IsarCore.readNull(reader, 11)) {
-          return true;
-        } else {
-          return IsarCore.readBool(reader, 11);
-        }
-      }
     default:
       throw ArgumentError('Unknown property: $property');
   }
@@ -265,7 +255,6 @@ sealed class _DeviceSettingsUpdate {
     bool? vibrationEnabled,
     PowerMode? powerMode,
     bool? continuosScreenEnabled,
-    String? version,
     int? co2AlertThreshold,
     bool? autoSyncTime,
     bool? autoCalibration,
@@ -285,7 +274,6 @@ class _DeviceSettingsUpdateImpl implements _DeviceSettingsUpdate {
     Object? vibrationEnabled = ignore,
     Object? powerMode = ignore,
     Object? continuosScreenEnabled = ignore,
-    Object? version = ignore,
     Object? co2AlertThreshold = ignore,
     Object? autoSyncTime = ignore,
     Object? autoCalibration = ignore,
@@ -299,11 +287,10 @@ class _DeviceSettingsUpdateImpl implements _DeviceSettingsUpdate {
           if (powerMode != ignore) 3: powerMode as PowerMode?,
           if (continuosScreenEnabled != ignore)
             4: continuosScreenEnabled as bool?,
-          if (version != ignore) 6: version as String?,
-          if (co2AlertThreshold != ignore) 8: co2AlertThreshold as int?,
-          if (autoSyncTime != ignore) 9: autoSyncTime as bool?,
-          if (autoCalibration != ignore) 10: autoCalibration as bool?,
-          if (autoConnect != ignore) 11: autoConnect as bool?,
+          if (co2AlertThreshold != ignore) 7: co2AlertThreshold as int?,
+          if (autoSyncTime != ignore) 8: autoSyncTime as bool?,
+          if (autoCalibration != ignore) 9: autoCalibration as bool?,
+          if (autoConnect != ignore) 10: autoConnect as bool?,
         }) >
         0;
   }
@@ -316,7 +303,6 @@ sealed class _DeviceSettingsUpdateAll {
     bool? vibrationEnabled,
     PowerMode? powerMode,
     bool? continuosScreenEnabled,
-    String? version,
     int? co2AlertThreshold,
     bool? autoSyncTime,
     bool? autoCalibration,
@@ -336,7 +322,6 @@ class _DeviceSettingsUpdateAllImpl implements _DeviceSettingsUpdateAll {
     Object? vibrationEnabled = ignore,
     Object? powerMode = ignore,
     Object? continuosScreenEnabled = ignore,
-    Object? version = ignore,
     Object? co2AlertThreshold = ignore,
     Object? autoSyncTime = ignore,
     Object? autoCalibration = ignore,
@@ -347,11 +332,10 @@ class _DeviceSettingsUpdateAllImpl implements _DeviceSettingsUpdateAll {
       if (vibrationEnabled != ignore) 2: vibrationEnabled as bool?,
       if (powerMode != ignore) 3: powerMode as PowerMode?,
       if (continuosScreenEnabled != ignore) 4: continuosScreenEnabled as bool?,
-      if (version != ignore) 6: version as String?,
-      if (co2AlertThreshold != ignore) 8: co2AlertThreshold as int?,
-      if (autoSyncTime != ignore) 9: autoSyncTime as bool?,
-      if (autoCalibration != ignore) 10: autoCalibration as bool?,
-      if (autoConnect != ignore) 11: autoConnect as bool?,
+      if (co2AlertThreshold != ignore) 7: co2AlertThreshold as int?,
+      if (autoSyncTime != ignore) 8: autoSyncTime as bool?,
+      if (autoCalibration != ignore) 9: autoCalibration as bool?,
+      if (autoConnect != ignore) 10: autoConnect as bool?,
     });
   }
 }
@@ -368,7 +352,6 @@ sealed class _DeviceSettingsQueryUpdate {
     bool? vibrationEnabled,
     PowerMode? powerMode,
     bool? continuosScreenEnabled,
-    String? version,
     int? co2AlertThreshold,
     bool? autoSyncTime,
     bool? autoCalibration,
@@ -388,7 +371,6 @@ class _DeviceSettingsQueryUpdateImpl implements _DeviceSettingsQueryUpdate {
     Object? vibrationEnabled = ignore,
     Object? powerMode = ignore,
     Object? continuosScreenEnabled = ignore,
-    Object? version = ignore,
     Object? co2AlertThreshold = ignore,
     Object? autoSyncTime = ignore,
     Object? autoCalibration = ignore,
@@ -399,11 +381,10 @@ class _DeviceSettingsQueryUpdateImpl implements _DeviceSettingsQueryUpdate {
       if (vibrationEnabled != ignore) 2: vibrationEnabled as bool?,
       if (powerMode != ignore) 3: powerMode as PowerMode?,
       if (continuosScreenEnabled != ignore) 4: continuosScreenEnabled as bool?,
-      if (version != ignore) 6: version as String?,
-      if (co2AlertThreshold != ignore) 8: co2AlertThreshold as int?,
-      if (autoSyncTime != ignore) 9: autoSyncTime as bool?,
-      if (autoCalibration != ignore) 10: autoCalibration as bool?,
-      if (autoConnect != ignore) 11: autoConnect as bool?,
+      if (co2AlertThreshold != ignore) 7: co2AlertThreshold as int?,
+      if (autoSyncTime != ignore) 8: autoSyncTime as bool?,
+      if (autoCalibration != ignore) 9: autoCalibration as bool?,
+      if (autoConnect != ignore) 10: autoConnect as bool?,
     });
   }
 }
@@ -429,7 +410,6 @@ class _DeviceSettingsQueryBuilderUpdateImpl
     Object? vibrationEnabled = ignore,
     Object? powerMode = ignore,
     Object? continuosScreenEnabled = ignore,
-    Object? version = ignore,
     Object? co2AlertThreshold = ignore,
     Object? autoSyncTime = ignore,
     Object? autoCalibration = ignore,
@@ -443,11 +423,10 @@ class _DeviceSettingsQueryBuilderUpdateImpl
         if (powerMode != ignore) 3: powerMode as PowerMode?,
         if (continuosScreenEnabled != ignore)
           4: continuosScreenEnabled as bool?,
-        if (version != ignore) 6: version as String?,
-        if (co2AlertThreshold != ignore) 8: co2AlertThreshold as int?,
-        if (autoSyncTime != ignore) 9: autoSyncTime as bool?,
-        if (autoCalibration != ignore) 10: autoCalibration as bool?,
-        if (autoConnect != ignore) 11: autoConnect as bool?,
+        if (co2AlertThreshold != ignore) 7: co2AlertThreshold as int?,
+        if (autoSyncTime != ignore) 8: autoSyncTime as bool?,
+        if (autoCalibration != ignore) 9: autoCalibration as bool?,
+        if (autoConnect != ignore) 10: autoConnect as bool?,
       });
     } finally {
       q.close();
@@ -601,186 +580,6 @@ extension DeviceSettingsQueryFilter
   }
 
   QueryBuilder<DeviceSettings, DeviceSettings, QAfterFilterCondition>
-      versionEqualTo(
-    String value, {
-    bool caseSensitive = true,
-  }) {
-    return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(
-        EqualCondition(
-          property: 6,
-          value: value,
-          caseSensitive: caseSensitive,
-        ),
-      );
-    });
-  }
-
-  QueryBuilder<DeviceSettings, DeviceSettings, QAfterFilterCondition>
-      versionGreaterThan(
-    String value, {
-    bool caseSensitive = true,
-  }) {
-    return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(
-        GreaterCondition(
-          property: 6,
-          value: value,
-          caseSensitive: caseSensitive,
-        ),
-      );
-    });
-  }
-
-  QueryBuilder<DeviceSettings, DeviceSettings, QAfterFilterCondition>
-      versionGreaterThanOrEqualTo(
-    String value, {
-    bool caseSensitive = true,
-  }) {
-    return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(
-        GreaterOrEqualCondition(
-          property: 6,
-          value: value,
-          caseSensitive: caseSensitive,
-        ),
-      );
-    });
-  }
-
-  QueryBuilder<DeviceSettings, DeviceSettings, QAfterFilterCondition>
-      versionLessThan(
-    String value, {
-    bool caseSensitive = true,
-  }) {
-    return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(
-        LessCondition(
-          property: 6,
-          value: value,
-          caseSensitive: caseSensitive,
-        ),
-      );
-    });
-  }
-
-  QueryBuilder<DeviceSettings, DeviceSettings, QAfterFilterCondition>
-      versionLessThanOrEqualTo(
-    String value, {
-    bool caseSensitive = true,
-  }) {
-    return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(
-        LessOrEqualCondition(
-          property: 6,
-          value: value,
-          caseSensitive: caseSensitive,
-        ),
-      );
-    });
-  }
-
-  QueryBuilder<DeviceSettings, DeviceSettings, QAfterFilterCondition>
-      versionBetween(
-    String lower,
-    String upper, {
-    bool caseSensitive = true,
-  }) {
-    return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(
-        BetweenCondition(
-          property: 6,
-          lower: lower,
-          upper: upper,
-          caseSensitive: caseSensitive,
-        ),
-      );
-    });
-  }
-
-  QueryBuilder<DeviceSettings, DeviceSettings, QAfterFilterCondition>
-      versionStartsWith(
-    String value, {
-    bool caseSensitive = true,
-  }) {
-    return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(
-        StartsWithCondition(
-          property: 6,
-          value: value,
-          caseSensitive: caseSensitive,
-        ),
-      );
-    });
-  }
-
-  QueryBuilder<DeviceSettings, DeviceSettings, QAfterFilterCondition>
-      versionEndsWith(
-    String value, {
-    bool caseSensitive = true,
-  }) {
-    return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(
-        EndsWithCondition(
-          property: 6,
-          value: value,
-          caseSensitive: caseSensitive,
-        ),
-      );
-    });
-  }
-
-  QueryBuilder<DeviceSettings, DeviceSettings, QAfterFilterCondition>
-      versionContains(String value, {bool caseSensitive = true}) {
-    return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(
-        ContainsCondition(
-          property: 6,
-          value: value,
-          caseSensitive: caseSensitive,
-        ),
-      );
-    });
-  }
-
-  QueryBuilder<DeviceSettings, DeviceSettings, QAfterFilterCondition>
-      versionMatches(String pattern, {bool caseSensitive = true}) {
-    return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(
-        MatchesCondition(
-          property: 6,
-          wildcard: pattern,
-          caseSensitive: caseSensitive,
-        ),
-      );
-    });
-  }
-
-  QueryBuilder<DeviceSettings, DeviceSettings, QAfterFilterCondition>
-      versionIsEmpty() {
-    return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(
-        const EqualCondition(
-          property: 6,
-          value: '',
-        ),
-      );
-    });
-  }
-
-  QueryBuilder<DeviceSettings, DeviceSettings, QAfterFilterCondition>
-      versionIsNotEmpty() {
-    return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(
-        const GreaterCondition(
-          property: 6,
-          value: '',
-        ),
-      );
-    });
-  }
-
-  QueryBuilder<DeviceSettings, DeviceSettings, QAfterFilterCondition>
       deviceIdEqualTo(
     String value, {
     bool caseSensitive = true,
@@ -788,7 +587,7 @@ extension DeviceSettingsQueryFilter
     return QueryBuilder.apply(this, (query) {
       return query.addFilterCondition(
         EqualCondition(
-          property: 7,
+          property: 6,
           value: value,
           caseSensitive: caseSensitive,
         ),
@@ -804,7 +603,7 @@ extension DeviceSettingsQueryFilter
     return QueryBuilder.apply(this, (query) {
       return query.addFilterCondition(
         GreaterCondition(
-          property: 7,
+          property: 6,
           value: value,
           caseSensitive: caseSensitive,
         ),
@@ -820,7 +619,7 @@ extension DeviceSettingsQueryFilter
     return QueryBuilder.apply(this, (query) {
       return query.addFilterCondition(
         GreaterOrEqualCondition(
-          property: 7,
+          property: 6,
           value: value,
           caseSensitive: caseSensitive,
         ),
@@ -836,7 +635,7 @@ extension DeviceSettingsQueryFilter
     return QueryBuilder.apply(this, (query) {
       return query.addFilterCondition(
         LessCondition(
-          property: 7,
+          property: 6,
           value: value,
           caseSensitive: caseSensitive,
         ),
@@ -852,7 +651,7 @@ extension DeviceSettingsQueryFilter
     return QueryBuilder.apply(this, (query) {
       return query.addFilterCondition(
         LessOrEqualCondition(
-          property: 7,
+          property: 6,
           value: value,
           caseSensitive: caseSensitive,
         ),
@@ -869,7 +668,7 @@ extension DeviceSettingsQueryFilter
     return QueryBuilder.apply(this, (query) {
       return query.addFilterCondition(
         BetweenCondition(
-          property: 7,
+          property: 6,
           lower: lower,
           upper: upper,
           caseSensitive: caseSensitive,
@@ -886,7 +685,7 @@ extension DeviceSettingsQueryFilter
     return QueryBuilder.apply(this, (query) {
       return query.addFilterCondition(
         StartsWithCondition(
-          property: 7,
+          property: 6,
           value: value,
           caseSensitive: caseSensitive,
         ),
@@ -902,7 +701,7 @@ extension DeviceSettingsQueryFilter
     return QueryBuilder.apply(this, (query) {
       return query.addFilterCondition(
         EndsWithCondition(
-          property: 7,
+          property: 6,
           value: value,
           caseSensitive: caseSensitive,
         ),
@@ -915,7 +714,7 @@ extension DeviceSettingsQueryFilter
     return QueryBuilder.apply(this, (query) {
       return query.addFilterCondition(
         ContainsCondition(
-          property: 7,
+          property: 6,
           value: value,
           caseSensitive: caseSensitive,
         ),
@@ -928,7 +727,7 @@ extension DeviceSettingsQueryFilter
     return QueryBuilder.apply(this, (query) {
       return query.addFilterCondition(
         MatchesCondition(
-          property: 7,
+          property: 6,
           wildcard: pattern,
           caseSensitive: caseSensitive,
         ),
@@ -941,7 +740,7 @@ extension DeviceSettingsQueryFilter
     return QueryBuilder.apply(this, (query) {
       return query.addFilterCondition(
         const EqualCondition(
-          property: 7,
+          property: 6,
           value: '',
         ),
       );
@@ -953,7 +752,7 @@ extension DeviceSettingsQueryFilter
     return QueryBuilder.apply(this, (query) {
       return query.addFilterCondition(
         const GreaterCondition(
-          property: 7,
+          property: 6,
           value: '',
         ),
       );
@@ -963,14 +762,14 @@ extension DeviceSettingsQueryFilter
   QueryBuilder<DeviceSettings, DeviceSettings, QAfterFilterCondition>
       co2AlertThresholdIsNull() {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(const IsNullCondition(property: 8));
+      return query.addFilterCondition(const IsNullCondition(property: 7));
     });
   }
 
   QueryBuilder<DeviceSettings, DeviceSettings, QAfterFilterCondition>
       co2AlertThresholdIsNotNull() {
     return QueryBuilder.apply(not(), (query) {
-      return query.addFilterCondition(const IsNullCondition(property: 8));
+      return query.addFilterCondition(const IsNullCondition(property: 7));
     });
   }
 
@@ -981,7 +780,7 @@ extension DeviceSettingsQueryFilter
     return QueryBuilder.apply(this, (query) {
       return query.addFilterCondition(
         EqualCondition(
-          property: 8,
+          property: 7,
           value: value,
         ),
       );
@@ -995,7 +794,7 @@ extension DeviceSettingsQueryFilter
     return QueryBuilder.apply(this, (query) {
       return query.addFilterCondition(
         GreaterCondition(
-          property: 8,
+          property: 7,
           value: value,
         ),
       );
@@ -1009,7 +808,7 @@ extension DeviceSettingsQueryFilter
     return QueryBuilder.apply(this, (query) {
       return query.addFilterCondition(
         GreaterOrEqualCondition(
-          property: 8,
+          property: 7,
           value: value,
         ),
       );
@@ -1023,7 +822,7 @@ extension DeviceSettingsQueryFilter
     return QueryBuilder.apply(this, (query) {
       return query.addFilterCondition(
         LessCondition(
-          property: 8,
+          property: 7,
           value: value,
         ),
       );
@@ -1037,7 +836,7 @@ extension DeviceSettingsQueryFilter
     return QueryBuilder.apply(this, (query) {
       return query.addFilterCondition(
         LessOrEqualCondition(
-          property: 8,
+          property: 7,
           value: value,
         ),
       );
@@ -1052,7 +851,7 @@ extension DeviceSettingsQueryFilter
     return QueryBuilder.apply(this, (query) {
       return query.addFilterCondition(
         BetweenCondition(
-          property: 8,
+          property: 7,
           lower: lower,
           upper: upper,
         ),
@@ -1067,7 +866,7 @@ extension DeviceSettingsQueryFilter
     return QueryBuilder.apply(this, (query) {
       return query.addFilterCondition(
         EqualCondition(
-          property: 9,
+          property: 8,
           value: value,
         ),
       );
@@ -1081,7 +880,7 @@ extension DeviceSettingsQueryFilter
     return QueryBuilder.apply(this, (query) {
       return query.addFilterCondition(
         EqualCondition(
-          property: 10,
+          property: 9,
           value: value,
         ),
       );
@@ -1095,7 +894,7 @@ extension DeviceSettingsQueryFilter
     return QueryBuilder.apply(this, (query) {
       return query.addFilterCondition(
         EqualCondition(
-          property: 11,
+          property: 10,
           value: value,
         ),
       );
@@ -1170,32 +969,11 @@ extension DeviceSettingsQuerySortBy
     });
   }
 
-  QueryBuilder<DeviceSettings, DeviceSettings, QAfterSortBy> sortByVersion(
-      {bool caseSensitive = true}) {
-    return QueryBuilder.apply(this, (query) {
-      return query.addSortBy(
-        6,
-        caseSensitive: caseSensitive,
-      );
-    });
-  }
-
-  QueryBuilder<DeviceSettings, DeviceSettings, QAfterSortBy> sortByVersionDesc(
-      {bool caseSensitive = true}) {
-    return QueryBuilder.apply(this, (query) {
-      return query.addSortBy(
-        6,
-        sort: Sort.desc,
-        caseSensitive: caseSensitive,
-      );
-    });
-  }
-
   QueryBuilder<DeviceSettings, DeviceSettings, QAfterSortBy> sortByDeviceId(
       {bool caseSensitive = true}) {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(
-        7,
+        6,
         caseSensitive: caseSensitive,
       );
     });
@@ -1205,7 +983,7 @@ extension DeviceSettingsQuerySortBy
       {bool caseSensitive = true}) {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(
-        7,
+        6,
         sort: Sort.desc,
         caseSensitive: caseSensitive,
       );
@@ -1215,56 +993,56 @@ extension DeviceSettingsQuerySortBy
   QueryBuilder<DeviceSettings, DeviceSettings, QAfterSortBy>
       sortByCo2AlertThreshold() {
     return QueryBuilder.apply(this, (query) {
-      return query.addSortBy(8);
+      return query.addSortBy(7);
     });
   }
 
   QueryBuilder<DeviceSettings, DeviceSettings, QAfterSortBy>
       sortByCo2AlertThresholdDesc() {
     return QueryBuilder.apply(this, (query) {
-      return query.addSortBy(8, sort: Sort.desc);
+      return query.addSortBy(7, sort: Sort.desc);
     });
   }
 
   QueryBuilder<DeviceSettings, DeviceSettings, QAfterSortBy>
       sortByAutoSyncTime() {
     return QueryBuilder.apply(this, (query) {
-      return query.addSortBy(9);
+      return query.addSortBy(8);
     });
   }
 
   QueryBuilder<DeviceSettings, DeviceSettings, QAfterSortBy>
       sortByAutoSyncTimeDesc() {
     return QueryBuilder.apply(this, (query) {
-      return query.addSortBy(9, sort: Sort.desc);
+      return query.addSortBy(8, sort: Sort.desc);
     });
   }
 
   QueryBuilder<DeviceSettings, DeviceSettings, QAfterSortBy>
       sortByAutoCalibration() {
     return QueryBuilder.apply(this, (query) {
-      return query.addSortBy(10);
+      return query.addSortBy(9);
     });
   }
 
   QueryBuilder<DeviceSettings, DeviceSettings, QAfterSortBy>
       sortByAutoCalibrationDesc() {
     return QueryBuilder.apply(this, (query) {
-      return query.addSortBy(10, sort: Sort.desc);
+      return query.addSortBy(9, sort: Sort.desc);
     });
   }
 
   QueryBuilder<DeviceSettings, DeviceSettings, QAfterSortBy>
       sortByAutoConnect() {
     return QueryBuilder.apply(this, (query) {
-      return query.addSortBy(11);
+      return query.addSortBy(10);
     });
   }
 
   QueryBuilder<DeviceSettings, DeviceSettings, QAfterSortBy>
       sortByAutoConnectDesc() {
     return QueryBuilder.apply(this, (query) {
-      return query.addSortBy(11, sort: Sort.desc);
+      return query.addSortBy(10, sort: Sort.desc);
     });
   }
 }
@@ -1326,87 +1104,73 @@ extension DeviceSettingsQuerySortThenBy
     });
   }
 
-  QueryBuilder<DeviceSettings, DeviceSettings, QAfterSortBy> thenByVersion(
+  QueryBuilder<DeviceSettings, DeviceSettings, QAfterSortBy> thenByDeviceId(
       {bool caseSensitive = true}) {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(6, caseSensitive: caseSensitive);
     });
   }
 
-  QueryBuilder<DeviceSettings, DeviceSettings, QAfterSortBy> thenByVersionDesc(
+  QueryBuilder<DeviceSettings, DeviceSettings, QAfterSortBy> thenByDeviceIdDesc(
       {bool caseSensitive = true}) {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(6, sort: Sort.desc, caseSensitive: caseSensitive);
     });
   }
 
-  QueryBuilder<DeviceSettings, DeviceSettings, QAfterSortBy> thenByDeviceId(
-      {bool caseSensitive = true}) {
-    return QueryBuilder.apply(this, (query) {
-      return query.addSortBy(7, caseSensitive: caseSensitive);
-    });
-  }
-
-  QueryBuilder<DeviceSettings, DeviceSettings, QAfterSortBy> thenByDeviceIdDesc(
-      {bool caseSensitive = true}) {
-    return QueryBuilder.apply(this, (query) {
-      return query.addSortBy(7, sort: Sort.desc, caseSensitive: caseSensitive);
-    });
-  }
-
   QueryBuilder<DeviceSettings, DeviceSettings, QAfterSortBy>
       thenByCo2AlertThreshold() {
     return QueryBuilder.apply(this, (query) {
-      return query.addSortBy(8);
+      return query.addSortBy(7);
     });
   }
 
   QueryBuilder<DeviceSettings, DeviceSettings, QAfterSortBy>
       thenByCo2AlertThresholdDesc() {
     return QueryBuilder.apply(this, (query) {
-      return query.addSortBy(8, sort: Sort.desc);
+      return query.addSortBy(7, sort: Sort.desc);
     });
   }
 
   QueryBuilder<DeviceSettings, DeviceSettings, QAfterSortBy>
       thenByAutoSyncTime() {
     return QueryBuilder.apply(this, (query) {
-      return query.addSortBy(9);
+      return query.addSortBy(8);
     });
   }
 
   QueryBuilder<DeviceSettings, DeviceSettings, QAfterSortBy>
       thenByAutoSyncTimeDesc() {
     return QueryBuilder.apply(this, (query) {
-      return query.addSortBy(9, sort: Sort.desc);
+      return query.addSortBy(8, sort: Sort.desc);
     });
   }
 
   QueryBuilder<DeviceSettings, DeviceSettings, QAfterSortBy>
       thenByAutoCalibration() {
     return QueryBuilder.apply(this, (query) {
-      return query.addSortBy(10);
+      return query.addSortBy(9);
     });
   }
 
   QueryBuilder<DeviceSettings, DeviceSettings, QAfterSortBy>
       thenByAutoCalibrationDesc() {
     return QueryBuilder.apply(this, (query) {
-      return query.addSortBy(10, sort: Sort.desc);
+      return query.addSortBy(9, sort: Sort.desc);
     });
   }
 
   QueryBuilder<DeviceSettings, DeviceSettings, QAfterSortBy>
       thenByAutoConnect() {
     return QueryBuilder.apply(this, (query) {
-      return query.addSortBy(11);
+      return query.addSortBy(10);
     });
   }
 
   QueryBuilder<DeviceSettings, DeviceSettings, QAfterSortBy>
       thenByAutoConnectDesc() {
     return QueryBuilder.apply(this, (query) {
-      return query.addSortBy(11, sort: Sort.desc);
+      return query.addSortBy(10, sort: Sort.desc);
     });
   }
 }
@@ -1442,37 +1206,30 @@ extension DeviceSettingsQueryWhereDistinct
   }
 
   QueryBuilder<DeviceSettings, DeviceSettings, QAfterDistinct>
-      distinctByVersion({bool caseSensitive = true}) {
-    return QueryBuilder.apply(this, (query) {
-      return query.addDistinctBy(6, caseSensitive: caseSensitive);
-    });
-  }
-
-  QueryBuilder<DeviceSettings, DeviceSettings, QAfterDistinct>
       distinctByCo2AlertThreshold() {
     return QueryBuilder.apply(this, (query) {
-      return query.addDistinctBy(8);
+      return query.addDistinctBy(7);
     });
   }
 
   QueryBuilder<DeviceSettings, DeviceSettings, QAfterDistinct>
       distinctByAutoSyncTime() {
     return QueryBuilder.apply(this, (query) {
-      return query.addDistinctBy(9);
+      return query.addDistinctBy(8);
     });
   }
 
   QueryBuilder<DeviceSettings, DeviceSettings, QAfterDistinct>
       distinctByAutoCalibration() {
     return QueryBuilder.apply(this, (query) {
-      return query.addDistinctBy(10);
+      return query.addDistinctBy(9);
     });
   }
 
   QueryBuilder<DeviceSettings, DeviceSettings, QAfterDistinct>
       distinctByAutoConnect() {
     return QueryBuilder.apply(this, (query) {
-      return query.addDistinctBy(11);
+      return query.addDistinctBy(10);
     });
   }
 }
@@ -1512,40 +1269,34 @@ extension DeviceSettingsQueryProperty1
     });
   }
 
-  QueryBuilder<DeviceSettings, String, QAfterProperty> versionProperty() {
-    return QueryBuilder.apply(this, (query) {
-      return query.addProperty(6);
-    });
-  }
-
   QueryBuilder<DeviceSettings, String, QAfterProperty> deviceIdProperty() {
     return QueryBuilder.apply(this, (query) {
-      return query.addProperty(7);
+      return query.addProperty(6);
     });
   }
 
   QueryBuilder<DeviceSettings, int?, QAfterProperty>
       co2AlertThresholdProperty() {
     return QueryBuilder.apply(this, (query) {
-      return query.addProperty(8);
+      return query.addProperty(7);
     });
   }
 
   QueryBuilder<DeviceSettings, bool, QAfterProperty> autoSyncTimeProperty() {
     return QueryBuilder.apply(this, (query) {
-      return query.addProperty(9);
+      return query.addProperty(8);
     });
   }
 
   QueryBuilder<DeviceSettings, bool, QAfterProperty> autoCalibrationProperty() {
     return QueryBuilder.apply(this, (query) {
-      return query.addProperty(10);
+      return query.addProperty(9);
     });
   }
 
   QueryBuilder<DeviceSettings, bool, QAfterProperty> autoConnectProperty() {
     return QueryBuilder.apply(this, (query) {
-      return query.addProperty(11);
+      return query.addProperty(10);
     });
   }
 }
@@ -1587,43 +1338,37 @@ extension DeviceSettingsQueryProperty2<R>
     });
   }
 
-  QueryBuilder<DeviceSettings, (R, String), QAfterProperty> versionProperty() {
-    return QueryBuilder.apply(this, (query) {
-      return query.addProperty(6);
-    });
-  }
-
   QueryBuilder<DeviceSettings, (R, String), QAfterProperty> deviceIdProperty() {
     return QueryBuilder.apply(this, (query) {
-      return query.addProperty(7);
+      return query.addProperty(6);
     });
   }
 
   QueryBuilder<DeviceSettings, (R, int?), QAfterProperty>
       co2AlertThresholdProperty() {
     return QueryBuilder.apply(this, (query) {
-      return query.addProperty(8);
+      return query.addProperty(7);
     });
   }
 
   QueryBuilder<DeviceSettings, (R, bool), QAfterProperty>
       autoSyncTimeProperty() {
     return QueryBuilder.apply(this, (query) {
-      return query.addProperty(9);
+      return query.addProperty(8);
     });
   }
 
   QueryBuilder<DeviceSettings, (R, bool), QAfterProperty>
       autoCalibrationProperty() {
     return QueryBuilder.apply(this, (query) {
-      return query.addProperty(10);
+      return query.addProperty(9);
     });
   }
 
   QueryBuilder<DeviceSettings, (R, bool), QAfterProperty>
       autoConnectProperty() {
     return QueryBuilder.apply(this, (query) {
-      return query.addProperty(11);
+      return query.addProperty(10);
     });
   }
 }
@@ -1666,44 +1411,37 @@ extension DeviceSettingsQueryProperty3<R1, R2>
   }
 
   QueryBuilder<DeviceSettings, (R1, R2, String), QOperations>
-      versionProperty() {
-    return QueryBuilder.apply(this, (query) {
-      return query.addProperty(6);
-    });
-  }
-
-  QueryBuilder<DeviceSettings, (R1, R2, String), QOperations>
       deviceIdProperty() {
     return QueryBuilder.apply(this, (query) {
-      return query.addProperty(7);
+      return query.addProperty(6);
     });
   }
 
   QueryBuilder<DeviceSettings, (R1, R2, int?), QOperations>
       co2AlertThresholdProperty() {
     return QueryBuilder.apply(this, (query) {
-      return query.addProperty(8);
+      return query.addProperty(7);
     });
   }
 
   QueryBuilder<DeviceSettings, (R1, R2, bool), QOperations>
       autoSyncTimeProperty() {
     return QueryBuilder.apply(this, (query) {
-      return query.addProperty(9);
+      return query.addProperty(8);
     });
   }
 
   QueryBuilder<DeviceSettings, (R1, R2, bool), QOperations>
       autoCalibrationProperty() {
     return QueryBuilder.apply(this, (query) {
-      return query.addProperty(10);
+      return query.addProperty(9);
     });
   }
 
   QueryBuilder<DeviceSettings, (R1, R2, bool), QOperations>
       autoConnectProperty() {
     return QueryBuilder.apply(this, (query) {
-      return query.addProperty(11);
+      return query.addProperty(10);
     });
   }
 }

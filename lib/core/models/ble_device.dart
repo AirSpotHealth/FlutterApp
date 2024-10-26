@@ -12,6 +12,7 @@ class BleDevice {
     required this.address,
     required this.platform,
     this.alias,
+    this.firmwareVersion = '-.-.-',
   });
 
   @Id()
@@ -31,12 +32,15 @@ class BleDevice {
 
   final String? alias;
 
+  final String firmwareVersion;
+
   BleDevice copyWith({
     String? deviceId,
     String? name,
     String? address,
     String? platform,
     String? alias,
+    String? firmwareVersion,
   }) {
     return BleDevice(
       deviceId: deviceId ?? this.deviceId,
@@ -44,6 +48,7 @@ class BleDevice {
       address: address ?? this.address,
       platform: platform ?? this.platform,
       alias: alias ?? this.alias,
+      firmwareVersion: firmwareVersion ?? this.firmwareVersion,
     );
   }
 

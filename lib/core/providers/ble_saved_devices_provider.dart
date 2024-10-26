@@ -70,4 +70,8 @@ class _BleSavedDevicesNotifier extends Notifier<List<BleDevice>> {
     state =
         state.map((d) => d.deviceId == device.deviceId ? device : d).toList();
   }
+
+  void reloadDevices() {
+    state = build();
+  }
 }
