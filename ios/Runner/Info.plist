@@ -55,8 +55,9 @@
     <string>This app needs location services to function</string>
     <key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
     <string>This app needs location services to function</string>
-    <key>
     <key>LSMinimumSystemVersion</key>
     <string>12.0</string>
+    <key>NSPhotoLibraryUsageDescription</key>
+    <string>This app needs access to the photo library to allow users to select files.</string>
 </dict>
 </plist>
