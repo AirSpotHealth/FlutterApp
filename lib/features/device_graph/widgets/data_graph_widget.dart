@@ -42,7 +42,9 @@ class _DataGraphWidgetState extends State<DataGraphWidget> {
 
   void _buildGraph() {
     final Iterable<DeviceData> data = widget.deviceDataList
-        .where((data) => data.value != null && data.value is num);
+        .where((data) => data.value != null && data.value is num)
+        .map((data) =>
+            data.copyWith(value: data.value < 400 ? 400 : data.value));
 
     // Prepare data for graph
     List<String> xAxisData = [];

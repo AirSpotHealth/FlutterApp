@@ -18,4 +18,16 @@ class DeviceData {
   final dynamic value;
 
   String get id => deviceId + dateTime.toIso8601String();
+
+  DeviceData copyWith({
+    String? deviceId,
+    DateTime? dateTime,
+    dynamic value,
+  }) {
+    return DeviceData(
+      deviceId: deviceId ?? this.deviceId,
+      dateTime: dateTime ?? this.dateTime,
+      value: value ?? this.value,
+    );
+  }
 }
