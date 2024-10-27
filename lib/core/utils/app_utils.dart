@@ -29,8 +29,8 @@ class AppUtils {
     final List<String> newVersionList = newVersion.split('.');
 
     for (int i = 0; i < currentVersionList.length; i++) {
-      final int currentVersionInt = int.parse(currentVersionList[i]);
-      final int newVersionInt = int.parse(newVersionList[i]);
+      final int currentVersionInt = int.tryParse(currentVersionList[i]) ?? 0;
+      final int newVersionInt = int.tryParse(newVersionList[i]) ?? 0;
 
       if (newVersionInt > currentVersionInt) {
         return true;

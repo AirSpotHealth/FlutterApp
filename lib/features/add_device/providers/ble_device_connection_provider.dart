@@ -2,7 +2,6 @@ import 'dart:async';
 
 import 'package:airspothealth/core/models/ble_device.dart';
 import 'package:airspothealth/core/providers/ble_connected_devices_provider.dart';
-import 'package:airspothealth/core/providers/ble_device_communication_provider.dart';
 import 'package:airspothealth/core/providers/ble_saved_devices_provider.dart';
 import 'package:airspothealth/core/services/ble_service.dart';
 import 'package:airspothealth/core/utils/extensions.dart';
@@ -56,9 +55,6 @@ class _BleDeviceConnectionNotifier
       };
 
       if (bState == BluetoothConnectionState.connected) {
-        ref
-            .read(bleDeviceCommunicationProvider(device.remoteId.str).notifier)
-            .setConnected();
         ref.read(bleConnectedDevicesProvider.notifier).refresh();
         ref.read(bleSavedDevicesProvider.notifier).addDevice(BleDevice(
               deviceId: device.remoteId.str,

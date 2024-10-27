@@ -70,3 +70,45 @@ class DeviceGraphPage extends ConsumerWidget {
     );
   }
 }
+
+class GraphLegend extends StatelessWidget {
+  const GraphLegend({super.key});
+
+  static const _items = [
+    {'color': AppColors.brandColorGreen, 'label': '< 800'},
+    {'color': AppColors.brandColorAmber, 'label': '800 - 1000'},
+    {'color': AppColors.brandColorRed, 'label': '> 1000'},
+  ];
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+        padding: const EdgeInsets.only(top: 12, left: 16, right: 16),
+        color: Colors.white,
+        width: double.infinity,
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          mainAxisAlignment: MainAxisAlignment.end,
+          children: _items
+              .map(
+                (item) => Row(
+                  children: [
+                    Container(
+                      width: 20,
+                      height: 14,
+                      decoration: BoxDecoration(
+                        color: item['color'] as Color,
+                        borderRadius: BorderRadius.circular(4),
+                      ),
+                    ),
+                    const SizedBox(width: 4),
+                    Text(item['label'] as String,
+                        style: context.textTheme.labelSmall),
+                    const SizedBox(width: 8),
+                  ],
+                ),
+              )
+              .toList(),
+        ));
+  }
+}

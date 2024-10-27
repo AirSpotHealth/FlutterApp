@@ -26,7 +26,10 @@ class _DataGraphWidgetState extends State<DataGraphWidget> {
   @override
   void didUpdateWidget(DataGraphWidget oldWidget) {
     super.didUpdateWidget(oldWidget);
-    _buildGraph();
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _buildGraph();
+    });
   }
 
   @override

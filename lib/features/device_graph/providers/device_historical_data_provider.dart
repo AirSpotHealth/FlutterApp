@@ -67,7 +67,7 @@ class _DeviceHistoricalDataNotifier
       });
     });
 
-    _getDeviceData();
+    // _getDeviceData();
 
     return [];
   }
