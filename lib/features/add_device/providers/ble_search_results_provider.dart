@@ -17,7 +17,7 @@ class _BleScanResultsNotifier
 
   @override
   (bool, List<BluetoothDevice>) build() {
-    _bleService.scanResults.listen((event) {
+    _bleService.scanResults().listen((event) {
       debugPrint('Scan results: $event');
       state = (isScanning, event);
     });

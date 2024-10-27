@@ -66,6 +66,15 @@ class DeviceSettingsPage extends ConsumerWidget {
           ..._deviceSettingsList.map((item) => SettingItemWidget(
                 item: item,
                 onTap: () {
+                  if (!ref
+                      .read(bleDeviceConnectionProvider(deviceId).notifier)
+                      .isConnected) {
+                    context.showSnackBar('Device not connected');
+
+                    Navigator.of(context).pop();
+                    return;
+                  }
+
                   if (item.suffixWidget != null) return;
 
                   if (item.route != null) {

@@ -1,7 +1,6 @@
+import 'package:airspothealth/core/theme/app_colors.dart';
 import 'package:airspothealth/core/utils/extensions.dart';
 import 'package:airspothealth/core/widgets/app_logo.dart';
-import 'package:airspothealth/core/widgets/custom_animated_progress_bar.dart';
-import 'package:airspothealth/features/add_device/providers/ble_device_connection_provider.dart';
 import 'package:airspothealth/features/device_settings/models/progress_model.dart';
 import 'package:airspothealth/features/device_settings/models/remote_version.dart';
 import 'package:airspothealth/features/device_settings/providers/dfu_update_provider.dart';
@@ -70,8 +69,6 @@ class _DeviceFirmwareUpdateDialogState
       if (newState is AsyncSuccess) {
         context.showSnackBar('Firmware updated successfully');
 
-        ref.read(bleDeviceConnectionProvider(deviceId).notifier).connect();
-
         Navigator.of(context).pop();
         Navigator.of(context).pop();
       }
@@ -90,6 +87,11 @@ class _DeviceFirmwareUpdateDialogState
             child: IconButton(
               icon: const Icon(Icons.close),
               onPressed: () {
+                if (updateState is AsyncInProgress) {
+                  context.showSnackBar('Firmware update in progress...');
+                  return;
+                }
+
                 Navigator.of(context).pop();
               },
             ),
@@ -104,7 +106,11 @@ class _DeviceFirmwareUpdateDialogState
             const SizedBox(height: 16)
           ],
           if (updateState is AsyncInProgress) ...[
-            CustomAnimatedProgressBar(progress: updateState.progress),
+            LinearProgressIndicator(
+              value: updateState.progress,
+              valueColor: const AlwaysStoppedAnimation(AppColors.primaryColor),
+              borderRadius: BorderRadius.circular(8),
+            ),
             const SizedBox(height: 8),
             if (updateState.message != null)
               Text(updateState.message!, style: context.textTheme.bodySmall),
@@ -112,10 +118,10 @@ class _DeviceFirmwareUpdateDialogState
               (updateState is AsyncNone || updateState is AsyncFailure))
             ElevatedButton(
               style: ElevatedButton.styleFrom(backgroundColor: Colors.green),
-              onPressed: () {
-                ref.read(dfuUpdateProvider.notifier).updateFirmware(
-                    url: remoteVersion!.downloadUrl, deviceId: deviceId);
-              },
+              onPressed: () => ref
+                  .read(dfuUpdateProvider.notifier)
+                  .updateFirmware(
+                      url: remoteVersion!.downloadUrl, deviceId: deviceId),
               child: const Text(
                 'Update Now',
                 style: TextStyle(

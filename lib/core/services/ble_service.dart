@@ -67,7 +67,15 @@ class BLEService {
   bool get isScanningNow => FlutterBluePlus.isScanningNow;
 
   /// Get the stream of Bluetooth devices.
-  Stream<List<BluetoothDevice>> get scanResults {
+  Stream<List<BluetoothDevice>> scanResults({bool distinct = true}) {
+    if (!distinct) {
+      return FlutterBluePlus.scanResults.map(
+        (List<ScanResult> scanResults) => scanResults
+            .map((ScanResult scanResult) => scanResult.device)
+            .toList(),
+      );
+    }
+
     final IsarService isarService = IsarService();
 
     final List<BleDevice> connectedDevices = isarService.read<List<BleDevice>>(

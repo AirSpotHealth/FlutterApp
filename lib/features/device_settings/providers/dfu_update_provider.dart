@@ -1,8 +1,11 @@
 import 'dart:io';
 
+import 'package:airspothealth/core/providers/ble_device_communication_provider.dart';
+import 'package:airspothealth/core/services/ble_service.dart';
 import 'package:airspothealth/core/services/network_service.dart';
 import 'package:airspothealth/features/device_settings/models/progress_model.dart';
 import 'package:flutter/foundation.dart';
+import 'package:flutter_blue_plus/flutter_blue_plus.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:nordic_dfu/nordic_dfu.dart';
 import 'package:path_provider/path_provider.dart';
@@ -61,7 +64,10 @@ class _DfuUpdateNotifier extends AutoDisposeNotifier<AsyncProgressValue> {
       filePath,
       onProgressChanged:
           (address, percent, speed, avgSpeed, currentPart, totalParts) {
-        state = AsyncInProgress(percent / 100, message: 'Updating firmware...');
+        state = AsyncInProgress(
+          percent / 100,
+          message: 'Updating firmware.... $percent%',
+        );
       },
       iosSpecialParameter: const IosSpecialParameter(
         connectionTimeout: 30,
@@ -94,7 +100,11 @@ class _DfuUpdateNotifier extends AutoDisposeNotifier<AsyncProgressValue> {
       },
       onDfuCompleted: (res) {
         debugPrint('DFU completed: $res');
-        state = const AsyncSuccess(null);
+        state = const AsyncInProgress(
+          1,
+          message: 'DFU completed!!, rebooting...',
+        );
+        _disconnectDevice(deviceId);
       },
       onFirmwareValidating: (address) {
         state = const AsyncInProgress(1.0, message: 'Validating firmware...');
@@ -110,5 +120,17 @@ class _DfuUpdateNotifier extends AutoDisposeNotifier<AsyncProgressValue> {
         state = AsyncFailure('Update failed: $message');
       },
     );
+  }
+
+  void _disconnectDevice(String deviceId) {
+    state = const AsyncInProgress(1, message: 'Reconnecting device...');
+
+    BLEService.instance.connect(BluetoothDevice.fromId(deviceId)).then((value) {
+      ref.invalidate(bleDeviceCommunicationProvider(deviceId));
+
+      state = const AsyncSuccess(null);
+    }).catchError((e) {
+      state = const AsyncSuccess(null);
+    });
   }
 }

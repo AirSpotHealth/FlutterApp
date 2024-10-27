@@ -55,10 +55,8 @@
     <string>This app needs location services to function</string>
     <key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
     <string>This app needs location services to function</string>
-    <key>LSApplicationQueriesSchemes</key>
-    <array>
-        <string>sms</string>
-        <string>tel</string>
-    </array>
+    <key>
+    <key>LSMinimumSystemVersion</key>
+    <string>12.0</string>
 </dict>
 </plist>

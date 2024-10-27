@@ -23,16 +23,20 @@ class BleDeviceWidget extends ConsumerWidget {
     final BluetoothBondState deviceConnectionState =
         ref.watch(bleDeviceConnectionProvider(bleDevice.deviceId));
 
+    debugPrint(
+        'bleDeviceConnectionProvider build ${bleDevice.deviceId}, $deviceConnectionState');
+
     final bool deviceConnected =
         deviceConnectionState == BluetoothBondState.bonded;
 
     return GestureDetector(
       onLongPress: () {
-        if (deviceConnected) return;
-
-        ref
-            .read(bleSavedDevicesProvider.notifier)
-            .removeDeviceById(bleDevice.deviceId);
+        if (deviceConnected) {
+          ref
+              .read(bleDeviceConnectionProvider(bleDevice.deviceId).notifier)
+              .disconnect();
+          return;
+        }
       },
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 300),
