@@ -1,6 +1,6 @@
 typedef DateTimeRange = (DateTime start, DateTime end);
 
-enum HistoryDataDuration {
+enum GraphDataDuration {
   today,
   yesterday,
   last7Days;
@@ -8,16 +8,16 @@ enum HistoryDataDuration {
   // get the name of the duration
   String get name {
     switch (this) {
-      case HistoryDataDuration.today:
+      case GraphDataDuration.today:
         return 'Today';
-      case HistoryDataDuration.yesterday:
+      case GraphDataDuration.yesterday:
         return 'Yesterday';
-      case HistoryDataDuration.last7Days:
+      case GraphDataDuration.last7Days:
         return '7 Days';
     }
   }
 
-  factory HistoryDataDuration.fromIndex(int index) => values[index];
+  factory GraphDataDuration.fromIndex(int index) => values[index];
 
   // get start and end date time for the selected range
   // the range should start from 00:00:00 to 23:59:59
@@ -33,7 +33,7 @@ enum HistoryDataDuration {
     );
     DateTime start;
     switch (this) {
-      case HistoryDataDuration.today:
+      case GraphDataDuration.today:
         start = DateTime(
           now.year,
           now.month,
@@ -43,7 +43,7 @@ enum HistoryDataDuration {
           0,
         );
         break;
-      case HistoryDataDuration.yesterday:
+      case GraphDataDuration.yesterday:
         start = DateTime(
           now.year,
           now.month,
@@ -53,7 +53,7 @@ enum HistoryDataDuration {
           0,
         );
         break;
-      case HistoryDataDuration.last7Days:
+      case GraphDataDuration.last7Days:
         start = DateTime(
           now.year,
           now.month,

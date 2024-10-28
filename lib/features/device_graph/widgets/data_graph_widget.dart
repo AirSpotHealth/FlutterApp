@@ -1,83 +1,171 @@
 import 'dart:convert';
 
 import 'package:airspothealth/core/models/device_data.dart';
-import 'package:airspothealth/core/utils/assets.dart';
-import 'package:airspothealth/core/utils/extensions.dart';
+import 'package:airspothealth/features/device_graph/models/graph_data_duration.dart';
+import 'package:airspothealth/features/device_graph/models/graph_settings.dart';
+import 'package:airspothealth/features/device_graph/providers/device_historical_data_provider.dart';
+import 'package:airspothealth/features/device_graph/providers/graph_settings_provider.dart';
 import 'package:flutter/material.dart';
-import 'package:webview_flutter/webview_flutter.dart';
+import 'package:flutter_echarts/flutter_echarts.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-class DataGraphWidget extends StatefulWidget {
-  const DataGraphWidget({super.key, required this.deviceDataList});
-
+class DataGraphWidget extends ConsumerStatefulWidget {
   final List<DeviceData> deviceDataList;
 
+  const DataGraphWidget({
+    super.key,
+    required this.deviceDataList,
+  });
+
   @override
-  State<DataGraphWidget> createState() => _DataGraphWidgetState();
+  ConsumerState<ConsumerStatefulWidget> createState() =>
+      _DataGraphWidgetState();
 }
 
-class _DataGraphWidgetState extends State<DataGraphWidget> {
-  late final WebViewController controller = WebViewController()
-    ..setJavaScriptMode(JavaScriptMode.unrestricted)
-    ..loadFlutterAsset(Assets.chartHtml)
-    ..setNavigationDelegate(
-        NavigationDelegate(onPageFinished: (url) => _buildGraph()))
-    ..setBackgroundColor(Colors.white);
-
-  @override
-  void didUpdateWidget(DataGraphWidget oldWidget) {
-    super.didUpdateWidget(oldWidget);
-
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      _buildGraph();
-    });
-  }
+class _DataGraphWidgetState extends ConsumerState<DataGraphWidget> {
+  List<DeviceData> get currentDataList => widget.deviceDataList;
 
   @override
   Widget build(BuildContext context) {
-    return SizedBox(
-      width: double.infinity,
-      height: context.height * 0.45,
-      child: WebViewWidget(
-        controller: controller,
-      ),
+    final GraphSettings settings = ref.watch(graphSettingsProvider);
+
+    final String currentOption = _buildOption(settings);
+
+    return Echarts(
+      option: currentOption,
+      onMessage: (message) {
+        debugPrint('Chart message: $message');
+      },
     );
   }
 
-  void _buildGraph() {
-    final Iterable<DeviceData> data = widget.deviceDataList
-        .where((data) => data.value != null && data.value is num)
-        .map((data) =>
-            data.copyWith(value: data.value < 400 ? 400 : data.value));
+  String _buildOption(GraphSettings settings) {
+    final GraphDataDuration? duration = currentDataList.isEmpty
+        ? null
+        : ref
+            .read(deviceHistoricalDataProvider(currentDataList.first.deviceId)
+                .notifier)
+            .duration;
 
-    // Prepare data for graph
-    List<String> xAxisData = [];
-    List<num> yAxisData = [];
+    final xData = currentDataList
+        .map((data) => _formatDate(data.dateTime, duration: duration))
+        .toList();
 
-    for (var deviceData in data) {
-      xAxisData.add(_formatDate(deviceData.dateTime));
-      yAxisData.add(deviceData.value);
+    final yData = currentDataList.map((data) => data.value.toDouble()).toList();
+
+    return '''
+    {
+      tooltip: {
+        trigger: 'axis',
+        axisPointer: {
+          type: 'cross'
+        }
+      },
+      xAxis: {
+        type: 'category',
+        data: ${jsonEncode(xData)},
+        boundaryGap: false,
+        axisLabel: {
+          hideOverlap: true
+        }
+      },
+      yAxis: {
+        type: 'value',
+        axisLine: {
+          lineStyle: {
+            color: '#333'
+          }
+        },
+        splitLine: {
+          show: true
+        }
+      },
+      dataZoom: [
+        {
+          type: 'inside',
+          start: 0,
+          end: 100,
+          zoomRate: 0.5
+        }${settings.showZoomSlider ? ', { type: "slider", start: 0, end: 100 }' : ''}
+      ],
+      grid: {
+        left: 40,
+        right: 40,
+        top: 50,
+        bottom: ${settings.showZoomSlider ? 80 : 50}
+      },
+      series: [
+        {
+          name: 'CO2 Value',
+          type: 'line',
+          data: ${jsonEncode(yData)},
+           ${settings.showAreaFill ? 'areaStyle: { opacity: 0.2 },' : ''}
+          smooth: true,
+          lineStyle: {
+            width: 2
+          },
+          markLine: ${settings.showMarkLines ? '''
+            {
+              symbol: ['none', 'none'],
+              label: { show: false },
+              silent: true,
+              animation: false,
+              data: [
+                { yAxis: 800, lineStyle: { color: '#FE9A23', type: 'dashed', } },
+                { yAxis: 1000, lineStyle: { color: '#D9001B', type: 'dashed' } }
+              ]
+            }
+          ''' : 'null'}
+        },
+        // Dummy series for legend
+        {
+          name: '< 800',
+          type: 'line',
+          data: [],
+          color: '#63A103',
+          lineStyle: { width: 0 }
+        },
+        {
+          name: '800 - 1000',
+          type: 'line',
+          data: [],
+          color: '#FE9A23',
+          lineStyle: { width: 0 }
+        },
+        {
+          name: '> 1000',
+          type: 'line',
+          data: [],
+          color: '#D9001B',
+          lineStyle: { width: 0 }
+        }
+      ],
+      visualMap: {
+        type: 'piecewise',
+        show: false,
+        dimension: 1,
+        pieces: [
+          {lte: 800, color: '#63A103'},
+          {gt: 800, lte: 1000, color: '#FE9A23'},
+          {gt: 1000, color: '#D9001B'}
+        ]
+      },
+      
     }
-
-    // Constructing the JSON data for the chart
-    var chartData = {
-      "xAxis": {"data": xAxisData},
-      "series": [
-        {"name": "ppm", "type": "line", "data": yAxisData}
-      ]
-    };
-
-    // Convert chartData to JSON string
-    String optionJson = jsonEncode(chartData);
-
-    // JavaScript to set the chart options
-    String jsCode = "javascript:setOption($optionJson);";
-
-    // Execute the JavaScript code
-    controller.runJavaScript(jsCode);
+    ''';
   }
 
-  String _formatDate(DateTime dateTime) {
-    // Format the DateTime to a string representation (20.10.24 01:00)
-    return '${dateTime.year.toString().substring(2)}.${dateTime.month}.${dateTime.day} ${dateTime.hour.toString().padLeft(2, '0')}:00';
+  // Menu to toggle chart settings
+
+  String _formatDate(DateTime dateTime, {GraphDataDuration? duration}) {
+    final String hm =
+        '${dateTime.hour.toString().padLeft(2, '0')}:${dateTime.minute.toString().padLeft(2, '0')}';
+
+    switch (duration) {
+      case GraphDataDuration.last7Days:
+        return '${dateTime.month}.${dateTime.day} ${dateTime.hour.toString().padLeft(2, '0')}:${dateTime.minute.toString().padLeft(2, '0')}';
+      default:
+        return hm;
+    }
   }
 }

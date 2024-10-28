@@ -2,7 +2,7 @@ import 'package:airspothealth/core/models/device_data.dart';
 import 'package:airspothealth/core/theme/app_colors.dart';
 import 'package:airspothealth/core/utils/app_utils.dart';
 import 'package:airspothealth/core/utils/extensions.dart';
-import 'package:airspothealth/features/device_graph/models/history_data_duration.dart';
+import 'package:airspothealth/features/device_graph/models/graph_data_duration.dart';
 import 'package:airspothealth/features/device_graph/providers/device_historical_data_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -21,7 +21,7 @@ class DeviceDataAggregateCard extends ConsumerWidget {
     final DeviceData? maxValue =
         ref.read(deviceHistoricalDataProvider(deviceId).notifier).maxValue;
 
-    final HistoryDataDuration selectedDuration =
+    final GraphDataDuration selectedDuration =
         ref.read(deviceHistoricalDataProvider(deviceId).notifier).duration;
 
     return Card(
@@ -33,12 +33,12 @@ class DeviceDataAggregateCard extends ConsumerWidget {
           children: [
             Text(
               selectedDuration.name.capitalize(),
-              style: context.textTheme.labelLarge,
+              style: context.textTheme.labelLarge?.weight600,
             ),
             const SizedBox(height: 4),
-            _buildDataRow(context, label: 'Lowest', data: minValue),
-            const SizedBox(height: 4),
             _buildDataRow(context, label: 'Highest', data: maxValue),
+            const SizedBox(height: 4),
+            _buildDataRow(context, label: 'Lowest', data: minValue),
           ],
         ),
       ),

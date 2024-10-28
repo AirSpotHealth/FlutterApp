@@ -2,7 +2,7 @@ import 'package:airspothealth/core/models/device_data.dart';
 import 'package:airspothealth/core/providers/ble_device_communication_provider.dart';
 import 'package:airspothealth/core/services/isar_service.dart';
 import 'package:airspothealth/core/utils/device_cmd_utils.dart';
-import 'package:airspothealth/features/device_graph/models/history_data_duration.dart';
+import 'package:airspothealth/features/device_graph/models/graph_data_duration.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:isar/isar.dart';
 
@@ -15,11 +15,11 @@ class _DeviceHistoricalDataNotifier
     extends FamilyNotifier<List<DeviceData>, String> {
   final IsarService _isarService = IsarService();
 
-  HistoryDataDuration _duration = HistoryDataDuration.today;
+  GraphDataDuration _duration = GraphDataDuration.today;
 
   String get deviceId => arg;
 
-  HistoryDataDuration get duration => _duration;
+  GraphDataDuration get duration => _duration;
 
   List<dynamic> get values {
     if (state.isEmpty) {
@@ -45,7 +45,7 @@ class _DeviceHistoricalDataNotifier
         (value, element) => value.value < element.value ? value : element);
   }
 
-  void setDuration(HistoryDataDuration duration) {
+  void setDuration(GraphDataDuration duration) {
     _duration = duration;
     _getDeviceData();
     // build(deviceId);

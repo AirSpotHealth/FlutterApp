@@ -1,6 +1,7 @@
 import 'package:airspothealth/core/providers/ble_device_communication_provider.dart';
 import 'package:airspothealth/core/theme/app_colors.dart';
 import 'package:airspothealth/core/utils/app_utils.dart';
+import 'package:airspothealth/core/utils/constants.dart';
 import 'package:airspothealth/core/utils/extensions.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -24,8 +25,8 @@ class DeviceCurrentValueWidget extends ConsumerWidget {
         child: Row(
           children: [
             Text(
-              'Current:',
-              style: context.textTheme.bodyMedium?.weight500,
+              'Current CO${Constants.subscript2} Level: ',
+              style: context.textTheme.bodyMedium?.weight600,
             ),
             const Spacer(),
             RichText(
