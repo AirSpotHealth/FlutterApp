@@ -88,7 +88,7 @@ class DeviceSettingsPage extends ConsumerWidget {
             margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
             child: ElevatedButton(
               style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.primaryColorDark),
+                  backgroundColor: AppColors.primaryColor),
               onPressed: () {
                 ref
                     .read(bleDeviceConnectionProvider(deviceId).notifier)
@@ -129,7 +129,7 @@ class ForgetDeviceWidget extends ConsumerWidget {
         ref.watch(deviceForgetStatusProvider(deviceId));
 
     return ElevatedButton(
-      style: ElevatedButton.styleFrom(backgroundColor: AppColors.primaryColor),
+      style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
       onPressed: () {
         if (forgetStatus == const AsyncValue.loading()) return;
 
