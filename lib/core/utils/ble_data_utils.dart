@@ -140,91 +140,91 @@ class ResponseCommandParser {
 
   /// Parses CO2 history data
   List<Map<String, dynamic>> parseGetCo2History(List<int> data) {
-    List<Map<String, dynamic>> co2Data = [];
-
     // Check if the data length is at least 6 bytes (minimum valid length)
-    if (data.length < 6) return co2Data;
-
-    // Extract the initial timestamp (first 4 bytes)
-    int baseTimestamp = _byteArrayToInt(data, 0, 3);
+    if (data.length < 6) return [];
 
     // Calculate the timestamp from 2000-01-01 00:00:00 UTC
-    DateTime timestampFrom2000 =
-        DateTime.utc(2000, 1, 1, 0, 0, 0).add(Duration(seconds: baseTimestamp));
+    int timestampFrom2000 = 946656000;
 
-    // Manually adjust the timestamp to align with the current date
-    timestampFrom2000 =
-        timestampFrom2000.subtract(const Duration(days: (365 * 111) + 66));
+    // total data count (3rd byte)
+    int dataCount = data[3];
 
-    // Extract the sampling rate (5th byte)
-    int samplingRate = data[4];
-    String mode = _getSamplingMode(samplingRate);
-
-    // If the sampling rate is unrecognized, default to "HI power mode"
-    if (mode == 'Unknown mode') {
-      samplingRate = 0x02; // Default to HI power mode
-      mode = 'HI power mode';
+    if (dataCount == 0) {
+      return [];
     }
 
-    // Extract the CO2 samples (from 6th byte onward)
-    for (int i = 5; i < data.length - 1; i += 2) {
-      int highByte = data[i];
-      int lowByte = data[i + 1];
-      int ppmValue = (highByte << 8) | lowByte;
-
-      // Add the parsed CO2 sample to the list
-      co2Data.add({
-        'timestamp': timestampFrom2000,
-        'samplingRate': mode,
-        'ppmValue': ppmValue,
-      });
-
-      // Update the timestamp based on the sampling rate
-      timestampFrom2000 = timestampFrom2000
-          .add(Duration(seconds: _getIntervalInSeconds(samplingRate)));
+    if (data.length < dataCount + 4) {
+      return [];
     }
 
-    final List<DeviceData> dd = co2Data.map((e) {
+    debugPrint('Data Hex: {${BleDataUtils.bytesToHexStr(data)}}');
+
+    // Extract the timestamp (6th to 9th bytes)
+    int timestamp = _byteArrayToInt(data, 4, 7);
+
+    // Calculate the timestamp from 2000-01-01 00:00:00 UTC
+    timestampFrom2000 += timestamp;
+
+    // Extract the mode (9th byte)
+    int mode = data[8];
+
+    // Calculate the mute time based on the mode
+    int muteTime = 0;
+
+    switch (mode) {
+      case 0:
+        muteTime = 3 * 60;
+        break;
+      case 1:
+        muteTime = 1 * 60;
+        break;
+      case 2:
+        muteTime = 5;
+        break;
+    }
+
+    // Extract the CO2 data count (10th byte)
+    int co2DataCount = dataCount - 5;
+
+    // Extract the CO2 data bytes
+    final co2DataBytes = data.sublist(9, 9 + co2DataCount);
+
+    // Extract the CO2 data values
+    final co2Data = <DateTime, int>{};
+
+    for (var i = 0; i < co2DataCount; i++) {
+      // Calculate the current loop value position
+      final index = (i * 2) % co2DataBytes.length;
+
+      // Extract two bytes and combine them into a single value
+      final highByte = co2DataBytes[index] & 0xFF;
+      final lowByte = co2DataBytes[index + 1] & 0xFF;
+      final combinedValue = (highByte << 8) | lowByte;
+
+      if (i % 2 == 0) {
+        timestampFrom2000 += muteTime;
+        co2Data.putIfAbsent(
+          DateTime.fromMillisecondsSinceEpoch(timestampFrom2000 * 1000),
+          () => combinedValue,
+        );
+      }
+    }
+
+    final List<DeviceData> dd = co2Data.entries.map((e) {
       return DeviceData(
         deviceId: deviceId,
-        dateTime: e['timestamp'],
-        value: e['ppmValue'],
+        dateTime: e.key,
+        value: e.value,
       );
     }).toList();
+
+    debugPrint('CO2 Data: Count: ${dd.length} ${dd.toString()}');
 
     isarService.write((isar) {
       isar.deviceDatas.putAll(dd);
     });
 
-    return co2Data;
-  }
-
-  /// Helper method to convert sampling rate to mode description
-  String _getSamplingMode(int samplingRate) {
-    switch (samplingRate) {
-      case 0x00:
-        return 'LOW power mode';
-      case 0x01:
-        return 'MED power mode';
-      case 0x02:
-        return 'HI power mode';
-      default:
-        return 'Unknown mode';
-    }
-  }
-
-  /// Helper method to get the interval in seconds based on sampling rate
-  int _getIntervalInSeconds(int samplingRate) {
-    switch (samplingRate) {
-      case 0x00:
-        return 180; // 3 minutes for LOW power mode
-      case 0x01:
-        return 60; // 1 minute for MED power mode
-      case 0x02:
-        return 5; // 5 seconds for HI power mode
-      default:
-        return 5; // Default to HI power mode interval
-    }
+    return [];
   }
 
   bool parseCalibrateSensors(List<int> data) => _parseBoolean(data, 4);

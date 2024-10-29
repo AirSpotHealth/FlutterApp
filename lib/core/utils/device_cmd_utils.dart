@@ -177,20 +177,16 @@ class DeviceCmdUtils {
     return targetDate.difference(startDate2000).inSeconds;
   }
 
-  static Uint8List getCo2History() {
-    DateTime currentDate = DateTime.now();
-    DateTime todayStart =
-        DateTime(currentDate.year, currentDate.month, currentDate.day);
-
+  static Uint8List getCo2History(
+      {required DateTime startDate, required DateTime endDate}) {
     // Calculate the total seconds since January 1, 2000, to today start and current time
-    int since2000ToYesterday0 = calculateSecondsSince2000(todayStart);
-    int since2000ToYesterdayNow = calculateSecondsSince2000(currentDate);
+    int since2000ToStartDate = calculateSecondsSince2000(startDate);
+    int since2000ToEndDate = calculateSecondsSince2000(endDate);
 
     // Convert the calculated seconds to byte arrays
     var byteArrayStart = ByteData(4)
-      ..setInt32(0, since2000ToYesterday0, Endian.big);
-    var byteArrayNow = ByteData(4)
-      ..setInt32(0, since2000ToYesterdayNow, Endian.big);
+      ..setInt32(0, since2000ToStartDate, Endian.big);
+    var byteArrayNow = ByteData(4)..setInt32(0, since2000ToEndDate, Endian.big);
 
     // Construct the BLE command
     return _buildCommand([

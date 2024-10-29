@@ -23,14 +23,7 @@ enum GraphDataDuration {
   // the range should start from 00:00:00 to 23:59:59
   DateTimeRange getDateTimeRange() {
     final DateTime now = DateTime.now();
-    final DateTime end = DateTime(
-      now.year,
-      now.month,
-      now.day,
-      23,
-      59,
-      59,
-    );
+
     DateTime start;
     switch (this) {
       case GraphDataDuration.today:
@@ -65,6 +58,6 @@ enum GraphDataDuration {
         break;
     }
 
-    return (start, end);
+    return (start, now);
   }
 }

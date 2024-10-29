@@ -17,7 +17,7 @@ class DeviceData {
 
   final dynamic value;
 
-  String get id => deviceId + dateTime.toIso8601String();
+  String get id => deviceId + dateTime.millisecondsSinceEpoch.toString();
 
   DeviceData copyWith({
     String? deviceId,
@@ -30,4 +30,21 @@ class DeviceData {
       value: value ?? this.value,
     );
   }
+
+  @override
+  bool operator ==(Object other) {
+    if (identical(this, other)) return true;
+
+    return other is DeviceData &&
+        other.deviceId == deviceId &&
+        other.dateTime == dateTime &&
+        other.value == value;
+  }
+
+  @override
+  int get hashCode => deviceId.hashCode ^ dateTime.hashCode ^ value.hashCode;
+
+  @override
+  String toString() =>
+      'DeviceData(deviceId: $deviceId, dateTime: $dateTime, value: $value)';
 }

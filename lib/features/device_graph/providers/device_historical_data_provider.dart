@@ -3,6 +3,7 @@ import 'package:airspothealth/core/providers/ble_device_communication_provider.d
 import 'package:airspothealth/core/services/isar_service.dart';
 import 'package:airspothealth/core/utils/device_cmd_utils.dart';
 import 'package:airspothealth/features/device_graph/models/graph_data_duration.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:isar/isar.dart';
 
@@ -53,7 +54,7 @@ class _DeviceHistoricalDataNotifier
 
   @override
   List<DeviceData> build(String arg) {
-    final DateTimeRange range = _duration.getDateTimeRange();
+    final range = _duration.getDateTimeRange();
 
     _isarService.read((isar) {
       isar.deviceDatas
@@ -63,6 +64,7 @@ class _DeviceHistoricalDataNotifier
           .sortByDateTime()
           .watch(fireImmediately: true)
           .listen((event) {
+        debugPrint('DeviceData: $event');
         state = event;
       });
     });
@@ -73,8 +75,10 @@ class _DeviceHistoricalDataNotifier
   }
 
   void _getDeviceData() {
-    ref
-        .read(bleDeviceCommunicationProvider(deviceId).notifier)
-        .sendCommand(DeviceCmdUtils.getCo2History());
+    build(deviceId);
+    final (startDate, endDate) = _duration.getDateTimeRange();
+
+    ref.read(bleDeviceCommunicationProvider(deviceId).notifier).sendCommand(
+        DeviceCmdUtils.getCo2History(startDate: startDate, endDate: endDate));
   }
 }

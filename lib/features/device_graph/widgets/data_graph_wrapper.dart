@@ -31,9 +31,9 @@ class _DataGraphWrapperState extends ConsumerState<DataGraphWrapper> {
   }
 
   void _fetchDeviceData(GraphDataDuration duration) {
-    // ref
-    //     .read(deviceHistoricalDataProvider(deviceId).notifier)
-    //     .setDuration(duration);
+    ref
+        .read(deviceHistoricalDataProvider(deviceId).notifier)
+        .setDuration(duration);
   }
 
   @override
