@@ -4,6 +4,7 @@ import 'package:airspothealth/core/utils/app_utils.dart';
 import 'package:airspothealth/core/utils/extensions.dart';
 import 'package:airspothealth/features/device_graph/models/graph_data_duration.dart';
 import 'package:airspothealth/features/device_graph/providers/device_historical_data_provider.dart';
+import 'package:airspothealth/features/device_graph/providers/graph_range_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -14,15 +15,19 @@ class DeviceDataAggregateCard extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    ref.watch(deviceHistoricalDataProvider(deviceId));
+    final GraphDataDuration selectedDuration = ref.watch(graphDurationProvider);
 
-    final DeviceData? minValue =
-        ref.read(deviceHistoricalDataProvider(deviceId).notifier).minValue;
-    final DeviceData? maxValue =
-        ref.read(deviceHistoricalDataProvider(deviceId).notifier).maxValue;
+    ref.watch(deviceHistoricalDataProvider((deviceId, selectedDuration)));
 
-    final GraphDataDuration selectedDuration =
-        ref.read(deviceHistoricalDataProvider(deviceId).notifier).duration;
+    final DeviceData? minValue = ref
+        .read(
+            deviceHistoricalDataProvider((deviceId, selectedDuration)).notifier)
+        .minValue;
+
+    final DeviceData? maxValue = ref
+        .read(
+            deviceHistoricalDataProvider((deviceId, selectedDuration)).notifier)
+        .maxValue;
 
     return Card(
       margin: const EdgeInsets.symmetric(horizontal: 16),

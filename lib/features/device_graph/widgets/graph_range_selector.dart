@@ -1,40 +1,24 @@
 import 'package:airspothealth/core/theme/app_colors.dart';
 import 'package:airspothealth/core/utils/extensions.dart';
 import 'package:airspothealth/features/device_graph/models/graph_data_duration.dart';
+import 'package:airspothealth/features/device_graph/providers/graph_range_provider.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-class GraphRangeSelector extends StatefulWidget {
-  const GraphRangeSelector({super.key, required this.onRangeSelected});
-  final void Function(GraphDataDuration) onRangeSelected;
-
-  @override
-  State<GraphRangeSelector> createState() => _GraphRangeSelectorState();
-}
-
-class _GraphRangeSelectorState extends State<GraphRangeSelector> {
-  static const List<GraphDataDuration> _rangeOptions = [
-    GraphDataDuration.today,
-    GraphDataDuration.yesterday,
-    GraphDataDuration.last7Days,
-  ];
-
-  GraphDataDuration _selectedRange = GraphDataDuration.today;
-
-  void _onRangeSelected(GraphDataDuration range) {
-    widget.onRangeSelected(range);
-    setState(() {
-      _selectedRange = range;
-    });
-  }
+class GraphRangeSelector extends ConsumerWidget {
+  const GraphRangeSelector({super.key});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final GraphDataDuration selectedRange = ref.watch(graphDurationProvider);
     return Row(
-      children: _rangeOptions.map((range) {
-        final bool isSelected = _selectedRange == range;
+      children: GraphDataDuration.values.map((range) {
+        final bool isSelected = selectedRange == range;
 
         return GestureDetector(
-          onTap: () => _onRangeSelected(range),
+          onTap: () {
+            ref.read(graphDurationProvider.notifier).setDuration(range);
+          },
           child: AnimatedContainer(
             duration: const Duration(milliseconds: 300),
             padding:

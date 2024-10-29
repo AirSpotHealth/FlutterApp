@@ -3,7 +3,7 @@ import 'dart:convert';
 import 'package:airspothealth/core/models/device_data.dart';
 import 'package:airspothealth/features/device_graph/models/graph_data_duration.dart';
 import 'package:airspothealth/features/device_graph/models/graph_settings.dart';
-import 'package:airspothealth/features/device_graph/providers/device_historical_data_provider.dart';
+import 'package:airspothealth/features/device_graph/providers/graph_range_provider.dart';
 import 'package:airspothealth/features/device_graph/providers/graph_settings_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_echarts/flutter_echarts.dart';
@@ -28,8 +28,9 @@ class _DataGraphWidgetState extends ConsumerState<DataGraphWidget> {
   @override
   Widget build(BuildContext context) {
     final GraphSettings settings = ref.watch(graphSettingsProvider);
+    final GraphDataDuration duration = ref.watch(graphDurationProvider);
 
-    final String currentOption = _buildOption(settings);
+    final String currentOption = _buildOption(settings, duration);
 
     return Echarts(
       option: currentOption,
@@ -39,14 +40,7 @@ class _DataGraphWidgetState extends ConsumerState<DataGraphWidget> {
     );
   }
 
-  String _buildOption(GraphSettings settings) {
-    final GraphDataDuration? duration = currentDataList.isEmpty
-        ? null
-        : ref
-            .read(deviceHistoricalDataProvider(currentDataList.first.deviceId)
-                .notifier)
-            .duration;
-
+  String _buildOption(GraphSettings settings, GraphDataDuration duration) {
     final xData = currentDataList
         .map((data) => _formatDate(data.dateTime, duration: duration))
         .toList();

@@ -153,13 +153,17 @@ class _BleDeviceCommunicationNotifier extends FamilyNotifier<dynamic, String> {
 
     _setHomeValue(value);
 
-    _isarService.write((isar) {
-      isar.deviceDatas.put(DeviceData(
-        deviceId: device!.remoteId.str,
-        value: value,
-        dateTime: DateTime.now(),
-      ));
-    });
+    try {
+      _isarService.write((isar) {
+        isar.deviceDatas.put(DeviceData(
+          deviceId: deviceId,
+          value: value,
+          dateTime: DateTime.now(),
+        ));
+      });
+    } catch (e) {
+      debugPrint('Error saving data: $e');
+    }
 
     state = value;
   }

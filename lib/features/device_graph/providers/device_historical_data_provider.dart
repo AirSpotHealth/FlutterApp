@@ -1,84 +1,59 @@
 import 'package:airspothealth/core/models/device_data.dart';
-import 'package:airspothealth/core/providers/ble_device_communication_provider.dart';
 import 'package:airspothealth/core/services/isar_service.dart';
-import 'package:airspothealth/core/utils/device_cmd_utils.dart';
+import 'package:airspothealth/core/utils/extensions.dart';
 import 'package:airspothealth/features/device_graph/models/graph_data_duration.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:isar/isar.dart';
 
-final deviceHistoricalDataProvider = NotifierProvider.family<
+final deviceHistoricalDataProvider = StreamNotifierProvider.family.autoDispose<
     _DeviceHistoricalDataNotifier,
     List<DeviceData>,
-    String>(_DeviceHistoricalDataNotifier.new);
+    (String, GraphDataDuration)>(_DeviceHistoricalDataNotifier.new);
 
-class _DeviceHistoricalDataNotifier
-    extends FamilyNotifier<List<DeviceData>, String> {
+class _DeviceHistoricalDataNotifier extends AutoDisposeFamilyStreamNotifier<
+    List<DeviceData>, (String, GraphDataDuration)> {
   final IsarService _isarService = IsarService();
 
-  GraphDataDuration _duration = GraphDataDuration.today;
+  String get deviceId => arg.$1;
 
-  String get deviceId => arg;
-
-  GraphDataDuration get duration => _duration;
+  GraphDataDuration get duration => arg.$2;
 
   List<dynamic> get values {
-    if (state.isEmpty) {
+    if (state.valueOrNull.isNullOrEmpty) {
       return [];
     }
-    return state.map((e) => e.value).toList();
+    return state.value!.map((e) => e.value).toList();
   }
 
   DeviceData? get maxValue {
-    if (state.isEmpty) {
+    if (state.value.isNullOrEmpty) {
       return null;
     }
 
-    return state.reduce(
+    return state.value!.reduce(
         (value, element) => value.value > element.value ? value : element);
   }
 
   DeviceData? get minValue {
-    if (state.isEmpty) {
+    if (state.value.isNullOrEmpty) {
       return null;
     }
-    return state.reduce(
+    return state.value!.reduce(
         (value, element) => value.value < element.value ? value : element);
   }
 
-  void setDuration(GraphDataDuration duration) {
-    _duration = duration;
-    _getDeviceData();
-    // build(deviceId);
-  }
-
   @override
-  List<DeviceData> build(String arg) {
-    final range = _duration.getDateTimeRange();
+  Stream<List<DeviceData>> build(arg) {
+    final range = duration.getDateTimeRange();
 
-    _isarService.read((isar) {
-      isar.deviceDatas
-          .where()
-          .deviceIdEqualTo(deviceId)
-          .dateTimeBetween(range.$1, range.$2)
-          .sortByDateTime()
-          .watch(fireImmediately: true)
-          .listen((event) {
-        debugPrint('DeviceData: $event');
-        state = event;
-      });
-    });
+    debugPrint('DeviceHistoricalDataProvider: $range');
 
-    // _getDeviceData();
-
-    return [];
-  }
-
-  void _getDeviceData() {
-    build(deviceId);
-    final (startDate, endDate) = _duration.getDateTimeRange();
-
-    ref.read(bleDeviceCommunicationProvider(deviceId).notifier).sendCommand(
-        DeviceCmdUtils.getCo2History(startDate: startDate, endDate: endDate));
+    return _isarService.deviceDatas
+        .where()
+        .deviceIdEqualTo(deviceId)
+        .dateTimeBetween(range.$1, range.$2)
+        .sortByDateTime()
+        .watch(fireImmediately: true);
   }
 }
