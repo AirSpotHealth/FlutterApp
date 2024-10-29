@@ -3,19 +3,19 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="@drawable/widget_background"
-    android:padding="16dp"
+    android:padding="8dp"
     android:theme="@style/Theme.Android.AppWidgetContainer">
 
     <!-- Device Name -->
     <TextView
-        android:id="@+id/device_name"
+        android:id="@+id/co2_text"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_alignParentTop="true"
         android:layout_centerHorizontal="true"
-        android:text="Device Name"
+        android:text="Current CO₂ Value"
         android:textColor="@android:color/white"
-        android:textSize="14sp"
+        android:textSize="12sp"
         android:textStyle="bold" />
 
     <!-- CO2 Value -->
@@ -23,10 +23,12 @@
         android:id="@+id/co2_value"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_centerInParent="true"
+        android:layout_below="@id/co2_text"
+        android:layout_centerHorizontal="true"
         android:text="0 ppm"
-        android:textColor="@android:color/white"
-        android:textSize="18sp"
+        android:textAlignment="center"
+        android:textColor="#4CAF50"
+        android:textSize="22sp"
         android:textStyle="bold" />
 
     <!-- Last Updated -->
@@ -35,10 +37,8 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_below="@id/co2_value"
-        android:layout_centerHorizontal="true"
-        android:layout_marginTop="8dp"
         android:text="Last updated: --:--"
         android:textColor="@android:color/white"
-        android:textSize="12sp" />
+        android:textSize="10sp" />
 
 </RelativeLayout>

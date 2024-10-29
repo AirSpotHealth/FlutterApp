@@ -47,6 +47,17 @@ class _DataGraphWidgetState extends ConsumerState<DataGraphWidget> {
 
     final yData = currentDataList.map((data) => data.value.toDouble()).toList();
 
+    // Check if there is no data
+    if (xData.isEmpty || yData.isEmpty) {
+      return '''
+    {
+      title: {
+        text: '',
+      }
+    }
+    ''';
+    }
+
     return '''
     {
       tooltip: {

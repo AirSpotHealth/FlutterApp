@@ -23,8 +23,6 @@ class DataGraphWrapper extends ConsumerWidget {
     final AsyncValue<List<DeviceData>> deviceDataList =
         ref.watch(deviceHistoricalDataProvider((deviceId, duration)));
 
-    debugPrint('DataGraphWrapper: $deviceDataList');
-
     return Stack(
       children: [
         Padding(

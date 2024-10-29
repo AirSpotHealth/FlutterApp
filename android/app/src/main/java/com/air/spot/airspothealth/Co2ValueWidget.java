@@ -11,6 +11,14 @@ import android.graphics.drawable.GradientDrawable;
 import android.widget.RemoteViews;
 import android.util.Log;
 
+import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
+import java.util.Calendar;
+import java.util.List;
+import java.util.Locale;
+import java.text.SimpleDateFormat;
+
+
 import es.antonborri.home_widget.HomeWidgetPlugin;
 
 /**
@@ -23,32 +31,34 @@ public class Co2ValueWidget extends AppWidgetProvider {
         RemoteViews views = new RemoteViews(context.getPackageName(), R.layout.co2_value_widget);
 
         // Get reference to SharedPreferences
-        String widgetData = HomeWidgetPlugin.Companion.getData(context).getString("airspot_home_widget", "---");
-
-        Log.d("WidgetData", widgetData);
-
-        // Set the device name
-        views.setTextViewText(R.id.device_name, "AirSpot");
+        String co2Value = HomeWidgetPlugin.Companion.getData(context).getString("airspot_home_widget", "0000");
 
         // Set the CO2 value
-        views.setTextViewText(R.id.co2_value, widgetData + " ppm");
+        views.setTextViewText(R.id.co2_value, co2Value + " ppm");
+
+        int color;
+
+        if (Integer.parseInt(co2Value) < 800) {
+            color = Color.parseColor("#63A103");
+        } else if (Integer.parseInt(co2Value) < 1000) {
+            color = Color.parseColor("#FE9A23");
+        } else {
+            color = Color.parseColor("#D9001B");
+        }
+
+        views.setTextColor(R.id.co2_value, color);
+
+        // Get the current date and time
+        Calendar calendar = Calendar.getInstance();
+
+        // Define the format you want (e.g., OCT 12, 12:00 PM)
+        SimpleDateFormat dateFormat = new SimpleDateFormat("MMM dd, hh:mm a", Locale.getDefault());
+
+        // Format the date
+        String formattedDate = dateFormat.format(calendar.getTime());
 
         // Set the last updated time
-        String lastUpdated = String.valueOf(System.currentTimeMillis());
-        views.setTextViewText(R.id.last_updated, lastUpdated);
-
-        // // Set dynamic background gradient
-        // GradientDrawable gradientDrawable = new GradientDrawable(GradientDrawable.Orientation.TOP_BOTTOM, new int[]{Colors., Color.TRANSPARENT});
-        // gradientDrawable.setCornerRadius(16); // Set rounded corners if needed
-
-        // // Convert the gradient drawable to a bitmap
-        // Bitmap bitmap = Bitmap.createBitmap(200, 200, Bitmap.Config.ARGB_8888);
-        // Canvas canvas = new Canvas(bitmap);
-        // gradientDrawable.setBounds(0, 0, canvas.getWidth(), canvas.getHeight());
-        // gradientDrawable.draw(canvas);
-
-        // // Set the bitmap as the background
-        // views.setImageViewBitmap(R.id.widget_container, bitmap);
+        views.setTextViewText(R.id.last_updated, "Last updated: " + formattedDate);
 
         // Update the widget
         appWidgetManager.updateAppWidget(appWidgetId, views);
