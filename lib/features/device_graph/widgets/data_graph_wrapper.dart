@@ -4,7 +4,6 @@ import 'package:airspothealth/features/device_graph/providers/device_historical_
 import 'package:airspothealth/features/device_graph/providers/graph_range_provider.dart';
 import 'package:airspothealth/features/device_graph/widgets/data_graph_widget.dart';
 import 'package:airspothealth/features/device_graph/widgets/graph_legends.dart';
-import 'package:airspothealth/features/device_graph/widgets/graph_loading_indicator.dart';
 import 'package:airspothealth/features/device_graph/widgets/graph_range_selector.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -36,11 +35,6 @@ class DataGraphWrapper extends ConsumerWidget {
           child: GraphRangeSelector(),
         ),
         const Positioned(right: 12, child: GraphLegends()),
-        if (deviceDataList.isLoading)
-          const Positioned.fill(
-            top: 60,
-            child: GraphLoadingIndicator(),
-          )
       ],
     );
   }

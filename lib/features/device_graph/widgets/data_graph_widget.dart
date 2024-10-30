@@ -45,7 +45,9 @@ class _DataGraphWidgetState extends ConsumerState<DataGraphWidget> {
         .map((data) => _formatDate(data.dateTime, duration: duration))
         .toList();
 
-    final yData = currentDataList.map((data) => data.value.toDouble()).toList();
+    final yData = currentDataList
+        .map((data) => data.value.clamp(350, 5000).toDouble())
+        .toList();
 
     // Check if there is no data
     if (xData.isEmpty || yData.isEmpty) {
@@ -53,7 +55,46 @@ class _DataGraphWidgetState extends ConsumerState<DataGraphWidget> {
     {
       title: {
         text: '',
+      },
+      graphic: {
+    elements: [
+      {
+        type: 'group',
+        left: 'center',
+        top: 'center',
+        children: new Array(7).fill(0).map((val, i) => ({
+          type: 'rect',
+          x: i * 20,
+          shape: {
+            x: 0,
+            y: -40,
+            width: 10,
+            height: 80
+          },
+          style: {
+            fill: '#009FD7'
+          },
+          keyframeAnimation: {
+            duration: 500,
+            delay: i * 200,
+            loop: true,
+            keyframes: [
+              {
+                percent: 0.5,
+                scaleY: 0.3,
+                easing: 'cubicIn'
+              },
+              {
+                percent: 1,
+                scaleY: 1,
+                easing: 'cubicOut'
+              }
+            ]
+          }
+        }))
       }
+    ]
+  }
     }
     ''';
     }
@@ -81,6 +122,8 @@ class _DataGraphWidgetState extends ConsumerState<DataGraphWidget> {
             color: '#333'
           }
         },
+        min: 350,
+        scale: true,
         splitLine: {
           show: true
         }
@@ -155,9 +198,8 @@ class _DataGraphWidgetState extends ConsumerState<DataGraphWidget> {
           {gt: 1000, color: '#D9001B'}
         ]
       },
-      
-    }
-    ''';
+  }
+  ''';
   }
 
   // Menu to toggle chart settings
