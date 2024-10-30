@@ -3,6 +3,7 @@ import 'package:airspothealth/core/models/device_settings.dart';
 import 'package:airspothealth/core/providers/ble_device_communication_provider.dart';
 import 'package:airspothealth/core/providers/device_settings_provider.dart';
 import 'package:airspothealth/core/theme/app_colors.dart';
+import 'package:airspothealth/core/utils/app_utils.dart';
 import 'package:airspothealth/core/utils/assets.dart';
 import 'package:airspothealth/core/utils/device_cmd_utils.dart';
 import 'package:airspothealth/core/utils/extensions.dart';
@@ -74,8 +75,12 @@ class MyDeviceWidget extends ConsumerWidget {
     return Align(
       alignment: Alignment.center,
       child: Text(
-        co2Value.toString(),
-        style: const TextStyle(color: Colors.white, fontSize: 24),
+        co2Value?.toString() ?? "0000",
+        style: TextStyle(
+            color: co2Value == null
+                ? Colors.white
+                : AppUtils.getDataColorFromValue(co2Value),
+            fontSize: 24),
         textAlign: TextAlign.center,
       ),
     );
@@ -124,9 +129,9 @@ class MyDeviceWidget extends ConsumerWidget {
 
   Align _buildActiveIndicator(co2Value, DeviceSettings deviceSettings) {
     return Align(
-      alignment: co2Value < deviceSettings.greenUpperLimit
+      alignment: (co2Value ?? 0) < deviceSettings.greenUpperLimit
           ? Alignment.centerLeft
-          : co2Value < deviceSettings.yellowUpperLimit
+          : (co2Value ?? 0) < deviceSettings.yellowUpperLimit
               ? Alignment.center
               : Alignment.centerRight,
       child: const Icon(
