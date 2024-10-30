@@ -143,8 +143,13 @@ class ResponseCommandParser {
     // Check if the data length is at least 6 bytes (minimum valid length)
     if (data.length < 6) return [];
 
+    // check if it is a co2 history done command
+    if (data.length == 6 && data[3] == 0x01 && data[5] == 0xb8) {
+      return [];
+    }
+
     // Calculate the timestamp from 2000-01-01 00:00:00 UTC
-    int timestampFrom2000 = 946656000;
+    int timestampFrom2000 = 946645200;
 
     // total data count (3rd byte)
     int dataCount = data[3];
@@ -192,22 +197,22 @@ class ResponseCommandParser {
     // Extract the CO2 data values
     final co2Data = <DateTime, int>{};
 
-    for (var i = 0; i < co2DataCount; i++) {
-      // Calculate the current loop value position
-      final index = (i * 2) % co2DataBytes.length;
-
+    for (var i = 0; i < co2DataCount; i += 2) {
       // Extract two bytes and combine them into a single value
-      final highByte = co2DataBytes[index] & 0xFF;
-      final lowByte = co2DataBytes[index + 1] & 0xFF;
+      final highByte = co2DataBytes[i] & 0xFF;
+      final lowByte = co2DataBytes[i + 1] & 0xFF;
       final combinedValue = (highByte << 8) | lowByte;
 
-      if (i % 2 == 0) {
-        timestampFrom2000 += muteTime;
-        co2Data.putIfAbsent(
-          DateTime.fromMillisecondsSinceEpoch(timestampFrom2000 * 1000),
-          () => combinedValue,
-        );
-      }
+      // Increment the timestamp after every 2 values
+      timestampFrom2000 += muteTime;
+
+      // Store the CO₂ data
+      co2Data.putIfAbsent(
+        DateTime.fromMillisecondsSinceEpoch(
+          timestampFrom2000 * 1000,
+        ),
+        () => combinedValue,
+      );
     }
 
     final List<DeviceData> dd = co2Data.entries.map((e) {
@@ -216,9 +221,15 @@ class ResponseCommandParser {
         dateTime: e.key,
         value: e.value,
       );
-    }).toList();
+    }).toList()
+      ..sort((a, b) => a.dateTime.compareTo(b.dateTime));
 
-    debugPrint('CO2 Data: Count: ${dd.length} ${dd.toString()}');
+    // export the data to a csv file
+    final csvData = dd.map((e) {
+      return '${e.dateTime.toIso8601String()},${e.value}';
+    }).join('\n');
+
+    debugPrint('Last 1 hour Data: $csvData');
 
     isarService.write((isar) {
       isar.deviceDatas.putAll(dd);
