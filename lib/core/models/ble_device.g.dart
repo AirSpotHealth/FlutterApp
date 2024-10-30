@@ -52,6 +52,14 @@ const BleDeviceSchema = IsarGeneratedSchema(
         name: 'firmwareVersion',
         type: IsarType.string,
       ),
+      IsarPropertySchema(
+        name: 'lastFetchedStartDate',
+        type: IsarType.dateTime,
+      ),
+      IsarPropertySchema(
+        name: 'lastFetchedEndDate',
+        type: IsarType.dateTime,
+      ),
     ],
     indexes: [
       IsarIndexSchema(
@@ -99,6 +107,16 @@ int serializeBleDevice(IsarWriter writer, BleDevice object) {
     }
   }
   IsarCore.writeString(writer, 8, object.firmwareVersion);
+  IsarCore.writeLong(
+      writer,
+      9,
+      object.lastFetchedStartDate?.toUtc().microsecondsSinceEpoch ??
+          -9223372036854775808);
+  IsarCore.writeLong(
+      writer,
+      10,
+      object.lastFetchedEndDate?.toUtc().microsecondsSinceEpoch ??
+          -9223372036854775808);
   return Isar.fastHash(object.deviceId);
 }
 
@@ -116,6 +134,26 @@ BleDevice deserializeBleDevice(IsarReader reader) {
   _alias = IsarCore.readString(reader, 7);
   final String _firmwareVersion;
   _firmwareVersion = IsarCore.readString(reader, 8) ?? '-.-.-';
+  final DateTime? _lastFetchedStartDate;
+  {
+    final value = IsarCore.readLong(reader, 9);
+    if (value == -9223372036854775808) {
+      _lastFetchedStartDate = null;
+    } else {
+      _lastFetchedStartDate =
+          DateTime.fromMicrosecondsSinceEpoch(value, isUtc: true).toLocal();
+    }
+  }
+  final DateTime? _lastFetchedEndDate;
+  {
+    final value = IsarCore.readLong(reader, 10);
+    if (value == -9223372036854775808) {
+      _lastFetchedEndDate = null;
+    } else {
+      _lastFetchedEndDate =
+          DateTime.fromMicrosecondsSinceEpoch(value, isUtc: true).toLocal();
+    }
+  }
   final object = BleDevice(
     deviceId: _deviceId,
     name: _name,
@@ -123,6 +161,8 @@ BleDevice deserializeBleDevice(IsarReader reader) {
     platform: _platform,
     alias: _alias,
     firmwareVersion: _firmwareVersion,
+    lastFetchedStartDate: _lastFetchedStartDate,
+    lastFetchedEndDate: _lastFetchedEndDate,
   );
   return object;
 }
@@ -162,6 +202,26 @@ dynamic deserializeBleDeviceProp(IsarReader reader, int property) {
       return IsarCore.readString(reader, 7);
     case 8:
       return IsarCore.readString(reader, 8) ?? '-.-.-';
+    case 9:
+      {
+        final value = IsarCore.readLong(reader, 9);
+        if (value == -9223372036854775808) {
+          return null;
+        } else {
+          return DateTime.fromMicrosecondsSinceEpoch(value, isUtc: true)
+              .toLocal();
+        }
+      }
+    case 10:
+      {
+        final value = IsarCore.readLong(reader, 10);
+        if (value == -9223372036854775808) {
+          return null;
+        } else {
+          return DateTime.fromMicrosecondsSinceEpoch(value, isUtc: true)
+              .toLocal();
+        }
+      }
     default:
       throw ArgumentError('Unknown property: $property');
   }
@@ -177,6 +237,8 @@ sealed class _BleDeviceUpdate {
     String? platform,
     String? alias,
     String? firmwareVersion,
+    DateTime? lastFetchedStartDate,
+    DateTime? lastFetchedEndDate,
   });
 }
 
@@ -195,6 +257,8 @@ class _BleDeviceUpdateImpl implements _BleDeviceUpdate {
     Object? platform = ignore,
     Object? alias = ignore,
     Object? firmwareVersion = ignore,
+    Object? lastFetchedStartDate = ignore,
+    Object? lastFetchedEndDate = ignore,
   }) {
     return collection.updateProperties([
           deviceId
@@ -206,6 +270,9 @@ class _BleDeviceUpdateImpl implements _BleDeviceUpdate {
           if (platform != ignore) 6: platform as String?,
           if (alias != ignore) 7: alias as String?,
           if (firmwareVersion != ignore) 8: firmwareVersion as String?,
+          if (lastFetchedStartDate != ignore)
+            9: lastFetchedStartDate as DateTime?,
+          if (lastFetchedEndDate != ignore) 10: lastFetchedEndDate as DateTime?,
         }) >
         0;
   }
@@ -221,6 +288,8 @@ sealed class _BleDeviceUpdateAll {
     String? platform,
     String? alias,
     String? firmwareVersion,
+    DateTime? lastFetchedStartDate,
+    DateTime? lastFetchedEndDate,
   });
 }
 
@@ -239,6 +308,8 @@ class _BleDeviceUpdateAllImpl implements _BleDeviceUpdateAll {
     Object? platform = ignore,
     Object? alias = ignore,
     Object? firmwareVersion = ignore,
+    Object? lastFetchedStartDate = ignore,
+    Object? lastFetchedEndDate = ignore,
   }) {
     return collection.updateProperties(deviceId, {
       if (name != ignore) 2: name as String?,
@@ -248,6 +319,8 @@ class _BleDeviceUpdateAllImpl implements _BleDeviceUpdateAll {
       if (platform != ignore) 6: platform as String?,
       if (alias != ignore) 7: alias as String?,
       if (firmwareVersion != ignore) 8: firmwareVersion as String?,
+      if (lastFetchedStartDate != ignore) 9: lastFetchedStartDate as DateTime?,
+      if (lastFetchedEndDate != ignore) 10: lastFetchedEndDate as DateTime?,
     });
   }
 }
@@ -267,6 +340,8 @@ sealed class _BleDeviceQueryUpdate {
     String? platform,
     String? alias,
     String? firmwareVersion,
+    DateTime? lastFetchedStartDate,
+    DateTime? lastFetchedEndDate,
   });
 }
 
@@ -285,6 +360,8 @@ class _BleDeviceQueryUpdateImpl implements _BleDeviceQueryUpdate {
     Object? platform = ignore,
     Object? alias = ignore,
     Object? firmwareVersion = ignore,
+    Object? lastFetchedStartDate = ignore,
+    Object? lastFetchedEndDate = ignore,
   }) {
     return query.updateProperties(limit: limit, {
       if (name != ignore) 2: name as String?,
@@ -294,6 +371,8 @@ class _BleDeviceQueryUpdateImpl implements _BleDeviceQueryUpdate {
       if (platform != ignore) 6: platform as String?,
       if (alias != ignore) 7: alias as String?,
       if (firmwareVersion != ignore) 8: firmwareVersion as String?,
+      if (lastFetchedStartDate != ignore) 9: lastFetchedStartDate as DateTime?,
+      if (lastFetchedEndDate != ignore) 10: lastFetchedEndDate as DateTime?,
     });
   }
 }
@@ -320,6 +399,8 @@ class _BleDeviceQueryBuilderUpdateImpl implements _BleDeviceQueryUpdate {
     Object? platform = ignore,
     Object? alias = ignore,
     Object? firmwareVersion = ignore,
+    Object? lastFetchedStartDate = ignore,
+    Object? lastFetchedEndDate = ignore,
   }) {
     final q = query.build();
     try {
@@ -331,6 +412,9 @@ class _BleDeviceQueryBuilderUpdateImpl implements _BleDeviceQueryUpdate {
         if (platform != ignore) 6: platform as String?,
         if (alias != ignore) 7: alias as String?,
         if (firmwareVersion != ignore) 8: firmwareVersion as String?,
+        if (lastFetchedStartDate != ignore)
+          9: lastFetchedStartDate as DateTime?,
+        if (lastFetchedEndDate != ignore) 10: lastFetchedEndDate as DateTime?,
       });
     } finally {
       q.close();
@@ -1581,6 +1665,206 @@ extension BleDeviceQueryFilter
       );
     });
   }
+
+  QueryBuilder<BleDevice, BleDevice, QAfterFilterCondition>
+      lastFetchedStartDateIsNull() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(const IsNullCondition(property: 9));
+    });
+  }
+
+  QueryBuilder<BleDevice, BleDevice, QAfterFilterCondition>
+      lastFetchedStartDateIsNotNull() {
+    return QueryBuilder.apply(not(), (query) {
+      return query.addFilterCondition(const IsNullCondition(property: 9));
+    });
+  }
+
+  QueryBuilder<BleDevice, BleDevice, QAfterFilterCondition>
+      lastFetchedStartDateEqualTo(
+    DateTime? value,
+  ) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        EqualCondition(
+          property: 9,
+          value: value,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<BleDevice, BleDevice, QAfterFilterCondition>
+      lastFetchedStartDateGreaterThan(
+    DateTime? value,
+  ) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        GreaterCondition(
+          property: 9,
+          value: value,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<BleDevice, BleDevice, QAfterFilterCondition>
+      lastFetchedStartDateGreaterThanOrEqualTo(
+    DateTime? value,
+  ) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        GreaterOrEqualCondition(
+          property: 9,
+          value: value,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<BleDevice, BleDevice, QAfterFilterCondition>
+      lastFetchedStartDateLessThan(
+    DateTime? value,
+  ) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        LessCondition(
+          property: 9,
+          value: value,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<BleDevice, BleDevice, QAfterFilterCondition>
+      lastFetchedStartDateLessThanOrEqualTo(
+    DateTime? value,
+  ) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        LessOrEqualCondition(
+          property: 9,
+          value: value,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<BleDevice, BleDevice, QAfterFilterCondition>
+      lastFetchedStartDateBetween(
+    DateTime? lower,
+    DateTime? upper,
+  ) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        BetweenCondition(
+          property: 9,
+          lower: lower,
+          upper: upper,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<BleDevice, BleDevice, QAfterFilterCondition>
+      lastFetchedEndDateIsNull() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(const IsNullCondition(property: 10));
+    });
+  }
+
+  QueryBuilder<BleDevice, BleDevice, QAfterFilterCondition>
+      lastFetchedEndDateIsNotNull() {
+    return QueryBuilder.apply(not(), (query) {
+      return query.addFilterCondition(const IsNullCondition(property: 10));
+    });
+  }
+
+  QueryBuilder<BleDevice, BleDevice, QAfterFilterCondition>
+      lastFetchedEndDateEqualTo(
+    DateTime? value,
+  ) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        EqualCondition(
+          property: 10,
+          value: value,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<BleDevice, BleDevice, QAfterFilterCondition>
+      lastFetchedEndDateGreaterThan(
+    DateTime? value,
+  ) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        GreaterCondition(
+          property: 10,
+          value: value,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<BleDevice, BleDevice, QAfterFilterCondition>
+      lastFetchedEndDateGreaterThanOrEqualTo(
+    DateTime? value,
+  ) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        GreaterOrEqualCondition(
+          property: 10,
+          value: value,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<BleDevice, BleDevice, QAfterFilterCondition>
+      lastFetchedEndDateLessThan(
+    DateTime? value,
+  ) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        LessCondition(
+          property: 10,
+          value: value,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<BleDevice, BleDevice, QAfterFilterCondition>
+      lastFetchedEndDateLessThanOrEqualTo(
+    DateTime? value,
+  ) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        LessOrEqualCondition(
+          property: 10,
+          value: value,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<BleDevice, BleDevice, QAfterFilterCondition>
+      lastFetchedEndDateBetween(
+    DateTime? lower,
+    DateTime? upper,
+  ) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        BetweenCondition(
+          property: 10,
+          lower: lower,
+          upper: upper,
+        ),
+      );
+    });
+  }
 }
 
 extension BleDeviceQueryObject
@@ -1736,6 +2020,33 @@ extension BleDeviceQuerySortBy on QueryBuilder<BleDevice, BleDevice, QSortBy> {
       );
     });
   }
+
+  QueryBuilder<BleDevice, BleDevice, QAfterSortBy>
+      sortByLastFetchedStartDate() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(9);
+    });
+  }
+
+  QueryBuilder<BleDevice, BleDevice, QAfterSortBy>
+      sortByLastFetchedStartDateDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(9, sort: Sort.desc);
+    });
+  }
+
+  QueryBuilder<BleDevice, BleDevice, QAfterSortBy> sortByLastFetchedEndDate() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(10);
+    });
+  }
+
+  QueryBuilder<BleDevice, BleDevice, QAfterSortBy>
+      sortByLastFetchedEndDateDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(10, sort: Sort.desc);
+    });
+  }
 }
 
 extension BleDeviceQuerySortThenBy
@@ -1847,6 +2158,33 @@ extension BleDeviceQuerySortThenBy
       return query.addSortBy(8, sort: Sort.desc, caseSensitive: caseSensitive);
     });
   }
+
+  QueryBuilder<BleDevice, BleDevice, QAfterSortBy>
+      thenByLastFetchedStartDate() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(9);
+    });
+  }
+
+  QueryBuilder<BleDevice, BleDevice, QAfterSortBy>
+      thenByLastFetchedStartDateDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(9, sort: Sort.desc);
+    });
+  }
+
+  QueryBuilder<BleDevice, BleDevice, QAfterSortBy> thenByLastFetchedEndDate() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(10);
+    });
+  }
+
+  QueryBuilder<BleDevice, BleDevice, QAfterSortBy>
+      thenByLastFetchedEndDateDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(10, sort: Sort.desc);
+    });
+  }
 }
 
 extension BleDeviceQueryWhereDistinct
@@ -1898,6 +2236,20 @@ extension BleDeviceQueryWhereDistinct
       return query.addDistinctBy(8, caseSensitive: caseSensitive);
     });
   }
+
+  QueryBuilder<BleDevice, BleDevice, QAfterDistinct>
+      distinctByLastFetchedStartDate() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addDistinctBy(9);
+    });
+  }
+
+  QueryBuilder<BleDevice, BleDevice, QAfterDistinct>
+      distinctByLastFetchedEndDate() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addDistinctBy(10);
+    });
+  }
 }
 
 extension BleDeviceQueryProperty1
@@ -1947,6 +2299,20 @@ extension BleDeviceQueryProperty1
   QueryBuilder<BleDevice, String, QAfterProperty> firmwareVersionProperty() {
     return QueryBuilder.apply(this, (query) {
       return query.addProperty(8);
+    });
+  }
+
+  QueryBuilder<BleDevice, DateTime?, QAfterProperty>
+      lastFetchedStartDateProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addProperty(9);
+    });
+  }
+
+  QueryBuilder<BleDevice, DateTime?, QAfterProperty>
+      lastFetchedEndDateProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addProperty(10);
     });
   }
 }
@@ -2002,6 +2368,20 @@ extension BleDeviceQueryProperty2<R>
       return query.addProperty(8);
     });
   }
+
+  QueryBuilder<BleDevice, (R, DateTime?), QAfterProperty>
+      lastFetchedStartDateProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addProperty(9);
+    });
+  }
+
+  QueryBuilder<BleDevice, (R, DateTime?), QAfterProperty>
+      lastFetchedEndDateProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addProperty(10);
+    });
+  }
 }
 
 extension BleDeviceQueryProperty3<R1, R2>
@@ -2053,6 +2433,20 @@ extension BleDeviceQueryProperty3<R1, R2>
       firmwareVersionProperty() {
     return QueryBuilder.apply(this, (query) {
       return query.addProperty(8);
+    });
+  }
+
+  QueryBuilder<BleDevice, (R1, R2, DateTime?), QOperations>
+      lastFetchedStartDateProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addProperty(9);
+    });
+  }
+
+  QueryBuilder<BleDevice, (R1, R2, DateTime?), QOperations>
+      lastFetchedEndDateProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addProperty(10);
     });
   }
 }

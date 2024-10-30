@@ -13,6 +13,8 @@ class BleDevice {
     required this.platform,
     this.alias,
     this.firmwareVersion = '-.-.-',
+    this.lastFetchedStartDate,
+    this.lastFetchedEndDate,
   });
 
   @Id()
@@ -34,6 +36,9 @@ class BleDevice {
 
   final String firmwareVersion;
 
+  DateTime? lastFetchedStartDate; // New field
+  DateTime? lastFetchedEndDate; // New field
+
   BleDevice copyWith({
     String? deviceId,
     String? name,
@@ -41,6 +46,8 @@ class BleDevice {
     String? platform,
     String? alias,
     String? firmwareVersion,
+    DateTime? lastFetchedStartDate,
+    DateTime? lastFetchedEndDate,
   }) {
     return BleDevice(
       deviceId: deviceId ?? this.deviceId,
@@ -49,6 +56,8 @@ class BleDevice {
       platform: platform ?? this.platform,
       alias: alias ?? this.alias,
       firmwareVersion: firmwareVersion ?? this.firmwareVersion,
+      lastFetchedStartDate: lastFetchedStartDate ?? this.lastFetchedStartDate,
+      lastFetchedEndDate: lastFetchedEndDate ?? this.lastFetchedEndDate,
     );
   }
 
