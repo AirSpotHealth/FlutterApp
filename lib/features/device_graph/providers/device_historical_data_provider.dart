@@ -68,6 +68,15 @@ class _DeviceHistoricalDataNotifier extends AutoDisposeFamilyStreamNotifier<
     final currentDateTime = DateTime.now();
     final (startDate, endDate) = dateTimeRange;
 
+    ref
+        .read(bleDeviceCommunicationProvider(deviceId).notifier)
+        .sendCommand(DeviceCmdUtils.getCo2History(
+          startDate: startDate,
+          endDate: endDate,
+        ));
+
+    return;
+
     // Read the existing device data from the database
     final bleDevice = _isarService.read<BleDevice?>((isar) =>
         isar.bleDevices.where().deviceIdEqualTo(deviceId).findFirst());
