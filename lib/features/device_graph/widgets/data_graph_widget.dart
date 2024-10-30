@@ -138,7 +138,7 @@ class _DataGraphWidgetState extends ConsumerState<DataGraphWidget> {
       ],
       grid: {
         left: 40,
-        right: 40,
+        right: 20,
         top: 50,
         bottom: ${settings.showZoomSlider ? 80 : 50}
       },
