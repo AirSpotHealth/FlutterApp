@@ -46,7 +46,7 @@
     <application
         android:name="${applicationName}"
         android:icon="@mipmap/launcher_icon"
-        android:label="AirSpot-Health Flutter">
+        android:label="AirSpot Health">
 
          <receiver
             android:name=".Co2ValueWidget"
