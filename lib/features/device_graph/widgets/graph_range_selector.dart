@@ -11,37 +11,42 @@ class GraphRangeSelector extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final GraphDataDuration selectedRange = ref.watch(graphDurationProvider);
-    return Row(
-      children: GraphDataDuration.values.map((range) {
-        final bool isSelected = selectedRange == range;
+    return Container(
+      constraints: BoxConstraints(maxWidth: context.width * 0.7),
+      padding: const EdgeInsets.symmetric(horizontal: 8.0),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: GraphDataDuration.values.map((range) {
+          final bool isSelected = selectedRange == range;
 
-        return GestureDetector(
-          onTap: () {
-            ref.read(graphDurationProvider.notifier).setDuration(range);
-          },
-          child: AnimatedContainer(
-            duration: const Duration(milliseconds: 300),
-            padding:
-                const EdgeInsets.symmetric(vertical: 8.0, horizontal: 12.0),
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(8.0),
-              color: isSelected
-                  ? AppColors.primaryColorDark
-                  : AppColors.backgroundSecondary,
-            ),
-            child: Text.rich(
-              TextSpan(
-                text: range.name.capitalize(),
-                style: TextStyle(
-                  color: isSelected ? Colors.white : AppColors.primaryColorDark,
-                  fontSize: 14.0,
-                  fontWeight: FontWeight.w600,
+          return Flexible(
+            child: GestureDetector(
+              onTap: () =>
+                  ref.read(graphDurationProvider.notifier).setDuration(range),
+              child: AnimatedContainer(
+                duration: const Duration(milliseconds: 300),
+                padding:
+                    const EdgeInsets.symmetric(vertical: 8.0, horizontal: 10.0),
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(8.0),
+                  color: isSelected
+                      ? AppColors.primaryColorDark
+                      : AppColors.backgroundSecondary,
+                ),
+                child: Text(
+                  range.name.capitalize(),
+                  style: TextStyle(
+                    color:
+                        isSelected ? Colors.white : AppColors.primaryColorDark,
+                    fontSize: context.textTheme.bodyMedium?.fontSize,
+                    fontWeight: FontWeight.w600,
+                  ),
                 ),
               ),
             ),
-          ),
-        );
-      }).toList(),
+          );
+        }).toList(),
+      ),
     );
   }
 }
