@@ -18,8 +18,6 @@ class _BleDeviceConnectionNotifier
     extends FamilyNotifier<BluetoothBondState, String> {
   final BLEService _bleService = BLEService.instance;
 
-  StreamSubscription<BluetoothConnectionState>? _deviceSubscription;
-
   BluetoothDevice get device => BluetoothDevice.fromId(arg);
 
   @override
@@ -46,7 +44,9 @@ class _BleDeviceConnectionNotifier
 
     debugPrint('Connecting to device: ${device.advName}');
 
-    _deviceSubscription = device.connectionState.listen((bState) {
+    StreamSubscription<BluetoothConnectionState>? deviceSubscription;
+
+    deviceSubscription = device.connectionState.listen((bState) {
       debugPrint('Device connection state: $bState');
 
       state = switch (bState) {
@@ -70,7 +70,7 @@ class _BleDeviceConnectionNotifier
     });
 
     device.cancelWhenDisconnected(
-      _deviceSubscription!,
+      deviceSubscription,
       delayed: true,
       next: true,
     );
