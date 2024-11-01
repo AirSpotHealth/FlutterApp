@@ -20,7 +20,7 @@ android {
     }
 
     defaultConfig {
-        applicationId = "com.air.spot.airspothealth"
+        applicationId "com.air.spot"
         minSdk = 23
         targetSdk = 34
         versionCode = flutter.versionCode
