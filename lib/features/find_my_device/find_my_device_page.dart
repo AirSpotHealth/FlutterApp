@@ -1,51 +1,44 @@
+import 'package:airspothealth/core/models/ble_device.dart';
 import 'package:airspothealth/core/providers/ble_saved_devices_provider.dart';
 import 'package:airspothealth/features/find_my_device/widgets/my_device_widget.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 class FindMyDevicePage extends ConsumerWidget {
-  const FindMyDevicePage({super.key});
+  const FindMyDevicePage({required this.deviceId, super.key});
+
+  final String deviceId;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final devices = ref.watch(bleSavedDevicesProvider);
+    final BleDevice? devices =
+        ref.read(bleSavedDevicesProvider.notifier).getDeviceById(deviceId);
+
+    if (devices == null) {
+      return Scaffold(
+        appBar: AppBar(
+          title: const Text('Locate My Airspot'),
+        ),
+        body: const Center(
+          child: Text('Device not found.'),
+        ),
+      );
+    }
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Find My Device'),
+        title: const Text('Locate My Airspot'),
       ),
-      body: devices.isEmpty
-          ? const Center(
-              child: Text('No devices found.'),
-            )
-          : Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Flexible(
-                  child: GridView.builder(
-                    shrinkWrap: true,
-                    padding: const EdgeInsets.all(16),
-                    gridDelegate:
-                        const SliverGridDelegateWithFixedCrossAxisCount(
-                      crossAxisCount: 2,
-                      crossAxisSpacing: 16,
-                      mainAxisSpacing: 16,
-                      childAspectRatio: 0.75,
-                    ),
-                    itemCount: devices.length,
-                    itemBuilder: (context, index) {
-                      final device = devices[index];
-                      return MyDeviceWidget(device: device);
-                    },
-                  ),
-                ),
-                const SizedBox(height: 32),
-                const Text(
-                  'Tap on a device to find it. It will deliver a 5-second alarm to your Bluetooth-linked device.',
-                  textAlign: TextAlign.center,
-                ),
-              ],
-            ),
+      body: Column(
+        children: [
+          Flexible(child: MyDeviceWidget(device: devices)),
+          const SizedBox(height: 32),
+          const Text(
+            'Tap on the device to find it. It will deliver a 5-second alarm to your Bluetooth-linked device.',
+            textAlign: TextAlign.center,
+          ),
+        ],
+      ),
     );
   }
 }

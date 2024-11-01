@@ -140,6 +140,20 @@ class AppRouter {
                       return DeviceUpdatePage(deviceId: deviceId);
                     },
                   ),
+                  // Route for find my device settings within device settings
+                  GoRoute(
+                    name: RouteNames.findMyDevice,
+                    path: RouteNames.findMyDevice,
+                    builder: (context, state) {
+                      final deviceId = state.pathParameters['deviceId'];
+
+                      if (deviceId == null) {
+                        throw ErrorDescription('Device ID is required');
+                      }
+
+                      return FindMyDevicePage(deviceId: deviceId);
+                    },
+                  ),
                 ],
               ),
               // Route for device graph
@@ -189,11 +203,6 @@ class AppRouter {
         name: RouteNames.latestNews,
         path: RouteNames.latestNews,
         builder: (context, state) => const LatestNewsPage(),
-      ),
-      GoRoute(
-        name: RouteNames.findMyDevice,
-        path: RouteNames.findMyDevice,
-        builder: (context, state) => const FindMyDevicePage(),
       ),
     ],
   );

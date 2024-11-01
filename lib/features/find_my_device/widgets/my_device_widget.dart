@@ -21,7 +21,7 @@ class MyDeviceWidget extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final DeviceSettings deviceSettings =
-        ref.read(deviceSettingsProvider(device.deviceId));
+        ref.watch(deviceSettingsProvider(device.deviceId));
 
     final dynamic co2Value =
         ref.watch(bleDeviceCommunicationProvider(device.deviceId));
@@ -30,45 +30,45 @@ class MyDeviceWidget extends ConsumerWidget {
         ref.watch(bleDeviceConnectionProvider(device.deviceId)) ==
             BluetoothBondState.bonded;
 
-    return LayoutBuilder(builder: (_, constraints) {
-      return TappableWidget(
-        onTap: () => ref
-            .read(bleDeviceCommunicationProvider(device.deviceId).notifier)
-            .sendCommand(DeviceCmdUtils.findDevice()),
-        tapCount: 1,
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(device.alias ?? device.name,
-                style: context.textTheme.labelLarge?.weight600),
-            const SizedBox(height: 4),
-            Container(
-              width: constraints.maxWidth,
-              height: constraints.maxHeight * 0.86,
-              padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 20),
-              decoration: const BoxDecoration(
-                image: DecorationImage(
-                  image: AssetImage(Assets.airSpotBg),
-                  fit: BoxFit.contain,
-                ),
-              ),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  _buildHeader(deviceSettings),
-                  const SizedBox(height: 6),
-                  _buildCo2Value(co2Value),
-                  _buildBluetooth(isConnected),
-                  _buildActiveIndicator(co2Value, deviceSettings),
-                  _showBrandColors(),
-                ],
+    return TappableWidget(
+      debounceTime: 5000,
+      onTap: () => ref
+          .read(bleDeviceCommunicationProvider(device.deviceId).notifier)
+          .sendCommand(DeviceCmdUtils.findDevice()),
+      tapCount: 1,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const SizedBox(height: 16),
+          Text("${device.alias}/${device.name}",
+              style: context.textTheme.labelLarge?.weight600),
+          const SizedBox(height: 16),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 20),
+            decoration: const BoxDecoration(
+              image: DecorationImage(
+                image: AssetImage(Assets.airSpotBg),
+                fit: BoxFit.contain,
               ),
             ),
-          ],
-        ),
-      );
-    });
+            width: context.width * 0.5,
+            height: context.height * 0.35,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                _buildHeader(deviceSettings),
+                const SizedBox(height: 6),
+                _buildCo2Value(co2Value),
+                _buildBluetooth(isConnected),
+                _buildActiveIndicator(co2Value, deviceSettings),
+                _showBrandColors(),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
   }
 
   Align _buildCo2Value(co2Value) {

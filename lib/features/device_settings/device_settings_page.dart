@@ -51,6 +51,11 @@ class DeviceSettingsPage extends ConsumerWidget {
       assetIcon: Assets.recalibrateSettings,
       route: RouteNames.recalibrateSettings,
     ),
+    SettingItem(
+      title: 'Locate my Airspot',
+      assetIcon: Assets.findMyDevice,
+      route: RouteNames.findMyDevice,
+    )
   ];
 
   @override

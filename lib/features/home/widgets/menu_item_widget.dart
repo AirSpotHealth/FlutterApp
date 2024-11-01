@@ -83,12 +83,6 @@ class MenuItems {
       route: RouteNames.solutions,
     ),
     MenuItem(
-      title: 'Find My AirSpot',
-      description: 'Deliver a 5 second alarm to your BlueTooth linked device.',
-      iconAsset: Assets.findMyDevice,
-      route: RouteNames.findMyDevice,
-    ),
-    MenuItem(
       title: 'Shop',
       description: 'Great products from AirSpot and our affiliate partners.',
       iconAsset: Assets.shop,
