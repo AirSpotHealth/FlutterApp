@@ -40,7 +40,8 @@ class DeviceMockWidget extends ConsumerWidget {
         mainAxisSize: MainAxisSize.min,
         children: [
           const SizedBox(height: 16),
-          Text("${device.alias}/${device.name}",
+          Text(
+              "${device.alias != null ? ('${device.alias!}/') : ''}${device.name}",
               style: context.textTheme.labelLarge?.weight600),
           const SizedBox(height: 16),
           Container(
@@ -53,6 +54,10 @@ class DeviceMockWidget extends ConsumerWidget {
             ),
             width: context.width * 0.5,
             height: context.height * 0.35,
+            constraints: const BoxConstraints(
+              maxWidth: 200,
+              maxHeight: 200,
+            ),
             child: Column(
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,

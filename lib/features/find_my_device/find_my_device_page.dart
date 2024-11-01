@@ -1,5 +1,6 @@
 import 'package:airspothealth/core/models/ble_device.dart';
 import 'package:airspothealth/core/providers/ble_saved_devices_provider.dart';
+import 'package:airspothealth/features/device_settings/widgets/device_settings_name_widget.dart';
 import 'package:airspothealth/features/find_my_device/widgets/device_mock_widget.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -27,7 +28,8 @@ class FindMyDevicePage extends ConsumerWidget {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Locate My Airspot'),
+        title:
+            DeviceSettingsNameWidget(deviceId: deviceId, suffixText: 'Locate'),
       ),
       body: Column(
         children: [
