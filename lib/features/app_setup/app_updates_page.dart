@@ -1,7 +1,9 @@
 import 'package:airspothealth/core/theme/app_colors.dart';
 import 'package:airspothealth/core/widgets/app_logo.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:package_info_plus/package_info_plus.dart';
 
 class AppUpdatesPage extends ConsumerStatefulWidget {
   const AppUpdatesPage({super.key});
@@ -29,13 +31,25 @@ class _AppUpdatePageState extends ConsumerState<AppUpdatesPage> {
                 color: AppColors.neutralGreyLight,
                 borderRadius: BorderRadius.circular(10),
               ),
-              child: const Row(
+              child: Row(
                 children: [
-                  Text('Current Version: '),
-                  SizedBox(width: 8),
-                  Text('1.2.9'),
-                  SizedBox(width: 8),
-                  Expanded(
+                  const Text('Current Version: '),
+                  const SizedBox(width: 8),
+                  FutureBuilder(
+                      future: PackageInfo.fromPlatform(),
+                      builder: (context, data) {
+                        switch (data.connectionState) {
+                          case ConnectionState.waiting:
+                            return const CupertinoActivityIndicator();
+                          case ConnectionState.done:
+                            final PackageInfo? packageInfo = data.data;
+                            return Text(packageInfo?.version ?? 'Unknown');
+                          default:
+                            return const Text('Unknown');
+                        }
+                      }),
+                  const SizedBox(width: 8),
+                  const Expanded(
                     child: Text(
                       'Up to Date',
                       textAlign: TextAlign.end,
