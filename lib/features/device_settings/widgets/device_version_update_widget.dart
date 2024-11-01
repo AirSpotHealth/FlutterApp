@@ -33,8 +33,8 @@ class _DeviceVersionUpdateWidgetState
   Widget build(BuildContext context) {
     ref.listen(firmwareRemoteVersionProvider, (oldState, newState) {
       if (newState is AsyncError) {
-        context
-            .showSnackBar('Failed to fetch remote version, ${newState.error}');
+        context.showSnackBar(newState.error.toString());
+        return;
       }
     });
 

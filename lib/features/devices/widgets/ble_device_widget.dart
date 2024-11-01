@@ -95,9 +95,11 @@ class BleDeviceWidget extends ConsumerWidget {
       mainAxisSize: MainAxisSize.min,
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        const Text(
-          'Not Connected/Unavailable',
-          style: TextStyle(color: AppColors.neutralGrey),
+        const Flexible(
+          child: Text(
+            'Not Connected/Unavailable',
+            style: TextStyle(color: AppColors.neutralGrey),
+          ),
         ),
         DeviceConnectButton(deviceId: bleDevice.deviceId),
       ],
@@ -107,9 +109,8 @@ class BleDeviceWidget extends ConsumerWidget {
   List<Widget> _getConnectedWidgets(WidgetRef ref) {
     return [
       GestureDetector(
-        onTap: () {
-          _showDeviceAliasDialog(ref, bleDevice.deviceId, bleDevice.alias);
-        },
+        onTap: () =>
+            _showDeviceAliasDialog(ref, bleDevice.deviceId, bleDevice.alias),
         child: const Icon(
           Icons.edit_outlined,
           color: AppColors.primaryColor,
@@ -117,11 +118,12 @@ class BleDeviceWidget extends ConsumerWidget {
         ),
       ),
       const SizedBox(width: 8),
-      Text(
-        bleDevice.alias ?? 'Airspot',
-        style: ref.context.textTheme.labelLarge,
+      Expanded(
+        child: Text(
+          bleDevice.alias ?? 'Airspot',
+          style: ref.context.textTheme.labelLarge,
+        ),
       ),
-      const Spacer(),
       Text(
         'connected',
         style: ref.context.textTheme.labelLarge
@@ -129,12 +131,10 @@ class BleDeviceWidget extends ConsumerWidget {
       ),
       const SizedBox(width: 8),
       GestureDetector(
-        onTap: () {
-          ref.context.pushNamed(
-            RouteNames.deviceGraph,
-            pathParameters: {'deviceId': bleDevice.deviceId},
-          );
-        },
+        onTap: () => ref.context.pushNamed(
+          RouteNames.deviceGraph,
+          pathParameters: {'deviceId': bleDevice.deviceId},
+        ),
         child: Image.asset(
           Assets.deviceGraph,
           width: 28,
@@ -142,12 +142,10 @@ class BleDeviceWidget extends ConsumerWidget {
       ),
       const SizedBox(width: 12),
       GestureDetector(
-        onTap: () {
-          ref.context.pushNamed(
-            RouteNames.deviceSettings,
-            pathParameters: {'deviceId': bleDevice.deviceId},
-          );
-        },
+        onTap: () => ref.context.pushNamed(
+          RouteNames.deviceSettings,
+          pathParameters: {'deviceId': bleDevice.deviceId},
+        ),
         child: Image.asset(
           Assets.deviceSettings,
           width: 28,
