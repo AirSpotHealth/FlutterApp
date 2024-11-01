@@ -45,6 +45,8 @@ class _AddDevicePageState extends ConsumerState<AddDevicePage> {
       body: RefreshIndicator.adaptive(
         onRefresh: () async {
           ref.read(bluetoothSearchResultsProvider.notifier).startScan();
+
+          return Future.value();
         },
         child: Column(
           mainAxisSize: MainAxisSize.min,
