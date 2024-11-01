@@ -64,7 +64,7 @@ class _DeviceHistoricalDataNotifier extends AutoDisposeFamilyStreamNotifier<
   }
 
   void _fetchDataFromDevice() async {
-    final currentDateTime = DateTime.now();
+    // final currentDateTime = DateTime.now();
     final (startDate, endDate) = dateTimeRange;
 
     ref
