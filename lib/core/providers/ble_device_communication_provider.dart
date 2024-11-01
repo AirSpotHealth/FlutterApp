@@ -134,6 +134,12 @@ class _BleDeviceCommunicationNotifier extends FamilyNotifier<dynamic, String> {
       return;
     }
 
+    if (data[2] == ResponseCommand.initialData.value) {
+      debugPrint('Initial data invalidating');
+      ref.invalidate(deviceSettingsProvider(deviceId));
+      return;
+    }
+
     if (data[2] == ResponseCommand.recalibrationTime.value) {
       ref
           .read(recalibrationTimeProvider(deviceId).notifier)

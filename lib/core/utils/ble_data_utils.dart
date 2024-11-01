@@ -57,6 +57,10 @@ class BleDataUtils {
       return result as String;
     }
 
+    if (responseCommand == ResponseCommand.initialData) {
+      return true;
+    }
+
     return null;
   }
 }
