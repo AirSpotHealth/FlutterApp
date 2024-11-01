@@ -13,8 +13,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_blue_plus/flutter_blue_plus.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-class MyDeviceWidget extends ConsumerWidget {
-  const MyDeviceWidget({required this.device, super.key});
+class DeviceMockWidget extends ConsumerWidget {
+  const DeviceMockWidget({required this.device, super.key});
 
   final BleDevice device;
 

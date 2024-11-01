@@ -1,6 +1,6 @@
 import 'package:airspothealth/core/models/ble_device.dart';
 import 'package:airspothealth/core/providers/ble_saved_devices_provider.dart';
-import 'package:airspothealth/features/find_my_device/widgets/my_device_widget.dart';
+import 'package:airspothealth/features/find_my_device/widgets/device_mock_widget.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -31,7 +31,7 @@ class FindMyDevicePage extends ConsumerWidget {
       ),
       body: Column(
         children: [
-          Flexible(child: MyDeviceWidget(device: devices)),
+          Flexible(child: DeviceMockWidget(device: devices)),
           const SizedBox(height: 32),
           const Text(
             'Tap on the device to find it. It will deliver a 5-second alarm to your Bluetooth-linked device.',
