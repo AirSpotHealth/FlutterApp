@@ -23,6 +23,7 @@ class DataGraphWrapper extends ConsumerWidget {
         ref.watch(deviceHistoricalDataProvider((deviceId, duration)));
 
     return Stack(
+      fit: StackFit.expand,
       children: [
         Padding(
           padding: const EdgeInsets.only(top: 16),
@@ -30,10 +31,7 @@ class DataGraphWrapper extends ConsumerWidget {
             deviceDataList: deviceDataList.value ?? [],
           ),
         ),
-        const Padding(
-          padding: EdgeInsets.symmetric(horizontal: 16),
-          child: GraphRangeSelector(),
-        ),
+        const GraphRangeSelector(),
         const Positioned(right: 12, child: GraphLegends()),
       ],
     );
