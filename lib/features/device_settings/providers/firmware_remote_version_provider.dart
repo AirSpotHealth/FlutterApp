@@ -35,13 +35,16 @@ class _FirmwareRemoteVersionNotifier
 
         state = AsyncData(remoteVersion);
       } else {
-        debugPrint('Version Update Check Error: ${result.data}');
-        state =
-            AsyncError('Failed to fetch remote version', StackTrace.current);
+        debugPrint('Error (${result.statusCode}): ${result.statusMessage}');
+        state = AsyncError(
+            'Failed to fetch remote version ${result.statusMessage}',
+            StackTrace.current);
       }
-    } catch (e) {
+    } on DioException catch (e) {
       debugPrint('Version Update Check Error: $e');
-      state = AsyncError('Failed to fetch remote version', StackTrace.current);
+      state = AsyncError(
+          'Failed to fetch remote version\nError Code: ${e.response?.statusCode}',
+          StackTrace.current);
     }
   }
 }
