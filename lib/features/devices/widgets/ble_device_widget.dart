@@ -180,7 +180,7 @@ class BleDeviceWidget extends ConsumerWidget {
                 TextFormField(
                   controller: controller,
                   decoration: const InputDecoration(
-                    hintText: 'Enter device alias',
+                    hintText: 'Enter nickname',
                     border: OutlineInputBorder(
                         borderSide: BorderSide(color: AppColors.primaryColor)),
                     enabledBorder: OutlineInputBorder(
