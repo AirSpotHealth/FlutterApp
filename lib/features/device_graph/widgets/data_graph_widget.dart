@@ -45,9 +45,7 @@ class _DataGraphWidgetState extends ConsumerState<DataGraphWidget> {
         .map((data) => _formatDate(data.dateTime, duration: duration))
         .toList();
 
-    final yData = currentDataList
-        .map((data) => data.value.clamp(350, 5000).toDouble())
-        .toList();
+    final yData = currentDataList.map((data) => data.value.toDouble()).toList();
 
     // Check if there is no data
     if (xData.isEmpty || yData.isEmpty) {

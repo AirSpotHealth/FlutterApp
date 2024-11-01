@@ -74,7 +74,9 @@ class DeviceDataAggregateCard extends ConsumerWidget {
           child: RichText(
             textAlign: TextAlign.end,
             text: TextSpan(
-              text: data != null ? data.value.toString() : '0000',
+              text: data != null
+                  ? data.value.toInt().clamp(350, 5000).toString()
+                  : '0000',
               style: context.textTheme.bodyMedium?.copyWith(
                   color: AppUtils.getDataColorFromValue(data?.value)),
               children: const [
