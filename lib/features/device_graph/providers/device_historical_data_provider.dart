@@ -1,4 +1,3 @@
-import 'package:airspothealth/core/models/ble_device.dart';
 import 'package:airspothealth/core/models/device_data.dart';
 import 'package:airspothealth/core/providers/ble_device_communication_provider.dart';
 import 'package:airspothealth/core/services/isar_service.dart';
@@ -78,46 +77,46 @@ class _DeviceHistoricalDataNotifier extends AutoDisposeFamilyStreamNotifier<
     return;
 
     // Read the existing device data from the database
-    final bleDevice = _isarService.read<BleDevice?>((isar) =>
-        isar.bleDevices.where().deviceIdEqualTo(deviceId).findFirst());
+    // final bleDevice = _isarService.read<BleDevice?>((isar) =>
+    //     isar.bleDevices.where().deviceIdEqualTo(deviceId).findFirst());
 
-    DateTime fetchStartDate = startDate;
-    DateTime fetchEndDate = endDate;
+    // DateTime fetchStartDate = startDate;
+    // DateTime fetchEndDate = endDate;
 
-    // If data has been previously fetched, adjust the start date
-    if (bleDevice != null && bleDevice.lastFetchedEndDate != null) {
-      final lastFetchedEndDate = bleDevice.lastFetchedEndDate!;
+    // // If data has been previously fetched, adjust the start date
+    // if (bleDevice != null && bleDevice.lastFetchedEndDate != null) {
+    //   final lastFetchedEndDate = bleDevice.lastFetchedEndDate!;
 
-      // If the last fetched end date is after the current start date, use it as the new start date
-      if (lastFetchedEndDate.isAfter(startDate)) {
-        fetchStartDate = lastFetchedEndDate;
-      }
-    }
+    //   // If the last fetched end date is after the current start date, use it as the new start date
+    //   if (lastFetchedEndDate.isAfter(startDate)) {
+    //     fetchStartDate = lastFetchedEndDate;
+    //   }
+    // }
 
-    // Set the end date to current time if it exceeds the current end date
-    if (fetchEndDate.isAfter(currentDateTime)) {
-      fetchEndDate = currentDateTime;
-    }
+    // // Set the end date to current time if it exceeds the current end date
+    // if (fetchEndDate.isAfter(currentDateTime)) {
+    //   fetchEndDate = currentDateTime;
+    // }
 
-    // Only fetch if there is a valid time gap
-    if (fetchStartDate.isBefore(fetchEndDate)) {
-      ref.read(bleDeviceCommunicationProvider(deviceId).notifier).sendCommand(
-            DeviceCmdUtils.getCo2History(
-              startDate: fetchStartDate,
-              endDate: fetchEndDate,
-            ),
-          );
+    // // Only fetch if there is a valid time gap
+    // if (fetchStartDate.isBefore(fetchEndDate)) {
+    //   ref.read(bleDeviceCommunicationProvider(deviceId).notifier).sendCommand(
+    //         DeviceCmdUtils.getCo2History(
+    //           startDate: fetchStartDate,
+    //           endDate: fetchEndDate,
+    //         ),
+    //       );
 
-      // Update the last fetched range in the BleDevice model
-      if (bleDevice != null) {
-        _isarService.write((isar) {
-          final updatedBleDevice = bleDevice.copyWith(
-            lastFetchedStartDate: fetchStartDate,
-            lastFetchedEndDate: fetchEndDate,
-          );
-          return isar.bleDevices.put(updatedBleDevice);
-        });
-      }
-    }
+    //   // Update the last fetched range in the BleDevice model
+    //   if (bleDevice != null) {
+    //     _isarService.write((isar) {
+    //       final updatedBleDevice = bleDevice.copyWith(
+    //         lastFetchedStartDate: fetchStartDate,
+    //         lastFetchedEndDate: fetchEndDate,
+    //       );
+    //       return isar.bleDevices.put(updatedBleDevice);
+    //     });
+    //   }
+    // }
   }
 }
