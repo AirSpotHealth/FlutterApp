@@ -37,6 +37,7 @@ class BleDataUtils {
       ResponseCommand.firmwareVersion: parser.parseFirmwareVersion,
       ResponseCommand.recalibrationTime: parser.parseRecalibrationTime,
       ResponseCommand.recalibrationConfirm: parser.parseRecalibrationTime,
+      ResponseCommand.locateMyAirspot: parser.parseLocateMyAirspot,
     };
 
     final result = responseParsers[responseCommand]?.call(data);
@@ -248,6 +249,8 @@ class ResponseCommandParser {
 
   int parseRecalibrationTime(List<int> data) => data[4];
 
+  bool parseLocateMyAirspot(List<int> data) => _parseBoolean(data, 4);
+
   // Helper Methods
   int _parseTwoBytesToInt(List<int> data, int startIndex) =>
       _byteArrayToInt(data, startIndex, startIndex + 1);
@@ -319,7 +322,8 @@ enum ResponseCommand {
   setContinuosDisplayResult(0x0E),
   firmwareVersion(0x13),
   recalibrationTime(0x0F),
-  recalibrationConfirm(0x0D);
+  recalibrationConfirm(0x0D),
+  locateMyAirspot(0x10);
 
   const ResponseCommand(this.value);
   final int value;

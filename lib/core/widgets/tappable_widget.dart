@@ -1,27 +1,51 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 
 class TappableWidget extends StatefulWidget {
-  const TappableWidget(
-      {this.tapCount = 1, required this.onTap, required this.child, super.key});
-
-  final int tapCount;
+  const TappableWidget({
+    required this.onTap,
+    required this.child,
+    this.tapCount = 1,
+    this.debounceTime = 300,
+    super.key,
+  });
 
   final VoidCallback onTap;
-
   final Widget child;
+  final int tapCount;
+  final int debounceTime; // in milliseconds
+
   @override
   State<TappableWidget> createState() => _TappableWidgetState();
 }
 
 class _TappableWidgetState extends State<TappableWidget> {
-  int _tapCount = 0;
+  int _tapCounter = 0;
+  bool _isDebounced = false;
+  Timer? _debounceTimer;
 
   void _onTap() {
-    _tapCount++;
-    if (_tapCount == widget.tapCount) {
-      widget.onTap();
-      _tapCount = 0;
+    if (!_isDebounced) {
+      _tapCounter++;
+      if (_tapCounter >= widget.tapCount) {
+        widget.onTap();
+        _isDebounced = true;
+        _tapCounter = 0;
+
+        _debounceTimer?.cancel();
+        _debounceTimer = Timer(Duration(milliseconds: widget.debounceTime), () {
+          _isDebounced = false;
+        });
+      }
     }
+    // Ignore taps while debounced
+  }
+
+  @override
+  void dispose() {
+    _debounceTimer?.cancel();
+    super.dispose();
   }
 
   @override
