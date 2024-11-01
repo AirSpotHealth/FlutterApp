@@ -5,12 +5,14 @@ class SettingItem {
   final String assetIcon;
   final String? route;
   final Widget? suffixWidget;
+  final bool enabled;
 
   SettingItem({
     required this.title,
     required this.assetIcon,
     this.route,
     this.suffixWidget,
+    this.enabled = true,
   }) : assert(route != null || suffixWidget != null,
             "route or suffixWidget must be provided");
 
@@ -19,7 +21,8 @@ class SettingItem {
     return title.hashCode ^
         assetIcon.hashCode ^
         route.hashCode ^
-        suffixWidget.hashCode;
+        suffixWidget.hashCode ^
+        enabled.hashCode;
   }
 
   @override
@@ -30,6 +33,7 @@ class SettingItem {
         other.title == title &&
         other.assetIcon == assetIcon &&
         other.route == route &&
-        other.suffixWidget == suffixWidget;
+        other.suffixWidget == suffixWidget &&
+        other.enabled == enabled;
   }
 }

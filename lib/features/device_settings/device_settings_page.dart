@@ -33,11 +33,13 @@ class DeviceSettingsPage extends ConsumerWidget {
       title: 'CO2 PPM Settings',
       assetIcon: Assets.ppmSettings,
       route: RouteNames.ppmSettings,
+      enabled: false,
     ),
     SettingItem(
       title: 'High CO2 Alert',
       assetIcon: Assets.co2Settings,
       route: RouteNames.co2Settings,
+      enabled: false,
     ),
     SettingItem(
       title: 'AirSpot Device Update',
