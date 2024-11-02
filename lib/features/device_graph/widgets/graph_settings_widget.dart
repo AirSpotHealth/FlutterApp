@@ -1,3 +1,4 @@
+import 'package:airspothealth/core/theme/app_colors.dart';
 import 'package:airspothealth/features/device_graph/models/graph_settings.dart';
 import 'package:airspothealth/features/device_graph/providers/graph_settings_provider.dart';
 import 'package:flutter/material.dart';
@@ -44,10 +45,11 @@ class GraphSettingsWidget extends ConsumerWidget {
       onTap: onTap,
       child: Row(
         children: [
-          Checkbox(
-            value: value,
-            onChanged: (_) {},
+          Icon(
+            value ? Icons.check_box : Icons.check_box_outline_blank,
+            color: value ? AppColors.primaryColor : Colors.grey,
           ),
+          const SizedBox(width: 8),
           Text(title),
         ],
       ),
