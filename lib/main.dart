@@ -25,6 +25,12 @@ class AirspotApp extends StatelessWidget {
       theme: AppTheme.theme,
       routerConfig: AppRouter.router,
       debugShowCheckedModeBanner: false,
+      builder: (context, child) => MediaQuery(
+        data: MediaQuery.of(context).copyWith(
+          textScaler: const TextScaler.linear(1.0),
+        ),
+        child: child!,
+      ),
     );
   }
 }
