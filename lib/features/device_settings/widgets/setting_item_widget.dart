@@ -18,15 +18,16 @@ class SettingItemWidget extends StatelessWidget {
     return GestureDetector(
       onTap: item.enabled ? onTap : null,
       child: Container(
-        padding: const EdgeInsets.only(left: 16, right: 16, bottom: 8),
+        padding: const EdgeInsets.only(bottom: 8),
         color: Colors.white,
         child: Row(
           children: [
-            Image.asset(
-              item.assetIcon,
-              width: 32,
-              opacity: AlwaysStoppedAnimation(item.enabled ? 1.0 : 0.5),
-            ),
+            item.leadingWidget ??
+                Image.asset(
+                  item.assetIcon,
+                  width: 32,
+                  opacity: AlwaysStoppedAnimation(item.enabled ? 1.0 : 0.5),
+                ),
             const SizedBox(width: 16),
             Expanded(
               child: DecoratedBox(
