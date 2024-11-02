@@ -48,11 +48,7 @@ class ForgetDeviceWidget extends ConsumerWidget {
             color: AppColors.brandColorRed,
           ),
         ),
-        suffixWidget: const Icon(
-          Icons.arrow_forward_ios,
-          size: 16,
-          color: Colors.grey,
-        ),
+        suffixWidget: const SizedBox(),
       ),
     );
   }

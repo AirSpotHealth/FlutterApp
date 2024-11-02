@@ -28,11 +28,7 @@ class DisconnectDeviceWidget extends ConsumerWidget {
             color: AppColors.primaryColorDark,
           ),
         ),
-        suffixWidget: const Icon(
-          Icons.arrow_forward_ios,
-          size: 16,
-          color: Colors.grey,
-        ),
+        suffixWidget: const SizedBox(),
       ),
       onTap: () =>
           ref.read(bleDeviceConnectionProvider(deviceId).notifier).disconnect(),
