@@ -29,6 +29,11 @@ class DataGraphWrapper extends ConsumerWidget {
           padding: const EdgeInsets.only(top: 16),
           child: DataGraphWidget(
             deviceDataList: deviceDataList.value ?? [],
+            loading: deviceDataList.when(
+              loading: () => true,
+              error: (error, _) => false,
+              data: (_) => false,
+            ),
           ),
         ),
         const GraphRangeSelector(),

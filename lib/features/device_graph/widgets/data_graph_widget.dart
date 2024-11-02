@@ -12,9 +12,12 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 class DataGraphWidget extends ConsumerStatefulWidget {
   final List<DeviceData> deviceDataList;
 
+  final bool loading;
+
   const DataGraphWidget({
     super.key,
     required this.deviceDataList,
+    this.loading = false,
   });
 
   @override
@@ -24,6 +27,8 @@ class DataGraphWidget extends ConsumerStatefulWidget {
 
 class _DataGraphWidgetState extends ConsumerState<DataGraphWidget> {
   List<DeviceData> get currentDataList => widget.deviceDataList;
+
+  bool get loading => widget.loading;
 
   @override
   Widget build(BuildContext context) {
@@ -48,7 +53,7 @@ class _DataGraphWidgetState extends ConsumerState<DataGraphWidget> {
     final yData = currentDataList.map((data) => data.value.toDouble()).toList();
 
     // Check if there is no data
-    if (xData.isEmpty || yData.isEmpty) {
+    if (loading) {
       return '''
     {
       title: {
@@ -93,6 +98,22 @@ class _DataGraphWidgetState extends ConsumerState<DataGraphWidget> {
       }
     ]
   }
+    }
+    ''';
+    }
+
+    if (currentDataList.isEmpty) {
+      return '''
+    {
+      title: {
+        text: 'No data available',
+        left: 'center',
+        top: 'center',
+        textStyle: {
+          color: '#333',
+          fontSize: 16
+        }
+      }
     }
     ''';
     }
