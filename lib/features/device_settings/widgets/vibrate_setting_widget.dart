@@ -19,7 +19,7 @@ class VibrateSettingWidget extends ConsumerWidget {
       onTap: () {},
       item: SettingItem(
         title: 'Vibrate',
-        assetIcon: Assets.alarmSettings,
+        assetIcon: Assets.vibrateSettings,
         suffixWidget: SizedBox(
           height: 24,
           child: Switch(
