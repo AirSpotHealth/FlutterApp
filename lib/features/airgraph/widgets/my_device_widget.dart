@@ -2,6 +2,7 @@ import 'package:airspothealth/core/models/ble_device.dart';
 import 'package:airspothealth/core/providers/ble_device_communication_provider.dart';
 import 'package:airspothealth/core/router/route_names.dart';
 import 'package:airspothealth/core/utils/app_utils.dart';
+import 'package:airspothealth/core/utils/extensions.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -23,7 +24,11 @@ class MyDeviceWidget extends ConsumerWidget {
           pathParameters: {'deviceId': device.deviceId},
         );
       },
-      title: Text("${device.name} ${device.alias ?? ''}"),
+      title: Text(
+        "${device.name}${device.alias != null ? '(${device.alias})' : ''}",
+        textAlign: TextAlign.start,
+      ),
+      titleTextStyle: context.textTheme.bodyLarge?.weight600,
       subtitle: Text(device.deviceId),
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(10),

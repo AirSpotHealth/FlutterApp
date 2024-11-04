@@ -17,6 +17,18 @@ enum GraphDataDuration {
     }
   }
 
+  // get the length of the duration
+  int get length {
+    switch (this) {
+      case GraphDataDuration.today:
+        return 0;
+      case GraphDataDuration.yesterday:
+        return 1;
+      case GraphDataDuration.last7Days:
+        return 7;
+    }
+  }
+
   factory GraphDataDuration.fromIndex(int index) => values[index];
 
   // get start and end date time for the selected range

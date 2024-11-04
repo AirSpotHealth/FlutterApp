@@ -99,3 +99,27 @@ extension DateTimeExtension on DateTime {
     return '$month/$day $formattedHour:$formattedMinute';
   }
 }
+
+extension IntExtension on int {
+  // get the name of the day
+  String get dayName {
+    switch (this) {
+      case DateTime.monday:
+        return 'Monday';
+      case DateTime.tuesday:
+        return 'Tuesday';
+      case DateTime.wednesday:
+        return 'Wednesday';
+      case DateTime.thursday:
+        return 'Thursday';
+      case DateTime.friday:
+        return 'Friday';
+      case DateTime.saturday:
+        return 'Saturday';
+      case DateTime.sunday:
+        return 'Sunday';
+      default:
+        return '';
+    }
+  }
+}
