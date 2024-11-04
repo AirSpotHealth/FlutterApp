@@ -109,13 +109,17 @@ class _DataGraphWidgetState extends ConsumerState<DataGraphWidget> {
 
     final seriesData = _generateSeriesData(currentDataList, duration);
     final fakeData = _generatePreviousAndAfterFakeData(duration);
+    // dynamically set the zoom start based on the data length so that the graph will be at center
+    // the value can be between 0 - 100
+    final zoomStart =
+        (fakeData.length / (fakeData.length + seriesData.length)) * 100;
 
     return '''
 {
   tooltip: {
     trigger: "axis",
     axisPointer: {
-      type: "none",
+      type: "line",
       snap: true,
       triggerOn: "none",
       handle: {
@@ -133,31 +137,34 @@ class _DataGraphWidgetState extends ConsumerState<DataGraphWidget> {
   xAxis: {
     type: 'time',
     boundaryGap: true,
-    minInterval: 1000 * 60 * 60,
+    minInterval: 1000 * 60,
     maxInterval: 1000 * 60 * 60 * 3,
-    interval: 1000 * 60 * 60 * 3,
+    interval: 1000 * 60 * 60,
+    showSymbol: false, // Only show symbol on hover
+    symbol: 'circle',
+    symbolSize: 20, // Default symbol size
+    emphasis: {
+      focus: 'series',
+      itemStyle: {
+        symbolSize: 40 // Increased size when focused (tooltip shown)
+      },
+    },
     axisLabel: {
       hideOverlap: true,
       fontSize: 11,
-      formatter: function (value,index) {
-        var date = new Date(value);
-        var day = date.getDate();
+      formatter: function (value, index) {
+      var date = new Date(value);
+      var dayName = date.toLocaleString('en-au', { weekday: 'short' }).toUpperCase(); // Get day name in short form (e.g., MON, TUE)
+      var hour = date.getHours();
 
-        if (day === 1 || day === new Date(date.getFullYear(), date.getMonth() + 1, 0).getDate()) {
-          return date.toLocaleString('en-au', { month: 'short' }) + ' ' + day;
-        }
+      // Show only day name if it's midnight or near midnight
+      if (hour === 0 || hour === 23) {
+        return dayName;
+      }
 
-        if (date.getHours() === 0) {
-          return date.toLocaleString('en-au', { weekday: 'short' }).toUpperCase();
-        }
-
-        if (date.getHours() === 23) {
-          return date.toLocaleString('en-au', { weekday: 'short' }).toUpperCase();
-        }
-
-        return date.toLocaleString('en-au', { hour: 'numeric', hour12: true }).padStart(2, '0').toUpperCase();
-      
-      },
+      // Show day name and time if it's not midnight
+      return `\${date.toLocaleString('en-au', { hour: 'numeric', hour12: true }).toUpperCase()}`;
+      }
     },
     axisLine: {
       show: false,
@@ -201,7 +208,7 @@ class _DataGraphWidgetState extends ConsumerState<DataGraphWidget> {
   dataZoom: [
     {
       type: 'inside',
-      start: 60,
+      start: $zoomStart,
       end: 100,
       filterMode: 'empty',
       xAxisIndex: [0],
@@ -264,7 +271,8 @@ class _DataGraphWidgetState extends ConsumerState<DataGraphWidget> {
       name: 'FakeData',
       type: 'line',
       data: ${jsonEncode(fakeData)},
-      lineStyle: { width: 0 }
+      lineStyle: { width: 0 },
+      tooltip: { show: false }
     }
   ],
   visualMap: {
@@ -310,7 +318,7 @@ class _DataGraphWidgetState extends ConsumerState<DataGraphWidget> {
 
     final fakeData = <List<dynamic>>[];
 
-    const fakeDataLength = 8;
+    const fakeDataLength = 5;
 
     for (int i = 0; i < fakeDataLength; i++) {
       final fakeDate =
