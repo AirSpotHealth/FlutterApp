@@ -1,7 +1,6 @@
 import 'package:airspothealth/core/models/ble_device.dart';
 import 'package:airspothealth/core/theme/app_colors.dart';
 import 'package:airspothealth/core/utils/assets.dart';
-import 'package:airspothealth/core/utils/extensions.dart';
 import 'package:airspothealth/features/add_device/providers/ble_device_connection_provider.dart';
 import 'package:airspothealth/features/device_settings/models/setting_item.dart';
 import 'package:airspothealth/features/device_settings/widgets/setting_item_widget.dart';
@@ -36,11 +35,6 @@ class DisconnectDeviceWidget extends ConsumerWidget {
         ref
             .read(bleDeviceConnectionProvider(device.deviceId).notifier)
             .disconnect();
-
-        context.showSnackBar(
-          '${device.alias ?? device.name} disconnected',
-        );
-        Navigator.of(context).pop();
       },
     );
   }

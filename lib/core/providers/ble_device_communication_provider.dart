@@ -8,6 +8,7 @@ import 'package:airspothealth/core/utils/ble_data_utils.dart';
 import 'package:airspothealth/core/utils/constants.dart';
 import 'package:airspothealth/core/utils/device_cmd_utils.dart';
 import 'package:airspothealth/core/utils/extensions.dart';
+import 'package:airspothealth/features/add_device/providers/ble_device_connection_provider.dart';
 import 'package:airspothealth/features/device_graph/providers/ble_device_provider.dart';
 import 'package:airspothealth/features/device_settings/providers/recalibration_time_provider.dart';
 import 'package:flutter/material.dart';
@@ -158,7 +159,7 @@ class _BleDeviceCommunicationNotifier extends FamilyNotifier<dynamic, String> {
       return;
     }
 
-    _setHomeValue(value);
+    // _setHomeValue(value);
 
     try {
       _isarService.write((isar) {
@@ -216,7 +217,7 @@ class _BleDeviceCommunicationNotifier extends FamilyNotifier<dynamic, String> {
       debugPrint('Command sent: ${BleDataUtils.bytesToHexStr(data)}');
       return true;
     } catch (e) {
-      debugPrint('Error sending command: $e');
+      ref.read(bleDeviceConnectionProvider(deviceId).notifier).disconnect();
       return false;
     }
   }

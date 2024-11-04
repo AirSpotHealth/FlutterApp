@@ -1,6 +1,7 @@
 // Extension file for managing the extensions of the app
 
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 /// extension on [BuildContext]
@@ -120,6 +121,20 @@ extension IntExtension on int {
         return 'Sunday';
       default:
         return '';
+    }
+  }
+}
+
+/// extension on GoRouter
+extension GoRouterExtension on GoRouter {
+  // Navigate back to a specific route
+  void popUntilPath(String ancestorPath) {
+    while (routerDelegate.currentConfiguration.matches.last.matchedLocation !=
+        ancestorPath) {
+      if (!canPop()) {
+        return;
+      }
+      pop();
     }
   }
 }

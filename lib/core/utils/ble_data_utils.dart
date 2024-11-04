@@ -62,10 +62,6 @@ class BleDataUtils {
       return true;
     }
 
-    if (responseCommand == ResponseCommand.setTimeResult) {
-      return result as bool;
-    }
-
     return null;
   }
 }

@@ -43,4 +43,8 @@ class Constants {
   static const String androidWidgetName = 'Co2ValueWidget';
 
   static const String subscript2 = '₂';
+
+  /// Regexes
+  static const String devicesPathRegex =
+      r'^/devices/[\w%]+/settings(?:/[\w%\-]+)*$';
 }
