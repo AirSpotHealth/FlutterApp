@@ -98,8 +98,11 @@ class _DeviceFirmwareUpdateDialogState
           ),
           const AppLogo(),
           const SizedBox(height: 8),
-          Text('AirSpot device firmware update',
-              style: context.textTheme.bodyLarge?.weight700),
+          Text(
+            'Airspot device firmware update',
+            style: context.textTheme.bodyLarge?.weight700,
+            textAlign: TextAlign.center,
+          ),
           const SizedBox(height: 16),
           if (remoteVersion != null) ...[
             Text(remoteVersion!.updateContent),
