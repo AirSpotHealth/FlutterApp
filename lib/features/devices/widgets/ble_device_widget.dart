@@ -74,7 +74,9 @@ class BleDeviceWidget extends ConsumerWidget {
               ],
             ),
             Text(
-              bleDevice.name,
+              deviceConnected
+                  ? bleDevice.name
+                  : bleDevice.alias ?? bleDevice.name,
               style: context.textTheme.labelLarge,
             ),
             if (deviceConnected) ...[
