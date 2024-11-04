@@ -53,10 +53,10 @@ class MenuItemWidget extends StatelessWidget {
 class MenuItems {
   static final List<MenuItem> items = [
     MenuItem(
-      title: 'AirMap',
-      description: 'Geolocate indoor air quality with the Clean Air Map.',
-      iconAsset: Assets.airMap,
-      externalUrl: ExternalUrls.airmap,
+      title: 'Devices',
+      description: 'Device List and Management',
+      iconAsset: Assets.device,
+      route: RouteNames.devices,
     ),
     MenuItem(
       title: 'AirGraph',
@@ -65,10 +65,10 @@ class MenuItems {
       route: RouteNames.airgraph,
     ),
     MenuItem(
-      title: 'Devices',
-      description: 'Device List and Management',
-      iconAsset: Assets.device,
-      route: RouteNames.devices,
+      title: 'AirMap',
+      description: 'Geolocate indoor air quality with the Clean Air Map.',
+      iconAsset: Assets.airMap,
+      externalUrl: ExternalUrls.airmap,
     ),
     MenuItem(
       title: 'App Set Up',
