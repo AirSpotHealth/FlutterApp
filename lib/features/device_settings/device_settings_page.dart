@@ -1,7 +1,9 @@
+import 'package:airspothealth/core/models/ble_device.dart';
 import 'package:airspothealth/core/router/route_names.dart';
 import 'package:airspothealth/core/utils/assets.dart';
 import 'package:airspothealth/core/utils/extensions.dart';
 import 'package:airspothealth/features/add_device/providers/ble_device_connection_provider.dart';
+import 'package:airspothealth/features/device_graph/providers/ble_device_provider.dart';
 import 'package:airspothealth/features/device_settings/models/setting_item.dart';
 import 'package:airspothealth/features/device_settings/widgets/alarm_setting_widget.dart';
 import 'package:airspothealth/features/device_settings/widgets/auto_connect_setting_widget.dart';
@@ -61,6 +63,14 @@ class DeviceSettingsPage extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final BleDevice? device = ref.read(bleDeviceProvider(deviceId));
+
+    if (device == null) {
+      ref.context.showSnackBar('Device with id $deviceId not found');
+      context.pop();
+      return const SizedBox();
+    }
+
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: AppBar(
@@ -73,7 +83,7 @@ class DeviceSettingsPage extends ConsumerWidget {
           VibrateSettingWidget(deviceId: deviceId),
           AutoConnectSettingWidget(deviceId: deviceId),
           ..._buildSettingsList(ref),
-          DisconnectDeviceWidget(deviceId: deviceId),
+          DisconnectDeviceWidget(device: device),
           ForgetDeviceWidget(deviceId: deviceId),
         ],
       ),
