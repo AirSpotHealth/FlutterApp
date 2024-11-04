@@ -10,9 +10,11 @@ class AppSetupPage extends ConsumerWidget {
 
   static final _items = <MenuItem>[
     MenuItem(
-        title: 'Latest News',
-        iconAsset: Assets.latestNews,
-        route: RouteNames.latestNews),
+      title: 'Latest News',
+      iconAsset: Assets.latestNews,
+      route: RouteNames.latestNews,
+      enabled: false,
+    ),
     MenuItem(
         title: 'AirSpot App Updates',
         iconAsset: Assets.deviceUpdate,

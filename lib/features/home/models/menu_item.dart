@@ -5,6 +5,7 @@ class MenuItem {
   final String iconAsset;
   final String? route;
   final String? externalUrl;
+  final bool enabled;
 
   MenuItem({
     required this.title,
@@ -12,6 +13,7 @@ class MenuItem {
     required this.iconAsset,
     this.route,
     this.externalUrl,
+    this.enabled = true,
   });
 
   @override
@@ -20,7 +22,8 @@ class MenuItem {
         description.hashCode ^
         iconAsset.hashCode ^
         route.hashCode ^
-        externalUrl.hashCode;
+        externalUrl.hashCode ^
+        enabled.hashCode;
   }
 
   @override
@@ -32,6 +35,7 @@ class MenuItem {
         other.description == description &&
         other.iconAsset == iconAsset &&
         other.route == route &&
-        other.externalUrl == externalUrl;
+        other.externalUrl == externalUrl &&
+        other.enabled == enabled;
   }
 }

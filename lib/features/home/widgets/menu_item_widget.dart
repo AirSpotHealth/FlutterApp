@@ -28,13 +28,19 @@ class MenuItemWidget extends StatelessWidget {
       ),
       contentPadding: dense ? null : const EdgeInsets.all(16),
       tileColor: Colors.white,
-      title:
-          Text(menuItem.title, style: context.textTheme.bodyMedium?.weight600),
+      enabled: menuItem.enabled,
+      title: Text(menuItem.title,
+          style: context.textTheme.bodyMedium?.weight600
+              ?.copyWith(color: menuItem.enabled ? null : Colors.grey)),
       subtitle: menuItem.description != null
           ? Text(menuItem.description!, style: context.textTheme.bodySmall)
           : null,
-      leading: Image.asset(menuItem.iconAsset, width: 32),
-      trailing: const Icon(Icons.arrow_forward_ios, size: 16),
+      leading: Image.asset(
+        menuItem.iconAsset,
+        width: 32,
+      ),
+      trailing: Icon(menuItem.enabled ? Icons.arrow_forward_ios : Icons.lock,
+          size: 16),
       onTap: () {
         WidgetsBinding.instance.addPostFrameCallback((_) {
           if (menuItem.route != null) {
