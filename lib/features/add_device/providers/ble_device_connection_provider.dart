@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:airspothealth/core/models/ble_device.dart';
 import 'package:airspothealth/core/providers/ble_connected_devices_provider.dart';
 import 'package:airspothealth/core/providers/ble_saved_devices_provider.dart';
+import 'package:airspothealth/core/providers/device_settings_provider.dart';
 import 'package:airspothealth/core/services/ble_service.dart';
 import 'package:airspothealth/core/utils/extensions.dart';
 import 'package:flutter/cupertino.dart';
@@ -20,9 +21,15 @@ class _BleDeviceConnectionNotifier
 
   BluetoothDevice get device => BluetoothDevice.fromId(arg);
 
+  StreamSubscription<BluetoothConnectionState>? deviceSubscription;
+
   @override
   BluetoothBondState build(String arg) {
     debugPrint('bleDeviceConnectionProvider build $arg');
+    ref.onDispose(() {
+      deviceSubscription?.cancel();
+    });
+
     return _bleService
                 .connectedDevices()
                 .firstWhereOrNull((device) => device.remoteId.str == arg)
@@ -34,55 +41,52 @@ class _BleDeviceConnectionNotifier
 
   bool get isConnected => state == BluetoothBondState.bonded;
 
+  bool get isConnecting => state == BluetoothBondState.bonding;
+
   void connect() {
     debugPrint('bleDeviceConnectionProvider connect $arg, $state');
 
-    if (state == BluetoothBondState.bonded ||
-        state == BluetoothBondState.bonding) return;
-
-    state = BluetoothBondState.bonding;
-
+    if (isConnected || isConnecting) return;
     debugPrint('Connecting to device: ${device.advName}');
 
-    StreamSubscription<BluetoothConnectionState>? deviceSubscription;
+    state = BluetoothBondState.bonding;
 
     deviceSubscription = device.connectionState.listen((bState) {
       debugPrint('Device connection state: $bState');
 
-      state = switch (bState) {
-        BluetoothConnectionState.connected => BluetoothBondState.bonded,
-        _ => BluetoothBondState.none,
-      };
-
       if (bState == BluetoothConnectionState.connected) {
-        ref.read(bleConnectedDevicesProvider.notifier).refresh();
-        ref.read(bleSavedDevicesProvider.notifier).addDevice(BleDevice(
-              deviceId: device.remoteId.str,
-              name: device.advName,
-              platform: device.platformName,
-              address: device.remoteId.str,
-            ));
-      }
+        if (state == BluetoothBondState.bonded) return;
 
-      if (bState == BluetoothConnectionState.disconnected) {
+        state = BluetoothBondState.bonded;
+        _refreshAndAddDevice();
+      } else if (bState == BluetoothConnectionState.disconnected) {
+        if (state == BluetoothBondState.none) return;
+
         state = BluetoothBondState.none;
       }
     });
 
-    device.cancelWhenDisconnected(
-      deviceSubscription,
-      delayed: true,
-      next: true,
-    );
+    if (!ref.read(deviceSettingsProvider(arg)).autoConnect &&
+        deviceSubscription != null) {
+      device.cancelWhenDisconnected(deviceSubscription!,
+          delayed: true, next: true);
+    }
 
     _bleService.connect(device);
+  }
+
+  void _refreshAndAddDevice() {
+    ref.read(bleConnectedDevicesProvider.notifier).refresh();
+    ref.read(bleSavedDevicesProvider.notifier).addDevice(BleDevice(
+          deviceId: device.remoteId.str,
+          name: device.advName,
+          platform: device.platformName,
+          address: device.remoteId.str,
+        ));
   }
 
   Future<void> disconnect() async {
+    deviceSubscription?.cancel();
     await _bleService.disconnect(device);
-  }
-
-  void reconnect() {
-    _bleService.connect(device);
   }
 }
