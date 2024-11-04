@@ -89,7 +89,13 @@ class _TimeSettingsPageState extends ConsumerState<TimeSettingsPage> {
             ),
             const SizedBox(height: 16),
             ElevatedButton(
-              onPressed: () {},
+              onPressed: () {
+                ref
+                    .read(bleDeviceCommunicationProvider(widget.deviceId)
+                        .notifier)
+                    .sendCommand(DeviceCmdUtils.setTime(
+                        hour: _selectedHour, min: _selectedMinute));
+              },
               child: const Text('Confirm'),
             ),
           ]
