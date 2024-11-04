@@ -14,7 +14,6 @@ import 'package:airspothealth/features/device_settings/providers/recalibration_t
 import 'package:flutter/material.dart';
 import 'package:flutter_blue_plus/flutter_blue_plus.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:home_widget/home_widget.dart';
 import 'package:isar/isar.dart';
 
 final bleDeviceCommunicationProvider =
@@ -176,13 +175,13 @@ class _BleDeviceCommunicationNotifier extends FamilyNotifier<dynamic, String> {
     state = value;
   }
 
-  void _setHomeValue(dynamic value) {
-    HomeWidget.saveWidgetData(Constants.homeWidgetKey, value.toString());
-    HomeWidget.updateWidget(
-      iOSName: Constants.iOSWidgetName,
-      androidName: Constants.androidWidgetName,
-    );
-  }
+  // void _setHomeValue(dynamic value) {
+  //   HomeWidget.saveWidgetData(Constants.homeWidgetKey, value.toString());
+  //   HomeWidget.updateWidget(
+  //     iOSName: Constants.iOSWidgetName,
+  //     androidName: Constants.androidWidgetName,
+  //   );
+  // }
 
   Future<void> _getInitialData() async {
     final DeviceSettings? deviceSettings =
