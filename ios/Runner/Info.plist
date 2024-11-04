@@ -53,5 +53,9 @@
 		<string>UIInterfaceOrientationPortrait</string>
 		<string>UIInterfaceOrientationPortraitUpsideDown</string>
 	</array>
+	<key>UIBackgroundModes</key>
+	<array>
+    <string>bluetooth-central</string>
+</array>
 </dict>
 </plist>
