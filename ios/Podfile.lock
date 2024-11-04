@@ -45,6 +45,8 @@ PODS:
   - nordic_dfu (1.0.0):
     - Flutter
     - iOSDFULibrary (~> 4.15.3)
+  - package_info_plus (0.4.5):
+    - Flutter
   - path_provider_foundation (0.0.1):
     - Flutter
     - FlutterMacOS
@@ -71,6 +73,7 @@ DEPENDENCIES:
   - home_widget (from `.symlinks/plugins/home_widget/ios`)
   - isar_flutter_libs (from `.symlinks/plugins/isar_flutter_libs/ios`)
   - nordic_dfu (from `.symlinks/plugins/nordic_dfu/ios`)
+  - package_info_plus (from `.symlinks/plugins/package_info_plus/ios`)
   - path_provider_foundation (from `.symlinks/plugins/path_provider_foundation/darwin`)
   - permission_handler_apple (from `.symlinks/plugins/permission_handler_apple/ios`)
   - shared_preferences_foundation (from `.symlinks/plugins/shared_preferences_foundation/darwin`)
@@ -99,6 +102,8 @@ EXTERNAL SOURCES:
     :path: ".symlinks/plugins/isar_flutter_libs/ios"
   nordic_dfu:
     :path: ".symlinks/plugins/nordic_dfu/ios"
+  package_info_plus:
+    :path: ".symlinks/plugins/package_info_plus/ios"
   path_provider_foundation:
     :path: ".symlinks/plugins/path_provider_foundation/darwin"
   permission_handler_apple:
@@ -120,6 +125,7 @@ SPEC CHECKSUMS:
   iOSDFULibrary: ef7e1fbb3fc7a5fabd106297a9cd0e775bcfcec6
   isar_flutter_libs: b69f437aeab9c521821c3f376198c4371fa21073
   nordic_dfu: 963e2e4e6afb04e515ff43c546e6f8abf3e04ed5
+  package_info_plus: c0502532a26c7662a62a356cebe2692ec5fe4ec4
   path_provider_foundation: 2b6b4c569c0fb62ec74538f866245ac84301af46
   permission_handler_apple: 9878588469a2b0d0fc1e048d9f43605f92e6cec2
   SDWebImage: 8a6b7b160b4d710e2a22b6900e25301075c34cb3
