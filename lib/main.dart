@@ -1,19 +1,37 @@
 import 'package:airspothealth/core/router/app_router.dart';
 import 'package:airspothealth/core/services/isar_service.dart';
+import 'package:airspothealth/core/services/prefs_service.dart';
 import 'package:airspothealth/core/theme/app_theme.dart';
+import 'package:airspothealth/core/utils/storage_keys.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:package_info_plus/package_info_plus.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  await IsarService().initialize();
+  await [IsarService().initialize(), PrefsService().initialize()].wait;
+
+  await _checkVersion();
 
   runApp(
     const ProviderScope(
       child: AirspotApp(),
     ),
   );
+}
+
+Future<void> _checkVersion() async {
+  final prefs = PrefsService();
+  final currentVersion = prefs.getString(StorageKeys.appVerion);
+  final appVersion = await PackageInfo.fromPlatform();
+
+  if (currentVersion != appVersion.version) {
+    await [
+      prefs.setString(StorageKeys.appVerion, appVersion.version),
+      IsarService().clearAllData()
+    ].wait;
+  }
 }
 
 class AirspotApp extends StatelessWidget {

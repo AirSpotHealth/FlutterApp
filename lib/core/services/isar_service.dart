@@ -44,6 +44,13 @@ class IsarService {
     });
   }
 
+  /// clear all data
+  Future<void> clearAllData() async {
+    await _isar.write((isar) async {
+      isar.clear();
+    });
+  }
+
   /// expose the schemas
   IsarCollection<String, BleDevice> get bleDevices => _isar.bleDevices;
   IsarCollection<String, DeviceData> get deviceDatas => _isar.deviceDatas;
