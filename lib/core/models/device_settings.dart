@@ -40,6 +40,9 @@ class DeviceSettings {
   /// auto connect
   final bool autoConnect;
 
+  /// log data bool
+  final bool logData;
+
   DeviceSettings({
     required this.alarmEnabled,
     required this.vibrationEnabled,
@@ -51,6 +54,7 @@ class DeviceSettings {
     this.autoSyncTime = true,
     this.autoCalibration = true,
     this.autoConnect = true,
+    this.logData = false,
   });
 
   DeviceSettings.empty({required this.deviceId})
@@ -62,7 +66,8 @@ class DeviceSettings {
         co2AlertThreshold = null,
         autoSyncTime = true,
         autoCalibration = true,
-        autoConnect = true;
+        autoConnect = true,
+        logData = false;
 
   DeviceSettings copyWith({
     bool? alarmEnabled,
@@ -76,6 +81,7 @@ class DeviceSettings {
     bool? autoSyncTime,
     bool? autoCalibration,
     bool? autoConnect,
+    bool? logData,
   }) {
     return DeviceSettings(
       alarmEnabled: alarmEnabled ?? this.alarmEnabled,
@@ -89,6 +95,7 @@ class DeviceSettings {
       autoSyncTime: autoSyncTime ?? this.autoSyncTime,
       autoCalibration: autoCalibration ?? this.autoCalibration,
       autoConnect: autoConnect ?? this.autoConnect,
+      logData: logData ?? this.logData,
     );
   }
 
@@ -162,6 +169,7 @@ class DeviceSettings {
       'autoSyncTime': autoSyncTime,
       'autoCalibration': autoCalibration,
       'autoConnect': autoConnect,
+      'logData': logData,
     };
   }
 
@@ -179,7 +187,8 @@ class DeviceSettings {
         other.co2AlertThreshold == co2AlertThreshold &&
         other.autoSyncTime == autoSyncTime &&
         other.autoCalibration == autoCalibration &&
-        other.autoConnect == autoConnect;
+        other.autoConnect == autoConnect &&
+        other.logData == logData;
   }
 
   @override
@@ -193,11 +202,12 @@ class DeviceSettings {
       co2AlertThreshold.hashCode ^
       autoSyncTime.hashCode ^
       autoCalibration.hashCode ^
-      autoConnect.hashCode;
+      autoConnect.hashCode ^
+      logData.hashCode;
 
   @override
   String toString() {
-    return 'DeviceSettings(alarmEnabled: $alarmEnabled, vibrationEnabled: $vibrationEnabled, powerMode: $powerMode, continuosScreenEnabled: $continuosScreenEnabled, thresholds: $thresholds, deviceId: $deviceId, co2AlertThreshold: $co2AlertThreshold, autoSyncTime: $autoSyncTime, autoCalibration: $autoCalibration, autoConnect: $autoConnect)';
+    return 'DeviceSettings(alarmEnabled: $alarmEnabled, vibrationEnabled: $vibrationEnabled, powerMode: $powerMode, continuosScreenEnabled: $continuosScreenEnabled, thresholds: $thresholds, deviceId: $deviceId, co2AlertThreshold: $co2AlertThreshold, autoSyncTime: $autoSyncTime, autoCalibration: $autoCalibration, autoConnect: $autoConnect, logData: $logData)';
   }
 }
 

@@ -63,6 +63,10 @@ const DeviceSettingsSchema = IsarGeneratedSchema(
         name: 'autoConnect',
         type: IsarType.bool,
       ),
+      IsarPropertySchema(
+        name: 'logData',
+        type: IsarType.bool,
+      ),
     ],
     indexes: [],
   ),
@@ -92,6 +96,7 @@ int serializeDeviceSettings(IsarWriter writer, DeviceSettings object) {
   IsarCore.writeBool(writer, 8, object.autoSyncTime);
   IsarCore.writeBool(writer, 9, object.autoCalibration);
   IsarCore.writeBool(writer, 10, object.autoConnect);
+  IsarCore.writeBool(writer, 11, object.logData);
   return Isar.fastHash(object.deviceId);
 }
 
@@ -161,6 +166,8 @@ DeviceSettings deserializeDeviceSettings(IsarReader reader) {
       _autoConnect = IsarCore.readBool(reader, 10);
     }
   }
+  final bool _logData;
+  _logData = IsarCore.readBool(reader, 11);
   final object = DeviceSettings(
     alarmEnabled: _alarmEnabled,
     vibrationEnabled: _vibrationEnabled,
@@ -172,6 +179,7 @@ DeviceSettings deserializeDeviceSettings(IsarReader reader) {
     autoSyncTime: _autoSyncTime,
     autoCalibration: _autoCalibration,
     autoConnect: _autoConnect,
+    logData: _logData,
   );
   return object;
 }
@@ -243,6 +251,8 @@ dynamic deserializeDeviceSettingsProp(IsarReader reader, int property) {
           return IsarCore.readBool(reader, 10);
         }
       }
+    case 11:
+      return IsarCore.readBool(reader, 11);
     default:
       throw ArgumentError('Unknown property: $property');
   }
@@ -259,6 +269,7 @@ sealed class _DeviceSettingsUpdate {
     bool? autoSyncTime,
     bool? autoCalibration,
     bool? autoConnect,
+    bool? logData,
   });
 }
 
@@ -278,6 +289,7 @@ class _DeviceSettingsUpdateImpl implements _DeviceSettingsUpdate {
     Object? autoSyncTime = ignore,
     Object? autoCalibration = ignore,
     Object? autoConnect = ignore,
+    Object? logData = ignore,
   }) {
     return collection.updateProperties([
           deviceId
@@ -291,6 +303,7 @@ class _DeviceSettingsUpdateImpl implements _DeviceSettingsUpdate {
           if (autoSyncTime != ignore) 8: autoSyncTime as bool?,
           if (autoCalibration != ignore) 9: autoCalibration as bool?,
           if (autoConnect != ignore) 10: autoConnect as bool?,
+          if (logData != ignore) 11: logData as bool?,
         }) >
         0;
   }
@@ -307,6 +320,7 @@ sealed class _DeviceSettingsUpdateAll {
     bool? autoSyncTime,
     bool? autoCalibration,
     bool? autoConnect,
+    bool? logData,
   });
 }
 
@@ -326,6 +340,7 @@ class _DeviceSettingsUpdateAllImpl implements _DeviceSettingsUpdateAll {
     Object? autoSyncTime = ignore,
     Object? autoCalibration = ignore,
     Object? autoConnect = ignore,
+    Object? logData = ignore,
   }) {
     return collection.updateProperties(deviceId, {
       if (alarmEnabled != ignore) 1: alarmEnabled as bool?,
@@ -336,6 +351,7 @@ class _DeviceSettingsUpdateAllImpl implements _DeviceSettingsUpdateAll {
       if (autoSyncTime != ignore) 8: autoSyncTime as bool?,
       if (autoCalibration != ignore) 9: autoCalibration as bool?,
       if (autoConnect != ignore) 10: autoConnect as bool?,
+      if (logData != ignore) 11: logData as bool?,
     });
   }
 }
@@ -356,6 +372,7 @@ sealed class _DeviceSettingsQueryUpdate {
     bool? autoSyncTime,
     bool? autoCalibration,
     bool? autoConnect,
+    bool? logData,
   });
 }
 
@@ -375,6 +392,7 @@ class _DeviceSettingsQueryUpdateImpl implements _DeviceSettingsQueryUpdate {
     Object? autoSyncTime = ignore,
     Object? autoCalibration = ignore,
     Object? autoConnect = ignore,
+    Object? logData = ignore,
   }) {
     return query.updateProperties(limit: limit, {
       if (alarmEnabled != ignore) 1: alarmEnabled as bool?,
@@ -385,6 +403,7 @@ class _DeviceSettingsQueryUpdateImpl implements _DeviceSettingsQueryUpdate {
       if (autoSyncTime != ignore) 8: autoSyncTime as bool?,
       if (autoCalibration != ignore) 9: autoCalibration as bool?,
       if (autoConnect != ignore) 10: autoConnect as bool?,
+      if (logData != ignore) 11: logData as bool?,
     });
   }
 }
@@ -414,6 +433,7 @@ class _DeviceSettingsQueryBuilderUpdateImpl
     Object? autoSyncTime = ignore,
     Object? autoCalibration = ignore,
     Object? autoConnect = ignore,
+    Object? logData = ignore,
   }) {
     final q = query.build();
     try {
@@ -427,6 +447,7 @@ class _DeviceSettingsQueryBuilderUpdateImpl
         if (autoSyncTime != ignore) 8: autoSyncTime as bool?,
         if (autoCalibration != ignore) 9: autoCalibration as bool?,
         if (autoConnect != ignore) 10: autoConnect as bool?,
+        if (logData != ignore) 11: logData as bool?,
       });
     } finally {
       q.close();
@@ -900,6 +921,20 @@ extension DeviceSettingsQueryFilter
       );
     });
   }
+
+  QueryBuilder<DeviceSettings, DeviceSettings, QAfterFilterCondition>
+      logDataEqualTo(
+    bool value,
+  ) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        EqualCondition(
+          property: 11,
+          value: value,
+        ),
+      );
+    });
+  }
 }
 
 extension DeviceSettingsQueryObject
@@ -1045,6 +1080,19 @@ extension DeviceSettingsQuerySortBy
       return query.addSortBy(10, sort: Sort.desc);
     });
   }
+
+  QueryBuilder<DeviceSettings, DeviceSettings, QAfterSortBy> sortByLogData() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(11);
+    });
+  }
+
+  QueryBuilder<DeviceSettings, DeviceSettings, QAfterSortBy>
+      sortByLogDataDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(11, sort: Sort.desc);
+    });
+  }
 }
 
 extension DeviceSettingsQuerySortThenBy
@@ -1173,6 +1221,19 @@ extension DeviceSettingsQuerySortThenBy
       return query.addSortBy(10, sort: Sort.desc);
     });
   }
+
+  QueryBuilder<DeviceSettings, DeviceSettings, QAfterSortBy> thenByLogData() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(11);
+    });
+  }
+
+  QueryBuilder<DeviceSettings, DeviceSettings, QAfterSortBy>
+      thenByLogDataDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(11, sort: Sort.desc);
+    });
+  }
 }
 
 extension DeviceSettingsQueryWhereDistinct
@@ -1230,6 +1291,13 @@ extension DeviceSettingsQueryWhereDistinct
       distinctByAutoConnect() {
     return QueryBuilder.apply(this, (query) {
       return query.addDistinctBy(10);
+    });
+  }
+
+  QueryBuilder<DeviceSettings, DeviceSettings, QAfterDistinct>
+      distinctByLogData() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addDistinctBy(11);
     });
   }
 }
@@ -1297,6 +1365,12 @@ extension DeviceSettingsQueryProperty1
   QueryBuilder<DeviceSettings, bool, QAfterProperty> autoConnectProperty() {
     return QueryBuilder.apply(this, (query) {
       return query.addProperty(10);
+    });
+  }
+
+  QueryBuilder<DeviceSettings, bool, QAfterProperty> logDataProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addProperty(11);
     });
   }
 }
@@ -1371,6 +1445,12 @@ extension DeviceSettingsQueryProperty2<R>
       return query.addProperty(10);
     });
   }
+
+  QueryBuilder<DeviceSettings, (R, bool), QAfterProperty> logDataProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addProperty(11);
+    });
+  }
 }
 
 extension DeviceSettingsQueryProperty3<R1, R2>
@@ -1442,6 +1522,12 @@ extension DeviceSettingsQueryProperty3<R1, R2>
       autoConnectProperty() {
     return QueryBuilder.apply(this, (query) {
       return query.addProperty(10);
+    });
+  }
+
+  QueryBuilder<DeviceSettings, (R1, R2, bool), QOperations> logDataProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addProperty(11);
     });
   }
 }

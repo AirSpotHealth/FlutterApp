@@ -109,7 +109,7 @@ class ResponseCommandParser {
     debugPrint('Initial Data: ${data.toString()}');
     _updateDeviceSettings(
       (settings) {
-        debugPrint('AutoConnect: ${settings.autoConnect}');
+        debugPrint('LogData: ${settings.logData}');
         return settings.copyWith(
           deviceId: deviceId,
           alarmEnabled: _parseBoolean(data, 4),
@@ -267,6 +267,9 @@ class ResponseCommandParser {
     isarService.write((isar) {
       final settings =
           isar.deviceSettings.where().deviceIdEqualTo(deviceId).findFirst();
+
+      debugPrint(
+          'Updating settings for device: $deviceId, initialData: $settings');
       isar.deviceSettings
           .put(update(settings ?? DeviceSettings.empty(deviceId: deviceId)));
     });

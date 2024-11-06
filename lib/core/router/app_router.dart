@@ -9,6 +9,7 @@ import 'package:airspothealth/features/device_graph/device_graph_page.dart';
 import 'package:airspothealth/features/device_settings/device_settings_page.dart';
 import 'package:airspothealth/features/device_settings/pages/co2_alert_settings_page.dart';
 import 'package:airspothealth/features/device_settings/pages/co2_ppm_settings_page.dart';
+import 'package:airspothealth/features/device_settings/pages/device_log_page.dart';
 import 'package:airspothealth/features/device_settings/pages/device_update_page.dart';
 import 'package:airspothealth/features/device_settings/pages/powe_mode_settings_page.dart';
 import 'package:airspothealth/features/device_settings/pages/recalibrate_device_page.dart';
@@ -59,6 +60,19 @@ class AppRouter {
               return DeviceSettingsPage(deviceId: deviceId);
             },
             routes: [
+              // data log route
+              GoRoute(
+                path: 'data-log',
+                name: RouteNames.dataLog,
+                builder: (context, state) {
+                  final deviceId = state.pathParameters['deviceId'];
+                  if (deviceId == null) {
+                    throw ErrorDescription('Device ID is required');
+                  }
+                  return DeviceLogPage(deviceId: deviceId);
+                },
+              ),
+
               // Route for device settings
               GoRoute(
                 path: 'settings',

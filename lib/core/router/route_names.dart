@@ -57,4 +57,7 @@ class RouteNames {
 
   /// device update route
   static const String deviceUpdate = '/device-update';
+
+  /// data log route
+  static const String dataLog = '/data-log';
 }

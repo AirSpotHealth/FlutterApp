@@ -3,6 +3,7 @@ import 'package:airspothealth/core/models/device_settings.dart';
 import 'package:airspothealth/core/providers/ble_connected_devices_provider.dart';
 import 'package:airspothealth/core/providers/ble_saved_devices_provider.dart';
 import 'package:airspothealth/core/providers/device_settings_provider.dart';
+import 'package:airspothealth/core/services/data_logger_service.dart';
 import 'package:airspothealth/core/services/isar_service.dart';
 import 'package:airspothealth/core/utils/ble_data_utils.dart';
 import 'package:airspothealth/core/utils/constants.dart';
@@ -161,13 +162,19 @@ class _BleDeviceCommunicationNotifier extends FamilyNotifier<dynamic, String> {
     // _setHomeValue(value);
 
     try {
+      final DateTime dateTime = DateTime.now();
+
+      debugPrint('Saving data for: $deviceId,  $value, $dateTime');
+
       _isarService.write((isar) {
         isar.deviceDatas.put(DeviceData(
           deviceId: deviceId,
           value: value,
-          dateTime: DateTime.now(),
+          dateTime: dateTime,
         ));
       });
+
+      _checkIfLogData(data, dateTime);
     } catch (e) {
       debugPrint('Error saving data: $e');
     }
@@ -218,6 +225,21 @@ class _BleDeviceCommunicationNotifier extends FamilyNotifier<dynamic, String> {
     } catch (e) {
       ref.read(bleDeviceConnectionProvider(deviceId).notifier).disconnect();
       return false;
+    }
+  }
+
+  void _checkIfLogData(dynamic value, DateTime dateTime) {
+    final DeviceSettings? deviceSettings =
+        ref.read(deviceSettingsProvider(deviceId));
+
+    debugPrint('Log data: ${deviceSettings?.logData}');
+
+    if (deviceSettings?.logData == true) {
+      DataLoggerService().logData(
+        deviceId: deviceId,
+        value: BleDataUtils.bytesToHexStr(value),
+        dateTime: dateTime,
+      );
     }
   }
 }

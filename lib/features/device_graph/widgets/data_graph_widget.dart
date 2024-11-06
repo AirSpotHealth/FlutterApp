@@ -35,6 +35,8 @@ class _DataGraphWidgetState extends ConsumerState<DataGraphWidget> {
     final GraphSettings settings = ref.watch(graphSettingsProvider);
     final GraphDataDuration duration = ref.watch(graphDurationProvider);
 
+    debugPrint("Datetimenow: ${DateTime.now()}");
+
     final String currentOption = _buildOption(settings, duration);
 
     return EChart(option: currentOption);

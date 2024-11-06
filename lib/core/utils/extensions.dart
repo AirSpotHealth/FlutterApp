@@ -99,6 +99,11 @@ extension DateTimeExtension on DateTime {
     final formattedMinute = minute.toString().padLeft(2, '0');
     return '$month/$day $formattedHour:$formattedMinute';
   }
+
+  /// format date in local format without milliseconds
+  String formatLocalDate() {
+    return toLocal().toString().split('.').first;
+  }
 }
 
 extension IntExtension on int {
