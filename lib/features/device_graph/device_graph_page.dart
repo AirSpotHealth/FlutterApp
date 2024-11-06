@@ -33,7 +33,7 @@ class DeviceGraphPage extends ConsumerWidget {
           Align(
             alignment: Alignment.center,
             child: Text(
-              device.name,
+              device.alias ?? device.name,
               style: context.textTheme.bodyMedium?.weight600,
             ),
           ),

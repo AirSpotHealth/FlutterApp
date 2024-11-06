@@ -1,3 +1,5 @@
+import 'package:flutter/material.dart';
+
 /// MenuItem model
 class MenuItem {
   final String title;
@@ -6,6 +8,7 @@ class MenuItem {
   final String? route;
   final String? externalUrl;
   final bool enabled;
+  final dynamic Function(BuildContext)? onTap;
 
   MenuItem({
     required this.title,
@@ -14,6 +17,7 @@ class MenuItem {
     this.route,
     this.externalUrl,
     this.enabled = true,
+    this.onTap,
   });
 
   @override
@@ -23,7 +27,8 @@ class MenuItem {
         iconAsset.hashCode ^
         route.hashCode ^
         externalUrl.hashCode ^
-        enabled.hashCode;
+        enabled.hashCode ^
+        onTap.hashCode;
   }
 
   @override
@@ -36,6 +41,7 @@ class MenuItem {
         other.iconAsset == iconAsset &&
         other.route == route &&
         other.externalUrl == externalUrl &&
-        other.enabled == enabled;
+        other.enabled == enabled &&
+        other.onTap == onTap;
   }
 }

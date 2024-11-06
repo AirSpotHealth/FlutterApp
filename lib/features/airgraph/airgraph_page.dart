@@ -13,7 +13,7 @@ class AirgraphPage extends ConsumerWidget {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('AirGraph'),
+        title: const Text('Select your device to show graph'),
       ),
       body: savedDevices.isEmpty
           ? const Center(

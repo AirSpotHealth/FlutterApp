@@ -1,10 +1,12 @@
 import 'package:airspothealth/core/router/route_names.dart';
+import 'package:airspothealth/core/services/isar_service.dart';
 import 'package:airspothealth/core/utils/assets.dart';
 import 'package:airspothealth/core/utils/extensions.dart';
 import 'package:airspothealth/core/utils/external_urls.dart';
 import 'package:airspothealth/features/home/models/menu_item.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:isar/isar.dart';
 
 class MenuItemWidget extends StatelessWidget {
   const MenuItemWidget({
@@ -50,6 +52,10 @@ class MenuItemWidget extends StatelessWidget {
           if (menuItem.externalUrl != null) {
             context.tryLaunchUrl(menuItem.externalUrl!);
           }
+
+          if (menuItem.onTap != null) {
+            menuItem.onTap!(context);
+          }
         });
       },
     );
@@ -68,7 +74,18 @@ class MenuItems {
       title: 'AirGraph',
       description: 'Review your AirSpots CO2 levels with time.',
       iconAsset: Assets.airGraph,
-      route: RouteNames.airgraph,
+      onTap: (context) {
+        final savedDevices = IsarService().bleDevices.where().findAll();
+
+        if (savedDevices.length != 1) {
+          context.pushNamed(RouteNames.airgraph);
+        } else {
+          context.pushNamed(
+            RouteNames.deviceGraph,
+            pathParameters: {'deviceId': savedDevices.first.deviceId},
+          );
+        }
+      },
     ),
     MenuItem(
       title: 'AirMap',
