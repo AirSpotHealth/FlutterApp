@@ -1,12 +1,10 @@
 import 'package:airspothealth/core/router/route_names.dart';
-import 'package:airspothealth/core/services/isar_service.dart';
 import 'package:airspothealth/core/utils/assets.dart';
 import 'package:airspothealth/core/utils/extensions.dart';
 import 'package:airspothealth/core/utils/external_urls.dart';
 import 'package:airspothealth/features/home/models/menu_item.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import 'package:isar/isar.dart';
 
 class MenuItemWidget extends StatelessWidget {
   const MenuItemWidget({
@@ -69,23 +67,6 @@ class MenuItems {
       description: 'Device List and Management',
       iconAsset: Assets.device,
       route: RouteNames.devices,
-    ),
-    MenuItem(
-      title: 'AirGraph',
-      description: 'Review your AirSpots CO2 levels with time.',
-      iconAsset: Assets.airGraph,
-      onTap: (context) {
-        final savedDevices = IsarService().bleDevices.where().findAll();
-
-        if (savedDevices.length != 1) {
-          context.pushNamed(RouteNames.airgraph);
-        } else {
-          context.pushNamed(
-            RouteNames.deviceGraph,
-            pathParameters: {'deviceId': savedDevices.first.deviceId},
-          );
-        }
-      },
     ),
     MenuItem(
       title: 'AirMap',
