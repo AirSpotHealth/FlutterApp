@@ -97,7 +97,7 @@ extension DateTimeExtension on DateTime {
   String formatTime() {
     final formattedHour = hour.toString().padLeft(2, '0');
     final formattedMinute = minute.toString().padLeft(2, '0');
-    return '$month/$day $formattedHour:$formattedMinute';
+    return '$day/$month $formattedHour:$formattedMinute';
   }
 
   /// format date in local format without milliseconds

@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import 'package:airspothealth/core/models/device_data.dart';
+import 'package:airspothealth/core/utils/constants.dart';
 import 'package:airspothealth/core/widgets/airspot_chart/echart.dart';
 import 'package:airspothealth/features/device_graph/models/graph_data_duration.dart';
 import 'package:airspothealth/features/device_graph/models/graph_settings.dart';
@@ -8,6 +9,9 @@ import 'package:airspothealth/features/device_graph/providers/graph_range_provid
 import 'package:airspothealth/features/device_graph/providers/graph_settings_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+
+// fake data length
+const fakeDataLength = 5;
 
 class DataGraphWidget extends ConsumerStatefulWidget {
   final List<DeviceData> deviceDataList;
@@ -35,8 +39,6 @@ class _DataGraphWidgetState extends ConsumerState<DataGraphWidget> {
     final GraphSettings settings = ref.watch(graphSettingsProvider);
     final GraphDataDuration duration = ref.watch(graphDurationProvider);
 
-    debugPrint("Datetimenow: ${DateTime.now()}");
-
     final String currentOption = _buildOption(settings, duration);
 
     return EChart(option: currentOption);
@@ -45,76 +47,17 @@ class _DataGraphWidgetState extends ConsumerState<DataGraphWidget> {
   String _buildOption(GraphSettings settings, GraphDataDuration duration) {
     // Check if there is no data
     if (loading) {
-      return '''
-    {
-      title: {
-        text: '',
-      },
-      graphic: {
-    elements: [
-      {
-        type: 'group',
-        left: 'center',
-        top: 'center',
-        children: new Array(7).fill(0).map((val, i) => ({
-          type: 'rect',
-          x: i * 20,
-          shape: {
-            x: 0,
-            y: -40,
-            width: 10,
-            height: 80
-          },
-          style: {
-            fill: '#009FD7'
-          },
-          keyframeAnimation: {
-            duration: 500,
-            delay: i * 200,
-            loop: true,
-            keyframes: [
-              {
-                percent: 0.5,
-                scaleY: 0.3,
-                easing: 'cubicIn'
-              },
-              {
-                percent: 1,
-                scaleY: 1,
-                easing: 'cubicOut'
-              }
-            ]
-          }
-        }))
-      }
-    ]
-  }
-    }
-    ''';
+      return Constants.loadingEchartString;
     }
 
     if (currentDataList.isEmpty) {
-      return '''
-    {
-      title: {
-        text: 'No data available',
-        left: 'center',
-        top: 'center',
-        textStyle: {
-          color: '#333',
-          fontSize: 16
-        }
-      }
-    }
-    ''';
+      return Constants.noChartDataString;
     }
 
     final seriesData = _generateSeriesData(currentDataList, duration);
     final fakeData = _generatePreviousAndAfterFakeData(duration);
-    // dynamically set the zoom start based on the data length so that the graph will be at center
-    // the value can be between 0 - 100
-    final zoomStart =
-        (fakeData.length / (fakeData.length + seriesData.length)) * 100;
+    // dynamically set the zoom start based on the duration of the series data
+    // the data range covered by the series data is divided by the total duration of the graph
 
     return '''
 {
@@ -139,34 +82,12 @@ class _DataGraphWidgetState extends ConsumerState<DataGraphWidget> {
   xAxis: {
     type: 'time',
     boundaryGap: true,
-    minInterval: 1000 * 60,
     maxInterval: 1000 * 60 * 60 * 3,
-    interval: 1000 * 60 * 60,
-    showSymbol: false, // Only show symbol on hover
+    showSymbol: false,
     symbol: 'circle',
-    symbolSize: 20, // Default symbol size
-    emphasis: {
-      focus: 'series',
-      itemStyle: {
-        symbolSize: 40 // Increased size when focused (tooltip shown)
-      },
-    },
     axisLabel: {
       hideOverlap: true,
       fontSize: 11,
-      formatter: function (value, index) {
-      var date = new Date(value);
-      var dayName = date.toLocaleString('en-au', { weekday: 'short' }).toUpperCase(); // Get day name in short form (e.g., MON, TUE)
-      var hour = date.getHours();
-
-      // Show only day name if it's midnight or near midnight
-      if (hour === 0 || hour === 23) {
-        return dayName;
-      }
-
-      // Show day name and time if it's not midnight
-      return `\${date.toLocaleString('en-au', { hour: 'numeric', hour12: true }).toUpperCase()}`;
-      }
     },
     axisLine: {
       show: false,
@@ -195,22 +116,30 @@ class _DataGraphWidgetState extends ConsumerState<DataGraphWidget> {
       }
     },
     gridIndex: 0,
-    scale: false,
+    scale: true,
     splitLine: {
       show: true,
       lineStyle: {
-        color: '#f2f2f2',
-        width: 2,
+        color: '#eee',
+        width: 1.5,
         type: 'dashed'
       }
     },
     z: 1,
-    min: 350    
+    min: 350,
+    axisLabel: {
+      fontSize: 11,
+      // customValues: [400, 600, 800, 1000, 1200, 1400, 1600, 2000, 2500, 3000, 3500, 4000, 4500, 5000],
+      // formatter: function (value, index) {
+      //   return value;
+      // }
+      showMinLabel: false,
+    }
   },
   dataZoom: [
     {
       type: 'inside',
-      start: $zoomStart,
+      start: 50,
       end: 100,
       filterMode: 'empty',
       xAxisIndex: [0],
@@ -233,7 +162,7 @@ class _DataGraphWidgetState extends ConsumerState<DataGraphWidget> {
       smooth: true,
       showSymbol: false,
       lineStyle: {
-        width: 1.5
+        width: 1
       },
       markLine: ${settings.showMarkLines ? '''
         {
@@ -302,7 +231,7 @@ class _DataGraphWidgetState extends ConsumerState<DataGraphWidget> {
       List<DeviceData> currentDataList, GraphDataDuration duration) {
     final dataList = currentDataList
         .map((data) => [
-              data.dateTime.toIso8601String(),
+              data.dateTime.toLocal().toIso8601String(),
               data.value.toInt().clamp(350, 5000)
             ])
         .toList();
@@ -319,8 +248,6 @@ class _DataGraphWidgetState extends ConsumerState<DataGraphWidget> {
     final (graphStartDate, graphEndDate) = duration.getDateTimeRange();
 
     final fakeData = <List<dynamic>>[];
-
-    const fakeDataLength = 5;
 
     for (int i = 0; i < fakeDataLength; i++) {
       final fakeDate =

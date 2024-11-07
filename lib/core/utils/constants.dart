@@ -45,6 +45,68 @@ class Constants {
   static const String subscript2 = '₂';
 
   /// Regexes
-  static const String devicesPathRegex =
-      r'^/devices/[\w%]+/settings(?:/[\w%\-]+)*$';
+  static const String devicesPathRegex = r'^/devices/[\w%]+(/[\w%]+)*/*$';
+
+  /// loading echart html string
+  static const loadingEchartString = '''
+    {
+      title: {
+        text: '',
+      },
+      graphic: {
+    elements: [
+      {
+        type: 'group',
+        left: 'center',
+        top: 'center',
+        children: new Array(7).fill(0).map((val, i) => ({
+          type: 'rect',
+          x: i * 20,
+          shape: {
+            x: 0,
+            y: -40,
+            width: 10,
+            height: 80
+          },
+          style: {
+            fill: '#009FD7'
+          },
+          keyframeAnimation: {
+            duration: 500,
+            delay: i * 200,
+            loop: true,
+            keyframes: [
+              {
+                percent: 0.5,
+                scaleY: 0.3,
+                easing: 'cubicIn'
+              },
+              {
+                percent: 1,
+                scaleY: 1,
+                easing: 'cubicOut'
+              }
+            ]
+          }
+        }))
+      }
+    ]
+  }
+    }
+    ''';
+
+  /// no data echart html string
+  static const String noChartDataString = '''
+    {
+      title: {
+        text: 'No data available',
+        left: 'center',
+        top: 'center',
+        textStyle: {
+          color: '#333',
+          fontSize: 16
+        }
+      }
+    }
+''';
 }
