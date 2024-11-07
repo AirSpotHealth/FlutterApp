@@ -3,7 +3,9 @@ import 'package:airspothealth/core/providers/device_settings_provider.dart';
 import 'package:airspothealth/core/services/data_logger_service.dart';
 import 'package:airspothealth/core/theme/app_colors.dart';
 import 'package:airspothealth/core/utils/extensions.dart';
+import 'package:airspothealth/features/device_settings/models/log_data.dart';
 import 'package:airspothealth/features/device_settings/providers/device_log_provider.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -15,32 +17,38 @@ class DeviceLogPage extends ConsumerWidget {
 
   final String deviceId;
 
-  Map<DateTime, String> parseLog(String log) {
+  List<LogData> parseLog(String log) {
     final lines = log.split('\n');
-    final entries = <DateTime, String>{};
+    final entries = <LogData>[];
     for (final line in lines) {
       if (line.trim().isEmpty) continue;
       final parts = line.split(',');
       if (parts.length >= 2) {
         final datetimeString = parts[0].trim();
         final value = parts[1].trim();
+        final sent = parts.length > 2 ? parts[2].trim() == 'sent' : false;
 
         final datetime = DateTime.tryParse(datetimeString);
         if (datetime != null) {
-          entries[datetime] = value;
+          entries.add(
+            LogData(
+              dateTime: datetime,
+              value: value,
+              deviceId: deviceId,
+              sent: sent,
+            ),
+          );
         }
       }
     }
 
-    return entries;
+    return entries..sort((a, b) => b.dateTime.compareTo(a.dateTime));
   }
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final AsyncValue<String> deviceLog = ref.watch(deviceLogProvider(deviceId));
     final DeviceSettings settings = ref.watch(deviceSettingsProvider(deviceId));
-
-    debugPrint('DeviceLogPage: $deviceLog, ');
 
     return Scaffold(
       appBar: AppBar(
@@ -71,10 +79,22 @@ class DeviceLogPage extends ConsumerWidget {
                 child: ListView.builder(
                   itemCount: entries.length,
                   itemBuilder: (context, index) {
-                    final entry = entries.entries.elementAt(index);
+                    final entry = entries[index];
                     return ListTile(
-                      title: Text('HexValue: ${entry.value}'),
-                      subtitle: Text('Date: ${entry.key.formatLocalDate()}'),
+                      title: Text('${entry.value}'),
+                      subtitle: Text(
+                        entry.dateTime.formatLocalDate(),
+                        style: const TextStyle(
+                          fontSize: 12,
+                          color: Colors.blueGrey,
+                        ),
+                      ),
+                      leading: Icon(
+                        entry.sent
+                            ? CupertinoIcons.device_phone_portrait
+                            : Icons.watch,
+                        color: entry.sent ? Colors.red : Colors.grey,
+                      ),
                     );
                   },
                 ),

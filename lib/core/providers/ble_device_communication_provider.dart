@@ -125,6 +125,9 @@ class _BleDeviceCommunicationNotifier extends FamilyNotifier<dynamic, String> {
 
   void _handleNotificationData(List<int> data) {
     debugPrint('Data received: $deviceId, ${BleDataUtils.bytesToHexStr(data)}');
+
+    _checkIfLogData(data, DateTime.now());
+
     final dynamic value = BleDataUtils.parseResponseCommand(deviceId, data);
 
     if (value == null) return;
@@ -173,8 +176,6 @@ class _BleDeviceCommunicationNotifier extends FamilyNotifier<dynamic, String> {
           dateTime: dateTime,
         ));
       });
-
-      _checkIfLogData(data, dateTime);
     } catch (e) {
       debugPrint('Error saving data: $e');
     }
@@ -220,6 +221,8 @@ class _BleDeviceCommunicationNotifier extends FamilyNotifier<dynamic, String> {
 
     try {
       await _writeCharacteristic!.write(data);
+      final DateTime dateTime = DateTime.now();
+      _checkIfLogData(data, dateTime, sent: true);
       debugPrint('Command sent: ${BleDataUtils.bytesToHexStr(data)}');
       return true;
     } catch (e) {
@@ -228,7 +231,7 @@ class _BleDeviceCommunicationNotifier extends FamilyNotifier<dynamic, String> {
     }
   }
 
-  void _checkIfLogData(dynamic value, DateTime dateTime) {
+  void _checkIfLogData(dynamic value, DateTime dateTime, {bool sent = false}) {
     final DeviceSettings? deviceSettings =
         ref.read(deviceSettingsProvider(deviceId));
 
@@ -239,6 +242,7 @@ class _BleDeviceCommunicationNotifier extends FamilyNotifier<dynamic, String> {
         deviceId: deviceId,
         value: BleDataUtils.bytesToHexStr(value),
         dateTime: dateTime,
+        sent: sent,
       );
     }
   }

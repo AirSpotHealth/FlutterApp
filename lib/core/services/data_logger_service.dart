@@ -9,6 +9,7 @@ class DataLoggerService {
     required String deviceId,
     required dynamic value,
     required DateTime dateTime,
+    required bool sent,
   }) async {
     try {
       // Get the local directory for storing files
@@ -17,7 +18,8 @@ class DataLoggerService {
       final file = File(filePath);
 
       // Prepare the data entry
-      String entry = '${dateTime.toIso8601String()},$value\n';
+      String entry =
+          '${dateTime.toIso8601String()},$value,${sent ? 'sent' : 'received'}\n';
 
       debugPrint('Data entry: $entry');
 

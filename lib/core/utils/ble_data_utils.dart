@@ -215,6 +215,7 @@ class ResponseCommandParser {
       co2Data.putIfAbsent(
         DateTime.fromMillisecondsSinceEpoch(
           timestampFrom2000 * 1000,
+          isUtc: false,
         ),
         () => combinedValue,
       );
