@@ -88,6 +88,21 @@ class _DataGraphWidgetState extends ConsumerState<DataGraphWidget> {
     axisLabel: {
       hideOverlap: true,
       fontSize: 11,
+      formatter: {
+        year: '{yyyy}',
+        month: '{MMM}',
+        day: '{dayStyle|{ee}}',
+        hour: '{hh} {A}',
+        minute: '{hh}:{mm} {A}',
+        second: '{HH}:{mm}:{ss}',
+        millisecond: '{hh}:{mm}:{ss} {SSS}',
+        none: '{yyyy}-{MM}-{dd} {hh}:{mm}:{ss} {SSS}'
+      },
+      rich: {
+        dayStyle: {
+          fontWeight: 'bold',
+        }
+      }
     },
     axisLine: {
       show: false,
