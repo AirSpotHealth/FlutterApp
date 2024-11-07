@@ -56,8 +56,7 @@ class _DataGraphWidgetState extends ConsumerState<DataGraphWidget> {
 
     final seriesData = _generateSeriesData(currentDataList, duration);
     final fakeData = _generatePreviousAndAfterFakeData(duration);
-    // dynamically set the zoom start based on the duration of the series data
-    // the data range covered by the series data is divided by the total duration of the graph
+    final zoomStart = _calculateZoomStart();
 
     return '''
 {
@@ -147,19 +146,19 @@ class _DataGraphWidgetState extends ConsumerState<DataGraphWidget> {
       // customValues: [400, 600, 800, 1000, 1200, 1400, 1600, 2000, 2500, 3000, 3500, 4000, 4500, 5000],
       // formatter: function (value, index) {
       //   return value;
-      // }
+      // },
       showMinLabel: false,
     }
   },
   dataZoom: [
     {
       type: 'inside',
-      start: 50,
+      start: $zoomStart,
       end: 100,
       filterMode: 'empty',
       xAxisIndex: [0],
       orient: 'horizontal',
-      throttle: 50
+      throttle: 50,
     }${settings.showZoomSlider ? ', { type: "slider", start: 0, end: 100 }' : ''}
   ],
   grid: {
@@ -276,5 +275,29 @@ class _DataGraphWidgetState extends ConsumerState<DataGraphWidget> {
     }
 
     return fakeData;
+  }
+
+  int _calculateZoomStart() {
+    final dateRange = currentDataList.last.dateTime
+        .difference(currentDataList.first.dateTime)
+        .inHours;
+
+    if (dateRange < 1) {
+      return 10;
+    }
+
+    if (dateRange < 12) {
+      return 10;
+    }
+
+    if (dateRange < 24) {
+      return 50;
+    }
+
+    if (dateRange < 168) {
+      return 80;
+    }
+
+    return 80;
   }
 }

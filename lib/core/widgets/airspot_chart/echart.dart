@@ -55,6 +55,39 @@ class _EChartState extends State<EChart> {
       $script;
       var chart = echarts.init(document.getElementById('chart'));
       chart.setOption($_currentOption, true);
+
+      // chart.on('datazoom', function (params) {
+      //   const series = chart.getOption().series[0]; // Get the series data
+      //   const data = series.data; // Access the data array
+
+      //   console.log("SeriesName: ", series.name);
+
+      //   // Get the current dataZoom range (start and end)
+      //   const dataZoomComponent = chart.getModel().getComponent('dataZoom').option;
+      //   const startPercent = dataZoomComponent.start;
+      //   const endPercent = dataZoomComponent.end;
+
+      //   // Calculate the indices of the visible range
+      //   const startIndex = Math.floor((startPercent / 100) * data.length);
+      //   const endIndex = Math.floor((endPercent / 100) * data.length);
+
+      //   // Calculate the middle index of the visible range
+      //   const middleIndex = Math.floor((startIndex + endIndex) / 2);
+
+      //   console.log("Middle index: ", middleIndex);
+      //   console.log("Middle data point: ", data[middleIndex]);
+
+      //   if (middleIndex < 0 || middleIndex >= data.length) {
+      //           return;
+      //   }
+      
+
+      //   chart.dispatchAction({
+      //       type: 'showTip',
+      //       seriesIndex: 0,
+      //       dataIndex: middleIndex
+      //   });
+      // });
     ''');
   }
 
