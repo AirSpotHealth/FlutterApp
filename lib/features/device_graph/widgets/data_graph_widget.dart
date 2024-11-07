@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:math' as math;
 
 import 'package:airspothealth/core/models/device_data.dart';
 import 'package:airspothealth/core/utils/constants.dart';
@@ -12,6 +13,23 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 // fake data length
 const fakeDataLength = 5;
+
+const yAxesValues = [
+  400,
+  600,
+  800,
+  1000,
+  1200,
+  1400,
+  1600,
+  2000,
+  2500,
+  3000,
+  3500,
+  4000,
+  4500,
+  5000,
+];
 
 class DataGraphWidget extends ConsumerStatefulWidget {
   final List<DeviceData> deviceDataList;
@@ -57,6 +75,9 @@ class _DataGraphWidgetState extends ConsumerState<DataGraphWidget> {
     final seriesData = _generateSeriesData(currentDataList, duration);
     final fakeData = _generatePreviousAndAfterFakeData(duration);
     final zoomStart = _calculateZoomStart();
+    // Get the maximum value of the y-axis
+    // it should be the maximum value of the data and round it to nearest value of yAxesValues
+    final yMax = _calculateYMax();
 
     return '''
 {
@@ -141,12 +162,13 @@ class _DataGraphWidgetState extends ConsumerState<DataGraphWidget> {
     },
     z: 1,
     min: 350,
+    max: $yMax,
     axisLabel: {
       fontSize: 11,
-      // customValues: [400, 600, 800, 1000, 1200, 1400, 1600, 2000, 2500, 3000, 3500, 4000, 4500, 5000],
-      // formatter: function (value, index) {
-      //   return value;
-      // },
+      customValues: ${jsonEncode(yAxesValues)},
+      formatter: function (value, index) {
+        return value;
+      },
       showMinLabel: false,
     }
   },
@@ -299,5 +321,19 @@ class _DataGraphWidgetState extends ConsumerState<DataGraphWidget> {
     }
 
     return 80;
+  }
+
+  dynamic _calculateYMax() {
+    dynamic yMax = currentDataList
+        .fold<int>(
+          1600,
+          (prevMax, data) => math.max(prevMax, data.value),
+        )
+        .ceilToDouble();
+
+    return yAxesValues.firstWhere(
+      (element) => element >= yMax,
+      orElse: () => yAxesValues.last,
+    );
   }
 }
