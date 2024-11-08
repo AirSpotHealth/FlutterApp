@@ -13,6 +13,7 @@ import 'package:airspothealth/features/add_device/providers/ble_device_connectio
 import 'package:airspothealth/features/device_graph/providers/ble_device_provider.dart';
 import 'package:airspothealth/features/device_settings/providers/recalibration_time_provider.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_blue_plus/flutter_blue_plus.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:isar/isar.dart';
@@ -31,6 +32,10 @@ class _BleDeviceCommunicationNotifier extends FamilyNotifier<dynamic, String> {
       .firstWhereOrNull((device) => device.remoteId.str == arg);
 
   String get deviceId => arg;
+
+  static const notifySubscriptionRetryMaxCount = 3;
+
+  int notifySubscriptionRetryCount = 0;
 
   @override
   dynamic build(String arg) {
@@ -88,6 +93,17 @@ class _BleDeviceCommunicationNotifier extends FamilyNotifier<dynamic, String> {
       _writeCharacteristic = _findCharacteristic(service, Constants.writeUuid);
 
       await _getInitialData();
+    } on PlatformException catch (e) {
+      debugPrint('Error starting notification stream platform: ${e.message}');
+
+      if ((e.message?.contains(Constants.serviceUuid.toLowerCase()) ?? false) &&
+          notifySubscriptionRetryCount < notifySubscriptionRetryMaxCount) {
+        // delay for 1 second before retrying
+        Future.delayed(const Duration(seconds: 1)).then((_) {
+          notifySubscriptionRetryCount++;
+          startListeningToNotifications();
+        });
+      }
     } catch (e) {
       debugPrint('Error starting notification stream: $e');
     }
