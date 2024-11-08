@@ -18,7 +18,7 @@ class SolutionsPage extends ConsumerWidget {
         iconAsset: Assets.mechanicalVentIcon,
         externalUrl: '${Constants.solutionsUrl}mechanical-ventilation'),
     MenuItem(
-        title: 'CO2 Monitors',
+        title: 'CO${Constants.subscript2} Monitors',
         iconAsset: Assets.co2MonitorIcon,
         externalUrl: '${Constants.solutionsUrl}co2-monitors'),
     MenuItem(

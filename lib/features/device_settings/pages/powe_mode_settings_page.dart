@@ -1,9 +1,11 @@
+import 'package:airspothealth/core/models/ble_device.dart';
 import 'package:airspothealth/core/models/device_settings.dart';
 import 'package:airspothealth/core/providers/device_settings_provider.dart';
 import 'package:airspothealth/core/theme/app_colors.dart';
 import 'package:airspothealth/core/utils/assets.dart';
+import 'package:airspothealth/core/utils/constants.dart';
 import 'package:airspothealth/core/utils/extensions.dart';
-import 'package:airspothealth/features/device_settings/widgets/device_settings_name_widget.dart';
+import 'package:airspothealth/features/device_graph/providers/ble_device_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -17,11 +19,13 @@ class PowerModeSettingsPage extends ConsumerWidget {
     final DeviceSettings deviceSettings =
         ref.watch(deviceSettingsProvider(deviceId));
 
+    final BleDevice bleDevice = ref.watch(bleDeviceProvider(deviceId));
+
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: AppBar(
-        title: DeviceSettingsNameWidget(
-            deviceId: deviceId, suffixText: 'Power Mode'),
+        title: Text(
+            '${bleDevice.alias ?? bleDevice.name} CO${Constants.subscript2} reading rate'),
       ),
       body: ListView(
         padding: const EdgeInsets.all(16),
@@ -34,7 +38,8 @@ class PowerModeSettingsPage extends ConsumerWidget {
                     isSelected: deviceSettings.powerMode == PowerMode.low,
                     onTap: () => _updatePowerMode(
                         ref, deviceSettings.copyWith(powerMode: PowerMode.low)),
-                    description: 'CO2 level updates every 3 minute'),
+                    description:
+                        'CO${Constants.subscript2} level updates every 3 minute'),
               ),
               const SizedBox(width: 16),
               Expanded(
@@ -43,7 +48,8 @@ class PowerModeSettingsPage extends ConsumerWidget {
                     isSelected: deviceSettings.powerMode == PowerMode.medium,
                     onTap: () => _updatePowerMode(ref,
                         deviceSettings.copyWith(powerMode: PowerMode.medium)),
-                    description: 'CO2 level updates every 1 minute'),
+                    description:
+                        'CO${Constants.subscript2} level updates every 1 minute'),
               ),
               const SizedBox(width: 16),
               Expanded(
@@ -52,7 +58,8 @@ class PowerModeSettingsPage extends ConsumerWidget {
                     isSelected: deviceSettings.powerMode == PowerMode.high,
                     onTap: () => _updatePowerMode(ref,
                         deviceSettings.copyWith(powerMode: PowerMode.high)),
-                    description: 'CO2 level updates every 5 seconds'),
+                    description:
+                        'CO${Constants.subscript2} level updates every 5 seconds'),
               ),
             ],
           ),

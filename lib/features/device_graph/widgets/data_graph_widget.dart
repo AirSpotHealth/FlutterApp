@@ -191,7 +191,7 @@ class _DataGraphWidgetState extends ConsumerState<DataGraphWidget> {
   },
   series: [
     {
-      name: 'CO2 Value',
+      name: 'CO${Constants.subscript2} Value',
       type: 'line',
       data: ${jsonEncode(seriesData)},
       ${settings.showAreaFill ? 'areaStyle: { opacity: 0.2 },' : ''}

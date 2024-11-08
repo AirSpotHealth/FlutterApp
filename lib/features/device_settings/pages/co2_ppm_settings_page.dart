@@ -41,7 +41,8 @@ class _Co2PpmSettingsPageState extends ConsumerState<Co2PpmSettingsPage> {
       backgroundColor: Colors.white,
       appBar: AppBar(
         title: DeviceSettingsNameWidget(
-            deviceId: widget.deviceId, suffixText: 'CO2 PPM'),
+            deviceId: widget.deviceId,
+            suffixText: 'CO${Constants.subscript2} PPM'),
       ),
       body: ListView(
         padding: const EdgeInsets.all(16),

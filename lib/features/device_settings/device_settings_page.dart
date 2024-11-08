@@ -1,6 +1,7 @@
 import 'package:airspothealth/core/models/ble_device.dart';
 import 'package:airspothealth/core/router/route_names.dart';
 import 'package:airspothealth/core/utils/assets.dart';
+import 'package:airspothealth/core/utils/constants.dart';
 import 'package:airspothealth/core/utils/extensions.dart';
 import 'package:airspothealth/features/add_device/providers/ble_device_connection_provider.dart';
 import 'package:airspothealth/features/device_graph/providers/ble_device_provider.dart';
@@ -28,18 +29,18 @@ class DeviceSettingsPage extends ConsumerWidget {
       route: RouteNames.timeSettings,
     ),
     SettingItem(
-      title: 'Power mode',
+      title: 'CO${Constants.subscript2} reading rate',
       assetIcon: Assets.powerModeSettings,
       route: RouteNames.powerModeSettings,
     ),
     SettingItem(
-      title: 'CO2 PPM Settings',
+      title: 'CO${Constants.subscript2} PPM Settings',
       assetIcon: Assets.ppmSettings,
       route: RouteNames.ppmSettings,
       enabled: false,
     ),
     SettingItem(
-      title: 'High CO2 Alert',
+      title: 'High CO${Constants.subscript2} Alert',
       assetIcon: Assets.co2Settings,
       route: RouteNames.co2Settings,
       enabled: false,
