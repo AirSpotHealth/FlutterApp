@@ -122,8 +122,9 @@ class BleDeviceWidget extends ConsumerWidget {
       const SizedBox(width: 8),
       Expanded(
         child: Text(
-          bleDevice.alias ?? 'Airspot',
-          style: ref.context.textTheme.labelLarge,
+          bleDevice.alias ?? 'No Alias',
+          style: ref.context.textTheme.labelLarge?.copyWith(
+              color: bleDevice.alias == null ? AppColors.neutralGrey : null),
         ),
       ),
       Text(
