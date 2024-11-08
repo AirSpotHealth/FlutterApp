@@ -45,7 +45,8 @@ class Constants {
   static const String subscript2 = '₂';
 
   /// Regexes
-  static const String devicesPathRegex = r'^/devices/[\w%]+(/[\w%]+)*/*$';
+  static const String devicesPathRegex =
+      r'^\/devices\/[A-Za-z0-9%]+(?:\/[A-Za-z0-9%_-]+)*$';
 
   /// loading echart html string
   static const loadingEchartString = '''
