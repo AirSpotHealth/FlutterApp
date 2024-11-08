@@ -49,7 +49,10 @@ class DataGraphWidget extends ConsumerStatefulWidget {
 }
 
 class _DataGraphWidgetState extends ConsumerState<DataGraphWidget> {
-  List<DeviceData> get currentDataList => widget.deviceDataList;
+  List<DeviceData> get currentDataList => List.from(widget.deviceDataList)
+    ..sort(
+      (a, b) => a.dateTime.compareTo(b.dateTime),
+    );
 
   bool get loading => widget.loading;
 
@@ -74,8 +77,8 @@ class _DataGraphWidgetState extends ConsumerState<DataGraphWidget> {
     }
 
     final seriesData = _generateSeriesData(currentDataList, duration);
+    debugPrint('Series data Last 2 values: ${seriesData.reversed.take(2)}');
     final fakeData = _generatePreviousAndAfterFakeData(duration);
-    final zoomStart = _calculateZoomStart();
     // Get the maximum value of the y-axis
     // it should be the maximum value of the data and round it to nearest value of yAxesValues
     final yMax = _calculateYMax();
@@ -176,8 +179,6 @@ class _DataGraphWidgetState extends ConsumerState<DataGraphWidget> {
   dataZoom: [
     {
       type: 'inside',
-      start: $zoomStart,
-      end: 100,
       filterMode: 'empty',
       xAxisIndex: [0],
       orient: 'horizontal',
@@ -266,6 +267,8 @@ class _DataGraphWidgetState extends ConsumerState<DataGraphWidget> {
 
   List<List<dynamic>> _generateSeriesData(
       List<DeviceData> currentDataList, GraphDataDuration duration) {
+    debugPrint(
+        'Current Data List Last 2 values: ${currentDataList.reversed.take(2)}');
     final dataList = currentDataList
         .map((data) => [
               data.dateTime.toLocal().toIso8601String(),
@@ -298,30 +301,6 @@ class _DataGraphWidgetState extends ConsumerState<DataGraphWidget> {
     }
 
     return fakeData;
-  }
-
-  int _calculateZoomStart() {
-    final dateRange = currentDataList.last.dateTime
-        .difference(currentDataList.first.dateTime)
-        .inHours;
-
-    if (dateRange < 1) {
-      return 10;
-    }
-
-    if (dateRange < 12) {
-      return 10;
-    }
-
-    if (dateRange < 24) {
-      return 50;
-    }
-
-    if (dateRange < 168) {
-      return 80;
-    }
-
-    return 80;
   }
 
   dynamic _calculateYMax() {

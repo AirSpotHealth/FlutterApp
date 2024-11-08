@@ -25,12 +25,11 @@ class EChart extends StatefulWidget {
 class _EChartState extends State<EChart> {
   WebViewController? _controller;
 
-  String? _currentOption;
+  String get _currentOption => widget.option;
 
   @override
   void initState() {
     super.initState();
-    _currentOption = widget.option;
 
     _controller = WebViewController()
       ..setBackgroundColor(const Color(0x00000000))
@@ -91,16 +90,26 @@ class _EChartState extends State<EChart> {
     ''');
   }
 
-  void update(String preOption) async {
-    _currentOption = widget.option;
+  void update(String preOption) {
     if (_currentOption != preOption) {
-      await _controller?.runJavaScript('''
+      _controller?.runJavaScript('''
         try {
-          chart.setOption($_currentOption, true);
-        } catch(e) {
+          const parsedOption = typeof $_currentOption === 'string' ? JSON.parse($_currentOption) : $_currentOption;
+
+          const zoom = chart.getOption().dataZoom[0];
+
+          if (!zoom) {
+            chart.setOption(parsedOption, true);
+          } else {
+            parsedOption.dataZoom[0].start = zoom.start;
+            parsedOption.dataZoom[0].end = zoom.end;
+
+            chart.setOption(parsedOption, true);
+          }
+        } catch (e) {
           console.log(e);
         }
-      ''');
+''');
     }
   }
 

@@ -55,7 +55,6 @@ class _DeviceHistoricalDataNotifier extends AutoDisposeFamilyStreamNotifier<
         .where()
         .deviceIdEqualTo(deviceId)
         .dateTimeBetween(startDate, endDate)
-        .sortByDateTime()
         .watch(fireImmediately: true);
 
     _fetchDataFromDevice();
