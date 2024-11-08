@@ -155,6 +155,14 @@ class DeviceLogPage extends ConsumerWidget {
             child: const Text('Clear Log'),
           ),
           const SizedBox(width: 16),
+          ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.brandColorGreen,
+              ),
+              onPressed: () {
+                DataLoggerService().downloadLogData(deviceId);
+              },
+              child: const Text('Download Log File')),
         ],
       ),
     );

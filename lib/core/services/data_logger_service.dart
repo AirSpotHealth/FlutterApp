@@ -1,5 +1,6 @@
 import 'dart:io';
 
+import 'package:document_file_save_plus/document_file_save_plus.dart';
 import 'package:flutter/material.dart';
 import 'package:path_provider/path_provider.dart';
 
@@ -57,6 +58,24 @@ class DataLoggerService {
       }
     } catch (e) {
       debugPrint('Error clearing log data: $e');
+    }
+  }
+
+  /// Download the log file to user's device
+  Future<void> downloadLogData(String deviceId) async {
+    try {
+      debugPrint('Downloading log data for device: $deviceId');
+      final file = await getLogFile(deviceId);
+
+      // get the bytes of the file
+      final bytes = await file.readAsBytes();
+
+      // save the file
+      final name = 'data_log_$deviceId.txt';
+
+      DocumentFileSavePlus().saveFile(bytes, name, "text/plain");
+    } catch (e) {
+      debugPrint('Error downloading log data: $e');
     }
   }
 }
