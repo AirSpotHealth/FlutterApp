@@ -16,10 +16,8 @@ class _BluetoothStateNotifier extends Notifier<BluetoothAdapterState> {
   @override
   BluetoothAdapterState build() {
     _bleService.adapterState.listen((newState) {
-      debugPrint('Bluetooth state: $newState');
       if (newState == BluetoothAdapterState.on &&
           state != BluetoothAdapterState.on) {
-        debugPrint('Bluetooth is on');
         _connectToDevices();
       }
 

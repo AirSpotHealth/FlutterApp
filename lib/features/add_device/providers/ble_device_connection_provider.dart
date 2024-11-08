@@ -31,7 +31,6 @@ class _BleDeviceConnectionNotifier
 
   @override
   BluetoothBondState build(String arg) {
-    debugPrint('bleDeviceConnectionProvider build $arg');
     ref.onDispose(() {
       deviceSubscription?.cancel();
     });
@@ -50,10 +49,7 @@ class _BleDeviceConnectionNotifier
   bool get isConnecting => state == BluetoothBondState.bonding;
 
   void connect() {
-    debugPrint('bleDeviceConnectionProvider connect $arg, $state');
-
     if (isConnected || isConnecting) return;
-    debugPrint('Connecting to device: ${device.advName}');
 
     state = BluetoothBondState.bonding;
 
@@ -69,8 +65,6 @@ class _BleDeviceConnectionNotifier
 
         ref.read(bleDeviceCommunicationProvider(arg).notifier).setConnected();
       } else if (bState == BluetoothConnectionState.disconnected) {
-        debugPrint('Device disconnected, $state');
-
         if (state == BluetoothBondState.none) return;
 
         _checkRouteAndPop();
@@ -110,13 +104,10 @@ class _BleDeviceConnectionNotifier
   void _checkRouteAndPop() {
     // check whether the disconnect was intitiated from the dfu update
     if (ref.read(dfuUpdateProvider) is AsyncInProgress) {
-      debugPrint('DFU update in progress, not popping');
       return;
     }
 
     final BuildContext? context = AppRouter.navigatorKey.currentContext;
-
-    debugPrint('Checking route and popping');
 
     if (context == null) return;
 
@@ -124,8 +115,6 @@ class _BleDeviceConnectionNotifier
 
     final path =
         router.routerDelegate.currentConfiguration.last.matchedLocation;
-
-    debugPrint('Path: $path, device: ${device.remoteId.str}');
 
     // if the path pattern matches this /devices/FF%3A51%3A34%3A9D%3A86%3A32/settings
     // then pop the route

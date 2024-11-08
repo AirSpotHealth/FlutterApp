@@ -21,12 +21,8 @@ class DataLoggerService {
       String entry =
           '${dateTime.toIso8601String()},$value,${sent ? 'sent' : 'received'}\n';
 
-      debugPrint('Data entry: $entry');
-
       // Append the data entry to the file
       await file.writeAsString(entry, mode: FileMode.append, flush: true);
-
-      debugPrint('Data logged successfully to $filePath');
     } catch (e) {
       debugPrint('Error logging data: $e');
     }
@@ -48,7 +44,6 @@ class DataLoggerService {
         return 'No log data available.';
       }
     } catch (e) {
-      debugPrint('Error reading log data: $e');
       return 'Error reading log data.';
     }
   }

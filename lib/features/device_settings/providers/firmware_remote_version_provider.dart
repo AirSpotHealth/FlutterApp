@@ -4,7 +4,6 @@ import 'package:airspothealth/core/services/network_service.dart';
 import 'package:airspothealth/core/utils/api_endpoints.dart';
 import 'package:airspothealth/features/device_settings/models/remote_version.dart';
 import 'package:dio/dio.dart';
-import 'package:flutter/cupertino.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 final firmwareRemoteVersionProvider = AsyncNotifierProvider.autoDispose<
@@ -31,18 +30,13 @@ class _FirmwareRemoteVersionNotifier
         final RemoteVersion remoteVersion =
             RemoteVersion.fromJson(result.data as Map<String, dynamic>);
 
-        debugPrint('Remote Version: ${remoteVersion.toString()}');
-
         state = AsyncData(remoteVersion);
       } else {
-        debugPrint('Error (${result.statusCode}): ${result.statusMessage}');
         state = AsyncError(
             'Failed to fetch remote version ${result.statusMessage}',
             StackTrace.current);
       }
     } on DioException catch (e) {
-      debugPrint('Version Update Check Error: $e');
-
       if (e.response?.data?['error'] != null) {
         state = AsyncError(
             'Error: ${e.response?.data?['error']}', StackTrace.current);

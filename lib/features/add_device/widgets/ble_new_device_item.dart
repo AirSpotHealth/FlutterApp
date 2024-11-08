@@ -12,12 +12,9 @@ class BleNewDeviceItem extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    debugPrint('Building device item: ${device.remoteId}');
     ref.listen<BluetoothBondState>(
         bleDeviceConnectionProvider(device.remoteId.str),
         (oldStatus, newStatus) {
-      debugPrint('Device status changed: $newStatus');
-
       if (newStatus == BluetoothBondState.bonded && oldStatus != newStatus) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
@@ -29,8 +26,6 @@ class BleNewDeviceItem extends ConsumerWidget {
 
     final BluetoothBondState deviceStatus =
         ref.watch(bleDeviceConnectionProvider(device.remoteId.str));
-
-    debugPrint('Device status: $deviceStatus');
 
     return ListTile(
       dense: true,

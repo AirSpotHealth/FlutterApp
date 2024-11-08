@@ -160,7 +160,6 @@ class _BleDeviceCommunicationNotifier extends FamilyNotifier<dynamic, String> {
     }
 
     if (data[2] == ResponseCommand.initialData.value) {
-      debugPrint('Initial data invalidating');
       ref.invalidate(deviceSettingsProvider(deviceId));
       return;
     }
@@ -255,8 +254,6 @@ class _BleDeviceCommunicationNotifier extends FamilyNotifier<dynamic, String> {
   void _checkIfLogData(dynamic value, DateTime dateTime, {bool sent = false}) {
     final DeviceSettings? deviceSettings =
         ref.read(deviceSettingsProvider(deviceId));
-
-    debugPrint('Log data: ${deviceSettings?.logData}');
 
     if (deviceSettings?.logData == true) {
       DataLoggerService().logData(

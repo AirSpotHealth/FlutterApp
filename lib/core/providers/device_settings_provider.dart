@@ -2,7 +2,6 @@ import 'package:airspothealth/core/models/ble_device.dart';
 import 'package:airspothealth/core/models/device_settings.dart';
 import 'package:airspothealth/core/providers/ble_device_communication_provider.dart';
 import 'package:airspothealth/core/services/isar_service.dart';
-import 'package:flutter/cupertino.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:isar/isar.dart';
 
@@ -58,18 +57,13 @@ class _DeviceSettingsNotifier extends FamilyNotifier<DeviceSettings, String> {
           .sendCommand(settings.autoSyncTimeCmd);
     }
 
-    debugPrint('Thresholds: ${settings.thresholds}, ${state.thresholds}');
-
     if (settings.thresholds.greenUpperLimit !=
             state.thresholds.greenUpperLimit ||
         settings.thresholds.yellowUpperLimit !=
             state.thresholds.yellowUpperLimit) {
-      debugPrint('Thresholds changed');
       ref
           .read(bleDeviceCommunicationProvider(settings.deviceId).notifier)
           .sendCommand(settings.thresholdsCmd);
-    } else {
-      debugPrint('Thresholds not changed');
     }
 
     _isarService.write((isar) {

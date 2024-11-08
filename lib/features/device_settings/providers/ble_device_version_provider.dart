@@ -1,6 +1,5 @@
 import 'package:airspothealth/core/models/ble_device.dart';
 import 'package:airspothealth/core/providers/isar_service_provider.dart';
-import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:isar/isar.dart';
 
@@ -10,7 +9,6 @@ final bleDeviceVersionProvider =
     final device =
         isar.bleDevices.where().deviceIdEqualTo(deviceId).findFirst();
 
-    debugPrint('device: ${device?.firmwareVersion}');
     return device?.firmwareVersion ?? '-.-.-';
   });
 });

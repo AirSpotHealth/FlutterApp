@@ -77,7 +77,6 @@ class _DataGraphWidgetState extends ConsumerState<DataGraphWidget> {
     }
 
     final seriesData = _generateSeriesData(currentDataList, duration);
-    debugPrint('Series data Last 2 values: ${seriesData.reversed.take(2)}');
     final fakeData = _generatePreviousAndAfterFakeData(duration);
     // Get the maximum value of the y-axis
     // it should be the maximum value of the data and round it to nearest value of yAxesValues
@@ -267,8 +266,6 @@ class _DataGraphWidgetState extends ConsumerState<DataGraphWidget> {
 
   List<List<dynamic>> _generateSeriesData(
       List<DeviceData> currentDataList, GraphDataDuration duration) {
-    debugPrint(
-        'Current Data List Last 2 values: ${currentDataList.reversed.take(2)}');
     final dataList = currentDataList
         .map((data) => [
               data.dateTime.toLocal().toIso8601String(),

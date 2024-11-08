@@ -76,9 +76,6 @@ class _Co2PpmSettingsPageState extends ConsumerState<Co2PpmSettingsPage> {
                 return;
               }
 
-              debugPrint('Green upper limit: $selectedGreenUpperLimit');
-              debugPrint('Amber upper limit: $selectedAmberUpperLimit');
-
               ref
                   .read(deviceSettingsProvider(widget.deviceId).notifier)
                   .updateSettings(deviceSettings.copyWith(

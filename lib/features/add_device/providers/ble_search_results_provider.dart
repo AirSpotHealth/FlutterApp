@@ -1,5 +1,4 @@
 import 'package:airspothealth/core/services/ble_service.dart';
-import 'package:flutter/material.dart';
 import 'package:flutter_blue_plus/flutter_blue_plus.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -18,12 +17,10 @@ class _BleScanResultsNotifier
   @override
   (bool, List<BluetoothDevice>) build() {
     _bleService.scanResults().listen((event) {
-      debugPrint('Scan results: $event');
       state = (isScanning, event);
     });
 
     _bleService.isScanning.listen((event) {
-      debugPrint('Is scanning: $event');
       state = (event, devices);
     });
 

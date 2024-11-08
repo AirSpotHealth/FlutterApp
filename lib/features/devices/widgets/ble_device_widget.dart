@@ -23,9 +23,6 @@ class BleDeviceWidget extends ConsumerWidget {
     final BluetoothBondState deviceConnectionState =
         ref.watch(bleDeviceConnectionProvider(bleDevice.deviceId));
 
-    debugPrint(
-        'bleDeviceConnectionProvider build ${bleDevice.deviceId}, $deviceConnectionState');
-
     final bool deviceConnected =
         deviceConnectionState == BluetoothBondState.bonded;
 

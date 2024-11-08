@@ -36,8 +36,6 @@ class _AddDevicePageState extends ConsumerState<AddDevicePage> {
     final (bool isScanning, List<BluetoothDevice> devices) =
         ref.watch(bluetoothSearchResultsProvider);
 
-    debugPrint('Number of devices found: ${devices.length}');
-
     return Scaffold(
       appBar: AppBar(
         title: const Text('Add Device'),

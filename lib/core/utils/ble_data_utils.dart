@@ -89,7 +89,6 @@ class ResponseCommandParser {
 
   String parseFirmwareVersion(List<int> data) {
     final firmwareVersion = _parseString(data, 3);
-    debugPrint('Firmware Version: $firmwareVersion');
 
     isarService.write((isar) {
       final device =
@@ -98,7 +97,6 @@ class ResponseCommandParser {
         return;
       }
 
-      debugPrint('Got version $firmwareVersion for device: ${device.name}');
       isar.bleDevices.put(device.copyWith(firmwareVersion: firmwareVersion));
     });
 
@@ -106,7 +104,6 @@ class ResponseCommandParser {
   }
 
   void parseInitialData(List<int> data) {
-    debugPrint('Initial Data: ${data.toString()}');
     _updateDeviceSettings(
       (settings) {
         debugPrint('LogData: ${settings.logData}');
@@ -166,8 +163,6 @@ class ResponseCommandParser {
     if (data.length < dataCount + 4) {
       return [];
     }
-
-    debugPrint('Data Hex: {${BleDataUtils.bytesToHexStr(data)}}');
 
     // Extract the timestamp (6th to 9th bytes)
     int timestamp = _byteArrayToInt(data, 4, 7);
@@ -230,13 +225,6 @@ class ResponseCommandParser {
     }).toList()
       ..sort((a, b) => a.dateTime.compareTo(b.dateTime));
 
-    // export the data to a csv file
-    final csvData = dd.map((e) {
-      return '${e.dateTime.toIso8601String()},${e.value}';
-    }).join('\n');
-
-    debugPrint('Last 1 hour Data: $csvData');
-
     isarService.write((isar) {
       isar.deviceDatas.putAll(dd);
     });
@@ -269,8 +257,6 @@ class ResponseCommandParser {
       final settings =
           isar.deviceSettings.where().deviceIdEqualTo(deviceId).findFirst();
 
-      debugPrint(
-          'Updating settings for device: $deviceId, initialData: $settings');
       isar.deviceSettings
           .put(update(settings ?? DeviceSettings.empty(deviceId: deviceId)));
     });

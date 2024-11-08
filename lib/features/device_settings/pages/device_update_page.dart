@@ -72,8 +72,6 @@ class CurrentDeviceVersionWidget extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final String version = ref.read(bleDeviceVersionProvider(deviceId));
 
-    debugPrint('CurrentDeviceVersionWidget: $version');
-
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(

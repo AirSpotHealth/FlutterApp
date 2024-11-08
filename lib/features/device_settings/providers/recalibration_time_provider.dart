@@ -1,4 +1,3 @@
-import 'package:flutter/cupertino.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 final recalibrationTimeProvider = NotifierProvider.family
@@ -13,7 +12,6 @@ class _RecalibrationTimeNotifier
   }
 
   void setRecalibrationTime(int? time) {
-    debugPrint('Setting recalibration time: $time');
     state = time;
   }
 }

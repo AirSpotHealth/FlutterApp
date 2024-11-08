@@ -4,7 +4,6 @@ import 'package:airspothealth/core/providers/ble_device_communication_provider.d
 import 'package:airspothealth/core/services/network_service.dart';
 import 'package:airspothealth/features/add_device/providers/ble_device_connection_provider.dart';
 import 'package:airspothealth/features/device_settings/models/progress_model.dart';
-import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:nordic_dfu/nordic_dfu.dart';
 import 'package:path_provider/path_provider.dart';
@@ -73,7 +72,6 @@ class _DfuUpdateNotifier extends AutoDisposeNotifier<AsyncProgressValue> {
         alternativeAdvertisingNameEnabled: false,
       ),
       onDeviceDisconnected: (error) {
-        debugPrint('Device disconnected, update failed $error');
         state = state is AsyncInProgress
             ? (state as AsyncInProgress).copyWithMessage('Device disconnected')
             : const AsyncInProgress(0.0, message: 'Device disconnected');
@@ -98,7 +96,6 @@ class _DfuUpdateNotifier extends AutoDisposeNotifier<AsyncProgressValue> {
         state = AsyncFailure('DFU aborted, update failed $error');
       },
       onDfuCompleted: (res) {
-        debugPrint('DFU completed: $res');
         state = const AsyncInProgress(
           1,
           message: 'DFU completed!!, rebooting...',
@@ -115,7 +112,6 @@ class _DfuUpdateNotifier extends AutoDisposeNotifier<AsyncProgressValue> {
         state = const AsyncInProgress(0.0, message: 'DFU process started...');
       },
       onError: (address, error, errorType, message) {
-        debugPrint('ErrorWhileDFU: $errorType, $message');
         state = AsyncFailure('Update failed: $message');
       },
     );
