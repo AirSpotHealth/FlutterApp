@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:airspothealth/core/models/device_data.dart';
 import 'package:airspothealth/core/models/device_settings.dart';
 import 'package:airspothealth/core/providers/ble_connected_devices_provider.dart';
@@ -33,8 +35,9 @@ class _BleDeviceCommunicationNotifier extends FamilyNotifier<dynamic, String> {
   String get deviceId => arg;
 
   static const notifySubscriptionRetryMaxCount = 3;
-
   int notifySubscriptionRetryCount = 0;
+
+  StreamSubscription<List<int>>? _notifySubscription;
 
   @override
   dynamic build(String arg) {
@@ -43,6 +46,10 @@ class _BleDeviceCommunicationNotifier extends FamilyNotifier<dynamic, String> {
     if (device?.isConnected == true) {
       setConnected();
     }
+
+    ref.onDispose(() {
+      _notifySubscription?.cancel();
+    });
     return lastValue;
   }
 
@@ -60,12 +67,9 @@ class _BleDeviceCommunicationNotifier extends FamilyNotifier<dynamic, String> {
 
   void setConnected() {
     _resetCharacteristics();
+    _notifySubscription?.cancel();
+    _notifySubscription = null;
     startListeningToNotifications();
-  }
-
-  void setDisconnected() {
-    state = false;
-    _resetCharacteristics();
   }
 
   void _resetCharacteristics() => _writeCharacteristic = null;
@@ -133,7 +137,9 @@ class _BleDeviceCommunicationNotifier extends FamilyNotifier<dynamic, String> {
     await notifyCharacteristic.setNotifyValue(true);
     final notificationStream = notifyCharacteristic.lastValueStream;
 
-    notificationStream.listen((data) {
+    _notifySubscription?.cancel();
+
+    _notifySubscription = notificationStream.listen((data) {
       _handleNotificationData(data);
     });
   }
