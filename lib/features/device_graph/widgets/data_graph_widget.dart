@@ -15,6 +15,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 const fakeDataLength = 5;
 
 const yAxesValues = [
+  350,
   400,
   600,
   800,
