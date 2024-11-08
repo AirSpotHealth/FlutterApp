@@ -105,7 +105,8 @@ class _DeviceFirmwareUpdateDialogState
           ),
           const SizedBox(height: 16),
           if (remoteVersion != null) ...[
-            Text(remoteVersion!.updateContent),
+            Text(remoteVersion!.changeLog ?? 'No change log available',
+                style: context.textTheme.bodySmall),
             const SizedBox(height: 16)
           ],
           if (updateState is AsyncInProgress) ...[

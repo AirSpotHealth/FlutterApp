@@ -24,12 +24,12 @@ class _FirmwareRemoteVersionNotifier
     state = const AsyncLoading();
 
     try {
-      final Response<dynamic> result = await _networkService
-          .get(ApiEndpoints.versionCheck, {'system': "2", 'software': "2"});
+      final Response<dynamic> result =
+          await _networkService.get(ApiEndpoints.versionCheck, {});
 
       if (result.statusCode == 200) {
         final RemoteVersion remoteVersion =
-            RemoteVersion.fromJson(result.data['data'] as Map<String, dynamic>);
+            RemoteVersion.fromJson(result.data as Map<String, dynamic>);
 
         debugPrint('Remote Version: ${remoteVersion.toString()}');
 
@@ -42,9 +42,15 @@ class _FirmwareRemoteVersionNotifier
       }
     } on DioException catch (e) {
       debugPrint('Version Update Check Error: $e');
-      state = AsyncError(
-          'Failed to fetch remote version\nError Code: ${e.response?.statusCode}',
-          StackTrace.current);
+
+      if (e.response?.data?['error'] != null) {
+        state = AsyncError(
+            'Error: ${e.response?.data?['error']}', StackTrace.current);
+      } else {
+        state = AsyncError(
+            'Failed to fetch remote version\n${e.response?.data?['error'] ?? e.response?.statusCode}',
+            StackTrace.current);
+      }
     }
   }
 }

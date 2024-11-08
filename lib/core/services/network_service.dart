@@ -36,6 +36,6 @@ class NetworkService {
 
   Future<Response> download(String url, String savePath,
       {ProgressCallback? onReceiveProgress}) {
-    return _dio.download(url, savePath, onReceiveProgress: onReceiveProgress);
+    return Dio().download(url, savePath, onReceiveProgress: onReceiveProgress);
   }
 }

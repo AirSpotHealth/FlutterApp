@@ -56,7 +56,7 @@ class _DeviceVersionUpdateWidgetState
             const Spacer(),
             remoteVersion.when(
               data: (version) => Text(
-                remoteVersion.value?.versionId ?? 'N/A',
+                remoteVersion.value?.versionName ?? 'N/A',
                 style: const TextStyle(
                   color: AppColors.brandColorAmber,
                   fontWeight: FontWeight.bold,
@@ -73,7 +73,7 @@ class _DeviceVersionUpdateWidgetState
             if (remoteVersion is AsyncData &&
                 remoteVersion.value != null &&
                 AppUtils.isVersionGreater(
-                    currentVersion, remoteVersion.value!.versionId)) ...[
+                    currentVersion, remoteVersion.value!.versionName)) ...[
               const SizedBox(width: 16),
               ElevatedButton(
                 onPressed: () {
