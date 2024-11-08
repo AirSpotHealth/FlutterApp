@@ -2,12 +2,12 @@ import 'dart:async';
 
 import 'package:airspothealth/core/models/ble_device.dart';
 import 'package:airspothealth/core/providers/ble_connected_devices_provider.dart';
+import 'package:airspothealth/core/providers/ble_device_communication_provider.dart';
 import 'package:airspothealth/core/providers/ble_saved_devices_provider.dart';
 import 'package:airspothealth/core/providers/device_settings_provider.dart';
 import 'package:airspothealth/core/router/app_router.dart';
 import 'package:airspothealth/core/router/route_names.dart';
 import 'package:airspothealth/core/services/ble_service.dart';
-import 'package:airspothealth/core/utils/constants.dart';
 import 'package:airspothealth/core/utils/extensions.dart';
 import 'package:airspothealth/features/device_settings/models/progress_model.dart';
 import 'package:airspothealth/features/device_settings/providers/dfu_update_provider.dart';
@@ -63,14 +63,18 @@ class _BleDeviceConnectionNotifier
       if (bState == BluetoothConnectionState.connected) {
         if (state == BluetoothBondState.bonded) return;
 
-        state = BluetoothBondState.bonded;
         _refreshAndAddDevice();
+
+        state = BluetoothBondState.bonded;
+
+        ref.read(bleDeviceCommunicationProvider(arg).notifier).setConnected();
       } else if (bState == BluetoothConnectionState.disconnected) {
         debugPrint('Device disconnected, $state');
 
         if (state == BluetoothBondState.none) return;
 
         _checkRouteAndPop();
+
         state = BluetoothBondState.none;
       }
     });
@@ -121,12 +125,14 @@ class _BleDeviceConnectionNotifier
     final path =
         router.routerDelegate.currentConfiguration.last.matchedLocation;
 
-    debugPrint('Path: $path');
+    debugPrint('Path: $path, device: ${device.remoteId.str}');
 
     // if the path pattern matches this /devices/FF%3A51%3A34%3A9D%3A86%3A32/settings
     // then pop the route
     // and show a snackbar that the device is disconnected
-    if (RegExp(Constants.devicesPathRegex).hasMatch(path)) {
+    if (path.contains(device.remoteId.str) &&
+        RegExp(r'^\/devices\/[A-Za-z0-9%-]+(?:\/[A-Za-z0-9%_-]+)*$')
+            .hasMatch(path)) {
       context.showSnackBar('Device disconnected.');
 
       router.popUntilPath(RouteNames.devices);
