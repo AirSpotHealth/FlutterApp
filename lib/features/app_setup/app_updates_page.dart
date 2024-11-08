@@ -25,44 +25,43 @@ class _AppUpdatePageState extends ConsumerState<AppUpdatesPage> {
           children: [
             const AppLogo(width: 200),
             const SizedBox(height: 32),
-            Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: AppColors.neutralGreyLight,
-                borderRadius: BorderRadius.circular(10),
-              ),
-              child: Row(
-                children: [
-                  const Text('Current Version: '),
-                  const SizedBox(width: 8),
-                  FutureBuilder(
-                      future: PackageInfo.fromPlatform(),
-                      builder: (context, data) {
-                        switch (data.connectionState) {
-                          case ConnectionState.waiting:
-                            return const CupertinoActivityIndicator();
-                          case ConnectionState.done:
-                            final PackageInfo? packageInfo = data.data;
-                            return Text(packageInfo?.version ?? 'Unknown');
-                          default:
-                            return const Text('Unknown');
-                        }
-                      }),
-                  const SizedBox(width: 8),
-                  const Expanded(
-                    child: Text(
-                      'Up to Date',
-                      textAlign: TextAlign.end,
-                      style: TextStyle(
-                        color: AppColors.primaryColor,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
+            _buildVersion('Current Version: '),
+            const SizedBox(height: 16),
+            _buildVersion('Latest Version: ', isLatest: true),
           ],
         ),
+      ),
+    );
+  }
+
+  Container _buildVersion(String labelText, {bool isLatest = false}) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: AppColors.neutralGreyLight,
+        borderRadius: BorderRadius.circular(10),
+      ),
+      child: Row(
+        children: [
+          Text(labelText),
+          const Spacer(),
+          FutureBuilder(
+              future: PackageInfo.fromPlatform(),
+              builder: (context, data) {
+                switch (data.connectionState) {
+                  case ConnectionState.waiting:
+                    return const CupertinoActivityIndicator();
+                  case ConnectionState.done:
+                    final PackageInfo? packageInfo = data.data;
+                    return Text(packageInfo?.version ?? 'Unknown',
+                        style: TextStyle(
+                            color:
+                                isLatest ? AppColors.brandColorAmber : null));
+                  default:
+                    return const Text('Unknown');
+                }
+              }),
+        ],
       ),
     );
   }
