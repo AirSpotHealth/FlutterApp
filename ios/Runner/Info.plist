@@ -29,17 +29,17 @@
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
 	<key>NSBluetoothAlwaysUsageDescription</key>
-	<string>This app needs Bluetooth to pair with the airspot device</string>
+	<string>This app needs Bluetooth to connect to and receive CO2 level readings from the airspot device.</string>
 	<key>NSBluetoothPeripheralUsageDescription</key>
-	<string>This app needs Bluetooth to work with the airspot device</string>
+	<string>TThis app needs Bluetooth to connect to and receive CO2 level readings from the airspot device.</string>
 	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
-	<string>This app needs location services to search for nearby airspot devices</string>
+	<string>This app needs location services to enable Bluetooth functionality and search for nearby airspot devices to monitor CO2 levels.</string>
 	<key>NSLocationUsageDescription</key>
-	<string>This app needs location services to search for nearby airspot devices</string>
+	<string>This app needs location services to enable Bluetooth functionality and search for nearby airspot devices to monitor CO2 levels.</string>
 	<key>NSLocationWhenInUseUsageDescription</key>
-	<string>This app needs location services to search for nearby airspot devices</string>
+	<string>This app needs location services to enable Bluetooth functionality and search for nearby airspot devices to monitor CO2 levels.</string>
 	<key>NSPhotoLibraryUsageDescription</key>
-	<string>This app needs access to the photo library to allow users to select files.</string>
+	<string>This app needs access to the photo library to allow users to select firmware files for updating the device via OTA.</string>
 	<key>UIApplicationSupportsIndirectInputEvents</key>
 	<true/>
 	<key>UILaunchStoryboardName</key>
