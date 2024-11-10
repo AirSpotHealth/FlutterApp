@@ -29,15 +29,15 @@
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
 	<key>NSBluetoothAlwaysUsageDescription</key>
-	<string>This app needs Bluetooth to function</string>
+	<string>This app needs Bluetooth to pair with the airspot device</string>
 	<key>NSBluetoothPeripheralUsageDescription</key>
-	<string>This app needs Bluetooth to function</string>
+	<string>This app needs Bluetooth to work with the airspot device</string>
 	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
-	<string>This app needs location services to function</string>
+	<string>This app needs location services to search for nearby airspot devices</string>
 	<key>NSLocationUsageDescription</key>
-	<string>This app needs location services to function</string>
+	<string>This app needs location services to search for nearby airspot devices</string>
 	<key>NSLocationWhenInUseUsageDescription</key>
-	<string>This app needs location services to function</string>
+	<string>This app needs location services to search for nearby airspot devices</string>
 	<key>NSPhotoLibraryUsageDescription</key>
 	<string>This app needs access to the photo library to allow users to select files.</string>
 	<key>UIApplicationSupportsIndirectInputEvents</key>
