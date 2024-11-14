@@ -49,12 +49,16 @@ class _EChartState extends State<EChart> {
       });
   }
 
-  void init() async {
-    await _controller?.runJavaScript('''
+  void init() {
+    _controller?.runJavaScript('''
       $script;
       var chart = echarts.init(document.getElementById('chart'));
       chart.setOption($_currentOption, true);
+      $showTipScript
+    ''');
+  }
 
+  static const String showTipScript = '''
       chart.on('datazoom', function (params) {
         const series = chart.getOption().series[0]; // Get the series data
         const data = series.data; // Access the data array
@@ -87,8 +91,7 @@ class _EChartState extends State<EChart> {
             dataIndex: middleIndex
         });
       });
-    ''');
-  }
+''';
 
   void update(String preOption) {
     if (_currentOption != preOption) {
