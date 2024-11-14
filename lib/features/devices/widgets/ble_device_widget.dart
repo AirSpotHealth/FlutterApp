@@ -119,7 +119,7 @@ class BleDeviceWidget extends ConsumerWidget {
       const SizedBox(width: 8),
       Expanded(
         child: Text(
-          bleDevice.alias ?? 'No Alias',
+          bleDevice.alias ?? 'No Nickname',
           style: ref.context.textTheme.labelLarge?.copyWith(
               color: bleDevice.alias == null ? AppColors.neutralGrey : null),
         ),

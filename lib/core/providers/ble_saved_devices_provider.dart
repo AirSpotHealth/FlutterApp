@@ -4,6 +4,7 @@ import 'package:airspothealth/core/providers/isar_service_provider.dart';
 import 'package:airspothealth/core/services/isar_service.dart';
 import 'package:airspothealth/core/utils/device_cmd_utils.dart';
 import 'package:airspothealth/core/utils/extensions.dart';
+import 'package:airspothealth/features/device_graph/providers/ble_device_provider.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:isar/isar.dart';
 
@@ -70,6 +71,8 @@ class _BleSavedDevicesNotifier extends Notifier<List<BleDevice>> {
 
     state =
         state.map((d) => d.deviceId == device.deviceId ? device : d).toList();
+
+    ref.invalidate(bleDeviceProvider(deviceId));
   }
 
   void reloadDevices() {
