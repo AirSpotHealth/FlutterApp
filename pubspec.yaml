@@ -30,6 +30,7 @@ dependencies:
   shimmer: ^3.0.0
   package_info_plus: ^8.1.1
   document_file_save_plus: ^2.0.0
+  new_version_plus: ^0.0.12
 
 dev_dependencies:
   flutter_test:

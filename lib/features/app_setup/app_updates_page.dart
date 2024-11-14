@@ -1,20 +1,20 @@
 import 'package:airspothealth/core/theme/app_colors.dart';
+import 'package:airspothealth/core/utils/extensions.dart';
 import 'package:airspothealth/core/widgets/app_logo.dart';
+import 'package:airspothealth/features/app_setup/providers/app_version_provider.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:package_info_plus/package_info_plus.dart';
+import 'package:new_version_plus/new_version_plus.dart';
 
-class AppUpdatesPage extends ConsumerStatefulWidget {
+class AppUpdatesPage extends ConsumerWidget {
   const AppUpdatesPage({super.key});
 
   @override
-  ConsumerState<ConsumerStatefulWidget> createState() => _AppUpdatePageState();
-}
+  Widget build(BuildContext context, WidgetRef ref) {
+    final AsyncValue<VersionStatus?> versionStatus =
+        ref.watch(appVersionProvider);
 
-class _AppUpdatePageState extends ConsumerState<AppUpdatesPage> {
-  @override
-  Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
         title: const Text('AirSpot App Update'),
@@ -25,16 +25,61 @@ class _AppUpdatePageState extends ConsumerState<AppUpdatesPage> {
           children: [
             const AppLogo(width: 200),
             const SizedBox(height: 32),
-            _buildVersion('Current Version: '),
+            _buildVersionInfoRow(
+              label: 'Installed Version:',
+              child: versionStatus.when(
+                data: (data) => Text(data?.localVersion ?? 'Unknown',
+                    style: const TextStyle(fontWeight: FontWeight.bold)),
+                loading: () => const CupertinoActivityIndicator(),
+                error: (error, stackTrace) => const Text('Unknown'),
+              ),
+            ),
             const SizedBox(height: 16),
-            _buildVersion('Latest Version: ', isLatest: true),
+            _buildVersionInfoRow(
+              label: 'Latest Version:',
+              child: versionStatus.when(
+                data: (data) => Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    if (data?.canUpdate ?? false)
+                      Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(
+                            data?.storeVersion ?? 'Unknown',
+                            style: TextStyle(
+                              color: (data?.canUpdate ?? false)
+                                  ? AppColors.brandColorAmber
+                                  : Colors.black,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          Padding(
+                            padding: const EdgeInsets.only(left: 16),
+                            child: ElevatedButton(
+                              child: const Text('Update Now'),
+                              onPressed: () {
+                                context.tryLaunchUrl(data!.appStoreLink);
+                              },
+                            ),
+                          ),
+                        ],
+                      )
+                    else
+                      Text(data?.storeVersion ?? 'Unknown'),
+                  ],
+                ),
+                loading: () => const CupertinoActivityIndicator(),
+                error: (error, stackTrace) => const Text('Unknown'),
+              ),
+            ),
           ],
         ),
       ),
     );
   }
 
-  Container _buildVersion(String labelText, {bool isLatest = false}) {
+  Widget _buildVersionInfoRow({required String label, required Widget child}) {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -43,24 +88,9 @@ class _AppUpdatePageState extends ConsumerState<AppUpdatesPage> {
       ),
       child: Row(
         children: [
-          Text(labelText),
+          Text(label),
           const Spacer(),
-          FutureBuilder(
-              future: PackageInfo.fromPlatform(),
-              builder: (context, data) {
-                switch (data.connectionState) {
-                  case ConnectionState.waiting:
-                    return const CupertinoActivityIndicator();
-                  case ConnectionState.done:
-                    final PackageInfo? packageInfo = data.data;
-                    return Text(packageInfo?.version ?? 'Unknown',
-                        style: TextStyle(
-                            color:
-                                isLatest ? AppColors.brandColorAmber : null));
-                  default:
-                    return const Text('Unknown');
-                }
-              }),
+          child,
         ],
       ),
     );
