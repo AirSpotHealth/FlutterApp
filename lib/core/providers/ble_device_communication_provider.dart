@@ -43,10 +43,6 @@ class _BleDeviceCommunicationNotifier extends FamilyNotifier<dynamic, String> {
   dynamic build(String arg) {
     final dynamic lastValue = _getLastStoredValue(arg);
 
-    if (device?.isConnected == true) {
-      setConnected();
-    }
-
     ref.onDispose(() {
       _notifySubscription?.cancel();
     });
@@ -136,6 +132,9 @@ class _BleDeviceCommunicationNotifier extends FamilyNotifier<dynamic, String> {
 
     await notifyCharacteristic.setNotifyValue(true);
     final notificationStream = notifyCharacteristic.lastValueStream;
+
+    debugPrint(
+        'Subscribed to notifications: $deviceId, Was previousNotifySubscription: ${_notifySubscription != null}');
 
     _notifySubscription?.cancel();
 
