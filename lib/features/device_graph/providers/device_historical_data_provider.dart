@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:airspothealth/core/models/ble_device.dart';
 import 'package:airspothealth/core/models/device_data.dart';
 import 'package:airspothealth/core/providers/ble_device_communication_provider.dart';
@@ -9,12 +11,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:isar/isar.dart';
 
-final deviceHistoricalDataProvider = NotifierProvider.family.autoDispose<
+final deviceHistoricalDataProvider = AsyncNotifierProvider.family.autoDispose<
     _DeviceHistoricalDataNotifier,
     List<DeviceData>,
     (String, GraphDataDuration)>(_DeviceHistoricalDataNotifier.new);
 
-class _DeviceHistoricalDataNotifier extends AutoDisposeFamilyNotifier<
+class _DeviceHistoricalDataNotifier extends AutoDisposeFamilyAsyncNotifier<
     List<DeviceData>, (String, GraphDataDuration)> {
   final IsarService _isarService = IsarService();
 
@@ -22,34 +24,38 @@ class _DeviceHistoricalDataNotifier extends AutoDisposeFamilyNotifier<
 
   GraphDataDuration get duration => arg.$2;
 
-  Iterable<dynamic> get values {
-    if (state.isNullOrEmpty) {
-      return [];
-    }
-    return state.map((e) => e.value);
-  }
+  Iterable<dynamic> get values => state.value?.map((e) => e.value) ?? [];
 
   DeviceData? get maxValue {
-    if (state.isNullOrEmpty) {
+    if (state.valueOrNull == null) {
       return null;
     }
 
-    return state.reduce(
+    if (state.valueOrNull!.isEmpty) {
+      return null;
+    }
+
+    return state.value?.reduce(
         (value, element) => value.value > element.value ? value : element);
   }
 
   DeviceData? get minValue {
-    if (state.isNullOrEmpty) {
+    if (state.valueOrNull == null) {
       return null;
     }
-    return state.reduce(
+
+    if (state.valueOrNull!.isEmpty) {
+      return null;
+    }
+
+    return state.value?.reduce(
         (value, element) => value.value < element.value ? value : element);
   }
 
   (DateTime, DateTime) get dateTimeRange => duration.getDateTimeRange();
 
   @override
-  List<DeviceData> build(arg) {
+  FutureOr<List<DeviceData>> build(arg) {
     final (startDate, endDate) = dateTimeRange;
 
     // First, try to get data from the local database
@@ -59,12 +65,12 @@ class _DeviceHistoricalDataNotifier extends AutoDisposeFamilyNotifier<
         .dateTimeBetween(startDate, endDate)
         .watch(fireImmediately: true)
         .listen((event) {
-      state = event;
+      state = AsyncData(event);
     });
 
     _fetchDataFromDevice();
 
-    return [];
+    return future;
   }
 
   void _fetchDataFromDevice() {
