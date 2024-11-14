@@ -1,18 +1,20 @@
+import 'package:airspothealth/core/models/ble_device.dart';
 import 'package:airspothealth/core/models/device_data.dart';
 import 'package:airspothealth/core/providers/ble_device_communication_provider.dart';
 import 'package:airspothealth/core/services/isar_service.dart';
 import 'package:airspothealth/core/utils/device_cmd_utils.dart';
 import 'package:airspothealth/core/utils/extensions.dart';
 import 'package:airspothealth/features/device_graph/models/graph_data_duration.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:isar/isar.dart';
 
-final deviceHistoricalDataProvider = StreamNotifierProvider.family.autoDispose<
+final deviceHistoricalDataProvider = NotifierProvider.family.autoDispose<
     _DeviceHistoricalDataNotifier,
     List<DeviceData>,
     (String, GraphDataDuration)>(_DeviceHistoricalDataNotifier.new);
 
-class _DeviceHistoricalDataNotifier extends AutoDisposeFamilyStreamNotifier<
+class _DeviceHistoricalDataNotifier extends AutoDisposeFamilyNotifier<
     List<DeviceData>, (String, GraphDataDuration)> {
   final IsarService _isarService = IsarService();
 
@@ -20,102 +22,139 @@ class _DeviceHistoricalDataNotifier extends AutoDisposeFamilyStreamNotifier<
 
   GraphDataDuration get duration => arg.$2;
 
-  List<dynamic> get values {
-    if (state.valueOrNull.isNullOrEmpty) {
+  Iterable<dynamic> get values {
+    if (state.isNullOrEmpty) {
       return [];
     }
-    return state.value!.map((e) => e.value).toList();
+    return state.map((e) => e.value);
   }
 
   DeviceData? get maxValue {
-    if (state.value.isNullOrEmpty) {
+    if (state.isNullOrEmpty) {
       return null;
     }
 
-    return state.value!.reduce(
+    return state.reduce(
         (value, element) => value.value > element.value ? value : element);
   }
 
   DeviceData? get minValue {
-    if (state.value.isNullOrEmpty) {
+    if (state.isNullOrEmpty) {
       return null;
     }
-    return state.value!.reduce(
+    return state.reduce(
         (value, element) => value.value < element.value ? value : element);
   }
 
   (DateTime, DateTime) get dateTimeRange => duration.getDateTimeRange();
 
   @override
-  Stream<List<DeviceData>> build(arg) {
+  List<DeviceData> build(arg) {
     final (startDate, endDate) = dateTimeRange;
 
     // First, try to get data from the local database
-    final localDataStream = _isarService.deviceDatas
+    _isarService.deviceDatas
         .where()
         .deviceIdEqualTo(deviceId)
         .dateTimeBetween(startDate, endDate)
-        .watch(fireImmediately: true);
+        .watch(fireImmediately: true)
+        .listen((event) {
+      state = event;
+    });
 
     _fetchDataFromDevice();
 
-    return localDataStream;
+    return [];
   }
 
-  void _fetchDataFromDevice() async {
-    // final currentDateTime = DateTime.now();
-    final (startDate, endDate) = dateTimeRange;
+  void _fetchDataFromDevice() {
+    var (startDate, endDate) = dateTimeRange;
 
-    ref
-        .read(bleDeviceCommunicationProvider(deviceId).notifier)
-        .sendCommand(DeviceCmdUtils.getCo2History(
-          startDate: startDate,
-          endDate: endDate,
+    // if start date is today then end date should be now because dateTimeRange returns the end of the day for today
+    if (startDate.isToday) {
+      endDate = DateTime.now();
+    }
+
+    // Retrieve the BLE device information from the local database
+    final bleDevice = _isarService.read<BleDevice?>((isar) =>
+        isar.bleDevices.where().deviceIdEqualTo(deviceId).findFirst());
+
+    if (bleDevice == null) {
+      return;
+    }
+
+    // Check existing fetched dates
+    final lastFetchedStartDate = bleDevice.lastFetchedStartDate;
+    final lastFetchedEndDate = bleDevice.lastFetchedEndDate;
+
+    debugPrint(
+        'Last fetched start date: $lastFetchedStartDate, Last fetched end date: $lastFetchedEndDate');
+
+    if (lastFetchedStartDate == null || lastFetchedEndDate == null) {
+      // No data has been fetched yet; fetch all data
+      ref.read(bleDeviceCommunicationProvider(deviceId).notifier).sendCommand(
+          DeviceCmdUtils.getCo2History(startDate: startDate, endDate: endDate));
+
+      // Update lastFetchedStartDate and lastFetchedEndDate in the local database
+      _isarService.write((isar) {
+        isar.bleDevices.put(bleDevice.copyWith(
+            lastFetchedStartDate: startDate, lastFetchedEndDate: endDate));
+      });
+
+      return;
+    }
+
+    // Condition 1: Check if the lastFetched range fully includes the requested range
+    if (lastFetchedStartDate.isBeforeOrEqual(startDate) &&
+        lastFetchedEndDate.isAfterOrEqual(endDate)) {
+      // No need to fetch data; the required range is already covered
+      debugPrint(
+          'No need to fetch data; the required range is already covered');
+      return;
+    }
+
+    // Determine the range(s) to fetch
+    DateTime? fetchStart;
+    DateTime? fetchEnd;
+
+    if (startDate.isAfterOrEqual(lastFetchedEndDate)) {
+      // Condition 2: Requested range is after the last fetched range
+      fetchStart = startDate;
+      fetchEnd = endDate;
+    } else if (endDate.isBeforeOrEqual(lastFetchedStartDate)) {
+      // Condition 3: Requested range is before the last fetched range
+      fetchStart = startDate;
+      fetchEnd = endDate;
+    } else {
+      // Condition 4: Requested range overlaps with the last fetched range
+      if (startDate.isBefore(lastFetchedStartDate)) {
+        fetchStart = startDate;
+        fetchEnd = lastFetchedStartDate.subtract(const Duration(seconds: 1));
+      } else if (endDate.isAfter(lastFetchedEndDate)) {
+        fetchStart = lastFetchedEndDate.add(const Duration(seconds: 1));
+        fetchEnd = endDate;
+      }
+    }
+
+    debugPrint('Fetch start: $fetchStart, Fetch end: $fetchEnd');
+
+    // If fetch range is determined, send the command to the device
+    if (fetchStart != null && fetchEnd != null) {
+      ref.read(bleDeviceCommunicationProvider(deviceId).notifier).sendCommand(
+          DeviceCmdUtils.getCo2History(
+              startDate: fetchStart, endDate: fetchEnd));
+
+      // Update lastFetchedStartDate and lastFetchedEndDate in the local database
+      _isarService.write((isar) {
+        isar.bleDevices.put(bleDevice.copyWith(
+          lastFetchedStartDate: fetchStart!.isBefore(lastFetchedStartDate)
+              ? fetchStart
+              : lastFetchedStartDate,
+          lastFetchedEndDate: fetchEnd!.isAfter(lastFetchedEndDate)
+              ? fetchEnd
+              : lastFetchedEndDate,
         ));
-
-    return;
-
-    // Read the existing device data from the database
-    // final bleDevice = _isarService.read<BleDevice?>((isar) =>
-    //     isar.bleDevices.where().deviceIdEqualTo(deviceId).findFirst());
-
-    // DateTime fetchStartDate = startDate;
-    // DateTime fetchEndDate = endDate;
-
-    // // If data has been previously fetched, adjust the start date
-    // if (bleDevice != null && bleDevice.lastFetchedEndDate != null) {
-    //   final lastFetchedEndDate = bleDevice.lastFetchedEndDate!;
-
-    //   // If the last fetched end date is after the current start date, use it as the new start date
-    //   if (lastFetchedEndDate.isAfter(startDate)) {
-    //     fetchStartDate = lastFetchedEndDate;
-    //   }
-    // }
-
-    // // Set the end date to current time if it exceeds the current end date
-    // if (fetchEndDate.isAfter(currentDateTime)) {
-    //   fetchEndDate = currentDateTime;
-    // }
-
-    // // Only fetch if there is a valid time gap
-    // if (fetchStartDate.isBefore(fetchEndDate)) {
-    //   ref.read(bleDeviceCommunicationProvider(deviceId).notifier).sendCommand(
-    //         DeviceCmdUtils.getCo2History(
-    //           startDate: fetchStartDate,
-    //           endDate: fetchEndDate,
-    //         ),
-    //       );
-
-    //   // Update the last fetched range in the BleDevice model
-    //   if (bleDevice != null) {
-    //     _isarService.write((isar) {
-    //       final updatedBleDevice = bleDevice.copyWith(
-    //         lastFetchedStartDate: fetchStartDate,
-    //         lastFetchedEndDate: fetchEndDate,
-    //       );
-    //       return isar.bleDevices.put(updatedBleDevice);
-    //     });
-    //   }
-    // }
+      });
+    }
   }
 }

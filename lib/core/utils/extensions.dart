@@ -104,6 +104,28 @@ extension DateTimeExtension on DateTime {
   String formatLocalDate() {
     return toLocal().toString().split('.').first;
   }
+
+  /// start of the day
+  DateTime get startOfDay => DateTime(year, month, day);
+
+  /// end of the day
+  DateTime get endOfDay => DateTime(year, month, day, 23, 59, 59, 999, 999);
+
+  // is before or equal
+  bool isBeforeOrEqual(DateTime other) {
+    return isBefore(other) || isAtSameMomentAs(other);
+  }
+
+  /// is after or equal
+  bool isAfterOrEqual(DateTime other) {
+    return isAfter(other) || isAtSameMomentAs(other);
+  }
+
+  /// is today
+  bool get isToday {
+    final now = DateTime.now();
+    return year == now.year && month == now.month && day == now.day;
+  }
 }
 
 extension IntExtension on int {

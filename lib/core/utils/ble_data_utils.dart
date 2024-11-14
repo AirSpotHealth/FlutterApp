@@ -197,23 +197,29 @@ class ResponseCommandParser {
     // Extract the CO2 data values
     final co2Data = <DateTime, int>{};
 
-    for (var i = 0; i < co2DataCount; i += 2) {
-      // Extract two bytes and combine them into a single value
-      final highByte = co2DataBytes[i] & 0xFF;
-      final lowByte = co2DataBytes[i + 1] & 0xFF;
-      final combinedValue = (highByte << 8) | lowByte;
-
-      // Increment the timestamp after every 2 values
-      timestampFrom2000 += muteTime;
-
-      // Store the CO₂ data
+    // if co2 data count is 1, the it is a single value and we don't need to loop
+    if (co2DataCount == 1) {
+      final value = co2DataBytes[0];
       co2Data.putIfAbsent(
-        DateTime.fromMillisecondsSinceEpoch(
-          timestampFrom2000 * 1000,
-          isUtc: false,
-        ),
-        () => combinedValue,
+        DateTime.fromMillisecondsSinceEpoch(timestampFrom2000 * 1000),
+        () => value,
       );
+    } else {
+      for (var i = 0; i < co2DataCount; i += 2) {
+        // Extract two bytes and combine them into a single value
+        final highByte = co2DataBytes[i] & 0xFF;
+        final lowByte = co2DataBytes[i + 1] & 0xFF;
+        final combinedValue = (highByte << 8) | lowByte;
+
+        // Increment the timestamp after every 2 values
+        timestampFrom2000 += muteTime;
+
+        // Store the CO₂ data
+        co2Data.putIfAbsent(
+          DateTime.fromMillisecondsSinceEpoch(timestampFrom2000 * 1000),
+          () => combinedValue,
+        );
+      }
     }
 
     final List<DeviceData> dd = co2Data.entries.map((e) {
@@ -224,6 +230,8 @@ class ResponseCommandParser {
       );
     }).toList()
       ..sort((a, b) => a.dateTime.compareTo(b.dateTime));
+
+    debugPrint('LogData: ${dd.map((e) => e.toString()).toList()}');
 
     isarService.write((isar) {
       isar.deviceDatas.putAll(dd);

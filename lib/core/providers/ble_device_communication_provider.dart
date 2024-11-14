@@ -187,8 +187,6 @@ class _BleDeviceCommunicationNotifier extends FamilyNotifier<dynamic, String> {
     try {
       final DateTime dateTime = DateTime.now();
 
-      debugPrint('Saving data for: $deviceId,  $value, $dateTime');
-
       _isarService.write((isar) {
         isar.deviceDatas.put(DeviceData(
           deviceId: deviceId,

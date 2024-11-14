@@ -19,23 +19,16 @@ class DataGraphWrapper extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final GraphDataDuration duration = ref.watch(graphDurationProvider);
-    final AsyncValue<List<DeviceData>> deviceDataList =
+    final List<DeviceData> deviceDataList =
         ref.watch(deviceHistoricalDataProvider((deviceId, duration)));
 
     return Stack(
       fit: StackFit.expand,
       children: [
         Padding(
-          padding: const EdgeInsets.only(top: 16),
-          child: DataGraphWidget(
-            deviceDataList: deviceDataList.value ?? [],
-            loading: deviceDataList.when(
-              loading: () => true,
-              error: (error, _) => false,
-              data: (_) => false,
-            ),
-          ),
-        ),
+            padding: const EdgeInsets.only(top: 16),
+            child: DataGraphWidget(
+                deviceDataList: deviceDataList, loading: false)),
         const GraphRangeSelector(),
         const Positioned(right: 12, child: GraphLegends()),
       ],
