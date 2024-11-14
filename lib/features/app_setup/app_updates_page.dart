@@ -41,19 +41,19 @@ class AppUpdatesPage extends ConsumerWidget {
                 data: (data) => Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Text(
-                          data?.storeVersion ?? 'Unknown',
-                          style: TextStyle(
-                            color: (data?.canUpdate ?? false)
-                                ? AppColors.brandColorAmber
-                                : Colors.black,
-                            fontWeight: FontWeight.bold,
+                    if (data?.canUpdate ?? false)
+                      Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(
+                            data?.storeVersion ?? 'Unknown',
+                            style: TextStyle(
+                              color: (data?.canUpdate ?? false)
+                                  ? AppColors.primaryColor
+                                  : Colors.black,
+                              fontWeight: FontWeight.bold,
+                            ),
                           ),
-                        ),
-                        if (data?.canUpdate ?? false)
                           Padding(
                             padding: const EdgeInsets.only(left: 16),
                             child: ElevatedButton(
@@ -63,8 +63,16 @@ class AppUpdatesPage extends ConsumerWidget {
                               },
                             ),
                           ),
-                      ],
-                    )
+                        ],
+                      )
+                    else
+                      const Text(
+                        'Up to date',
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          color: AppColors.primaryColor,
+                        ),
+                      ),
                   ],
                 ),
                 loading: () => const CupertinoActivityIndicator(),
