@@ -1,6 +1,6 @@
 import 'dart:io';
 
-import 'package:document_file_save_plus/document_file_save_plus.dart';
+import 'package:file_saver/file_saver.dart';
 import 'package:flutter/material.dart';
 import 'package:path_provider/path_provider.dart';
 
@@ -73,7 +73,8 @@ class DataLoggerService {
       // save the file
       final name = 'data_log_$deviceId.txt';
 
-      DocumentFileSavePlus().saveFile(bytes, name, "text/plain");
+      await FileSaver.instance.saveAs(
+          name: name, bytes: bytes, mimeType: MimeType.text, ext: 'txt');
     } catch (e) {
       debugPrint('Error downloading log data: $e');
     }
