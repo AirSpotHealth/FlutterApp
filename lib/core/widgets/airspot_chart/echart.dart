@@ -54,7 +54,7 @@ class _EChartState extends State<EChart> {
       $script;
       var chart = echarts.init(document.getElementById('chart'));
       chart.setOption($_currentOption, true);
-      $showTipScript
+      
     ''');
   }
 
