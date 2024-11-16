@@ -1,22 +1,38 @@
+import 'package:airspothealth/core/models/device_settings.dart';
 import 'package:airspothealth/core/theme/app_colors.dart';
 import 'package:airspothealth/core/utils/extensions.dart';
 import 'package:flutter/material.dart';
 
 class GraphLegends extends StatelessWidget {
-  const GraphLegends({super.key});
+  const GraphLegends({
+    super.key,
+    required this.deviceSettings,
+  });
 
-  static const _items = [
-    {'color': AppColors.brandColorRed, 'label': '> 1000'},
-    {'color': AppColors.brandColorAmber, 'label': '800 - 1000'},
-    {'color': AppColors.brandColorGreen, 'label': '< 800'},
-  ];
+  final DeviceSettings deviceSettings;
 
   @override
   Widget build(BuildContext context) {
+    final items = [
+      {
+        'color': AppColors.brandColorRed,
+        'label': '> ${deviceSettings.yellowUpperLimit}'
+      },
+      {
+        'color': AppColors.brandColorAmber,
+        'label':
+            '${deviceSettings.greenUpperLimit} - ${deviceSettings.yellowUpperLimit}'
+      },
+      {
+        'color': AppColors.brandColorGreen,
+        'label': '< ${deviceSettings.greenUpperLimit}'
+      },
+    ];
+
     return Column(
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.start,
-      children: _items
+      children: items
           .map(
             (item) => Padding(
               padding: const EdgeInsets.only(bottom: 4),

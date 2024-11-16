@@ -1,6 +1,7 @@
+import 'package:airspothealth/core/models/device_settings.dart';
 import 'package:airspothealth/core/providers/ble_device_communication_provider.dart';
+import 'package:airspothealth/core/providers/device_settings_provider.dart';
 import 'package:airspothealth/core/router/route_names.dart';
-import 'package:airspothealth/core/utils/app_utils.dart';
 import 'package:airspothealth/core/utils/constants.dart';
 import 'package:airspothealth/core/utils/extensions.dart';
 import 'package:airspothealth/core/widgets/tappable_widget.dart';
@@ -16,6 +17,8 @@ class DeviceValueWidget extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final deviceValue = ref.watch(bleDeviceCommunicationProvider(deviceId));
+    final DeviceSettings deviceSettings =
+        ref.watch(deviceSettingsProvider(deviceId));
 
     return Row(
       mainAxisSize: MainAxisSize.min,
@@ -24,7 +27,7 @@ class DeviceValueWidget extends ConsumerWidget {
           "CO${Constants.subscript2} ",
           style: context.textTheme.titleLarge?.copyWith(
             fontWeight: FontWeight.bold,
-            color: AppUtils.getDataColorFromValue(deviceValue),
+            color: deviceSettings.getValueColor(deviceValue),
           ),
         ),
         TappableWidget(
@@ -42,7 +45,7 @@ class DeviceValueWidget extends ConsumerWidget {
               deviceValue != null ? "$deviceValue ppm" : '------',
               key: ValueKey<String>(deviceValue?.toString() ?? '------'),
               style: context.textTheme.titleLarge?.copyWith(
-                color: AppUtils.getDataColorFromValue(deviceValue),
+                color: deviceSettings.getValueColor(deviceValue),
                 fontWeight: FontWeight.bold,
               ),
             ),

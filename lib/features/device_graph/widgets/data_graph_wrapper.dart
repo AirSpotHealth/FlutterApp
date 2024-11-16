@@ -1,4 +1,5 @@
 import 'package:airspothealth/core/models/device_data.dart';
+import 'package:airspothealth/core/providers/device_settings_provider.dart';
 import 'package:airspothealth/features/device_graph/models/graph_data_duration.dart';
 import 'package:airspothealth/features/device_graph/providers/device_historical_data_provider.dart';
 import 'package:airspothealth/features/device_graph/providers/graph_range_provider.dart';
@@ -21,6 +22,7 @@ class DataGraphWrapper extends ConsumerWidget {
     final GraphDataDuration duration = ref.watch(graphDurationProvider);
     final AsyncValue<List<DeviceData>> deviceDataList =
         ref.watch(deviceHistoricalDataProvider((deviceId, duration)));
+    final deviceSettings = ref.watch(deviceSettingsProvider(deviceId));
 
     return Stack(
       fit: StackFit.expand,
@@ -28,12 +30,17 @@ class DataGraphWrapper extends ConsumerWidget {
         Padding(
           padding: const EdgeInsets.only(top: 16),
           child: DataGraphWidget(
+            deviceSettings: deviceSettings,
             deviceDataList: deviceDataList.valueOrNull ?? const [],
             loading: deviceDataList.isLoading,
           ),
         ),
         const GraphRangeSelector(),
-        const Positioned(right: 12, child: GraphLegends()),
+        Positioned(
+            right: 12,
+            child: GraphLegends(
+              deviceSettings: deviceSettings,
+            )),
       ],
     );
   }

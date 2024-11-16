@@ -37,7 +37,7 @@ class DeviceSettingsPage extends ConsumerWidget {
       title: 'CO${Constants.subscript2} PPM Settings',
       assetIcon: Assets.ppmSettings,
       route: RouteNames.ppmSettings,
-      enabled: false,
+      enabled: true,
     ),
     SettingItem(
       title: 'High CO${Constants.subscript2} Alert',

@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'dart:math' as math;
 
 import 'package:airspothealth/core/models/device_data.dart';
+import 'package:airspothealth/core/models/device_settings.dart';
 import 'package:airspothealth/core/utils/constants.dart';
 import 'package:airspothealth/core/widgets/airspot_chart/echart.dart';
 import 'package:airspothealth/features/device_graph/models/graph_data_duration.dart';
@@ -37,9 +38,12 @@ class DataGraphWidget extends ConsumerStatefulWidget {
 
   final bool loading;
 
+  final DeviceSettings deviceSettings;
+
   const DataGraphWidget({
     super.key,
     required this.deviceDataList,
+    required this.deviceSettings,
     this.loading = false,
   });
 
@@ -55,6 +59,10 @@ class _DataGraphWidgetState extends ConsumerState<DataGraphWidget> {
     );
 
   bool get loading => widget.loading;
+
+  dynamic get greenThreshold => widget.deviceSettings.greenUpperLimit;
+
+  dynamic get amberThreshold => widget.deviceSettings.yellowUpperLimit;
 
   @override
   Widget build(BuildContext context) {
@@ -209,28 +217,28 @@ class _DataGraphWidgetState extends ConsumerState<DataGraphWidget> {
           silent: true,
           animation: false,
           data: [
-            { yAxis: 800, lineStyle: { color: '#FE9A23', type: 'dashed' } },
-            { yAxis: 1000, lineStyle: { color: '#D9001B', type: 'dashed' } }
+            { yAxis: $greenThreshold, lineStyle: { color: '#FE9A23', type: 'dashed' } },
+            { yAxis: $amberThreshold, lineStyle: { color: '#D9001B', type: 'dashed' } }
           ]
         }
       ''' : 'null'}
     },
     {
-      name: '< 800',
+      name: '< $greenThreshold',
       type: 'line',
       data: [],
       color: '#63A103',
       lineStyle: { width: 0 }
     },
     {
-      name: '800 - 1000',
+      name: '$greenThreshold - $amberThreshold',
       type: 'line',
       data: [],
       color: '#FE9A23',
       lineStyle: { width: 0 }
     },
     {
-      name: '> 1000',
+      name: '> $amberThreshold',
       type: 'line',
       data: [],
       color: '#D9001B',
@@ -249,9 +257,9 @@ class _DataGraphWidgetState extends ConsumerState<DataGraphWidget> {
     show: false,
     dimension: 1,
     pieces: [
-      {lte: 800, color: '#63A103'},
-      {gt: 800, lte: 1000, color: '#FE9A23'},
-      {gt: 1000, color: '#D9001B'}
+      {lte: $greenThreshold, color: '#63A103'},
+      {gt: $greenThreshold, lte: $amberThreshold, color: '#FE9A23'},
+      {gt: $amberThreshold, color: '#D9001B'}
     ]
   },
   animationEasing: 'linear',

@@ -1,6 +1,7 @@
+import 'package:airspothealth/core/models/device_settings.dart';
 import 'package:airspothealth/core/providers/ble_device_communication_provider.dart';
+import 'package:airspothealth/core/providers/device_settings_provider.dart';
 import 'package:airspothealth/core/theme/app_colors.dart';
-import 'package:airspothealth/core/utils/app_utils.dart';
 import 'package:airspothealth/core/utils/constants.dart';
 import 'package:airspothealth/core/utils/extensions.dart';
 import 'package:flutter/material.dart';
@@ -17,6 +18,8 @@ class DeviceCurrentValueWidget extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final deviceValue = ref.watch(bleDeviceCommunicationProvider(deviceId));
+    final DeviceSettings deviceSettings =
+        ref.watch(deviceSettingsProvider(deviceId));
 
     return Card(
       margin: const EdgeInsets.symmetric(horizontal: 16),
@@ -33,7 +36,7 @@ class DeviceCurrentValueWidget extends ConsumerWidget {
               text: TextSpan(
                 text: deviceValue != null ? "$deviceValue" : '0000',
                 style: context.textTheme.titleLarge?.copyWith(
-                  color: AppUtils.getDataColorFromValue(deviceValue),
+                  color: deviceSettings.getValueColor(deviceValue),
                   fontWeight: FontWeight.bold,
                 ),
                 children: const [

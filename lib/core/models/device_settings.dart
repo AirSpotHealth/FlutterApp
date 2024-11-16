@@ -1,5 +1,7 @@
 import 'dart:typed_data';
+import 'dart:ui';
 
+import 'package:airspothealth/core/theme/app_colors.dart';
 import 'package:airspothealth/core/utils/constants.dart';
 import 'package:airspothealth/core/utils/device_cmd_utils.dart';
 import 'package:isar/isar.dart';
@@ -156,6 +158,20 @@ class DeviceSettings {
   Uint8List get autoCalibrationCmd => autoCalibration
       ? DeviceCmdUtils.setCalibrationAuto()
       : DeviceCmdUtils.setCalibrationManual();
+
+  Color getValueColor(dynamic value) {
+    if (value == null) {
+      return AppColors.brandColorGreen;
+    }
+
+    if (value > 0 && value < greenUpperLimit) {
+      return AppColors.brandColorGreen;
+    } else if (value >= greenUpperLimit && value < yellowUpperLimit) {
+      return AppColors.brandColorAmber;
+    } else {
+      return AppColors.brandColorRed;
+    }
+  }
 
   Map<String, dynamic> toJson() {
     return {

@@ -1,6 +1,7 @@
 import 'package:airspothealth/core/models/device_data.dart';
+import 'package:airspothealth/core/models/device_settings.dart';
+import 'package:airspothealth/core/providers/device_settings_provider.dart';
 import 'package:airspothealth/core/theme/app_colors.dart';
-import 'package:airspothealth/core/utils/app_utils.dart';
 import 'package:airspothealth/core/utils/extensions.dart';
 import 'package:airspothealth/features/device_graph/models/graph_data_duration.dart';
 import 'package:airspothealth/features/device_graph/providers/device_historical_data_provider.dart';
@@ -29,6 +30,9 @@ class DeviceDataAggregateCard extends ConsumerWidget {
             deviceHistoricalDataProvider((deviceId, selectedDuration)).notifier)
         .maxValue;
 
+    final DeviceSettings deviceSettings =
+        ref.watch(deviceSettingsProvider(deviceId));
+
     return Card(
       margin: const EdgeInsets.symmetric(horizontal: 16),
       child: Padding(
@@ -41,9 +45,15 @@ class DeviceDataAggregateCard extends ConsumerWidget {
               style: context.textTheme.labelLarge?.weight600,
             ),
             const SizedBox(height: 4),
-            _buildDataRow(context, label: 'Highest', data: maxValue),
+            _buildDataRow(context,
+                label: 'Highest',
+                data: maxValue,
+                color: deviceSettings.getValueColor(maxValue?.value)),
             const SizedBox(height: 4),
-            _buildDataRow(context, label: 'Lowest', data: minValue),
+            _buildDataRow(context,
+                label: 'Lowest',
+                data: minValue,
+                color: deviceSettings.getValueColor(minValue?.value)),
           ],
         ),
       ),
@@ -51,7 +61,7 @@ class DeviceDataAggregateCard extends ConsumerWidget {
   }
 
   Row _buildDataRow(BuildContext context,
-      {required String label, required DeviceData? data}) {
+      {required String label, required DeviceData? data, Color? color}) {
     return Row(
       children: [
         Expanded(
@@ -77,8 +87,7 @@ class DeviceDataAggregateCard extends ConsumerWidget {
               text: data != null
                   ? data.value.toInt().clamp(350, 5000).toString()
                   : '0000',
-              style: context.textTheme.bodyMedium?.copyWith(
-                  color: AppUtils.getDataColorFromValue(data?.value)),
+              style: context.textTheme.bodyMedium?.copyWith(color: color),
               children: const [
                 TextSpan(
                   text: ' ppm',
