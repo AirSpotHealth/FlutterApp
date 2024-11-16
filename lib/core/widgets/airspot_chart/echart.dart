@@ -43,7 +43,7 @@ class _EChartState extends State<EChart> {
           },
         ),
       )
-      ..addJavaScriptChannel('Messager',
+      ..addJavaScriptChannel('Print',
           onMessageReceived: (JavaScriptMessage javascriptMessage) {
         debugPrint('Chart message: ${javascriptMessage.message}');
       });
@@ -54,42 +54,48 @@ class _EChartState extends State<EChart> {
       $script;
       var chart = echarts.init(document.getElementById('chart'));
       chart.setOption($_currentOption, true);
-      
+      Print.postMessage('Chart initialized');
     ''');
   }
 
   static const String showTipScript = '''
       chart.on('datazoom', function (params) {
-        const series = chart.getOption().series[0]; // Get the series data
-        const data = series.data; // Access the data array
 
-        console.log("SeriesName: ", series.name);
+        try {
+          const series = chart.getOption().series[0]; // Get the series data
+          const data = series.data; // Access the data array
 
-        // Get the current dataZoom range (start and end)
-        const dataZoomComponent = chart.getModel().getComponent('dataZoom').option;
-        const startPercent = dataZoomComponent.start;
-        const endPercent = dataZoomComponent.end;
+          Print.postMessage("SeriesName: " + series.name);
 
-        // Calculate the indices of the visible range
-        const startIndex = Math.floor((startPercent / 100) * data.length);
-        const endIndex = Math.floor((endPercent / 100) * data.length);
+          // Get the current dataZoom range (start and end)
+          const dataZoomComponent = chart.getModel().getComponent('dataZoom').option;
+          const startPercent = dataZoomComponent.start;
+          const endPercent = dataZoomComponent.end;
 
-        // Calculate the middle index of the visible range
-        const middleIndex = Math.floor((startIndex + endIndex) / 2);
+          // Calculate the indices of the visible range
+          const startIndex = Math.floor((startPercent / 100) * data.length);
+          const endIndex = Math.floor((endPercent / 100) * data.length);
 
-        console.log("Middle index: ", middleIndex);
-        console.log("Middle data point: ", data[middleIndex]);
+          // Calculate the middle index of the visible range
+          const middleIndex = Math.floor((startIndex + endIndex) / 2);
 
-        if (middleIndex < 0 || middleIndex >= data.length) {
-          return;
+          Print.postMessage("Middle index: " + middleIndex);
+          Print.postMessage("Middle data point: " + data[middleIndex]);
+          Print.postMessage("Data length: " + data.length);
+
+          if (middleIndex < 0 || middleIndex >= data.length) {
+            return;
+          }
+        
+
+          chart.dispatchAction({
+              type: 'showTip',
+              seriesIndex: 0,
+              dataIndex: middleIndex
+          });
+        } catch (e) {
+          Print.postMessage("Error: " + e);
         }
-      
-
-        chart.dispatchAction({
-            type: 'showTip',
-            seriesIndex: 0,
-            dataIndex: middleIndex
-        });
       });
 ''';
 

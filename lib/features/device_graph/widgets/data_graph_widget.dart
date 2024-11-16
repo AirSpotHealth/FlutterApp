@@ -88,12 +88,12 @@ class _DataGraphWidgetState extends ConsumerState<DataGraphWidget> {
     trigger: "axis",
     axisPointer: {
       type: "line",
-      snap: true,
-      triggerOn: "none",
-      handle: {
-        show: true,
-        size: 45,
-      }
+      axis: "x",
+      lineStyle: {
+        color: '#777',
+        width: 1,
+        type: 'solid'
+      },
     },
     position: function (point, params, dom, rect, size) {
       var x = (size.viewSize[0] - dom.clientWidth) / 2;
@@ -198,6 +198,7 @@ class _DataGraphWidgetState extends ConsumerState<DataGraphWidget> {
       ${settings.showAreaFill ? 'areaStyle: { opacity: 0.2 },' : ''}
       smooth: true,
       showSymbol: false,
+      symbolSize: 8,
       lineStyle: {
         width: 1
       },
