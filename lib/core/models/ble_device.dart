@@ -64,4 +64,9 @@ class BleDevice {
   @ignore
   DeviceSettings? get settings => IsarService().read<DeviceSettings?>((isar) =>
       isar.deviceSettings.where().deviceIdEqualTo(deviceId).findFirst());
+
+  @override
+  String toString() {
+    return 'BleDevice{deviceId: $deviceId, name: $name, address: $address, platform: $platform, alias: $alias, firmwareVersion: $firmwareVersion, lastFetchedStartDate: $lastFetchedStartDate, lastFetchedEndDate: $lastFetchedEndDate}';
+  }
 }

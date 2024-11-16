@@ -181,6 +181,12 @@ class _BleDeviceCommunicationNotifier extends FamilyNotifier<dynamic, String> {
       return;
     }
 
+    // set alias to device if received
+    if (data[2] == ResponseCommand.getAlias.value) {
+      ref.invalidate(bleSavedDevicesProvider);
+      return;
+    }
+
     // _setHomeValue(value);
 
     try {

@@ -28,7 +28,7 @@ class BleDataUtils {
       ResponseCommand.disconnectResult: parser.parseDisconnect,
       ResponseCommand.setCoo2Ppm: parser.parseSetCo2Ppm,
       ResponseCommand.initialData: parser.parseInitialData,
-      ResponseCommand.alias: parser.parseAlias,
+      ResponseCommand.getAlias: parser.parseAlias,
       ResponseCommand.setAliasResult: parser.parseSetAlias,
       ResponseCommand.getCo2History: parser.parseGetCo2History,
       ResponseCommand.calibrateSensors: parser.parseCalibrateSensors,
@@ -60,6 +60,10 @@ class BleDataUtils {
 
     if (responseCommand == ResponseCommand.initialData) {
       return true;
+    }
+
+    if (responseCommand == ResponseCommand.getAlias) {
+      return result as String;
     }
 
     return null;
@@ -313,7 +317,7 @@ enum ResponseCommand {
   disconnectResult(0x06),
   setCoo2Ppm(0x07),
   initialData(0x08),
-  alias(0x09),
+  getAlias(0x09),
   setAliasResult(0x0A),
   getCo2History(0x0C),
   calibrateSensors(0x11),
