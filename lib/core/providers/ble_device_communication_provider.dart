@@ -193,8 +193,15 @@ class _BleDeviceCommunicationNotifier extends FamilyNotifier<dynamic, String> {
     try {
       final DateTime dateTime = DateTime.now();
 
-      NotificationService.showNotification(
-          title: 'CO${Constants.subscript2} Alert', body: "CO2 value: $value");
+      final DeviceSettings? deviceSettings =
+          ref.read(deviceSettingsProvider(deviceId));
+
+      if (deviceSettings?.co2AlertThreshold != null &&
+          value >= deviceSettings!.co2AlertThreshold!) {
+        NotificationService.showNotification(
+            title: 'CO${Constants.subscript2} Alert',
+            body: "CO2 value: $value");
+      }
 
       _isarService.write((isar) {
         isar.deviceDatas.put(DeviceData(

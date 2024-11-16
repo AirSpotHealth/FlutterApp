@@ -43,7 +43,7 @@ class DeviceSettingsPage extends ConsumerWidget {
       title: 'High CO${Constants.subscript2} Alert',
       assetIcon: Assets.co2Settings,
       route: RouteNames.co2Settings,
-      enabled: false,
+      enabled: true,
     ),
     SettingItem(
       title: 'AirSpot Device Update',
