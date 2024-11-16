@@ -150,6 +150,11 @@ extension IntExtension on int {
         return '';
     }
   }
+
+  /// limit to bit size
+  int limitToBitSize(int bitSize) {
+    return this & ((1 << bitSize) - 1);
+  }
 }
 
 /// extension on GoRouter

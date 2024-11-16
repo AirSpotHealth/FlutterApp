@@ -1,5 +1,6 @@
 import 'package:airspothealth/core/router/app_router.dart';
 import 'package:airspothealth/core/services/isar_service.dart';
+import 'package:airspothealth/core/services/notification_service.dart';
 import 'package:airspothealth/core/services/prefs_service.dart';
 import 'package:airspothealth/core/theme/app_theme.dart';
 import 'package:airspothealth/core/utils/storage_keys.dart';
@@ -12,7 +13,7 @@ void main() async {
 
   await [IsarService().initialize(), PrefsService().initialize()].wait;
 
-  await _checkVersion();
+  await [_checkVersion(), NotificationService.initNotification()].wait;
 
   runApp(
     const ProviderScope(

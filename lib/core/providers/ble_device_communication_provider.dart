@@ -7,6 +7,7 @@ import 'package:airspothealth/core/providers/ble_saved_devices_provider.dart';
 import 'package:airspothealth/core/providers/device_settings_provider.dart';
 import 'package:airspothealth/core/services/data_logger_service.dart';
 import 'package:airspothealth/core/services/isar_service.dart';
+import 'package:airspothealth/core/services/notification_service.dart';
 import 'package:airspothealth/core/utils/ble_data_utils.dart';
 import 'package:airspothealth/core/utils/constants.dart';
 import 'package:airspothealth/core/utils/device_cmd_utils.dart';
@@ -191,6 +192,9 @@ class _BleDeviceCommunicationNotifier extends FamilyNotifier<dynamic, String> {
 
     try {
       final DateTime dateTime = DateTime.now();
+
+      NotificationService.showNotification(
+          title: 'CO${Constants.subscript2} Alert', body: "CO2 value: $value");
 
       _isarService.write((isar) {
         isar.deviceDatas.put(DeviceData(

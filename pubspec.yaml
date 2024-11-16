@@ -31,6 +31,8 @@ dependencies:
   package_info_plus: ^8.1.1
   file_saver: ^0.2.14
   new_version_plus: ^0.0.12
+  awesome_notifications_core: ^0.10.0 # use the latest core version available
+  awesome_notifications: ^0.10.0 # This version is managed by core plugin
 
 dev_dependencies:
   flutter_test:
