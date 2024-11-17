@@ -2,43 +2,29 @@ import 'package:airspothealth/core/models/device_settings.dart';
 import 'package:airspothealth/core/providers/device_settings_provider.dart';
 import 'package:airspothealth/core/utils/constants.dart';
 import 'package:airspothealth/core/utils/extensions.dart';
+import 'package:airspothealth/features/device_settings/widgets/device_settings_name_widget.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-class Co2AlertSettingsPage extends ConsumerStatefulWidget {
+class Co2AlertSettingsPage extends ConsumerWidget {
   const Co2AlertSettingsPage({required this.deviceId, super.key});
 
   final String deviceId;
 
   @override
-  ConsumerState<ConsumerStatefulWidget> createState() =>
-      _Co2AlertSettingsPageState();
-}
-
-class _Co2AlertSettingsPageState extends ConsumerState<Co2AlertSettingsPage> {
-  late int selectedAlertValue;
-
-  @override
-  void initState() {
-    super.initState();
-
+  Widget build(BuildContext context, WidgetRef ref) {
     final DeviceSettings deviceSettings =
-        ref.read(deviceSettingsProvider(widget.deviceId));
+        ref.watch(deviceSettingsProvider(deviceId));
 
-    selectedAlertValue =
-        deviceSettings.co2AlertThreshold ?? Constants.defaultco2AlertThreshold;
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final DeviceSettings deviceSettings =
-        ref.watch(deviceSettingsProvider(widget.deviceId));
+    debugPrint('Co2HighAlertThreshold: ${deviceSettings.co2AlertThreshold}');
 
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: AppBar(
-        title: const Text('High CO2 Alert'),
-      ),
+          title: DeviceSettingsNameWidget(
+        deviceId: deviceId,
+        suffixText: 'High CO${Constants.subscript2} alert Settings',
+      )),
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
@@ -57,54 +43,62 @@ class _Co2AlertSettingsPageState extends ConsumerState<Co2AlertSettingsPage> {
                       .copyWith(color: Colors.white),
                 ),
               ),
-              const Spacer(),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 32),
-                height: 32,
-                decoration: BoxDecoration(
-                  color: Colors.grey.shade300,
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: DropdownButton<int>(
-                  value: selectedAlertValue,
-                  items: Constants.co2PPMValues
-                      .map((value) => DropdownMenuItem<int>(
-                            value: value,
-                            child: Text(value.toString()),
-                          ))
-                      .toList(),
-                  borderRadius: BorderRadius.circular(8),
-                  underline: const SizedBox(),
-                  icon: const SizedBox.shrink(),
-                  dropdownColor: Colors.white,
-                  onChanged: (int? value) {
-                    if (value != null) {
-                      setState(() {
-                        selectedAlertValue = value;
-                      });
-                    }
-
-                    if (deviceSettings.co2AlertThreshold != null) {
-                      ref
-                          .read(
-                              deviceSettingsProvider(widget.deviceId).notifier)
-                          .updateSettings(
-                            deviceSettings.copyWith(co2AlertThreshold: value),
-                          );
-                    }
-                  },
-                ),
+              const SizedBox(width: 16),
+              Flexible(
+                child: DropdownButtonFormField<int>(
+                    isDense: true,
+                    value: deviceSettings.co2AlertThreshold ??
+                        Constants.defaultco2AlertThreshold,
+                    items: Constants.co2PPMValues
+                        .map((value) => DropdownMenuItem<int>(
+                              value: value,
+                              child: Text(value.toString()),
+                            ))
+                        .toList(),
+                    borderRadius: BorderRadius.circular(8),
+                    alignment: Alignment.centerRight,
+                    isExpanded: true,
+                    decoration: InputDecoration(
+                      fillColor: Colors.grey.shade300,
+                      filled: true,
+                      suffixText: 'ppm',
+                      border: const OutlineInputBorder(
+                        borderSide: BorderSide.none,
+                        borderRadius: BorderRadius.all(Radius.circular(8)),
+                      ),
+                      enabled: deviceSettings.co2AlertThreshold != null,
+                      contentPadding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 12,
+                      ),
+                    ),
+                    icon: const SizedBox.shrink(),
+                    dropdownColor: Colors.white,
+                    onChanged: deviceSettings.co2AlertThreshold != null
+                        ? (int? value) {
+                            debugPrint('Dropdown value Co2: $value');
+                            ref
+                                .read(deviceSettingsProvider(deviceId).notifier)
+                                .updateSettings(
+                                  deviceSettings.copyWith(
+                                    co2AlertThreshold: value,
+                                  ),
+                                );
+                          }
+                        : null),
               ),
               const SizedBox(width: 24),
               Switch(
                 value: deviceSettings.co2AlertThreshold != null,
                 onChanged: (value) {
                   ref
-                      .read(deviceSettingsProvider(widget.deviceId).notifier)
+                      .read(deviceSettingsProvider(deviceId).notifier)
                       .updateSettings(
                         deviceSettings.copyWith(
-                            co2AlertThreshold:
-                                value ? selectedAlertValue : null),
+                          co2AlertThreshold: value == true
+                              ? Constants.defaultco2AlertThreshold
+                              : null,
+                        ),
                       );
                 },
               ),

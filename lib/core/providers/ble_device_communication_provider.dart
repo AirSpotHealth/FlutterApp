@@ -199,8 +199,15 @@ class _BleDeviceCommunicationNotifier extends FamilyNotifier<dynamic, String> {
       if (deviceSettings?.co2AlertThreshold != null &&
           value >= deviceSettings!.co2AlertThreshold!) {
         NotificationService.showNotification(
-            title: 'CO${Constants.subscript2} Alert',
-            body: "CO2 value: $value");
+          title:
+              'Alert! CO${Constants.subscript2} > ${deviceSettings.co2AlertThreshold} ppm',
+          // wide headed north east arrow character if value is increasing
+          // wide headed west south arrow character if value is decreasing
+          body: 'Now $value ppm',
+          suffixIcon: value > state
+              ? 'asset://assets/images/trending-up.png'
+              : 'asset://assets/images/trending-down.png',
+        ).ignore();
       }
 
       _isarService.write((isar) {

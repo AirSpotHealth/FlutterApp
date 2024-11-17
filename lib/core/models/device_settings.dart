@@ -93,7 +93,7 @@ class DeviceSettings {
           continuosScreenEnabled ?? this.continuosScreenEnabled,
       thresholds: thresholds ?? this.thresholds,
       deviceId: deviceId ?? this.deviceId,
-      co2AlertThreshold: co2AlertThreshold ?? this.co2AlertThreshold,
+      co2AlertThreshold: co2AlertThreshold,
       autoSyncTime: autoSyncTime ?? this.autoSyncTime,
       autoCalibration: autoCalibration ?? this.autoCalibration,
       autoConnect: autoConnect ?? this.autoConnect,

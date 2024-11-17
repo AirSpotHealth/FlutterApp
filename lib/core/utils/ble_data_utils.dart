@@ -121,6 +121,7 @@ class ResponseCommandParser {
             greenUpperLimit: _parseTwoBytesToInt(data, 7),
             yellowUpperLimit: _parseTwoBytesToInt(data, 9),
           ),
+          co2AlertThreshold: settings.co2AlertThreshold,
         );
       },
     );

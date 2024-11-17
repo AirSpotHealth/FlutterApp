@@ -36,14 +36,22 @@ class NotificationService {
     required String title,
     required String body,
     Map<String, String>? payload,
+    String? statusBarIcon,
+    String? suffixIcon,
   }) async {
+    await AwesomeNotifications().dismissNotificationsByChannelKey('alerts');
     await AwesomeNotifications().createNotification(
       content: NotificationContent(
-          id: DateTime.now().millisecondsSinceEpoch.limitToBitSize(32),
-          channelKey: 'alerts',
-          title: title,
-          body: body,
-          payload: payload),
+        id: DateTime.now().millisecondsSinceEpoch.limitToBitSize(32),
+        channelKey: 'alerts',
+        title: title,
+        body: body,
+        criticalAlert: true,
+        autoDismissible: true,
+        largeIcon: suffixIcon,
+        icon: statusBarIcon,
+        payload: payload,
+      ),
     );
   }
 }
