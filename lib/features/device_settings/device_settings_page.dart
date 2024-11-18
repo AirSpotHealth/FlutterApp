@@ -6,13 +6,11 @@ import 'package:airspothealth/core/utils/extensions.dart';
 import 'package:airspothealth/features/add_device/providers/ble_device_connection_provider.dart';
 import 'package:airspothealth/features/device_graph/providers/ble_device_provider.dart';
 import 'package:airspothealth/features/device_settings/models/setting_item.dart';
-import 'package:airspothealth/features/device_settings/widgets/alarm_setting_widget.dart';
 import 'package:airspothealth/features/device_settings/widgets/auto_connect_setting_widget.dart';
 import 'package:airspothealth/features/device_settings/widgets/device_settings_name_widget.dart';
 import 'package:airspothealth/features/device_settings/widgets/disconnect_device_widget.dart';
 import 'package:airspothealth/features/device_settings/widgets/forget_device_widget.dart';
 import 'package:airspothealth/features/device_settings/widgets/setting_item_widget.dart';
-import 'package:airspothealth/features/device_settings/widgets/vibrate_setting_widget.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -32,12 +30,6 @@ class DeviceSettingsPage extends ConsumerWidget {
       title: 'CO${Constants.subscript2} reading rate',
       assetIcon: Assets.powerModeSettings,
       route: RouteNames.powerModeSettings,
-    ),
-    SettingItem(
-      title: 'CO${Constants.subscript2} PPM Settings',
-      assetIcon: Assets.ppmSettings,
-      route: RouteNames.ppmSettings,
-      enabled: true,
     ),
     SettingItem(
       title: 'High CO${Constants.subscript2} Alert',
@@ -80,8 +72,6 @@ class DeviceSettingsPage extends ConsumerWidget {
       body: ListView(
         padding: const EdgeInsets.only(left: 16, right: 16, bottom: 16),
         children: [
-          AlarmSettingWidget(deviceId: deviceId),
-          VibrateSettingWidget(deviceId: deviceId),
           AutoConnectSettingWidget(deviceId: deviceId),
           ..._buildSettingsList(ref),
           DisconnectDeviceWidget(device: device),

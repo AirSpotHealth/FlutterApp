@@ -7,7 +7,6 @@ import 'package:airspothealth/features/app_setup/privacy_policy_page.dart';
 import 'package:airspothealth/features/device_graph/device_graph_page.dart';
 import 'package:airspothealth/features/device_settings/device_settings_page.dart';
 import 'package:airspothealth/features/device_settings/pages/co2_alert_settings_page.dart';
-import 'package:airspothealth/features/device_settings/pages/co2_ppm_settings_page.dart';
 import 'package:airspothealth/features/device_settings/pages/device_log_page.dart';
 import 'package:airspothealth/features/device_settings/pages/device_update_page.dart';
 import 'package:airspothealth/features/device_settings/pages/powe_mode_settings_page.dart';
@@ -106,18 +105,6 @@ class AppRouter {
                         throw ErrorDescription('Device ID is required');
                       }
                       return PowerModeSettingsPage(deviceId: deviceId);
-                    },
-                  ),
-                  // Route for co2 ppm settings within device settings
-                  GoRoute(
-                    path: 'ppm-settings',
-                    name: RouteNames.ppmSettings,
-                    builder: (context, state) {
-                      final deviceId = state.pathParameters['deviceId'];
-                      if (deviceId == null) {
-                        throw ErrorDescription('Device ID is required');
-                      }
-                      return Co2PpmSettingsPage(deviceId: deviceId);
                     },
                   ),
                   // Route for CO2 alert settings within device settings
