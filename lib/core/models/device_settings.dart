@@ -30,8 +30,11 @@ class DeviceSettings {
   @Id()
   final String deviceId;
 
-  /// Whether the high CO2 alarm is enabled or not
-  final int? co2AlertThreshold;
+  /// The med alert boolean
+  final bool co2MedAlertEnabled;
+
+  /// The high alert boolean
+  final bool co2HighAlertEnabled;
 
   /// auto sync time
   final bool autoSyncTime;
@@ -52,7 +55,8 @@ class DeviceSettings {
     required this.continuosScreenEnabled,
     required this.thresholds,
     required this.deviceId,
-    required this.co2AlertThreshold,
+    this.co2MedAlertEnabled = false,
+    this.co2HighAlertEnabled = false,
     this.autoSyncTime = true,
     this.autoCalibration = true,
     this.autoConnect = true,
@@ -65,7 +69,8 @@ class DeviceSettings {
         powerMode = PowerMode.low,
         continuosScreenEnabled = false,
         thresholds = DeviceThresholds.empty(),
-        co2AlertThreshold = null,
+        co2MedAlertEnabled = false,
+        co2HighAlertEnabled = false,
         autoSyncTime = true,
         autoCalibration = true,
         autoConnect = true,
@@ -79,7 +84,8 @@ class DeviceSettings {
     DeviceThresholds? thresholds,
     String? version,
     String? deviceId,
-    int? co2AlertThreshold,
+    bool? co2MedAlertEnabled,
+    bool? co2HighAlertEnabled,
     bool? autoSyncTime,
     bool? autoCalibration,
     bool? autoConnect,
@@ -93,7 +99,8 @@ class DeviceSettings {
           continuosScreenEnabled ?? this.continuosScreenEnabled,
       thresholds: thresholds ?? this.thresholds,
       deviceId: deviceId ?? this.deviceId,
-      co2AlertThreshold: co2AlertThreshold,
+      co2MedAlertEnabled: co2MedAlertEnabled ?? this.co2MedAlertEnabled,
+      co2HighAlertEnabled: co2HighAlertEnabled ?? this.co2HighAlertEnabled,
       autoSyncTime: autoSyncTime ?? this.autoSyncTime,
       autoCalibration: autoCalibration ?? this.autoCalibration,
       autoConnect: autoConnect ?? this.autoConnect,
@@ -181,7 +188,8 @@ class DeviceSettings {
       'continuosScreenEnabled': continuosScreenEnabled,
       'thresholds': thresholds.toMap(),
       'deviceId': deviceId,
-      'co2AlertThreshold': co2AlertThreshold,
+      'co2MedAlertEnabled': co2MedAlertEnabled,
+      'co2HighAlertEnabled': co2HighAlertEnabled,
       'autoSyncTime': autoSyncTime,
       'autoCalibration': autoCalibration,
       'autoConnect': autoConnect,
@@ -200,7 +208,8 @@ class DeviceSettings {
         other.continuosScreenEnabled == continuosScreenEnabled &&
         other.thresholds == thresholds &&
         other.deviceId == deviceId &&
-        other.co2AlertThreshold == co2AlertThreshold &&
+        other.co2MedAlertEnabled == co2MedAlertEnabled &&
+        other.co2HighAlertEnabled == co2HighAlertEnabled &&
         other.autoSyncTime == autoSyncTime &&
         other.autoCalibration == autoCalibration &&
         other.autoConnect == autoConnect &&
@@ -215,7 +224,8 @@ class DeviceSettings {
       continuosScreenEnabled.hashCode ^
       thresholds.hashCode ^
       deviceId.hashCode ^
-      co2AlertThreshold.hashCode ^
+      co2MedAlertEnabled.hashCode ^
+      co2HighAlertEnabled.hashCode ^
       autoSyncTime.hashCode ^
       autoCalibration.hashCode ^
       autoConnect.hashCode ^
@@ -223,7 +233,7 @@ class DeviceSettings {
 
   @override
   String toString() {
-    return 'DeviceSettings(alarmEnabled: $alarmEnabled, vibrationEnabled: $vibrationEnabled, powerMode: $powerMode, continuosScreenEnabled: $continuosScreenEnabled, thresholds: $thresholds, deviceId: $deviceId, co2AlertThreshold: $co2AlertThreshold, autoSyncTime: $autoSyncTime, autoCalibration: $autoCalibration, autoConnect: $autoConnect, logData: $logData)';
+    return 'DeviceSettings(alarmEnabled: $alarmEnabled, vibrationEnabled: $vibrationEnabled, powerMode: $powerMode, continuosScreenEnabled: $continuosScreenEnabled, thresholds: $thresholds, deviceId: $deviceId, co2MedAlertEnabled: $co2MedAlertEnabled, co2HighAlertEnabled: $co2HighAlertEnabled, autoSyncTime: $autoSyncTime, autoCalibration: $autoCalibration, autoConnect: $autoConnect, logData: $logData)';
   }
 }
 

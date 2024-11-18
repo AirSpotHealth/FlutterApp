@@ -48,8 +48,12 @@ const DeviceSettingsSchema = IsarGeneratedSchema(
         type: IsarType.string,
       ),
       IsarPropertySchema(
-        name: 'co2AlertThreshold',
-        type: IsarType.long,
+        name: 'co2MedAlertEnabled',
+        type: IsarType.bool,
+      ),
+      IsarPropertySchema(
+        name: 'co2HighAlertEnabled',
+        type: IsarType.bool,
       ),
       IsarPropertySchema(
         name: 'autoSyncTime',
@@ -91,12 +95,12 @@ int serializeDeviceSettings(IsarWriter writer, DeviceSettings object) {
     IsarCore.endObject(writer, objectWriter);
   }
   IsarCore.writeString(writer, 6, object.deviceId);
-  IsarCore.writeLong(
-      writer, 7, object.co2AlertThreshold ?? -9223372036854775808);
-  IsarCore.writeBool(writer, 8, object.autoSyncTime);
-  IsarCore.writeBool(writer, 9, object.autoCalibration);
-  IsarCore.writeBool(writer, 10, object.autoConnect);
-  IsarCore.writeBool(writer, 11, object.logData);
+  IsarCore.writeBool(writer, 7, object.co2MedAlertEnabled);
+  IsarCore.writeBool(writer, 8, object.co2HighAlertEnabled);
+  IsarCore.writeBool(writer, 9, object.autoSyncTime);
+  IsarCore.writeBool(writer, 10, object.autoCalibration);
+  IsarCore.writeBool(writer, 11, object.autoConnect);
+  IsarCore.writeBool(writer, 12, object.logData);
   return Isar.fastHash(object.deviceId);
 }
 
@@ -133,41 +137,36 @@ DeviceSettings deserializeDeviceSettings(IsarReader reader) {
   }
   final String _deviceId;
   _deviceId = IsarCore.readString(reader, 6) ?? '';
-  final int? _co2AlertThreshold;
-  {
-    final value = IsarCore.readLong(reader, 7);
-    if (value == -9223372036854775808) {
-      _co2AlertThreshold = null;
-    } else {
-      _co2AlertThreshold = value;
-    }
-  }
+  final bool _co2MedAlertEnabled;
+  _co2MedAlertEnabled = IsarCore.readBool(reader, 7);
+  final bool _co2HighAlertEnabled;
+  _co2HighAlertEnabled = IsarCore.readBool(reader, 8);
   final bool _autoSyncTime;
   {
-    if (IsarCore.readNull(reader, 8)) {
+    if (IsarCore.readNull(reader, 9)) {
       _autoSyncTime = true;
     } else {
-      _autoSyncTime = IsarCore.readBool(reader, 8);
+      _autoSyncTime = IsarCore.readBool(reader, 9);
     }
   }
   final bool _autoCalibration;
   {
-    if (IsarCore.readNull(reader, 9)) {
+    if (IsarCore.readNull(reader, 10)) {
       _autoCalibration = true;
     } else {
-      _autoCalibration = IsarCore.readBool(reader, 9);
+      _autoCalibration = IsarCore.readBool(reader, 10);
     }
   }
   final bool _autoConnect;
   {
-    if (IsarCore.readNull(reader, 10)) {
+    if (IsarCore.readNull(reader, 11)) {
       _autoConnect = true;
     } else {
-      _autoConnect = IsarCore.readBool(reader, 10);
+      _autoConnect = IsarCore.readBool(reader, 11);
     }
   }
   final bool _logData;
-  _logData = IsarCore.readBool(reader, 11);
+  _logData = IsarCore.readBool(reader, 12);
   final object = DeviceSettings(
     alarmEnabled: _alarmEnabled,
     vibrationEnabled: _vibrationEnabled,
@@ -175,7 +174,8 @@ DeviceSettings deserializeDeviceSettings(IsarReader reader) {
     continuosScreenEnabled: _continuosScreenEnabled,
     thresholds: _thresholds,
     deviceId: _deviceId,
-    co2AlertThreshold: _co2AlertThreshold,
+    co2MedAlertEnabled: _co2MedAlertEnabled,
+    co2HighAlertEnabled: _co2HighAlertEnabled,
     autoSyncTime: _autoSyncTime,
     autoCalibration: _autoCalibration,
     autoConnect: _autoConnect,
@@ -219,22 +219,9 @@ dynamic deserializeDeviceSettingsProp(IsarReader reader, int property) {
     case 6:
       return IsarCore.readString(reader, 6) ?? '';
     case 7:
-      {
-        final value = IsarCore.readLong(reader, 7);
-        if (value == -9223372036854775808) {
-          return null;
-        } else {
-          return value;
-        }
-      }
+      return IsarCore.readBool(reader, 7);
     case 8:
-      {
-        if (IsarCore.readNull(reader, 8)) {
-          return true;
-        } else {
-          return IsarCore.readBool(reader, 8);
-        }
-      }
+      return IsarCore.readBool(reader, 8);
     case 9:
       {
         if (IsarCore.readNull(reader, 9)) {
@@ -252,7 +239,15 @@ dynamic deserializeDeviceSettingsProp(IsarReader reader, int property) {
         }
       }
     case 11:
-      return IsarCore.readBool(reader, 11);
+      {
+        if (IsarCore.readNull(reader, 11)) {
+          return true;
+        } else {
+          return IsarCore.readBool(reader, 11);
+        }
+      }
+    case 12:
+      return IsarCore.readBool(reader, 12);
     default:
       throw ArgumentError('Unknown property: $property');
   }
@@ -265,7 +260,8 @@ sealed class _DeviceSettingsUpdate {
     bool? vibrationEnabled,
     PowerMode? powerMode,
     bool? continuosScreenEnabled,
-    int? co2AlertThreshold,
+    bool? co2MedAlertEnabled,
+    bool? co2HighAlertEnabled,
     bool? autoSyncTime,
     bool? autoCalibration,
     bool? autoConnect,
@@ -285,7 +281,8 @@ class _DeviceSettingsUpdateImpl implements _DeviceSettingsUpdate {
     Object? vibrationEnabled = ignore,
     Object? powerMode = ignore,
     Object? continuosScreenEnabled = ignore,
-    Object? co2AlertThreshold = ignore,
+    Object? co2MedAlertEnabled = ignore,
+    Object? co2HighAlertEnabled = ignore,
     Object? autoSyncTime = ignore,
     Object? autoCalibration = ignore,
     Object? autoConnect = ignore,
@@ -299,11 +296,12 @@ class _DeviceSettingsUpdateImpl implements _DeviceSettingsUpdate {
           if (powerMode != ignore) 3: powerMode as PowerMode?,
           if (continuosScreenEnabled != ignore)
             4: continuosScreenEnabled as bool?,
-          if (co2AlertThreshold != ignore) 7: co2AlertThreshold as int?,
-          if (autoSyncTime != ignore) 8: autoSyncTime as bool?,
-          if (autoCalibration != ignore) 9: autoCalibration as bool?,
-          if (autoConnect != ignore) 10: autoConnect as bool?,
-          if (logData != ignore) 11: logData as bool?,
+          if (co2MedAlertEnabled != ignore) 7: co2MedAlertEnabled as bool?,
+          if (co2HighAlertEnabled != ignore) 8: co2HighAlertEnabled as bool?,
+          if (autoSyncTime != ignore) 9: autoSyncTime as bool?,
+          if (autoCalibration != ignore) 10: autoCalibration as bool?,
+          if (autoConnect != ignore) 11: autoConnect as bool?,
+          if (logData != ignore) 12: logData as bool?,
         }) >
         0;
   }
@@ -316,7 +314,8 @@ sealed class _DeviceSettingsUpdateAll {
     bool? vibrationEnabled,
     PowerMode? powerMode,
     bool? continuosScreenEnabled,
-    int? co2AlertThreshold,
+    bool? co2MedAlertEnabled,
+    bool? co2HighAlertEnabled,
     bool? autoSyncTime,
     bool? autoCalibration,
     bool? autoConnect,
@@ -336,7 +335,8 @@ class _DeviceSettingsUpdateAllImpl implements _DeviceSettingsUpdateAll {
     Object? vibrationEnabled = ignore,
     Object? powerMode = ignore,
     Object? continuosScreenEnabled = ignore,
-    Object? co2AlertThreshold = ignore,
+    Object? co2MedAlertEnabled = ignore,
+    Object? co2HighAlertEnabled = ignore,
     Object? autoSyncTime = ignore,
     Object? autoCalibration = ignore,
     Object? autoConnect = ignore,
@@ -347,11 +347,12 @@ class _DeviceSettingsUpdateAllImpl implements _DeviceSettingsUpdateAll {
       if (vibrationEnabled != ignore) 2: vibrationEnabled as bool?,
       if (powerMode != ignore) 3: powerMode as PowerMode?,
       if (continuosScreenEnabled != ignore) 4: continuosScreenEnabled as bool?,
-      if (co2AlertThreshold != ignore) 7: co2AlertThreshold as int?,
-      if (autoSyncTime != ignore) 8: autoSyncTime as bool?,
-      if (autoCalibration != ignore) 9: autoCalibration as bool?,
-      if (autoConnect != ignore) 10: autoConnect as bool?,
-      if (logData != ignore) 11: logData as bool?,
+      if (co2MedAlertEnabled != ignore) 7: co2MedAlertEnabled as bool?,
+      if (co2HighAlertEnabled != ignore) 8: co2HighAlertEnabled as bool?,
+      if (autoSyncTime != ignore) 9: autoSyncTime as bool?,
+      if (autoCalibration != ignore) 10: autoCalibration as bool?,
+      if (autoConnect != ignore) 11: autoConnect as bool?,
+      if (logData != ignore) 12: logData as bool?,
     });
   }
 }
@@ -368,7 +369,8 @@ sealed class _DeviceSettingsQueryUpdate {
     bool? vibrationEnabled,
     PowerMode? powerMode,
     bool? continuosScreenEnabled,
-    int? co2AlertThreshold,
+    bool? co2MedAlertEnabled,
+    bool? co2HighAlertEnabled,
     bool? autoSyncTime,
     bool? autoCalibration,
     bool? autoConnect,
@@ -388,7 +390,8 @@ class _DeviceSettingsQueryUpdateImpl implements _DeviceSettingsQueryUpdate {
     Object? vibrationEnabled = ignore,
     Object? powerMode = ignore,
     Object? continuosScreenEnabled = ignore,
-    Object? co2AlertThreshold = ignore,
+    Object? co2MedAlertEnabled = ignore,
+    Object? co2HighAlertEnabled = ignore,
     Object? autoSyncTime = ignore,
     Object? autoCalibration = ignore,
     Object? autoConnect = ignore,
@@ -399,11 +402,12 @@ class _DeviceSettingsQueryUpdateImpl implements _DeviceSettingsQueryUpdate {
       if (vibrationEnabled != ignore) 2: vibrationEnabled as bool?,
       if (powerMode != ignore) 3: powerMode as PowerMode?,
       if (continuosScreenEnabled != ignore) 4: continuosScreenEnabled as bool?,
-      if (co2AlertThreshold != ignore) 7: co2AlertThreshold as int?,
-      if (autoSyncTime != ignore) 8: autoSyncTime as bool?,
-      if (autoCalibration != ignore) 9: autoCalibration as bool?,
-      if (autoConnect != ignore) 10: autoConnect as bool?,
-      if (logData != ignore) 11: logData as bool?,
+      if (co2MedAlertEnabled != ignore) 7: co2MedAlertEnabled as bool?,
+      if (co2HighAlertEnabled != ignore) 8: co2HighAlertEnabled as bool?,
+      if (autoSyncTime != ignore) 9: autoSyncTime as bool?,
+      if (autoCalibration != ignore) 10: autoCalibration as bool?,
+      if (autoConnect != ignore) 11: autoConnect as bool?,
+      if (logData != ignore) 12: logData as bool?,
     });
   }
 }
@@ -429,7 +433,8 @@ class _DeviceSettingsQueryBuilderUpdateImpl
     Object? vibrationEnabled = ignore,
     Object? powerMode = ignore,
     Object? continuosScreenEnabled = ignore,
-    Object? co2AlertThreshold = ignore,
+    Object? co2MedAlertEnabled = ignore,
+    Object? co2HighAlertEnabled = ignore,
     Object? autoSyncTime = ignore,
     Object? autoCalibration = ignore,
     Object? autoConnect = ignore,
@@ -443,11 +448,12 @@ class _DeviceSettingsQueryBuilderUpdateImpl
         if (powerMode != ignore) 3: powerMode as PowerMode?,
         if (continuosScreenEnabled != ignore)
           4: continuosScreenEnabled as bool?,
-        if (co2AlertThreshold != ignore) 7: co2AlertThreshold as int?,
-        if (autoSyncTime != ignore) 8: autoSyncTime as bool?,
-        if (autoCalibration != ignore) 9: autoCalibration as bool?,
-        if (autoConnect != ignore) 10: autoConnect as bool?,
-        if (logData != ignore) 11: logData as bool?,
+        if (co2MedAlertEnabled != ignore) 7: co2MedAlertEnabled as bool?,
+        if (co2HighAlertEnabled != ignore) 8: co2HighAlertEnabled as bool?,
+        if (autoSyncTime != ignore) 9: autoSyncTime as bool?,
+        if (autoCalibration != ignore) 10: autoCalibration as bool?,
+        if (autoConnect != ignore) 11: autoConnect as bool?,
+        if (logData != ignore) 12: logData as bool?,
       });
     } finally {
       q.close();
@@ -781,22 +787,8 @@ extension DeviceSettingsQueryFilter
   }
 
   QueryBuilder<DeviceSettings, DeviceSettings, QAfterFilterCondition>
-      co2AlertThresholdIsNull() {
-    return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(const IsNullCondition(property: 7));
-    });
-  }
-
-  QueryBuilder<DeviceSettings, DeviceSettings, QAfterFilterCondition>
-      co2AlertThresholdIsNotNull() {
-    return QueryBuilder.apply(not(), (query) {
-      return query.addFilterCondition(const IsNullCondition(property: 7));
-    });
-  }
-
-  QueryBuilder<DeviceSettings, DeviceSettings, QAfterFilterCondition>
-      co2AlertThresholdEqualTo(
-    int? value,
+      co2MedAlertEnabledEqualTo(
+    bool value,
   ) {
     return QueryBuilder.apply(this, (query) {
       return query.addFilterCondition(
@@ -809,79 +801,7 @@ extension DeviceSettingsQueryFilter
   }
 
   QueryBuilder<DeviceSettings, DeviceSettings, QAfterFilterCondition>
-      co2AlertThresholdGreaterThan(
-    int? value,
-  ) {
-    return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(
-        GreaterCondition(
-          property: 7,
-          value: value,
-        ),
-      );
-    });
-  }
-
-  QueryBuilder<DeviceSettings, DeviceSettings, QAfterFilterCondition>
-      co2AlertThresholdGreaterThanOrEqualTo(
-    int? value,
-  ) {
-    return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(
-        GreaterOrEqualCondition(
-          property: 7,
-          value: value,
-        ),
-      );
-    });
-  }
-
-  QueryBuilder<DeviceSettings, DeviceSettings, QAfterFilterCondition>
-      co2AlertThresholdLessThan(
-    int? value,
-  ) {
-    return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(
-        LessCondition(
-          property: 7,
-          value: value,
-        ),
-      );
-    });
-  }
-
-  QueryBuilder<DeviceSettings, DeviceSettings, QAfterFilterCondition>
-      co2AlertThresholdLessThanOrEqualTo(
-    int? value,
-  ) {
-    return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(
-        LessOrEqualCondition(
-          property: 7,
-          value: value,
-        ),
-      );
-    });
-  }
-
-  QueryBuilder<DeviceSettings, DeviceSettings, QAfterFilterCondition>
-      co2AlertThresholdBetween(
-    int? lower,
-    int? upper,
-  ) {
-    return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(
-        BetweenCondition(
-          property: 7,
-          lower: lower,
-          upper: upper,
-        ),
-      );
-    });
-  }
-
-  QueryBuilder<DeviceSettings, DeviceSettings, QAfterFilterCondition>
-      autoSyncTimeEqualTo(
+      co2HighAlertEnabledEqualTo(
     bool value,
   ) {
     return QueryBuilder.apply(this, (query) {
@@ -895,7 +815,7 @@ extension DeviceSettingsQueryFilter
   }
 
   QueryBuilder<DeviceSettings, DeviceSettings, QAfterFilterCondition>
-      autoCalibrationEqualTo(
+      autoSyncTimeEqualTo(
     bool value,
   ) {
     return QueryBuilder.apply(this, (query) {
@@ -909,7 +829,7 @@ extension DeviceSettingsQueryFilter
   }
 
   QueryBuilder<DeviceSettings, DeviceSettings, QAfterFilterCondition>
-      autoConnectEqualTo(
+      autoCalibrationEqualTo(
     bool value,
   ) {
     return QueryBuilder.apply(this, (query) {
@@ -923,13 +843,27 @@ extension DeviceSettingsQueryFilter
   }
 
   QueryBuilder<DeviceSettings, DeviceSettings, QAfterFilterCondition>
-      logDataEqualTo(
+      autoConnectEqualTo(
     bool value,
   ) {
     return QueryBuilder.apply(this, (query) {
       return query.addFilterCondition(
         EqualCondition(
           property: 11,
+          value: value,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<DeviceSettings, DeviceSettings, QAfterFilterCondition>
+      logDataEqualTo(
+    bool value,
+  ) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        EqualCondition(
+          property: 12,
           value: value,
         ),
       );
@@ -1026,71 +960,85 @@ extension DeviceSettingsQuerySortBy
   }
 
   QueryBuilder<DeviceSettings, DeviceSettings, QAfterSortBy>
-      sortByCo2AlertThreshold() {
+      sortByCo2MedAlertEnabled() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(7);
     });
   }
 
   QueryBuilder<DeviceSettings, DeviceSettings, QAfterSortBy>
-      sortByCo2AlertThresholdDesc() {
+      sortByCo2MedAlertEnabledDesc() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(7, sort: Sort.desc);
     });
   }
 
   QueryBuilder<DeviceSettings, DeviceSettings, QAfterSortBy>
-      sortByAutoSyncTime() {
+      sortByCo2HighAlertEnabled() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(8);
     });
   }
 
   QueryBuilder<DeviceSettings, DeviceSettings, QAfterSortBy>
-      sortByAutoSyncTimeDesc() {
+      sortByCo2HighAlertEnabledDesc() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(8, sort: Sort.desc);
     });
   }
 
   QueryBuilder<DeviceSettings, DeviceSettings, QAfterSortBy>
-      sortByAutoCalibration() {
+      sortByAutoSyncTime() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(9);
     });
   }
 
   QueryBuilder<DeviceSettings, DeviceSettings, QAfterSortBy>
-      sortByAutoCalibrationDesc() {
+      sortByAutoSyncTimeDesc() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(9, sort: Sort.desc);
     });
   }
 
   QueryBuilder<DeviceSettings, DeviceSettings, QAfterSortBy>
-      sortByAutoConnect() {
+      sortByAutoCalibration() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(10);
     });
   }
 
   QueryBuilder<DeviceSettings, DeviceSettings, QAfterSortBy>
-      sortByAutoConnectDesc() {
+      sortByAutoCalibrationDesc() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(10, sort: Sort.desc);
     });
   }
 
-  QueryBuilder<DeviceSettings, DeviceSettings, QAfterSortBy> sortByLogData() {
+  QueryBuilder<DeviceSettings, DeviceSettings, QAfterSortBy>
+      sortByAutoConnect() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(11);
     });
   }
 
   QueryBuilder<DeviceSettings, DeviceSettings, QAfterSortBy>
-      sortByLogDataDesc() {
+      sortByAutoConnectDesc() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(11, sort: Sort.desc);
+    });
+  }
+
+  QueryBuilder<DeviceSettings, DeviceSettings, QAfterSortBy> sortByLogData() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(12);
+    });
+  }
+
+  QueryBuilder<DeviceSettings, DeviceSettings, QAfterSortBy>
+      sortByLogDataDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(12, sort: Sort.desc);
     });
   }
 }
@@ -1167,71 +1115,85 @@ extension DeviceSettingsQuerySortThenBy
   }
 
   QueryBuilder<DeviceSettings, DeviceSettings, QAfterSortBy>
-      thenByCo2AlertThreshold() {
+      thenByCo2MedAlertEnabled() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(7);
     });
   }
 
   QueryBuilder<DeviceSettings, DeviceSettings, QAfterSortBy>
-      thenByCo2AlertThresholdDesc() {
+      thenByCo2MedAlertEnabledDesc() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(7, sort: Sort.desc);
     });
   }
 
   QueryBuilder<DeviceSettings, DeviceSettings, QAfterSortBy>
-      thenByAutoSyncTime() {
+      thenByCo2HighAlertEnabled() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(8);
     });
   }
 
   QueryBuilder<DeviceSettings, DeviceSettings, QAfterSortBy>
-      thenByAutoSyncTimeDesc() {
+      thenByCo2HighAlertEnabledDesc() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(8, sort: Sort.desc);
     });
   }
 
   QueryBuilder<DeviceSettings, DeviceSettings, QAfterSortBy>
-      thenByAutoCalibration() {
+      thenByAutoSyncTime() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(9);
     });
   }
 
   QueryBuilder<DeviceSettings, DeviceSettings, QAfterSortBy>
-      thenByAutoCalibrationDesc() {
+      thenByAutoSyncTimeDesc() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(9, sort: Sort.desc);
     });
   }
 
   QueryBuilder<DeviceSettings, DeviceSettings, QAfterSortBy>
-      thenByAutoConnect() {
+      thenByAutoCalibration() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(10);
     });
   }
 
   QueryBuilder<DeviceSettings, DeviceSettings, QAfterSortBy>
-      thenByAutoConnectDesc() {
+      thenByAutoCalibrationDesc() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(10, sort: Sort.desc);
     });
   }
 
-  QueryBuilder<DeviceSettings, DeviceSettings, QAfterSortBy> thenByLogData() {
+  QueryBuilder<DeviceSettings, DeviceSettings, QAfterSortBy>
+      thenByAutoConnect() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(11);
     });
   }
 
   QueryBuilder<DeviceSettings, DeviceSettings, QAfterSortBy>
-      thenByLogDataDesc() {
+      thenByAutoConnectDesc() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(11, sort: Sort.desc);
+    });
+  }
+
+  QueryBuilder<DeviceSettings, DeviceSettings, QAfterSortBy> thenByLogData() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(12);
+    });
+  }
+
+  QueryBuilder<DeviceSettings, DeviceSettings, QAfterSortBy>
+      thenByLogDataDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(12, sort: Sort.desc);
     });
   }
 }
@@ -1267,37 +1229,44 @@ extension DeviceSettingsQueryWhereDistinct
   }
 
   QueryBuilder<DeviceSettings, DeviceSettings, QAfterDistinct>
-      distinctByCo2AlertThreshold() {
+      distinctByCo2MedAlertEnabled() {
     return QueryBuilder.apply(this, (query) {
       return query.addDistinctBy(7);
     });
   }
 
   QueryBuilder<DeviceSettings, DeviceSettings, QAfterDistinct>
-      distinctByAutoSyncTime() {
+      distinctByCo2HighAlertEnabled() {
     return QueryBuilder.apply(this, (query) {
       return query.addDistinctBy(8);
     });
   }
 
   QueryBuilder<DeviceSettings, DeviceSettings, QAfterDistinct>
-      distinctByAutoCalibration() {
+      distinctByAutoSyncTime() {
     return QueryBuilder.apply(this, (query) {
       return query.addDistinctBy(9);
     });
   }
 
   QueryBuilder<DeviceSettings, DeviceSettings, QAfterDistinct>
-      distinctByAutoConnect() {
+      distinctByAutoCalibration() {
     return QueryBuilder.apply(this, (query) {
       return query.addDistinctBy(10);
     });
   }
 
   QueryBuilder<DeviceSettings, DeviceSettings, QAfterDistinct>
-      distinctByLogData() {
+      distinctByAutoConnect() {
     return QueryBuilder.apply(this, (query) {
       return query.addDistinctBy(11);
+    });
+  }
+
+  QueryBuilder<DeviceSettings, DeviceSettings, QAfterDistinct>
+      distinctByLogData() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addDistinctBy(12);
     });
   }
 }
@@ -1343,34 +1312,41 @@ extension DeviceSettingsQueryProperty1
     });
   }
 
-  QueryBuilder<DeviceSettings, int?, QAfterProperty>
-      co2AlertThresholdProperty() {
+  QueryBuilder<DeviceSettings, bool, QAfterProperty>
+      co2MedAlertEnabledProperty() {
     return QueryBuilder.apply(this, (query) {
       return query.addProperty(7);
     });
   }
 
-  QueryBuilder<DeviceSettings, bool, QAfterProperty> autoSyncTimeProperty() {
+  QueryBuilder<DeviceSettings, bool, QAfterProperty>
+      co2HighAlertEnabledProperty() {
     return QueryBuilder.apply(this, (query) {
       return query.addProperty(8);
     });
   }
 
-  QueryBuilder<DeviceSettings, bool, QAfterProperty> autoCalibrationProperty() {
+  QueryBuilder<DeviceSettings, bool, QAfterProperty> autoSyncTimeProperty() {
     return QueryBuilder.apply(this, (query) {
       return query.addProperty(9);
     });
   }
 
-  QueryBuilder<DeviceSettings, bool, QAfterProperty> autoConnectProperty() {
+  QueryBuilder<DeviceSettings, bool, QAfterProperty> autoCalibrationProperty() {
     return QueryBuilder.apply(this, (query) {
       return query.addProperty(10);
     });
   }
 
-  QueryBuilder<DeviceSettings, bool, QAfterProperty> logDataProperty() {
+  QueryBuilder<DeviceSettings, bool, QAfterProperty> autoConnectProperty() {
     return QueryBuilder.apply(this, (query) {
       return query.addProperty(11);
+    });
+  }
+
+  QueryBuilder<DeviceSettings, bool, QAfterProperty> logDataProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addProperty(12);
     });
   }
 }
@@ -1418,37 +1394,44 @@ extension DeviceSettingsQueryProperty2<R>
     });
   }
 
-  QueryBuilder<DeviceSettings, (R, int?), QAfterProperty>
-      co2AlertThresholdProperty() {
+  QueryBuilder<DeviceSettings, (R, bool), QAfterProperty>
+      co2MedAlertEnabledProperty() {
     return QueryBuilder.apply(this, (query) {
       return query.addProperty(7);
     });
   }
 
   QueryBuilder<DeviceSettings, (R, bool), QAfterProperty>
-      autoSyncTimeProperty() {
+      co2HighAlertEnabledProperty() {
     return QueryBuilder.apply(this, (query) {
       return query.addProperty(8);
     });
   }
 
   QueryBuilder<DeviceSettings, (R, bool), QAfterProperty>
-      autoCalibrationProperty() {
+      autoSyncTimeProperty() {
     return QueryBuilder.apply(this, (query) {
       return query.addProperty(9);
     });
   }
 
   QueryBuilder<DeviceSettings, (R, bool), QAfterProperty>
-      autoConnectProperty() {
+      autoCalibrationProperty() {
     return QueryBuilder.apply(this, (query) {
       return query.addProperty(10);
     });
   }
 
-  QueryBuilder<DeviceSettings, (R, bool), QAfterProperty> logDataProperty() {
+  QueryBuilder<DeviceSettings, (R, bool), QAfterProperty>
+      autoConnectProperty() {
     return QueryBuilder.apply(this, (query) {
       return query.addProperty(11);
+    });
+  }
+
+  QueryBuilder<DeviceSettings, (R, bool), QAfterProperty> logDataProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addProperty(12);
     });
   }
 }
@@ -1497,37 +1480,44 @@ extension DeviceSettingsQueryProperty3<R1, R2>
     });
   }
 
-  QueryBuilder<DeviceSettings, (R1, R2, int?), QOperations>
-      co2AlertThresholdProperty() {
+  QueryBuilder<DeviceSettings, (R1, R2, bool), QOperations>
+      co2MedAlertEnabledProperty() {
     return QueryBuilder.apply(this, (query) {
       return query.addProperty(7);
     });
   }
 
   QueryBuilder<DeviceSettings, (R1, R2, bool), QOperations>
-      autoSyncTimeProperty() {
+      co2HighAlertEnabledProperty() {
     return QueryBuilder.apply(this, (query) {
       return query.addProperty(8);
     });
   }
 
   QueryBuilder<DeviceSettings, (R1, R2, bool), QOperations>
-      autoCalibrationProperty() {
+      autoSyncTimeProperty() {
     return QueryBuilder.apply(this, (query) {
       return query.addProperty(9);
     });
   }
 
   QueryBuilder<DeviceSettings, (R1, R2, bool), QOperations>
-      autoConnectProperty() {
+      autoCalibrationProperty() {
     return QueryBuilder.apply(this, (query) {
       return query.addProperty(10);
     });
   }
 
-  QueryBuilder<DeviceSettings, (R1, R2, bool), QOperations> logDataProperty() {
+  QueryBuilder<DeviceSettings, (R1, R2, bool), QOperations>
+      autoConnectProperty() {
     return QueryBuilder.apply(this, (query) {
       return query.addProperty(11);
+    });
+  }
+
+  QueryBuilder<DeviceSettings, (R1, R2, bool), QOperations> logDataProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addProperty(12);
     });
   }
 }
