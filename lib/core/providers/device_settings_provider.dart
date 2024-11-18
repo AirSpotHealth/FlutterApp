@@ -2,6 +2,7 @@ import 'package:airspothealth/core/models/ble_device.dart';
 import 'package:airspothealth/core/models/device_settings.dart';
 import 'package:airspothealth/core/providers/ble_device_communication_provider.dart';
 import 'package:airspothealth/core/services/isar_service.dart';
+import 'package:airspothealth/core/utils/delayed_function_call.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:isar/isar.dart';
 
@@ -61,9 +62,11 @@ class _DeviceSettingsNotifier extends FamilyNotifier<DeviceSettings, String> {
             state.thresholds.greenUpperLimit ||
         settings.thresholds.yellowUpperLimit !=
             state.thresholds.yellowUpperLimit) {
-      ref
-          .read(bleDeviceCommunicationProvider(settings.deviceId).notifier)
-          .sendCommand(settings.thresholdsCmd);
+      DelayedFunctionCaller().call(() {
+        ref
+            .read(bleDeviceCommunicationProvider(settings.deviceId).notifier)
+            .sendCommand(settings.thresholdsCmd);
+      });
     }
 
     _isarService.write((isar) {
