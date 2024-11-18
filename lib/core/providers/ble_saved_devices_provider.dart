@@ -1,4 +1,6 @@
 import 'package:airspothealth/core/models/ble_device.dart';
+import 'package:airspothealth/core/models/device_data.dart';
+import 'package:airspothealth/core/models/device_settings.dart';
 import 'package:airspothealth/core/providers/ble_device_communication_provider.dart';
 import 'package:airspothealth/core/providers/isar_service_provider.dart';
 import 'package:airspothealth/core/services/isar_service.dart';
@@ -47,6 +49,8 @@ class _BleSavedDevicesNotifier extends Notifier<List<BleDevice>> {
 
     ref.read(isarServiceProvider).write((isar) {
       isar.bleDevices.delete(deviceId);
+      isar.deviceSettings.where().deviceIdEqualTo(deviceId).deleteAll();
+      isar.deviceDatas.where().deviceIdEqualTo(deviceId).deleteAll();
     });
 
     state = state.where((d) => d.deviceId != deviceId).toList();
