@@ -1,6 +1,8 @@
 import 'package:airspothealth/core/models/device_settings.dart';
+import 'package:airspothealth/core/providers/ble_device_communication_provider.dart';
 import 'package:airspothealth/core/providers/device_settings_provider.dart';
 import 'package:airspothealth/core/theme/app_colors.dart';
+import 'package:airspothealth/core/utils/delayed_function_call.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 // ignore: depend_on_referenced_packages
@@ -10,7 +12,7 @@ import 'package:syncfusion_flutter_sliders/sliders.dart';
 class Co2PpmRangePickerWidget extends ConsumerWidget {
   const Co2PpmRangePickerWidget({required this.deviceId, super.key});
 
-  static const labelValues = <int>[400, 800, 1200, 4000];
+  static const labelValues = <int>[400, 4000];
 
   final String deviceId;
 
@@ -25,6 +27,13 @@ class Co2PpmRangePickerWidget extends ConsumerWidget {
         deviceSettings.greenUpperLimit.toDouble(),
         deviceSettings.yellowUpperLimit.toDouble(),
       ),
+      onChangeEnd: (value) {
+        DelayedFunctionCaller().call(() {
+          ref
+              .read(bleDeviceCommunicationProvider(deviceId).notifier)
+              .sendCommand(deviceSettings.thresholdsCmd);
+        });
+      },
       onChanged: (SfRangeValues values) {
         ref.read(deviceSettingsProvider(deviceId).notifier).updateSettings(
               deviceSettings.copyWith(
@@ -98,7 +107,7 @@ class _CustomTooltipShape extends SfTooltipShape {
     textPainter.paint(
         context.canvas,
         Offset(thumbCenter.dx - textPainter.width / 2,
-            thumbCenter.dy - 30 - textPainter.height / 2));
+            thumbCenter.dy - 24 - textPainter.height / 2));
   }
 }
 
