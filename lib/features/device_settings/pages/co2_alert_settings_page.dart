@@ -2,6 +2,7 @@ import 'package:airspothealth/core/utils/constants.dart';
 import 'package:airspothealth/core/utils/extensions.dart';
 import 'package:airspothealth/features/device_settings/widgets/alarm_setting_widget.dart';
 import 'package:airspothealth/features/device_settings/widgets/amber_alert_setting_widget.dart';
+import 'package:airspothealth/features/device_settings/widgets/co2_ppm_range_picker_widget.dart';
 import 'package:airspothealth/features/device_settings/widgets/device_settings_name_widget.dart';
 import 'package:airspothealth/features/device_settings/widgets/red_alert_setting_widget.dart';
 import 'package:airspothealth/features/device_settings/widgets/vibrate_setting_widget.dart';
@@ -31,15 +32,8 @@ class Co2AlertSettingsPage extends ConsumerWidget {
               color: Colors.grey.shade600,
             ),
           ),
-          const SizedBox(height: 4),
-          RangeSlider(
-            values: const RangeValues(800, 1000),
-            onChanged: (value) {},
-            min: 0,
-            max: 2000,
-            divisions: 40,
-            labels: const RangeLabels('800', '1000'),
-          ),
+          const SizedBox(height: 24),
+          Co2PpmRangePickerWidget(deviceId: deviceId),
           const SizedBox(height: 16),
           Text(
             'Set the range of CO2 ppm levels that will be considered as amber and red alert levels.',
