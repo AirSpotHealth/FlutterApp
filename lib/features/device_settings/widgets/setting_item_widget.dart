@@ -24,7 +24,7 @@ class SettingItemWidget extends StatelessWidget {
           children: [
             item.leadingWidget ??
                 Image.asset(
-                  item.assetIcon,
+                  item.assetIcon!,
                   width: 32,
                   opacity: AlwaysStoppedAnimation(item.enabled ? 1.0 : 0.5),
                 ),

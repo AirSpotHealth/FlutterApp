@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 
 class SettingItem {
   final String title;
-  final String assetIcon;
+  final String? assetIcon;
   final String? route;
   final Widget? suffixWidget;
   final bool enabled;
@@ -10,13 +10,15 @@ class SettingItem {
 
   SettingItem({
     required this.title,
-    required this.assetIcon,
+    this.assetIcon,
     this.route,
     this.suffixWidget,
     this.enabled = true,
     this.leadingWidget,
-  }) : assert(route != null || suffixWidget != null,
-            "route or suffixWidget must be provided");
+  })  : assert(route != null || suffixWidget != null,
+            "route or suffixWidget must be provided"),
+        assert(assetIcon != null || leadingWidget != null,
+            "assetIcon or leadingWidget must be provided");
 
   @override
   int get hashCode {
