@@ -196,19 +196,7 @@ class _BleDeviceCommunicationNotifier extends FamilyNotifier<dynamic, String> {
       final DeviceSettings? deviceSettings =
           ref.read(deviceSettingsProvider(deviceId));
 
-      if (deviceSettings?.co2AlertThreshold != null &&
-          value >= deviceSettings!.co2AlertThreshold!) {
-        NotificationService.showNotification(
-          title:
-              'Alert! CO${Constants.subscript2} > ${deviceSettings.co2AlertThreshold} ppm',
-          // wide headed north east arrow character if value is increasing
-          // wide headed west south arrow character if value is decreasing
-          body: 'Now $value ppm',
-          suffixIcon: value > state
-              ? 'asset://assets/images/trending-up.png'
-              : 'asset://assets/images/trending-down.png',
-        ).ignore();
-      }
+      _checkAndShowNotification(deviceSettings, value);
 
       _isarService.write((isar) {
         isar.deviceDatas.put(DeviceData(
@@ -222,6 +210,32 @@ class _BleDeviceCommunicationNotifier extends FamilyNotifier<dynamic, String> {
     }
 
     state = value;
+  }
+
+  void _checkAndShowNotification(DeviceSettings? deviceSettings, value) {
+    if (deviceSettings == null) return;
+
+    if (deviceSettings.co2HighAlertEnabled &&
+        value > deviceSettings.yellowUpperLimit) {
+      NotificationService.showNotification(
+        title:
+            'Alert! CO${Constants.subscript2} > ${deviceSettings.yellowUpperLimit} ppm',
+        body: 'Now $value ppm',
+        suffixIcon: value > state
+            ? 'asset://assets/images/trending-up.png'
+            : 'asset://assets/images/trending-down.png',
+      ).ignore();
+    } else if (deviceSettings.co2MedAlertEnabled &&
+        value > deviceSettings.greenUpperLimit) {
+      NotificationService.showNotification(
+        title:
+            'Alert! CO${Constants.subscript2} > ${deviceSettings.greenUpperLimit} ppm',
+        body: 'Now $value ppm',
+        suffixIcon: value > state
+            ? 'asset://assets/images/trending-up.png'
+            : 'asset://assets/images/trending-down.png',
+      ).ignore();
+    }
   }
 
   // void _setHomeValue(dynamic value) {
