@@ -55,11 +55,11 @@
 	</array>
 	<key>UIBackgroundModes</key>
 	<array>
-    <string>bluetooth-central</string>
+    	<string>bluetooth-central</string>
+	</array>
 	<key>LSSupportsOpeningDocumentsInPlace</key>
 	<true/>
 	<key>UIFileSharingEnabled</key>
 	<true/>
-</array>
 </dict>
 </plist>
