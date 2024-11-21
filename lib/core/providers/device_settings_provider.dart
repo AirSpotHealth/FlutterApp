@@ -57,6 +57,12 @@ class _DeviceSettingsNotifier extends FamilyNotifier<DeviceSettings, String> {
           .sendCommand(settings.autoSyncTimeCmd);
     }
 
+    if (settings.autoCalibration != state.autoCalibration) {
+      ref
+          .read(bleDeviceCommunicationProvider(settings.deviceId).notifier)
+          .sendCommand(settings.autoCalibrationCmd);
+    }
+
     _isarService.write((isar) {
       isar.deviceSettings.put(settings);
     });
