@@ -219,7 +219,7 @@ class _BleDeviceCommunicationNotifier extends FamilyNotifier<dynamic, String> {
         value > deviceSettings.yellowUpperLimit) {
       NotificationService.showNotification(
         title:
-            'Alert! CO${Constants.subscript2} > ${deviceSettings.yellowUpperLimit} ppm',
+            'Alert! ${Constants.co2Text} > ${deviceSettings.yellowUpperLimit} ppm',
         body: 'Now $value ppm',
         suffixIcon: value > state
             ? 'asset://assets/images/trending-up.png'
@@ -229,7 +229,7 @@ class _BleDeviceCommunicationNotifier extends FamilyNotifier<dynamic, String> {
         value > deviceSettings.greenUpperLimit) {
       NotificationService.showNotification(
         title:
-            'Alert! CO${Constants.subscript2} > ${deviceSettings.greenUpperLimit} ppm',
+            'Alert! ${Constants.co2Text} > ${deviceSettings.greenUpperLimit} ppm',
         body: 'Now $value ppm',
         suffixIcon: value > state
             ? 'asset://assets/images/trending-up.png'

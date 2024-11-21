@@ -25,7 +25,7 @@ class PowerModeSettingsPage extends ConsumerWidget {
       backgroundColor: Colors.white,
       appBar: AppBar(
         title: Text(
-            '${bleDevice.alias ?? bleDevice.name} CO${Constants.subscript2} reading rate'),
+            '${bleDevice.alias ?? bleDevice.name} ${Constants.co2Text} reading rate'),
       ),
       body: ListView(
         padding: const EdgeInsets.all(16),
@@ -39,7 +39,7 @@ class PowerModeSettingsPage extends ConsumerWidget {
                     onTap: () => _updatePowerMode(
                         ref, deviceSettings.copyWith(powerMode: PowerMode.low)),
                     description:
-                        'CO${Constants.subscript2} level updates every 3 minute'),
+                        '${Constants.co2Text} level updates every 3 minute'),
               ),
               const SizedBox(width: 16),
               Expanded(
@@ -49,7 +49,7 @@ class PowerModeSettingsPage extends ConsumerWidget {
                     onTap: () => _updatePowerMode(ref,
                         deviceSettings.copyWith(powerMode: PowerMode.medium)),
                     description:
-                        'CO${Constants.subscript2} level updates every 1 minute'),
+                        '${Constants.co2Text} level updates every 1 minute'),
               ),
               const SizedBox(width: 16),
               Expanded(
@@ -59,7 +59,7 @@ class PowerModeSettingsPage extends ConsumerWidget {
                     onTap: () => _updatePowerMode(ref,
                         deviceSettings.copyWith(powerMode: PowerMode.high)),
                     description:
-                        'CO${Constants.subscript2} level updates every 5 seconds'),
+                        '${Constants.co2Text} level updates every 5 seconds'),
               ),
             ],
           ),

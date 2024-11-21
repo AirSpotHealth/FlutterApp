@@ -29,12 +29,12 @@ class DeviceSettingsPage extends ConsumerWidget {
       route: RouteNames.timeSettings,
     ),
     SettingItem(
-      title: 'CO${Constants.subscript2} reading rate',
+      title: '${Constants.co2Text} reading rate',
       assetIcon: Assets.powerModeSettings,
       route: RouteNames.powerModeSettings,
     ),
     SettingItem(
-      title: 'High CO${Constants.subscript2} Alert',
+      title: 'High ${Constants.co2Text} Alert',
       assetIcon: Assets.co2Settings,
       route: RouteNames.co2Settings,
       enabled: true,

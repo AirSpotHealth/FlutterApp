@@ -19,7 +19,7 @@ class Co2AlertSettingsPage extends ConsumerWidget {
       appBar: AppBar(
           title: DeviceSettingsNameWidget(
         deviceId: deviceId,
-        suffixText: 'High CO${Constants.subscript2} alert Settings',
+        suffixText: 'High ${Constants.co2Text} alert Settings',
       )),
       body: ListView(
         padding: const EdgeInsets.all(16),
@@ -29,7 +29,7 @@ class Co2AlertSettingsPage extends ConsumerWidget {
           Co2PpmRangePickerWidget(deviceId: deviceId),
           const SizedBox(height: 16),
           _buildInfoText(context,
-              'Set the range of CO2 ppm levels that will be considered as amber and red alert levels.'),
+              'Set the range of ${Constants.co2Text} ppm levels that will be considered as amber and red alert levels.'),
           const SizedBox(height: 16),
           Row(
             mainAxisSize: MainAxisSize.min,
@@ -48,7 +48,7 @@ class Co2AlertSettingsPage extends ConsumerWidget {
           RedAlertSettingWidget(deviceId: deviceId),
           const SizedBox(height: 16),
           _buildInfoText(context,
-              'When turned on respective Co2 alert notifications will appear on this device.'),
+              'When turned on respective ${Constants.co2Text} alert notifications will appear on this device.'),
         ],
       ),
     );

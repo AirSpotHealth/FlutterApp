@@ -28,7 +28,7 @@ class DeviceCurrentValueWidget extends ConsumerWidget {
         child: Row(
           children: [
             Text(
-              'Current CO${Constants.subscript2} Level: ',
+              'Current ${Constants.co2Text} Level: ',
               style: context.textTheme.bodyMedium?.weight600,
             ),
             const Spacer(),

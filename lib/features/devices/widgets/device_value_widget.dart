@@ -24,7 +24,7 @@ class DeviceValueWidget extends ConsumerWidget {
       mainAxisSize: MainAxisSize.min,
       children: [
         Text(
-          "CO${Constants.subscript2} ",
+          "${Constants.co2Text} ",
           style: context.textTheme.titleLarge?.copyWith(
             fontWeight: FontWeight.bold,
             color: deviceSettings.getValueColor(deviceValue),

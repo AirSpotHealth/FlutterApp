@@ -5,6 +5,7 @@ import 'package:airspothealth/core/providers/device_settings_provider.dart';
 import 'package:airspothealth/core/theme/app_colors.dart';
 import 'package:airspothealth/core/utils/app_utils.dart';
 import 'package:airspothealth/core/utils/assets.dart';
+import 'package:airspothealth/core/utils/constants.dart';
 import 'package:airspothealth/core/utils/device_cmd_utils.dart';
 import 'package:airspothealth/core/utils/extensions.dart';
 import 'package:airspothealth/core/widgets/tappable_widget.dart';
@@ -118,7 +119,7 @@ class DeviceMockWidget extends ConsumerWidget {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          const Text('CO2',
+          const Text(Constants.co2Text,
               style: TextStyle(color: Colors.white, fontSize: 10)),
           const Text('PPM',
               style: TextStyle(color: Colors.white, fontSize: 10)),

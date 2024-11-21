@@ -44,6 +44,8 @@ class Constants {
 
   static const String subscript2 = '₂';
 
+  static const String co2Text = 'CO₂';
+
   /// loading echart html string
   static const loadingEchartString = '''
     {
