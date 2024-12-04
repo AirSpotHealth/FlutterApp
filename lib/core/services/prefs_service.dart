@@ -18,4 +18,10 @@ class PrefsService {
   Future<void> setString(String key, String value) async {
     await _prefs.setString(key, value);
   }
+
+  bool getBool(String key) => _prefs.getBool(key) ?? false;
+
+  Future<void> setBool(String key, bool value) async {
+    await _prefs.setBool(key, value);
+  }
 }

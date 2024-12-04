@@ -44,6 +44,13 @@ class IsarService {
     });
   }
 
+  /// write async method
+  Future<void> writeAsync(Future<void> Function(Isar isar) fn) async {
+    await _isar.write((isar) async {
+      await fn(isar);
+    });
+  }
+
   /// clear all data
   Future<void> clearAllData() async {
     await _isar.write((isar) async {

@@ -1,7 +1,11 @@
 import 'package:airspothealth/core/router/route_names.dart';
 import 'package:airspothealth/core/utils/assets.dart';
+import 'package:airspothealth/features/app_setup/providers/dev_mode_provider.dart';
+import 'package:airspothealth/features/device_settings/models/setting_item.dart';
+import 'package:airspothealth/features/device_settings/widgets/setting_item_widget.dart';
 import 'package:airspothealth/features/home/models/menu_item.dart';
 import 'package:airspothealth/features/home/widgets/menu_item_widget.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -20,13 +24,16 @@ class AppSetupPage extends ConsumerWidget {
         iconAsset: Assets.deviceUpdate,
         route: RouteNames.appUpdates),
     MenuItem(
-        title: 'Privacy Policy',
-        iconAsset: Assets.privayPolicy,
-        route: RouteNames.privacyPolicy),
+      title: 'Privacy Policy',
+      iconAsset: Assets.privayPolicy,
+      route: RouteNames.privacyPolicy,
+    ),
   ];
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final bool isDevMode = ref.watch(devModeProvider);
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('Settings'),
@@ -44,6 +51,21 @@ class AppSetupPage extends ConsumerWidget {
           );
         },
       ),
+      bottomNavigationBar: isDevMode
+          ? SettingItemWidget(
+              onTap: () {},
+              item: SettingItem(
+                title: 'Dev Mode',
+                leadingWidget: const Icon(Icons.developer_mode),
+                enabled: isDevMode,
+                suffixWidget: CupertinoSwitch(
+                    value: isDevMode,
+                    onChanged: (value) {
+                      ref.read(devModeProvider.notifier).toggleDevMode();
+                    }),
+              ),
+            )
+          : null,
     );
   }
 }

@@ -1,7 +1,9 @@
 import 'package:airspothealth/core/theme/app_colors.dart';
 import 'package:airspothealth/core/utils/extensions.dart';
 import 'package:airspothealth/core/widgets/app_logo.dart';
+import 'package:airspothealth/core/widgets/tappable_widget.dart';
 import 'package:airspothealth/features/app_setup/providers/app_version_provider.dart';
+import 'package:airspothealth/features/app_setup/providers/dev_mode_provider.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -28,8 +30,14 @@ class AppUpdatesPage extends ConsumerWidget {
             _buildVersionInfoRow(
               label: 'Installed Version:',
               child: versionStatus.when(
-                data: (data) => Text(data?.localVersion ?? 'Unknown',
-                    style: const TextStyle(fontWeight: FontWeight.bold)),
+                data: (data) => TappableWidget(
+                  onTap: () {
+                    ref.read(devModeProvider.notifier).toggleDevMode();
+                  },
+                  tapCount: 7,
+                  child: Text(data?.localVersion ?? 'Unknown',
+                      style: const TextStyle(fontWeight: FontWeight.bold)),
+                ),
                 loading: () => const CupertinoActivityIndicator(),
                 error: (error, stackTrace) => const Text('Unknown'),
               ),

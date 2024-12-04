@@ -4,6 +4,7 @@ import 'package:airspothealth/core/utils/assets.dart';
 import 'package:airspothealth/core/utils/constants.dart';
 import 'package:airspothealth/core/utils/extensions.dart';
 import 'package:airspothealth/features/add_device/providers/ble_device_connection_provider.dart';
+import 'package:airspothealth/features/app_setup/providers/dev_mode_provider.dart';
 import 'package:airspothealth/features/device_graph/providers/ble_device_provider.dart';
 import 'package:airspothealth/features/device_settings/models/setting_item.dart';
 import 'package:airspothealth/features/device_settings/widgets/alarm_setting_widget.dart';
@@ -60,6 +61,8 @@ class DeviceSettingsPage extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final BleDevice? device = ref.read(bleDeviceProvider(deviceId));
 
+    final bool devMode = ref.watch(devModeProvider);
+
     if (device == null) {
       ref.context.showSnackBar('Device with id $deviceId not found');
       context.pop();
@@ -80,6 +83,24 @@ class DeviceSettingsPage extends ConsumerWidget {
           ..._buildSettingsList(ref),
           DisconnectDeviceWidget(device: device),
           ForgetDeviceWidget(deviceId: deviceId),
+          if (devMode) ...[
+            SettingItemWidget(
+              item: SettingItem(
+                title: 'Data Logger',
+                leadingWidget: const Icon(Icons.data_array),
+                suffixWidget: const Icon(
+                  Icons.arrow_forward_ios,
+                  size: 16,
+                  color: Colors.grey,
+                ),
+              ),
+              onTap: () {
+                context.pushNamed(RouteNames.dataLog,
+                    pathParameters: {'deviceId': deviceId});
+              },
+            ),
+            // SendCommandWidget(deviceId: deviceId),
+          ]
         ],
       ),
     );
