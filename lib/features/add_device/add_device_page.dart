@@ -46,8 +46,7 @@ class _AddDevicePageState extends ConsumerState<AddDevicePage> {
 
           return Future.value();
         },
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
+        child: ListView(
           children: [
             if (isScanning)
               const Padding(
@@ -59,22 +58,22 @@ class _AddDevicePageState extends ConsumerState<AddDevicePage> {
               ),
             if (devices.isEmpty && !isScanning)
               Container(
-                  alignment: Alignment.center,
-                  height: 200,
-                  padding: const EdgeInsets.all(16),
-                  child: const Text(
-                    'No devices found, swipe down to refresh',
-                  ))
-            else
-              Expanded(
-                child: ListView.separated(
-                  padding: const EdgeInsets.all(16),
-                  itemCount: devices.length,
-                  separatorBuilder: (context, index) =>
-                      const SizedBox(height: 12),
-                  itemBuilder: (context, index) =>
-                      BleNewDeviceItem(device: devices[index]),
+                alignment: Alignment.center,
+                height: MediaQuery.of(context).size.height * 0.8,
+                padding: const EdgeInsets.all(16),
+                child: const Text(
+                  'No devices found, swipe down to refresh',
                 ),
+              )
+            else
+              ListView.separated(
+                shrinkWrap: true,
+                padding: const EdgeInsets.all(16),
+                itemCount: devices.length,
+                separatorBuilder: (context, index) =>
+                    const SizedBox(height: 12),
+                itemBuilder: (context, index) =>
+                    BleNewDeviceItem(device: devices[index]),
               ),
             const SizedBox(height: 16),
           ],
