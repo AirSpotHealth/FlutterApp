@@ -1,4 +1,6 @@
 import 'package:airspothealth/core/models/ble_device.dart';
+import 'package:airspothealth/core/models/device_settings.dart';
+import 'package:airspothealth/core/providers/device_settings_provider.dart';
 import 'package:airspothealth/core/router/route_names.dart';
 import 'package:airspothealth/core/utils/assets.dart';
 import 'package:airspothealth/core/utils/constants.dart';
@@ -24,16 +26,6 @@ class DeviceSettingsPage extends ConsumerWidget {
   final String deviceId;
 
   static final _deviceSettingsList = <SettingItem>[
-    SettingItem(
-      title: 'Time Settings',
-      assetIcon: Assets.timeSettings,
-      route: RouteNames.timeSettings,
-    ),
-    SettingItem(
-      title: '${Constants.co2Text} reading rate',
-      assetIcon: Assets.powerModeSettings,
-      route: RouteNames.powerModeSettings,
-    ),
     SettingItem(
       title: 'High ${Constants.co2Text} Alert',
       assetIcon: Assets.co2Settings,
@@ -80,6 +72,8 @@ class DeviceSettingsPage extends ConsumerWidget {
           AlarmSettingWidget(deviceId: deviceId),
           VibrateSettingWidget(deviceId: deviceId),
           AutoConnectSettingWidget(deviceId: deviceId),
+          _buildTimeSettingWidget(ref),
+          PowerModeSettingWidget(deviceId: deviceId),
           ..._buildSettingsList(ref),
           DisconnectDeviceWidget(device: device),
           ForgetDeviceWidget(deviceId: deviceId),
@@ -106,26 +100,87 @@ class DeviceSettingsPage extends ConsumerWidget {
     );
   }
 
+  SettingItemWidget _buildTimeSettingWidget(WidgetRef ref) {
+    return SettingItemWidget(
+      item: SettingItem(
+        title: 'Time Settings',
+        assetIcon: Assets.timeSettings,
+        route: RouteNames.timeSettings,
+      ),
+      onTap: () {
+        if (!ref
+            .read(bleDeviceConnectionProvider(deviceId).notifier)
+            .isConnected) {
+          ref.context.showSnackBar('Device not connected');
+
+          Navigator.of(ref.context).pop();
+          return;
+        }
+
+        ref.context.pushNamed(RouteNames.timeSettings,
+            pathParameters: {'deviceId': deviceId});
+      },
+    );
+  }
+
   Iterable<Widget> _buildSettingsList(WidgetRef ref) {
-    return _deviceSettingsList.map((item) => SettingItemWidget(
-          item: item,
-          onTap: () {
-            if (!ref
-                .read(bleDeviceConnectionProvider(deviceId).notifier)
-                .isConnected) {
-              ref.context.showSnackBar('Device not connected');
+    return _deviceSettingsList.map(
+      (item) => SettingItemWidget(
+        item: item,
+        onTap: () {
+          if (!ref
+              .read(bleDeviceConnectionProvider(deviceId).notifier)
+              .isConnected) {
+            ref.context.showSnackBar('Device not connected');
 
-              Navigator.of(ref.context).pop();
-              return;
-            }
+            Navigator.of(ref.context).pop();
+            return;
+          }
 
-            if (item.suffixWidget != null) return;
+          if (item.suffixWidget != null) return;
 
-            if (item.route != null) {
-              ref.context.pushNamed(item.route!,
-                  pathParameters: {'deviceId': deviceId});
-            }
-          },
-        ));
+          if (item.route != null) {
+            ref.context
+                .pushNamed(item.route!, pathParameters: {'deviceId': deviceId});
+          }
+        },
+      ),
+    );
+  }
+}
+
+class PowerModeSettingWidget extends ConsumerWidget {
+  const PowerModeSettingWidget({
+    super.key,
+    required this.deviceId,
+  });
+
+  final String deviceId;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final PowerMode powerMode =
+        ref.watch(deviceSettingsProvider(deviceId)).powerMode;
+
+    return SettingItemWidget(
+      item: SettingItem(
+        title: '${Constants.co2Text} reading rate',
+        assetIcon: powerMode.assetIcon,
+        route: RouteNames.powerModeSettings,
+      ),
+      onTap: () {
+        if (!ref
+            .read(bleDeviceConnectionProvider(deviceId).notifier)
+            .isConnected) {
+          ref.context.showSnackBar('Device not connected');
+
+          Navigator.of(ref.context).pop();
+          return;
+        }
+
+        ref.context.pushNamed(RouteNames.powerModeSettings,
+            pathParameters: {'deviceId': deviceId});
+      },
+    );
   }
 }

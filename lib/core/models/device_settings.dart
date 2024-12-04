@@ -2,6 +2,7 @@ import 'dart:typed_data';
 import 'dart:ui';
 
 import 'package:airspothealth/core/theme/app_colors.dart';
+import 'package:airspothealth/core/utils/assets.dart';
 import 'package:airspothealth/core/utils/constants.dart';
 import 'package:airspothealth/core/utils/device_cmd_utils.dart';
 import 'package:isar/isar.dart';
@@ -329,6 +330,19 @@ enum PowerMode {
         return PowerMode.high;
       default:
         return PowerMode.onDemand;
+    }
+  }
+
+  String get assetIcon {
+    switch (this) {
+      case PowerMode.onDemand:
+        return Assets.powerModeOnDemand;
+      case PowerMode.low:
+        return Assets.powerMode3min;
+      case PowerMode.medium:
+        return Assets.powerMode1min;
+      case PowerMode.high:
+        return Assets.powerMode5sec;
     }
   }
 }
