@@ -27,19 +27,17 @@ class AppUpdatesPage extends ConsumerWidget {
           children: [
             const AppLogo(width: 200),
             const SizedBox(height: 32),
-            _buildVersionInfoRow(
-              label: 'Installed Version:',
-              child: versionStatus.when(
-                data: (data) => TappableWidget(
-                  onTap: () {
-                    ref.read(devModeProvider.notifier).toggleDevMode();
-                  },
-                  tapCount: 7,
-                  child: Text(data?.localVersion ?? 'Unknown',
+            TappableWidget(
+              onTap: () => ref.read(devModeProvider.notifier).toggleDevMode(),
+              tapCount: 7,
+              child: _buildVersionInfoRow(
+                label: 'Installed Version:',
+                child: versionStatus.when(
+                  data: (data) => Text(data?.localVersion ?? 'Unknown',
                       style: const TextStyle(fontWeight: FontWeight.bold)),
+                  loading: () => const CupertinoActivityIndicator(),
+                  error: (error, stackTrace) => const Text('Unknown'),
                 ),
-                loading: () => const CupertinoActivityIndicator(),
-                error: (error, stackTrace) => const Text('Unknown'),
               ),
             ),
             const SizedBox(height: 16),
