@@ -32,7 +32,7 @@ const DeviceSettingsSchema = IsarGeneratedSchema(
       IsarPropertySchema(
         name: 'powerMode',
         type: IsarType.byte,
-        enumMap: {"low": 0, "medium": 1, "high": 2},
+        enumMap: {"onDemand": 0, "low": 1, "medium": 2, "high": 3},
       ),
       IsarPropertySchema(
         name: 'continuosScreenEnabled',
@@ -113,10 +113,10 @@ DeviceSettings deserializeDeviceSettings(IsarReader reader) {
   final PowerMode _powerMode;
   {
     if (IsarCore.readNull(reader, 3)) {
-      _powerMode = PowerMode.low;
+      _powerMode = PowerMode.onDemand;
     } else {
       _powerMode = _deviceSettingsPowerMode[IsarCore.readByte(reader, 3)] ??
-          PowerMode.low;
+          PowerMode.onDemand;
     }
   }
   final bool _continuosScreenEnabled;
@@ -150,13 +150,7 @@ DeviceSettings deserializeDeviceSettings(IsarReader reader) {
     }
   }
   final bool _autoCalibration;
-  {
-    if (IsarCore.readNull(reader, 10)) {
-      _autoCalibration = true;
-    } else {
-      _autoCalibration = IsarCore.readBool(reader, 10);
-    }
-  }
+  _autoCalibration = IsarCore.readBool(reader, 10);
   final bool _autoConnect;
   {
     if (IsarCore.readNull(reader, 11)) {
@@ -194,10 +188,10 @@ dynamic deserializeDeviceSettingsProp(IsarReader reader, int property) {
     case 3:
       {
         if (IsarCore.readNull(reader, 3)) {
-          return PowerMode.low;
+          return PowerMode.onDemand;
         } else {
           return _deviceSettingsPowerMode[IsarCore.readByte(reader, 3)] ??
-              PowerMode.low;
+              PowerMode.onDemand;
         }
       }
     case 4:
@@ -231,13 +225,7 @@ dynamic deserializeDeviceSettingsProp(IsarReader reader, int property) {
         }
       }
     case 10:
-      {
-        if (IsarCore.readNull(reader, 10)) {
-          return true;
-        } else {
-          return IsarCore.readBool(reader, 10);
-        }
-      }
+      return IsarCore.readBool(reader, 10);
     case 11:
       {
         if (IsarCore.readNull(reader, 11)) {
@@ -471,9 +459,10 @@ extension DeviceSettingsQueryBuilderUpdate
 }
 
 const _deviceSettingsPowerMode = {
-  0: PowerMode.low,
-  1: PowerMode.medium,
-  2: PowerMode.high,
+  0: PowerMode.onDemand,
+  1: PowerMode.low,
+  2: PowerMode.medium,
+  3: PowerMode.high,
 };
 
 extension DeviceSettingsQueryFilter

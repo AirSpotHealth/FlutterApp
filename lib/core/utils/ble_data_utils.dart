@@ -121,6 +121,7 @@ class ResponseCommandParser {
             greenUpperLimit: _parseTwoBytesToInt(data, 7),
             yellowUpperLimit: _parseTwoBytesToInt(data, 9),
           ),
+          autoCalibration: _parseBoolean(data, 12),
         );
       },
     );

@@ -90,6 +90,15 @@ extension StringExtension on String {
   String capitalize() {
     return isNullOrEmpty ? this : '${this[0].toUpperCase()}${substring(1)}';
   }
+
+  /// hex to bytes
+  List<int> get hexToBytes {
+    final List<int> bytes = [];
+    for (int i = 0; i < length; i += 2) {
+      bytes.add(int.parse(substring(i, i + 2), radix: 16));
+    }
+    return bytes;
+  }
 }
 
 extension DateTimeExtension on DateTime {

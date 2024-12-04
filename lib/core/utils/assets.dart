@@ -31,9 +31,11 @@ class Assets {
       'assets/images/recalibrate_icon.png';
   static const String autoConnectSettings = 'assets/images/bluetooth_icon.png';
 
-  static const String highBattery = 'assets/images/5secblue.png';
-  static const String lowBattery = 'assets/images/3minblue.png';
-  static const String mediumBattery = 'assets/images/1minblue.png';
+  static const String powerMode5sec = 'assets/images/5secblue.png';
+  static const String powerMode3min = 'assets/images/3minblue.png';
+  static const String powerMode1min = 'assets/images/1minblue.png';
+  static const String powerModeOnDemand =
+      'assets/images/power_mode_ondemand.png';
 
   static const String recalibrateImage = 'assets/images/recalibrate_image.png';
 

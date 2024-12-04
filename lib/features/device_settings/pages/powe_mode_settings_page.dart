@@ -31,10 +31,21 @@ class PowerModeSettingsPage extends ConsumerWidget {
         padding: const EdgeInsets.all(16),
         children: [
           Row(
+            crossAxisAlignment: CrossAxisAlignment.baseline,
+            textBaseline: TextBaseline.alphabetic,
             children: [
               Expanded(
                 child: _buildPowerModeItem(
-                    asset: Assets.lowBattery,
+                    asset: Assets.powerModeOnDemand,
+                    isSelected: deviceSettings.powerMode == PowerMode.onDemand,
+                    onTap: () => _updatePowerMode(ref,
+                        deviceSettings.copyWith(powerMode: PowerMode.onDemand)),
+                    description:
+                        '${Constants.co2Text} level updates on button press'),
+              ),
+              Expanded(
+                child: _buildPowerModeItem(
+                    asset: Assets.powerMode3min,
                     isSelected: deviceSettings.powerMode == PowerMode.low,
                     onTap: () => _updatePowerMode(
                         ref, deviceSettings.copyWith(powerMode: PowerMode.low)),
@@ -44,7 +55,7 @@ class PowerModeSettingsPage extends ConsumerWidget {
               const SizedBox(width: 16),
               Expanded(
                 child: _buildPowerModeItem(
-                    asset: Assets.mediumBattery,
+                    asset: Assets.powerMode1min,
                     isSelected: deviceSettings.powerMode == PowerMode.medium,
                     onTap: () => _updatePowerMode(ref,
                         deviceSettings.copyWith(powerMode: PowerMode.medium)),
@@ -54,7 +65,7 @@ class PowerModeSettingsPage extends ConsumerWidget {
               const SizedBox(width: 16),
               Expanded(
                 child: _buildPowerModeItem(
-                    asset: Assets.highBattery,
+                    asset: Assets.powerMode5sec,
                     isSelected: deviceSettings.powerMode == PowerMode.high,
                     onTap: () => _updatePowerMode(ref,
                         deviceSettings.copyWith(powerMode: PowerMode.high)),
