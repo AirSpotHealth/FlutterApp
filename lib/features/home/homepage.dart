@@ -1,4 +1,3 @@
-import 'package:airspothealth/core/services/notification_service.dart';
 import 'package:airspothealth/core/utils/constants.dart';
 import 'package:airspothealth/core/widgets/airspot_bar.dart';
 import 'package:airspothealth/features/home/widgets/menu_item_widget.dart';
@@ -17,7 +16,7 @@ class _HomePageState extends ConsumerState<HomePage> {
   @override
   void initState() {
     _setAppGroupId();
-    NotificationService.checkNotificationPermission();
+    // NotificationService.checkNotificationPermission();
     super.initState();
   }
 

@@ -7,11 +7,11 @@ import 'package:airspothealth/core/providers/ble_saved_devices_provider.dart';
 import 'package:airspothealth/core/providers/device_settings_provider.dart';
 import 'package:airspothealth/core/services/data_logger_service.dart';
 import 'package:airspothealth/core/services/isar_service.dart';
-import 'package:airspothealth/core/services/notification_service.dart';
 import 'package:airspothealth/core/utils/ble_data_utils.dart';
 import 'package:airspothealth/core/utils/constants.dart';
 import 'package:airspothealth/core/utils/device_cmd_utils.dart';
 import 'package:airspothealth/core/utils/extensions.dart';
+import 'package:airspothealth/features/app_setup/providers/dev_mode_provider.dart';
 import 'package:airspothealth/features/device_graph/providers/ble_device_provider.dart';
 import 'package:airspothealth/features/device_settings/providers/recalibration_time_provider.dart';
 import 'package:flutter/material.dart';
@@ -193,10 +193,10 @@ class _BleDeviceCommunicationNotifier extends FamilyNotifier<dynamic, String> {
     try {
       final DateTime dateTime = DateTime.now();
 
-      final DeviceSettings? deviceSettings =
-          ref.read(deviceSettingsProvider(deviceId));
+      // final DeviceSettings? deviceSettings =
+      //     ref.read(deviceSettingsProvider(deviceId));
 
-      _checkAndShowNotification(deviceSettings, value);
+      // _checkAndShowNotification(deviceSettings, value);
 
       _isarService.write((isar) {
         isar.deviceDatas.put(DeviceData(
@@ -212,31 +212,31 @@ class _BleDeviceCommunicationNotifier extends FamilyNotifier<dynamic, String> {
     state = value;
   }
 
-  void _checkAndShowNotification(DeviceSettings? deviceSettings, value) {
-    if (deviceSettings == null) return;
+  // void _checkAndShowNotification(DeviceSettings? deviceSettings, value) {
+  //   if (deviceSettings == null) return;
 
-    if (deviceSettings.co2HighAlertEnabled &&
-        value > deviceSettings.yellowUpperLimit) {
-      NotificationService.showNotification(
-        title:
-            'Alert! ${Constants.co2Text} > ${deviceSettings.yellowUpperLimit} ppm',
-        body: 'Now $value ppm',
-        suffixIcon: value > state
-            ? 'asset://assets/images/trending-up.png'
-            : 'asset://assets/images/trending-down.png',
-      ).ignore();
-    } else if (deviceSettings.co2MedAlertEnabled &&
-        value > deviceSettings.greenUpperLimit) {
-      NotificationService.showNotification(
-        title:
-            'Alert! ${Constants.co2Text} > ${deviceSettings.greenUpperLimit} ppm',
-        body: 'Now $value ppm',
-        suffixIcon: value > state
-            ? 'asset://assets/images/trending-up.png'
-            : 'asset://assets/images/trending-down.png',
-      ).ignore();
-    }
-  }
+  //   if (deviceSettings.co2HighAlertEnabled &&
+  //       value > deviceSettings.yellowUpperLimit) {
+  //     NotificationService.showNotification(
+  //       title:
+  //           'Alert! ${Constants.co2Text} > ${deviceSettings.yellowUpperLimit} ppm',
+  //       body: 'Now $value ppm',
+  //       suffixIcon: value > state
+  //           ? 'asset://assets/images/trending-up.png'
+  //           : 'asset://assets/images/trending-down.png',
+  //     ).ignore();
+  //   } else if (deviceSettings.co2MedAlertEnabled &&
+  //       value > deviceSettings.greenUpperLimit) {
+  //     NotificationService.showNotification(
+  //       title:
+  //           'Alert! ${Constants.co2Text} > ${deviceSettings.greenUpperLimit} ppm',
+  //       body: 'Now $value ppm',
+  //       suffixIcon: value > state
+  //           ? 'asset://assets/images/trending-up.png'
+  //           : 'asset://assets/images/trending-down.png',
+  //     ).ignore();
+  //   }
+  // }
 
   // void _setHomeValue(dynamic value) {
   //   HomeWidget.saveWidgetData(Constants.homeWidgetKey, value.toString());
@@ -287,10 +287,9 @@ class _BleDeviceCommunicationNotifier extends FamilyNotifier<dynamic, String> {
   }
 
   void _checkIfLogData(dynamic value, DateTime dateTime, {bool sent = false}) {
-    final DeviceSettings? deviceSettings =
-        ref.read(deviceSettingsProvider(deviceId));
+    final bool? devMode = ref.read(devModeProvider);
 
-    if (deviceSettings?.logData == true) {
+    if (devMode == true) {
       DataLoggerService().logData(
         deviceId: deviceId,
         value: BleDataUtils.bytesToHexStr(value),
