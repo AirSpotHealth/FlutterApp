@@ -32,7 +32,7 @@ const DeviceSettingsSchema = IsarGeneratedSchema(
       IsarPropertySchema(
         name: 'powerMode',
         type: IsarType.byte,
-        enumMap: {"onDemand": 0, "low": 1, "medium": 2, "high": 3},
+        enumMap: {"low": 0, "medium": 1, "high": 2},
       ),
       IsarPropertySchema(
         name: 'continuosScreenEnabled',
@@ -113,10 +113,10 @@ DeviceSettings deserializeDeviceSettings(IsarReader reader) {
   final PowerMode _powerMode;
   {
     if (IsarCore.readNull(reader, 3)) {
-      _powerMode = PowerMode.onDemand;
+      _powerMode = PowerMode.low;
     } else {
       _powerMode = _deviceSettingsPowerMode[IsarCore.readByte(reader, 3)] ??
-          PowerMode.onDemand;
+          PowerMode.low;
     }
   }
   final bool _continuosScreenEnabled;
@@ -188,10 +188,10 @@ dynamic deserializeDeviceSettingsProp(IsarReader reader, int property) {
     case 3:
       {
         if (IsarCore.readNull(reader, 3)) {
-          return PowerMode.onDemand;
+          return PowerMode.low;
         } else {
           return _deviceSettingsPowerMode[IsarCore.readByte(reader, 3)] ??
-              PowerMode.onDemand;
+              PowerMode.low;
         }
       }
     case 4:
@@ -459,10 +459,9 @@ extension DeviceSettingsQueryBuilderUpdate
 }
 
 const _deviceSettingsPowerMode = {
-  0: PowerMode.onDemand,
-  1: PowerMode.low,
-  2: PowerMode.medium,
-  3: PowerMode.high,
+  0: PowerMode.low,
+  1: PowerMode.medium,
+  2: PowerMode.high,
 };
 
 extension DeviceSettingsQueryFilter
