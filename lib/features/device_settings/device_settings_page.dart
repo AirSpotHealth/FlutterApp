@@ -26,12 +26,12 @@ class DeviceSettingsPage extends ConsumerWidget {
   final String deviceId;
 
   static final _deviceSettingsList = <SettingItem>[
-    SettingItem(
-      title: 'High ${Constants.co2Text} Alert',
-      assetIcon: Assets.co2Settings,
-      route: RouteNames.co2Settings,
-      enabled: true,
-    ),
+    // SettingItem(
+    //   title: 'High ${Constants.co2Text} Alert',
+    //   assetIcon: Assets.co2Settings,
+    //   route: RouteNames.co2Settings,
+    //   enabled: true,
+    // ),
     SettingItem(
       title: 'AirSpot Device Update',
       assetIcon: Assets.deviceUpdate,
@@ -65,6 +65,16 @@ class DeviceSettingsPage extends ConsumerWidget {
       backgroundColor: Colors.white,
       appBar: AppBar(
         title: DeviceSettingsNameWidget(deviceId: deviceId),
+        actions: [
+          if (devMode)
+            IconButton(
+              icon: Icon(Icons.data_array),
+              onPressed: () {
+                context.pushNamed(RouteNames.dataLog,
+                    pathParameters: {'deviceId': deviceId});
+              },
+            ),
+        ],
       ),
       body: ListView(
         padding: const EdgeInsets.only(left: 16, right: 16, bottom: 16),
@@ -77,24 +87,6 @@ class DeviceSettingsPage extends ConsumerWidget {
           ..._buildSettingsList(ref),
           DisconnectDeviceWidget(device: device),
           ForgetDeviceWidget(deviceId: deviceId),
-          if (devMode) ...[
-            SettingItemWidget(
-              item: SettingItem(
-                title: 'Data Logger',
-                leadingWidget: const Icon(Icons.data_array),
-                suffixWidget: const Icon(
-                  Icons.arrow_forward_ios,
-                  size: 16,
-                  color: Colors.grey,
-                ),
-              ),
-              onTap: () {
-                context.pushNamed(RouteNames.dataLog,
-                    pathParameters: {'deviceId': deviceId});
-              },
-            ),
-            // SendCommandWidget(deviceId: deviceId),
-          ]
         ],
       ),
     );

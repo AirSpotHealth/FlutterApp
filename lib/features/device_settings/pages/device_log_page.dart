@@ -1,8 +1,10 @@
+import 'package:airspothealth/core/models/ble_device.dart';
 import 'package:airspothealth/core/models/device_settings.dart';
 import 'package:airspothealth/core/providers/device_settings_provider.dart';
 import 'package:airspothealth/core/services/data_logger_service.dart';
 import 'package:airspothealth/core/theme/app_colors.dart';
 import 'package:airspothealth/core/utils/extensions.dart';
+import 'package:airspothealth/features/device_graph/providers/ble_device_provider.dart';
 import 'package:airspothealth/features/device_settings/models/log_data.dart';
 import 'package:airspothealth/features/device_settings/providers/device_log_provider.dart';
 import 'package:flutter/cupertino.dart';
@@ -49,20 +51,11 @@ class DeviceLogPage extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final AsyncValue<String> deviceLog = ref.watch(deviceLogProvider(deviceId));
     final DeviceSettings settings = ref.watch(deviceSettingsProvider(deviceId));
+    final BleDevice device = ref.read(bleDeviceProvider(deviceId));
 
     return Scaffold(
       appBar: AppBar(
-        title: Text('$deviceId log'),
-        actions: [
-          Switch(
-            value: settings.logData,
-            activeTrackColor: AppColors.brandColorAmber,
-            onChanged: (value) => ref
-                .read(deviceSettingsProvider(deviceId).notifier)
-                .updateSettings(settings.copyWith(logData: value)),
-          ),
-          const SizedBox(width: 12),
-        ],
+        title: Text('${device.alias ?? device.name} log'),
       ),
       body: deviceLog.when(
         data: (log) {
