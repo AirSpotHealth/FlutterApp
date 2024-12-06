@@ -19,12 +19,12 @@ class _FirmwareRemoteVersionNotifier
     return null;
   }
 
-  Future<void> fetchRemoteVersion() async {
+  Future<void> fetchRemoteVersion({bool beta = false}) async {
     state = const AsyncLoading();
 
     try {
-      final Response<dynamic> result =
-          await _networkService.get(ApiEndpoints.versionCheck, {});
+      final Response<dynamic> result = await _networkService.get(
+          beta ? ApiEndpoints.versionCheckBeta : ApiEndpoints.versionCheck, {});
 
       if (result.statusCode == 200) {
         final RemoteVersion remoteVersion =
