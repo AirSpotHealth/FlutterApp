@@ -123,15 +123,15 @@ class DeviceCmdUtils {
   // }
 
   static Uint8List setPowerLow() {
-    return _buildCommand([prefixHigh, prefixLow, 5, 1, 0, 0xB0]);
+    return _buildCommand([prefixHigh, prefixLow, 5, 1, 0, 0xAF]);
   }
 
   static Uint8List setPowerMed() {
-    return _buildCommand([prefixHigh, prefixLow, 5, 1, 1, 0xB1]);
+    return _buildCommand([prefixHigh, prefixLow, 5, 1, 1, 0xB0]);
   }
 
   static Uint8List setPowerHi() {
-    return _buildCommand([prefixHigh, prefixLow, 5, 1, 2, 0xB2]);
+    return _buildCommand([prefixHigh, prefixLow, 5, 1, 2, 0xB1]);
   }
 
   // ======= Bluetooth Commands =======
