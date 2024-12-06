@@ -1,6 +1,4 @@
-import 'package:airspothealth/core/models/device_settings.dart';
 import 'package:airspothealth/core/providers/ble_device_communication_provider.dart';
-import 'package:airspothealth/core/providers/device_settings_provider.dart';
 import 'package:airspothealth/core/utils/assets.dart';
 import 'package:airspothealth/core/utils/device_cmd_utils.dart';
 import 'package:airspothealth/features/device_settings/providers/recalibration_time_provider.dart';
@@ -25,8 +23,8 @@ class RecalibrateDevicePage extends ConsumerWidget {
       }
     });
 
-    final DeviceSettings deviceSettings =
-        ref.watch(deviceSettingsProvider(deviceId));
+    // final DeviceSettings deviceSettings =
+    //     ref.watch(deviceSettingsProvider(deviceId));
 
     final int? recalibrationTime =
         ref.watch(recalibrationTimeProvider(deviceId));
@@ -72,19 +70,20 @@ class RecalibrateDevicePage extends ConsumerWidget {
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: 16),
-            ] else
-              SwitchListTile(
-                title: const Text('Auto Calibration',
-                    style:
-                        TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
-                value: deviceSettings.autoCalibration,
-                onChanged: (bool value) {
-                  ref
-                      .read(deviceSettingsProvider(deviceId).notifier)
-                      .updateSettings(
-                          deviceSettings.copyWith(autoCalibration: value));
-                },
-              ),
+            ]
+            // else
+            //   SwitchListTile(
+            //     title: const Text('Auto Calibration',
+            //         style:
+            //             TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+            //     value: deviceSettings.autoCalibration,
+            //     onChanged: (bool value) {
+            //       ref
+            //           .read(deviceSettingsProvider(deviceId).notifier)
+            //           .updateSettings(
+            //               deviceSettings.copyWith(autoCalibration: value));
+            //     },
+            //   ),
           ],
         ),
       ),
