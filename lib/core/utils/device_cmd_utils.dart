@@ -134,14 +134,6 @@ class DeviceCmdUtils {
     return _buildCommand([prefixHigh, prefixLow, 5, 1, 2, 0xB2]);
   }
 
-  static Uint8List openPowerMode() {
-    return _buildCommand([prefixHigh, prefixLow, 5, 1, 1, 0xB0]);
-  }
-
-  static Uint8List closePowerMode() {
-    return _buildCommand([prefixHigh, prefixLow, 5, 1, 0, 0xAF]);
-  }
-
   // ======= Bluetooth Commands =======
 
   static Uint8List openBluetooth() {
