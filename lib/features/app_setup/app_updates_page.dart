@@ -28,7 +28,11 @@ class AppUpdatesPage extends ConsumerWidget {
             const AppLogo(width: 200),
             const SizedBox(height: 32),
             TappableWidget(
-              onTap: () => ref.read(devModeProvider.notifier).toggleDevMode(),
+              onTap: () {
+                ref.read(devModeProvider.notifier).toggleDevMode();
+
+                context.showSnackBar('Dev Mode is now enabled.');
+              },
               tapCount: 7,
               child: _buildVersionInfoRow(
                 label: 'Installed Version:',
