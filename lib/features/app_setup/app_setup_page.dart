@@ -1,5 +1,6 @@
 import 'package:airspothealth/core/router/route_names.dart';
 import 'package:airspothealth/core/utils/assets.dart';
+import 'package:airspothealth/core/utils/extensions.dart';
 import 'package:airspothealth/features/app_setup/providers/dev_mode_provider.dart';
 import 'package:airspothealth/features/device_settings/models/setting_item.dart';
 import 'package:airspothealth/features/device_settings/widgets/setting_item_widget.dart';
@@ -62,6 +63,8 @@ class AppSetupPage extends ConsumerWidget {
                     value: isDevMode,
                     onChanged: (value) {
                       ref.read(devModeProvider.notifier).toggleDevMode();
+
+                      context.showSnackBar('Dev Mode is now disabled');
                     }),
               ),
             )
