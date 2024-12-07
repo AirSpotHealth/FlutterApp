@@ -21,8 +21,10 @@ class DeviceUpdatePage extends ConsumerWidget {
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: AppBar(
-        title:
-            DeviceSettingsNameWidget(deviceId: deviceId, suffixText: 'Update'),
+        title: DeviceSettingsNameWidget(
+          deviceId: deviceId,
+          suffixText: 'Device Update',
+        ),
       ),
       body: ListView(padding: const EdgeInsets.all(16), children: [
         TappableWidget(
@@ -80,7 +82,7 @@ class CurrentDeviceVersionWidget extends ConsumerWidget {
       ),
       child: Row(
         children: [
-          const Text('Current Version: '),
+          const Text('Installed Version: '),
           const Spacer(),
           Text(version.isEmpty ? 'N/A' : version),
         ],
