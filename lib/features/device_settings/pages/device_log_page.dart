@@ -1,6 +1,4 @@
 import 'package:airspothealth/core/models/ble_device.dart';
-import 'package:airspothealth/core/models/device_settings.dart';
-import 'package:airspothealth/core/providers/device_settings_provider.dart';
 import 'package:airspothealth/core/services/data_logger_service.dart';
 import 'package:airspothealth/core/theme/app_colors.dart';
 import 'package:airspothealth/core/utils/extensions.dart';
@@ -50,114 +48,88 @@ class DeviceLogPage extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final AsyncValue<String> deviceLog = ref.watch(deviceLogProvider(deviceId));
-    final DeviceSettings settings = ref.watch(deviceSettingsProvider(deviceId));
     final BleDevice device = ref.read(bleDeviceProvider(deviceId));
 
     return Scaffold(
-      appBar: AppBar(
-        title: Text('${device.alias ?? device.name} log'),
-      ),
-      body: deviceLog.when(
-        data: (log) {
-          final entries = parseLog(log);
+        appBar: AppBar(
+          title: Text('${device.alias ?? device.name} log'),
+          actions: [
+            IconButton(
+              onPressed: () {
+                WidgetsBinding.instance.addPostFrameCallback((_) {
+                  ref.invalidate(deviceLogProvider(deviceId));
+                });
+              },
+              icon: Icon(Icons.refresh),
+            ),
+            IconButton(
+              iconSize: 24,
+              onPressed: () {
+                DataLoggerService().clearLogData(deviceId);
+                ref.invalidate(deviceLogProvider(deviceId));
+              },
+              icon: Icon(Icons.delete),
+            ),
+          ],
+        ),
+        body: deviceLog.when(
+          data: (log) {
+            final entries = parseLog(log);
 
-          if (entries.isEmpty) {
-            return const Center(child: Text('No log entries available'));
-          }
+            if (entries.isEmpty) {
+              return const Center(child: Text('No log entries available'));
+            }
 
-          return Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Expanded(
-                child: ListView.builder(
-                  itemCount: entries.length,
-                  itemBuilder: (context, index) {
-                    final entry = entries[index];
-                    return ListTile(
-                      title: Text('${entry.value}'),
-                      subtitle: Text(
-                        entry.dateTime.formatLocalDate(),
-                        style: const TextStyle(
-                          fontSize: 12,
-                          color: Colors.blueGrey,
+            return Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Expanded(
+                  child: ListView.builder(
+                    itemCount: entries.length,
+                    itemBuilder: (context, index) {
+                      final entry = entries[index];
+                      return ListTile(
+                        title: Text('${entry.value}'),
+                        subtitle: Text(
+                          entry.dateTime.formatLocalDate(),
+                          style: const TextStyle(
+                            fontSize: 12,
+                            color: Colors.blueGrey,
+                          ),
                         ),
-                      ),
-                      leading: Icon(
-                        entry.sent
-                            ? CupertinoIcons.device_phone_portrait
-                            : Icons.watch,
-                        color: entry.sent ? Colors.red : Colors.grey,
-                      ),
-                    );
-                  },
+                        leading: Icon(
+                          entry.sent
+                              ? CupertinoIcons.device_phone_portrait
+                              : Icons.watch,
+                          color: entry.sent ? Colors.red : Colors.grey,
+                        ),
+                      );
+                    },
+                  ),
                 ),
-              ),
-            ],
-          );
-        },
-        loading: () => const Center(child: CircularProgressIndicator()),
-        error: (error, stackTrace) => Center(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              const Text('Error loading device log'),
-              ElevatedButton(
-                onPressed: () => ref.invalidate(deviceLogProvider(deviceId)),
-                child: const Text('Retry'),
-              ),
-            ],
+              ],
+            );
+          },
+          loading: () => const Center(child: CircularProgressIndicator()),
+          error: (error, stackTrace) => Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                const Text('Error loading device log'),
+                ElevatedButton(
+                  onPressed: () => ref.invalidate(deviceLogProvider(deviceId)),
+                  child: const Text('Retry'),
+                ),
+              ],
+            ),
           ),
         ),
-      ),
-      bottomNavigationBar: settings.logData
-          ? _buildActions(ref)
-          : const Padding(
-              padding: EdgeInsets.all(16),
-              child: Text(
-                'Log data is disabled. Enable it in the top right to view the log.',
-                textAlign: TextAlign.center,
-              ),
-            ),
-    );
-  }
-
-  Padding _buildActions(WidgetRef ref) {
-    return Padding(
-      padding: const EdgeInsets.all(16),
-      child: OverflowBar(
-        overflowAlignment: OverflowBarAlignment.end,
-        alignment: MainAxisAlignment.center,
-        children: [
-          ElevatedButton(
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Theme.of(ref.context).primaryColor,
-            ),
-            onPressed: () => ref.invalidate(deviceLogProvider(deviceId)),
-            child: const Text('Refresh'),
-          ),
-          const SizedBox(width: 16),
-          ElevatedButton(
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.brandColorRed,
-            ),
-            onPressed: () {
-              DataLoggerService().clearLogData(deviceId);
-
-              ref.invalidate(deviceLogProvider(deviceId));
-            },
-            child: const Text('Clear Log'),
-          ),
-          const SizedBox(width: 16),
-          ElevatedButton(
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.brandColorGreen,
-              ),
-              onPressed: () {
-                DataLoggerService().downloadLogData(deviceId);
-              },
-              child: const Text('Download Log File')),
-        ],
-      ),
-    );
+        floatingActionButton: FloatingActionButton(
+          onPressed: () {
+            DataLoggerService().downloadLogData(deviceId);
+          },
+          backgroundColor: AppColors.primaryColor,
+          child: const Icon(Icons.download),
+        ));
   }
 }
