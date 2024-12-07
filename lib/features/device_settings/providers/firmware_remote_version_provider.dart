@@ -4,7 +4,9 @@ import 'package:airspothealth/core/services/network_service.dart';
 import 'package:airspothealth/core/utils/api_endpoints.dart';
 import 'package:airspothealth/features/device_settings/models/remote_version.dart';
 import 'package:dio/dio.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:package_info_plus/package_info_plus.dart';
 
 final firmwareRemoteVersionProvider = AsyncNotifierProvider.autoDispose<
     _FirmwareRemoteVersionNotifier,
@@ -19,10 +21,28 @@ class _FirmwareRemoteVersionNotifier
     return null;
   }
 
-  Future<void> fetchRemoteVersion({bool beta = false}) async {
+  Future<void> fetchRemoteVersion() async {
     state = const AsyncLoading();
 
     try {
+      String? currentVersion = (await PackageInfo.fromPlatform()).version;
+
+      // if the last character is a 0, it's a production build
+      // else it's a beta build
+      bool beta = false;
+
+      final List<String> parts = currentVersion.split('.');
+
+      if (parts.isNotEmpty) {
+        final String lastPart = parts.last;
+
+        if (lastPart.isNotEmpty) {
+          beta = lastPart != '0';
+        }
+      }
+
+      debugPrint('Beta mode: $beta');
+
       final Response<dynamic> result = await _networkService.get(
           beta ? ApiEndpoints.versionCheckBeta : ApiEndpoints.versionCheck, {});
 
