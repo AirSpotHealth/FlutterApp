@@ -45,6 +45,18 @@ class AppTheme {
         ),
       ),
     ),
+    outlinedButtonTheme: OutlinedButtonThemeData(
+      style: ButtonStyle(
+        backgroundColor: WidgetStateProperty.all(Colors.white),
+        foregroundColor: WidgetStateProperty.all(AppColors.textPrimary),
+        shape: WidgetStateProperty.all(
+          RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(8),
+            side: BorderSide(color: AppColors.neutralGrey),
+          ),
+        ),
+      ),
+    ),
     switchTheme: SwitchThemeData(
       trackOutlineWidth: const WidgetStatePropertyAll(0),
       thumbColor: WidgetStateProperty.all(Colors.white),

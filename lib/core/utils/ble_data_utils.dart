@@ -12,6 +12,13 @@ class BleDataUtils {
   static String? bytesToHexStr(List<int>? bytes) =>
       bytes?.map((byt) => byt.toRadixString(16).padLeft(2, '0')).join();
 
+  /// history data length
+  /// 4 byte timestamp + 1 byte record type + 2 byte value + 1 byte reserved
+  static const int deviceDataLength = 8;
+
+  /// timestamp from 2000
+  static const int timestampFrom2000 = 946645200;
+
   /// Parses the response command based on device ID and data
   static dynamic parseResponseCommand(String deviceId, List<int> data) {
     if (data.length < 6) return null;
@@ -38,6 +45,7 @@ class BleDataUtils {
       ResponseCommand.recalibrationTime: parser.parseRecalibrationTime,
       ResponseCommand.recalibrationConfirm: parser.parseRecalibrationTime,
       ResponseCommand.locateMyAirspot: parser.parseLocateMyAirspot,
+      ResponseCommand.dataEraseDone: parser.parseEraseDataDone,
     };
 
     final result = responseParsers[responseCommand]?.call(data);
@@ -64,6 +72,10 @@ class BleDataUtils {
 
     if (responseCommand == ResponseCommand.getAlias) {
       return result as String;
+    }
+
+    if (responseCommand == ResponseCommand.dataEraseDone) {
+      return result as bool;
     }
 
     return null;
@@ -145,104 +157,69 @@ class ResponseCommandParser {
 
   bool parseSetAlias(List<int> data) => _parseBoolean(data, 4);
 
-  /// Parses CO2 history data
   List<Map<String, dynamic>> parseGetCo2History(List<int> data) {
-    // Check if the data length is at least 6 bytes (minimum valid length)
-    if (data.length < 6) return [];
+    debugPrint('Parsing CO2 history data Length: ${data.length}');
 
-    // check if it is a co2 history done command
+    // Check if it is a CO2 history done command
     if (data.length == 6 && data[3] == 0x01 && data[5] == 0xb8) {
       return [];
     }
 
-    // Calculate the timestamp from 2000-01-01 00:00:00 UTC
-    int timestampFrom2000 = 946645200;
-
-    // total data count (3rd byte)
-    int dataCount = data[3];
-
-    if (dataCount == 0) {
+    // Check if the data length is valid
+    if (data.length < 9 ||
+        (data.length - 5) % BleDataUtils.deviceDataLength != 0) {
+      debugPrint('Invalid data length');
       return [];
     }
 
-    if (data.length < dataCount + 4) {
-      return [];
-    }
+    // Extract the CO2 history data (ignore header and checksum)
+    final List<int> historyData = List.from(data.sublist(4, data.length - 1));
 
-    // Extract the timestamp (6th to 9th bytes)
-    int timestamp = _byteArrayToInt(data, 4, 7);
+    final List<DeviceData> deviceData = [];
 
-    // Calculate the timestamp from 2000-01-01 00:00:00 UTC
-    timestampFrom2000 += timestamp;
+    // Parse each record (6 bytes per record: 4 bytes timestamp, 2 bytes CO₂ value)
+    for (var i = 0;
+        i < historyData.length;
+        i += BleDataUtils.deviceDataLength) {
+      // Extract the timestamp (4 bytes)
+      final timestamp = _byteArrayToInt(historyData, i, i + 3) +
+          BleDataUtils.timestampFrom2000;
+      final date = DateTime.fromMillisecondsSinceEpoch(timestamp * 1000);
 
-    // Extract the mode (9th byte)
-    int mode = data[8];
+      debugPrint('Timestamp: $timestamp, Date: $date');
 
-    // Calculate the mute time based on the mode
-    int muteTime = 0;
+      /// Extract the type (1 byte)
+      final type = historyData[i + 4];
 
-    switch (mode) {
-      case 0:
-        muteTime = 3 * 60;
-        break;
-      case 1:
-        muteTime = 1 * 60;
-        break;
-      case 2:
-        muteTime = 5;
-        break;
-    }
+      // Extract the value (2 bytes)
+      final highByte = historyData[i + 5] & 0xFF;
+      final lowByte = historyData[i + 6] & 0xFF;
+      final value = (highByte << 8) | lowByte;
 
-    // Extract the CO2 data count (10th byte)
-    int co2DataCount = dataCount - 5;
-
-    // Extract the CO2 data bytes
-    final co2DataBytes = data.sublist(9, 9 + co2DataCount);
-
-    // Extract the CO2 data values
-    final co2Data = <DateTime, int>{};
-
-    // if co2 data count is 1, the it is a single value and we don't need to loop
-    if (co2DataCount == 1) {
-      final value = co2DataBytes[0];
-      co2Data.putIfAbsent(
-        DateTime.fromMillisecondsSinceEpoch(timestampFrom2000 * 1000),
-        () => value,
-      );
-    } else {
-      for (var i = 0; i < co2DataCount; i += 2) {
-        // Extract two bytes and combine them into a single value
-        final highByte = co2DataBytes[i] & 0xFF;
-        final lowByte = co2DataBytes[i + 1] & 0xFF;
-        final combinedValue = (highByte << 8) | lowByte;
-
-        // Increment the timestamp after every 2 values
-        timestampFrom2000 += muteTime;
-
-        // Store the CO₂ data
-        co2Data.putIfAbsent(
-          DateTime.fromMillisecondsSinceEpoch(timestampFrom2000 * 1000),
-          () => combinedValue,
-        );
-      }
-    }
-
-    final List<DeviceData> dd = co2Data.entries.map((e) {
-      return DeviceData(
+      deviceData.add(DeviceData(
         deviceId: deviceId,
-        dateTime: e.key,
-        value: e.value,
-      );
-    }).toList()
-      ..sort((a, b) => a.dateTime.compareTo(b.dateTime));
+        dateTime: date,
+        value: value,
+        type: DeviceDataType.fromByte(type),
+      ));
+    }
 
-    debugPrint('LogData: ${dd.map((e) => e.toString()).toList()}');
+    debugPrint('CO2 Data: ${deviceData.map((e) => e.toString())}');
 
     isarService.write((isar) {
-      isar.deviceDatas.putAll(dd);
+      isar.deviceDatas.putAll(deviceData);
     });
 
     return [];
+  }
+
+  int _byteArrayToInt(List<int> data, int startIndex, int endIndex) {
+    int result = 0;
+    for (var i = startIndex; i <= endIndex; i++) {
+      result =
+          (result << 8) | (data[i] & 0xFF); // Combine bytes into an integer
+    }
+    return result;
   }
 
   bool parseCalibrateSensors(List<int> data) => _parseBoolean(data, 4);
@@ -252,6 +229,8 @@ class ResponseCommandParser {
   int parseRecalibrationTime(List<int> data) => data[4];
 
   bool parseLocateMyAirspot(List<int> data) => _parseBoolean(data, 4);
+
+  bool parseEraseDataDone(List<int> data) => _parseBoolean(data, 4);
 
   // Helper Methods
   int _parseTwoBytesToInt(List<int> data, int startIndex) =>
@@ -273,15 +252,6 @@ class ResponseCommandParser {
       isar.deviceSettings
           .put(update(settings ?? DeviceSettings.empty(deviceId: deviceId)));
     });
-  }
-
-  int _byteArrayToInt(List<int> data, int startIndex, int endIndex) {
-    dynamic result = 0;
-    for (var i = startIndex; i <= endIndex; i++) {
-      result = result << 8;
-      result = result | (data[i] & 0xFF);
-    }
-    return result.toInt();
   }
 }
 
@@ -326,7 +296,8 @@ enum ResponseCommand {
   firmwareVersion(0x13),
   recalibrationTime(0x0F),
   recalibrationConfirm(0x0D),
-  locateMyAirspot(0x10);
+  locateMyAirspot(0x10),
+  dataEraseDone(0xFD);
 
   const ResponseCommand(this.value);
   final int value;

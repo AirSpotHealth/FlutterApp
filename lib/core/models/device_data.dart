@@ -8,6 +8,7 @@ class DeviceData {
     required this.deviceId,
     required this.dateTime,
     required this.value,
+    this.type = DeviceDataType.co2,
   });
 
   final String deviceId;
@@ -17,17 +18,21 @@ class DeviceData {
 
   final dynamic value;
 
+  final DeviceDataType type;
+
   String get id => deviceId + dateTime.millisecondsSinceEpoch.toString();
 
   DeviceData copyWith({
     String? deviceId,
     DateTime? dateTime,
     dynamic value,
+    DeviceDataType? type,
   }) {
     return DeviceData(
       deviceId: deviceId ?? this.deviceId,
       dateTime: dateTime ?? this.dateTime,
       value: value ?? this.value,
+      type: type ?? this.type,
     );
   }
 
@@ -38,13 +43,34 @@ class DeviceData {
     return other is DeviceData &&
         other.deviceId == deviceId &&
         other.dateTime == dateTime &&
-        other.value == value;
+        other.value == value &&
+        other.type == type;
   }
 
   @override
-  int get hashCode => deviceId.hashCode ^ dateTime.hashCode ^ value.hashCode;
+  int get hashCode =>
+      deviceId.hashCode ^ dateTime.hashCode ^ value.hashCode ^ type.hashCode;
 
   @override
   String toString() =>
-      'DeviceData(deviceId: $deviceId, dateTime: $dateTime, value: $value)';
+      'DeviceData(deviceId: $deviceId, dateTime: $dateTime, value: $value), type: $type';
+}
+
+enum DeviceDataType {
+  co2,
+  batteryLow,
+  calibration;
+
+  static DeviceDataType fromByte(int byte) {
+    switch (byte) {
+      case 0:
+        return DeviceDataType.co2;
+      case 1:
+        return DeviceDataType.batteryLow;
+      case 2:
+        return DeviceDataType.calibration;
+      default:
+        throw Exception('Unknown DeviceDataType: $byte');
+    }
+  }
 }

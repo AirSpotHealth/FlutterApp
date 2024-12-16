@@ -245,4 +245,8 @@ class DeviceCmdUtils {
     byteArray[1] = value & 0xFF;
     return byteArray;
   }
+
+  static Uint8List eraseData() {
+    return _buildCommand([prefixHigh, prefixLow, 0xFD, 1, 1]);
+  }
 }

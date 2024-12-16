@@ -13,6 +13,7 @@ import 'package:airspothealth/features/device_settings/widgets/alarm_setting_wid
 import 'package:airspothealth/features/device_settings/widgets/auto_connect_setting_widget.dart';
 import 'package:airspothealth/features/device_settings/widgets/device_settings_name_widget.dart';
 import 'package:airspothealth/features/device_settings/widgets/disconnect_device_widget.dart';
+import 'package:airspothealth/features/device_settings/widgets/erase_device_record_widget.dart';
 import 'package:airspothealth/features/device_settings/widgets/forget_device_widget.dart';
 import 'package:airspothealth/features/device_settings/widgets/setting_item_widget.dart';
 import 'package:airspothealth/features/device_settings/widgets/vibrate_setting_widget.dart';
@@ -85,6 +86,7 @@ class DeviceSettingsPage extends ConsumerWidget {
           _buildTimeSettingWidget(ref),
           PowerModeSettingWidget(deviceId: deviceId),
           ..._buildSettingsList(ref),
+          EraseDeviceRecordWidget(deviceId: deviceId),
           DisconnectDeviceWidget(device: device),
           ForgetDeviceWidget(deviceId: deviceId),
         ],

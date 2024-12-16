@@ -33,6 +33,11 @@ const DeviceDataSchema = IsarGeneratedSchema(
         type: IsarType.json,
       ),
       IsarPropertySchema(
+        name: 'type',
+        type: IsarType.byte,
+        enumMap: {"co2": 0, "batteryLow": 1, "calibration": 2},
+      ),
+      IsarPropertySchema(
         name: 'id',
         type: IsarType.string,
       ),
@@ -61,7 +66,8 @@ int serializeDeviceData(IsarWriter writer, DeviceData object) {
   IsarCore.writeString(writer, 1, object.deviceId);
   IsarCore.writeLong(writer, 2, object.dateTime.toUtc().microsecondsSinceEpoch);
   IsarCore.writeString(writer, 3, isarJsonEncode(object.value));
-  IsarCore.writeString(writer, 4, object.id);
+  IsarCore.writeByte(writer, 4, object.type.index);
+  IsarCore.writeString(writer, 5, object.id);
   return Isar.fastHash(object.id);
 }
 
@@ -81,10 +87,20 @@ DeviceData deserializeDeviceData(IsarReader reader) {
   }
   final dynamic _value;
   _value = isarJsonDecode(IsarCore.readString(reader, 3) ?? 'null') ?? null;
+  final DeviceDataType _type;
+  {
+    if (IsarCore.readNull(reader, 4)) {
+      _type = DeviceDataType.co2;
+    } else {
+      _type =
+          _deviceDataType[IsarCore.readByte(reader, 4)] ?? DeviceDataType.co2;
+    }
+  }
   final object = DeviceData(
     deviceId: _deviceId,
     dateTime: _dateTime,
     value: _value,
+    type: _type,
   );
   return object;
 }
@@ -107,7 +123,16 @@ dynamic deserializeDeviceDataProp(IsarReader reader, int property) {
     case 3:
       return isarJsonDecode(IsarCore.readString(reader, 3) ?? 'null') ?? null;
     case 4:
-      return IsarCore.readString(reader, 4) ?? '';
+      {
+        if (IsarCore.readNull(reader, 4)) {
+          return DeviceDataType.co2;
+        } else {
+          return _deviceDataType[IsarCore.readByte(reader, 4)] ??
+              DeviceDataType.co2;
+        }
+      }
+    case 5:
+      return IsarCore.readString(reader, 5) ?? '';
     default:
       throw ArgumentError('Unknown property: $property');
   }
@@ -118,6 +143,7 @@ sealed class _DeviceDataUpdate {
     required String id,
     String? deviceId,
     DateTime? dateTime,
+    DeviceDataType? type,
   });
 }
 
@@ -131,12 +157,14 @@ class _DeviceDataUpdateImpl implements _DeviceDataUpdate {
     required String id,
     Object? deviceId = ignore,
     Object? dateTime = ignore,
+    Object? type = ignore,
   }) {
     return collection.updateProperties([
           id
         ], {
           if (deviceId != ignore) 1: deviceId as String?,
           if (dateTime != ignore) 2: dateTime as DateTime?,
+          if (type != ignore) 4: type as DeviceDataType?,
         }) >
         0;
   }
@@ -147,6 +175,7 @@ sealed class _DeviceDataUpdateAll {
     required List<String> id,
     String? deviceId,
     DateTime? dateTime,
+    DeviceDataType? type,
   });
 }
 
@@ -160,10 +189,12 @@ class _DeviceDataUpdateAllImpl implements _DeviceDataUpdateAll {
     required List<String> id,
     Object? deviceId = ignore,
     Object? dateTime = ignore,
+    Object? type = ignore,
   }) {
     return collection.updateProperties(id, {
       if (deviceId != ignore) 1: deviceId as String?,
       if (dateTime != ignore) 2: dateTime as DateTime?,
+      if (type != ignore) 4: type as DeviceDataType?,
     });
   }
 }
@@ -178,6 +209,7 @@ sealed class _DeviceDataQueryUpdate {
   int call({
     String? deviceId,
     DateTime? dateTime,
+    DeviceDataType? type,
   });
 }
 
@@ -191,10 +223,12 @@ class _DeviceDataQueryUpdateImpl implements _DeviceDataQueryUpdate {
   int call({
     Object? deviceId = ignore,
     Object? dateTime = ignore,
+    Object? type = ignore,
   }) {
     return query.updateProperties(limit: limit, {
       if (deviceId != ignore) 1: deviceId as String?,
       if (dateTime != ignore) 2: dateTime as DateTime?,
+      if (type != ignore) 4: type as DeviceDataType?,
     });
   }
 }
@@ -216,12 +250,14 @@ class _DeviceDataQueryBuilderUpdateImpl implements _DeviceDataQueryUpdate {
   int call({
     Object? deviceId = ignore,
     Object? dateTime = ignore,
+    Object? type = ignore,
   }) {
     final q = query.build();
     try {
       return q.updateProperties(limit: limit, {
         if (deviceId != ignore) 1: deviceId as String?,
         if (dateTime != ignore) 2: dateTime as DateTime?,
+        if (type != ignore) 4: type as DeviceDataType?,
       });
     } finally {
       q.close();
@@ -237,6 +273,12 @@ extension DeviceDataQueryBuilderUpdate
   _DeviceDataQueryUpdate get updateAll =>
       _DeviceDataQueryBuilderUpdateImpl(this);
 }
+
+const _deviceDataType = {
+  0: DeviceDataType.co2,
+  1: DeviceDataType.batteryLow,
+  2: DeviceDataType.calibration,
+};
 
 extension DeviceDataQueryFilter
     on QueryBuilder<DeviceData, DeviceData, QFilterCondition> {
@@ -501,6 +543,88 @@ extension DeviceDataQueryFilter
     });
   }
 
+  QueryBuilder<DeviceData, DeviceData, QAfterFilterCondition> typeEqualTo(
+    DeviceDataType value,
+  ) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        EqualCondition(
+          property: 4,
+          value: value.index,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<DeviceData, DeviceData, QAfterFilterCondition> typeGreaterThan(
+    DeviceDataType value,
+  ) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        GreaterCondition(
+          property: 4,
+          value: value.index,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<DeviceData, DeviceData, QAfterFilterCondition>
+      typeGreaterThanOrEqualTo(
+    DeviceDataType value,
+  ) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        GreaterOrEqualCondition(
+          property: 4,
+          value: value.index,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<DeviceData, DeviceData, QAfterFilterCondition> typeLessThan(
+    DeviceDataType value,
+  ) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        LessCondition(
+          property: 4,
+          value: value.index,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<DeviceData, DeviceData, QAfterFilterCondition>
+      typeLessThanOrEqualTo(
+    DeviceDataType value,
+  ) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        LessOrEqualCondition(
+          property: 4,
+          value: value.index,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<DeviceData, DeviceData, QAfterFilterCondition> typeBetween(
+    DeviceDataType lower,
+    DeviceDataType upper,
+  ) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        BetweenCondition(
+          property: 4,
+          lower: lower.index,
+          upper: upper.index,
+        ),
+      );
+    });
+  }
+
   QueryBuilder<DeviceData, DeviceData, QAfterFilterCondition> idEqualTo(
     String value, {
     bool caseSensitive = true,
@@ -508,7 +632,7 @@ extension DeviceDataQueryFilter
     return QueryBuilder.apply(this, (query) {
       return query.addFilterCondition(
         EqualCondition(
-          property: 4,
+          property: 5,
           value: value,
           caseSensitive: caseSensitive,
         ),
@@ -523,7 +647,7 @@ extension DeviceDataQueryFilter
     return QueryBuilder.apply(this, (query) {
       return query.addFilterCondition(
         GreaterCondition(
-          property: 4,
+          property: 5,
           value: value,
           caseSensitive: caseSensitive,
         ),
@@ -539,7 +663,7 @@ extension DeviceDataQueryFilter
     return QueryBuilder.apply(this, (query) {
       return query.addFilterCondition(
         GreaterOrEqualCondition(
-          property: 4,
+          property: 5,
           value: value,
           caseSensitive: caseSensitive,
         ),
@@ -554,7 +678,7 @@ extension DeviceDataQueryFilter
     return QueryBuilder.apply(this, (query) {
       return query.addFilterCondition(
         LessCondition(
-          property: 4,
+          property: 5,
           value: value,
           caseSensitive: caseSensitive,
         ),
@@ -570,7 +694,7 @@ extension DeviceDataQueryFilter
     return QueryBuilder.apply(this, (query) {
       return query.addFilterCondition(
         LessOrEqualCondition(
-          property: 4,
+          property: 5,
           value: value,
           caseSensitive: caseSensitive,
         ),
@@ -586,7 +710,7 @@ extension DeviceDataQueryFilter
     return QueryBuilder.apply(this, (query) {
       return query.addFilterCondition(
         BetweenCondition(
-          property: 4,
+          property: 5,
           lower: lower,
           upper: upper,
           caseSensitive: caseSensitive,
@@ -602,7 +726,7 @@ extension DeviceDataQueryFilter
     return QueryBuilder.apply(this, (query) {
       return query.addFilterCondition(
         StartsWithCondition(
-          property: 4,
+          property: 5,
           value: value,
           caseSensitive: caseSensitive,
         ),
@@ -617,7 +741,7 @@ extension DeviceDataQueryFilter
     return QueryBuilder.apply(this, (query) {
       return query.addFilterCondition(
         EndsWithCondition(
-          property: 4,
+          property: 5,
           value: value,
           caseSensitive: caseSensitive,
         ),
@@ -631,7 +755,7 @@ extension DeviceDataQueryFilter
     return QueryBuilder.apply(this, (query) {
       return query.addFilterCondition(
         ContainsCondition(
-          property: 4,
+          property: 5,
           value: value,
           caseSensitive: caseSensitive,
         ),
@@ -645,7 +769,7 @@ extension DeviceDataQueryFilter
     return QueryBuilder.apply(this, (query) {
       return query.addFilterCondition(
         MatchesCondition(
-          property: 4,
+          property: 5,
           wildcard: pattern,
           caseSensitive: caseSensitive,
         ),
@@ -657,7 +781,7 @@ extension DeviceDataQueryFilter
     return QueryBuilder.apply(this, (query) {
       return query.addFilterCondition(
         const EqualCondition(
-          property: 4,
+          property: 5,
           value: '',
         ),
       );
@@ -668,7 +792,7 @@ extension DeviceDataQueryFilter
     return QueryBuilder.apply(this, (query) {
       return query.addFilterCondition(
         const GreaterCondition(
-          property: 4,
+          property: 5,
           value: '',
         ),
       );
@@ -726,11 +850,23 @@ extension DeviceDataQuerySortBy
     });
   }
 
+  QueryBuilder<DeviceData, DeviceData, QAfterSortBy> sortByType() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(4);
+    });
+  }
+
+  QueryBuilder<DeviceData, DeviceData, QAfterSortBy> sortByTypeDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(4, sort: Sort.desc);
+    });
+  }
+
   QueryBuilder<DeviceData, DeviceData, QAfterSortBy> sortById(
       {bool caseSensitive = true}) {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(
-        4,
+        5,
         caseSensitive: caseSensitive,
       );
     });
@@ -740,7 +876,7 @@ extension DeviceDataQuerySortBy
       {bool caseSensitive = true}) {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(
-        4,
+        5,
         sort: Sort.desc,
         caseSensitive: caseSensitive,
       );
@@ -788,17 +924,29 @@ extension DeviceDataQuerySortThenBy
     });
   }
 
+  QueryBuilder<DeviceData, DeviceData, QAfterSortBy> thenByType() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(4);
+    });
+  }
+
+  QueryBuilder<DeviceData, DeviceData, QAfterSortBy> thenByTypeDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(4, sort: Sort.desc);
+    });
+  }
+
   QueryBuilder<DeviceData, DeviceData, QAfterSortBy> thenById(
       {bool caseSensitive = true}) {
     return QueryBuilder.apply(this, (query) {
-      return query.addSortBy(4, caseSensitive: caseSensitive);
+      return query.addSortBy(5, caseSensitive: caseSensitive);
     });
   }
 
   QueryBuilder<DeviceData, DeviceData, QAfterSortBy> thenByIdDesc(
       {bool caseSensitive = true}) {
     return QueryBuilder.apply(this, (query) {
-      return query.addSortBy(4, sort: Sort.desc, caseSensitive: caseSensitive);
+      return query.addSortBy(5, sort: Sort.desc, caseSensitive: caseSensitive);
     });
   }
 }
@@ -823,6 +971,12 @@ extension DeviceDataQueryWhereDistinct
       return query.addDistinctBy(3);
     });
   }
+
+  QueryBuilder<DeviceData, DeviceData, QAfterDistinct> distinctByType() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addDistinctBy(4);
+    });
+  }
 }
 
 extension DeviceDataQueryProperty1
@@ -845,9 +999,15 @@ extension DeviceDataQueryProperty1
     });
   }
 
-  QueryBuilder<DeviceData, String, QAfterProperty> idProperty() {
+  QueryBuilder<DeviceData, DeviceDataType, QAfterProperty> typeProperty() {
     return QueryBuilder.apply(this, (query) {
       return query.addProperty(4);
+    });
+  }
+
+  QueryBuilder<DeviceData, String, QAfterProperty> idProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addProperty(5);
     });
   }
 }
@@ -872,9 +1032,15 @@ extension DeviceDataQueryProperty2<R>
     });
   }
 
-  QueryBuilder<DeviceData, (R, String), QAfterProperty> idProperty() {
+  QueryBuilder<DeviceData, (R, DeviceDataType), QAfterProperty> typeProperty() {
     return QueryBuilder.apply(this, (query) {
       return query.addProperty(4);
+    });
+  }
+
+  QueryBuilder<DeviceData, (R, String), QAfterProperty> idProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addProperty(5);
     });
   }
 }
@@ -899,9 +1065,16 @@ extension DeviceDataQueryProperty3<R1, R2>
     });
   }
 
-  QueryBuilder<DeviceData, (R1, R2, String), QOperations> idProperty() {
+  QueryBuilder<DeviceData, (R1, R2, DeviceDataType), QOperations>
+      typeProperty() {
     return QueryBuilder.apply(this, (query) {
       return query.addProperty(4);
+    });
+  }
+
+  QueryBuilder<DeviceData, (R1, R2, String), QOperations> idProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addProperty(5);
     });
   }
 }

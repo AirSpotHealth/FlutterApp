@@ -5,6 +5,7 @@ import 'package:airspothealth/core/models/device_settings.dart';
 import 'package:airspothealth/core/providers/ble_connected_devices_provider.dart';
 import 'package:airspothealth/core/providers/ble_saved_devices_provider.dart';
 import 'package:airspothealth/core/providers/device_settings_provider.dart';
+import 'package:airspothealth/core/providers/isar_service_provider.dart';
 import 'package:airspothealth/core/services/data_logger_service.dart';
 import 'package:airspothealth/core/services/isar_service.dart';
 import 'package:airspothealth/core/utils/ble_data_utils.dart';
@@ -13,6 +14,7 @@ import 'package:airspothealth/core/utils/device_cmd_utils.dart';
 import 'package:airspothealth/core/utils/extensions.dart';
 import 'package:airspothealth/features/app_setup/providers/dev_mode_provider.dart';
 import 'package:airspothealth/features/device_graph/providers/ble_device_provider.dart';
+import 'package:airspothealth/features/device_settings/providers/device_data_erase_provider.dart';
 import 'package:airspothealth/features/device_settings/providers/recalibration_time_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -185,6 +187,15 @@ class _BleDeviceCommunicationNotifier extends FamilyNotifier<dynamic, String> {
     // set alias to device if received
     if (data[2] == ResponseCommand.getAlias.value) {
       ref.invalidate(bleSavedDevicesProvider);
+      return;
+    }
+
+    // erase all data from device if received
+    if (data[2] == ResponseCommand.dataEraseDone.value) {
+      ref.read(isarServiceProvider).write((isar) {
+        isar.deviceDatas.where().deviceIdEqualTo(deviceId).deleteAll();
+      });
+      ref.read(deviceDataEraseProvider(deviceId).notifier).setSuccess();
       return;
     }
 
