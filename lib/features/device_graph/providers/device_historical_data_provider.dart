@@ -68,12 +68,12 @@ class _DeviceHistoricalDataNotifier extends AutoDisposeFamilyAsyncNotifier<
       state = AsyncData(event);
     });
 
-    _fetchDataFromDevice();
+    fetchDataFromDevice();
 
     return future;
   }
 
-  void _fetchDataFromDevice() {
+  void fetchDataFromDevice({bool force = false}) {
     var (startDate, endDate) = dateTimeRange;
 
     // if start date is today then end date should be now because dateTimeRange returns the end of the day for today
@@ -93,6 +93,19 @@ class _DeviceHistoricalDataNotifier extends AutoDisposeFamilyAsyncNotifier<
     //     DeviceCmdUtils.getCo2History(startDate: startDate, endDate: endDate));
 
     // return;
+
+    if (force) {
+      ref.read(bleDeviceCommunicationProvider(deviceId).notifier).sendCommand(
+          DeviceCmdUtils.getCo2History(startDate: startDate, endDate: endDate));
+
+      // Update lastFetchedStartDate and lastFetchedEndDate in the local database
+      _isarService.write((isar) {
+        isar.bleDevices.put(bleDevice.copyWith(
+            lastFetchedStartDate: startDate, lastFetchedEndDate: endDate));
+      });
+
+      return;
+    }
 
     // Check existing fetched dates
     final lastFetchedStartDate = bleDevice.lastFetchedStartDate;

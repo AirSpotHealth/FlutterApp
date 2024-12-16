@@ -48,7 +48,7 @@ class BleDataUtils {
       ResponseCommand.dataEraseDone: parser.parseEraseDataDone,
     };
 
-    final result = responseParsers[responseCommand]?.call(data);
+    final dynamic result = responseParsers[responseCommand]?.call(data);
 
     if (responseCommand == ResponseCommand.co2Value) {
       return result as int;
@@ -75,6 +75,10 @@ class BleDataUtils {
     }
 
     if (responseCommand == ResponseCommand.dataEraseDone) {
+      return result as bool;
+    }
+
+    if (responseCommand == ResponseCommand.getCo2History && result == true) {
       return result as bool;
     }
 
@@ -119,7 +123,7 @@ class ResponseCommandParser {
     return firmwareVersion;
   }
 
-  void parseInitialData(List<int> data) {
+  dynamic parseInitialData(List<int> data) {
     _updateDeviceSettings(
       (settings) {
         debugPrint('LogData: ${settings.logData}');
@@ -157,19 +161,19 @@ class ResponseCommandParser {
 
   bool parseSetAlias(List<int> data) => _parseBoolean(data, 4);
 
-  List<Map<String, dynamic>> parseGetCo2History(List<int> data) {
+  dynamic parseGetCo2History(List<int> data) {
     debugPrint('Parsing CO2 history data Length: ${data.length}');
 
     // Check if it is a CO2 history done command
     if (data.length == 6 && data[3] == 0x01 && data[5] == 0xb8) {
-      return [];
+      return true;
     }
 
     // Check if the data length is valid
     if (data.length < 9 ||
         (data.length - 5) % BleDataUtils.deviceDataLength != 0) {
       debugPrint('Invalid data length');
-      return [];
+      return false;
     }
 
     // Extract the CO2 history data (ignore header and checksum)
@@ -210,7 +214,7 @@ class ResponseCommandParser {
       isar.deviceDatas.putAll(deviceData);
     });
 
-    return [];
+    return false;
   }
 
   int _byteArrayToInt(List<int> data, int startIndex, int endIndex) {

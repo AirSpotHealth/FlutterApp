@@ -2,6 +2,8 @@ import 'dart:io';
 
 import 'package:airspothealth/core/models/device_data.dart';
 import 'package:airspothealth/core/providers/isar_service_provider.dart';
+import 'package:airspothealth/features/device_graph/models/graph_data_duration.dart';
+import 'package:airspothealth/features/device_graph/providers/device_historical_data_provider.dart';
 import 'package:airspothealth/features/device_settings/models/progress_model.dart';
 import 'package:file_saver/file_saver.dart';
 import 'package:flutter/material.dart';
@@ -22,9 +24,14 @@ class _DeviceDataDownloadNotifier
     return AsyncNone();
   }
 
-  Future<void> downloadDeviceData() async {
+  Future<void> setDataDownloadedFromDevice() async {
+    debugPrint('setDataDownloadedFromDevice');
+    if (state is AsyncNone || state is AsyncSuccess) {
+      return;
+    }
+
     try {
-      state = AsyncInProgress(0.0, message: 'Downloading device data....');
+      state = AsyncInProgress(0.5, message: 'Processing device data....');
 
       final List<DeviceData> deviceDatas = ref.read(isarServiceProvider).read(
         (isar) {
@@ -49,12 +56,17 @@ class _DeviceDataDownloadNotifier
 
       final File file = File('${directory.path}/device_data_$deviceId.csv');
 
+      state = AsyncInProgress(0.8, message: 'Generating CSV file....');
+
       await file.writeAsString(headerRow);
       await file.writeAsString(csvData, mode: FileMode.append);
 
       final bytes = await file.readAsBytes();
 
       final String name = 'device_data_$deviceId.csv';
+
+      state =
+          AsyncInProgress(1.0, message: 'Device data ready for download....');
 
       await FileSaver.instance
           .saveAs(name: name, bytes: bytes, mimeType: MimeType.csv, ext: 'csv');
@@ -65,6 +77,17 @@ class _DeviceDataDownloadNotifier
       debugPrint('Failed to download device data: $e');
       state = AsyncFailure(e.toString());
     }
+  }
+
+  Future<void> downloadDeviceData() async {
+    state = AsyncInProgress(0.0, message: 'Downloading device data....');
+
+    ref
+        .read(deviceHistoricalDataProvider(
+            (deviceId, GraphDataDuration.last7Days)).notifier)
+        .fetchDataFromDevice(force: true);
+
+    state = AsyncInProgress(0.1, message: 'Fetching device data....');
   }
 
   void setProgress(double progress) {
