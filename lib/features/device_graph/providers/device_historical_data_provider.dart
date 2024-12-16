@@ -89,6 +89,11 @@ class _DeviceHistoricalDataNotifier extends AutoDisposeFamilyAsyncNotifier<
       return;
     }
 
+    // ref.read(bleDeviceCommunicationProvider(deviceId).notifier).sendCommand(
+    //     DeviceCmdUtils.getCo2History(startDate: startDate, endDate: endDate));
+
+    // return;
+
     // Check existing fetched dates
     final lastFetchedStartDate = bleDevice.lastFetchedStartDate;
     final lastFetchedEndDate = bleDevice.lastFetchedEndDate;

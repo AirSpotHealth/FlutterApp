@@ -39,16 +39,18 @@ class _DeviceDataDownloadNotifier
 
       // convert the file to csv and make it available for download
 
+      final headerRow = 'DateTime,Value,Type\n';
+
       final csvData = deviceDatas.map((data) {
         return '${data.dateTime.toIso8601String()},${data.value},${data.type.name}';
       }).join('\n');
 
       final directory = await getApplicationDocumentsDirectory();
 
-      final File file =
-          await File('${directory.path}/device_data_$deviceId.csv')
-              .writeAsString(csvData)
-            ..readAsBytes();
+      final File file = File('${directory.path}/device_data_$deviceId.csv');
+
+      await file.writeAsString(headerRow);
+      await file.writeAsString(csvData, mode: FileMode.append);
 
       final bytes = await file.readAsBytes();
 
