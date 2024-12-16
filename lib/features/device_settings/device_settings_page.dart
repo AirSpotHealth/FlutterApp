@@ -2,23 +2,29 @@ import 'package:airspothealth/core/models/ble_device.dart';
 import 'package:airspothealth/core/models/device_settings.dart';
 import 'package:airspothealth/core/providers/device_settings_provider.dart';
 import 'package:airspothealth/core/router/route_names.dart';
+import 'package:airspothealth/core/theme/app_colors.dart';
 import 'package:airspothealth/core/utils/assets.dart';
 import 'package:airspothealth/core/utils/constants.dart';
 import 'package:airspothealth/core/utils/extensions.dart';
 import 'package:airspothealth/features/add_device/providers/ble_device_connection_provider.dart';
 import 'package:airspothealth/features/app_setup/providers/dev_mode_provider.dart';
 import 'package:airspothealth/features/device_graph/providers/ble_device_provider.dart';
+import 'package:airspothealth/features/device_settings/models/progress_model.dart';
 import 'package:airspothealth/features/device_settings/models/setting_item.dart';
+import 'package:airspothealth/features/device_settings/providers/device_data_download_provider.dart';
 import 'package:airspothealth/features/device_settings/widgets/alarm_setting_widget.dart';
 import 'package:airspothealth/features/device_settings/widgets/auto_connect_setting_widget.dart';
 import 'package:airspothealth/features/device_settings/widgets/device_settings_name_widget.dart';
 import 'package:airspothealth/features/device_settings/widgets/disconnect_device_widget.dart';
+import 'package:airspothealth/features/device_settings/widgets/download_device_data_button.dart';
 import 'package:airspothealth/features/device_settings/widgets/erase_device_record_widget.dart';
 import 'package:airspothealth/features/device_settings/widgets/forget_device_widget.dart';
 import 'package:airspothealth/features/device_settings/widgets/setting_item_widget.dart';
 import 'package:airspothealth/features/device_settings/widgets/vibrate_setting_widget.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:go_router/go_router.dart';
 
 class DeviceSettingsPage extends ConsumerWidget {
@@ -86,6 +92,7 @@ class DeviceSettingsPage extends ConsumerWidget {
           _buildTimeSettingWidget(ref),
           PowerModeSettingWidget(deviceId: deviceId),
           ..._buildSettingsList(ref),
+          DeviceDataDownloadSettingWidget(deviceId: deviceId),
           EraseDeviceRecordWidget(deviceId: deviceId),
           DisconnectDeviceWidget(device: device),
           ForgetDeviceWidget(deviceId: deviceId),
@@ -139,6 +146,54 @@ class DeviceSettingsPage extends ConsumerWidget {
           }
         },
       ),
+    );
+  }
+}
+
+class DeviceDataDownloadSettingWidget extends StatelessWidget {
+  const DeviceDataDownloadSettingWidget({
+    super.key,
+    required this.deviceId,
+  });
+
+  final String deviceId;
+
+  @override
+  Widget build(BuildContext context) {
+    return DownloadDeviceDataButton(
+      deviceId: deviceId,
+      builder: (ref, progress) {
+        return SettingItemWidget(
+          item: SettingItem(
+            title: 'Download Device Data',
+            suffixWidget: progress is AsyncInProgress
+                ? CupertinoActivityIndicator()
+                : progress is AsyncSuccess
+                    ? Icon(Icons.download_done_rounded,
+                        size: 20, color: AppColors.primaryColor)
+                    : Icon(Icons.download, size: 20),
+            leadingWidget: Container(
+              width: 32,
+              height: 32,
+              alignment: Alignment.center,
+              decoration: BoxDecoration(
+                color: Colors.blue,
+                borderRadius: BorderRadius.circular(4),
+              ),
+              child: FaIcon(
+                FontAwesomeIcons.fileCsv,
+                size: 20,
+                color: Colors.white,
+              ),
+            ),
+          ),
+          onTap: () {
+            ref
+                .read(deviceDataDownloadProvider(deviceId).notifier)
+                .downloadDeviceData();
+          },
+        );
+      },
     );
   }
 }

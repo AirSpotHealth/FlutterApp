@@ -6,14 +6,21 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 class DownloadDeviceDataButton extends ConsumerWidget {
-  const DownloadDeviceDataButton({required this.deviceId, super.key});
+  const DownloadDeviceDataButton(
+      {required this.deviceId, this.builder, super.key});
 
   final String deviceId;
+
+  final Widget Function(WidgetRef ref, AsyncProgressValue progress)? builder;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final AsyncProgressValue progress =
         ref.watch(deviceDataDownloadProvider(deviceId));
+
+    if (builder != null) {
+      return builder!(ref, progress);
+    }
 
     return Button(
       type: ButtonType.outlined,

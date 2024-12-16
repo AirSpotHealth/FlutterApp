@@ -34,6 +34,7 @@ dependencies:
   awesome_notifications_core: ^0.10.0 # use the latest core version available
   awesome_notifications: ^0.10.0 # This version is managed by core plugin
   syncfusion_flutter_sliders: ^27.2.5
+  font_awesome_flutter: ^10.8.0
 
 dev_dependencies:
   flutter_test:
