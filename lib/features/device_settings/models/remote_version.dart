@@ -6,6 +6,7 @@ class RemoteVersion {
   final String fileUrl;
   final String createdAt;
   final String? changeLog;
+  final bool requireErase;
 
   RemoteVersion({
     required this.id,
@@ -14,6 +15,7 @@ class RemoteVersion {
     required this.isActive,
     required this.fileUrl,
     required this.createdAt,
+    required this.requireErase,
     this.changeLog,
   });
 
@@ -26,6 +28,7 @@ class RemoteVersion {
       fileUrl: json['file_url'],
       createdAt: json['created_at'],
       changeLog: json['change_log'],
+      requireErase: json['require_erase'],
     );
   }
 
@@ -38,6 +41,7 @@ class RemoteVersion {
       'file_url': fileUrl,
       'created_at': createdAt,
       'change_log': changeLog,
+      'require_erase': requireErase,
     };
   }
 
@@ -49,6 +53,7 @@ class RemoteVersion {
     String? fileUrl,
     String? createdAt,
     String? changeLog,
+    bool? requireErase,
   }) {
     return RemoteVersion(
       id: id ?? this.id,
@@ -58,6 +63,7 @@ class RemoteVersion {
       fileUrl: fileUrl ?? this.fileUrl,
       createdAt: createdAt ?? this.createdAt,
       changeLog: changeLog ?? this.changeLog,
+      requireErase: requireErase ?? this.requireErase,
     );
   }
 
@@ -72,7 +78,8 @@ class RemoteVersion {
         other.isActive == isActive &&
         other.fileUrl == fileUrl &&
         other.createdAt == createdAt &&
-        other.changeLog == changeLog;
+        other.changeLog == changeLog &&
+        other.requireErase == requireErase;
   }
 
   @override
@@ -83,12 +90,13 @@ class RemoteVersion {
         isActive.hashCode ^
         fileUrl.hashCode ^
         createdAt.hashCode ^
-        changeLog.hashCode;
+        changeLog.hashCode ^
+        requireErase.hashCode;
   }
 
   @override
   String toString() {
-    return 'RemoteVersion(id: $id, versionName: $versionName, availableFor: $availableFor, isActive: $isActive, fileUrl: $fileUrl, createdAt: $createdAt, changeLog: $changeLog)';
+    return 'RemoteVersion(id: $id, versionName: $versionName, availableFor: $availableFor, isActive: $isActive, fileUrl: $fileUrl, createdAt: $createdAt, changeLog: $changeLog, requireErase: $requireErase)';
   }
 
   String get downloadUrl => fileUrl;

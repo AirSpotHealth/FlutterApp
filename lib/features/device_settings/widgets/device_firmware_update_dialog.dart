@@ -4,6 +4,7 @@ import 'package:airspothealth/core/widgets/app_logo.dart';
 import 'package:airspothealth/features/device_settings/models/progress_model.dart';
 import 'package:airspothealth/features/device_settings/models/remote_version.dart';
 import 'package:airspothealth/features/device_settings/providers/dfu_update_provider.dart';
+import 'package:airspothealth/features/device_settings/widgets/download_device_data_button.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -103,12 +104,20 @@ class _DeviceFirmwareUpdateDialogState
             style: context.textTheme.bodyLarge?.weight700,
             textAlign: TextAlign.center,
           ),
-          const SizedBox(height: 16),
           if (remoteVersion != null) ...[
             Text(remoteVersion!.changeLog ?? 'No change log available',
                 style: context.textTheme.bodySmall),
             const SizedBox(height: 16)
           ],
+          if (remoteVersion?.requireErase == true) ...[
+            Text(
+              'Warning: This update will erase all data on the device',
+              style: context.textTheme.bodySmall?.copyWith(color: Colors.red),
+            ),
+            const SizedBox(height: 16),
+            DownloadDeviceDataButton(deviceId: deviceId)
+          ],
+          const SizedBox(height: 16),
           if (updateState is AsyncInProgress) ...[
             LinearProgressIndicator(
               value: updateState.progress,
@@ -126,8 +135,10 @@ class _DeviceFirmwareUpdateDialogState
                   .read(dfuUpdateProvider.notifier)
                   .updateFirmware(
                       url: remoteVersion!.downloadUrl, deviceId: deviceId),
-              child: const Text(
-                'Update Now',
+              child: Text(
+                remoteVersion?.requireErase == true
+                    ? 'Erase and Update Now'
+                    : 'Update Now',
                 style: TextStyle(
                   color: Colors.white,
                   fontWeight: FontWeight.bold,
