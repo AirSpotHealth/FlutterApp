@@ -8,27 +8,28 @@ class Button extends StatelessWidget {
   /// Constructor
   const Button({
     required this.onPressed,
-    required this.label,
+    this.label,
+    this.child,
     super.key,
     this.disabled = false,
     this.loading = false,
     this.type = ButtonType.primary,
-    this.icon,
+    this.prefixIcon,
     this.suffixIcon,
-    this.debounceDurationMillis,
     this.wrapWidth = false,
     this.height,
-    this.color,
-  }) : assert(
-          type != ButtonType.icon || icon != null,
-          'Icon must be provided for icon button',
-        );
+    this.backgroundColor,
+    this.textColor,
+  });
 
   /// callback when the button is pressed
   final VoidCallback? onPressed;
 
   /// label of the button
-  final String label;
+  final String? label;
+
+  /// child widget of the button
+  final Widget? child;
 
   /// disabled state of the button
   final bool disabled;
@@ -39,14 +40,11 @@ class Button extends StatelessWidget {
   /// button type
   final ButtonType type;
 
-  /// icon of the button
-  final IconData? icon;
+  /// prefix icon of the button
+  final Widget? prefixIcon;
 
   /// suffix icon of the button
-  final IconData? suffixIcon;
-
-  /// debounce duration
-  final int? debounceDurationMillis;
+  final Widget? suffixIcon;
 
   /// whether the button should wrap its width or take the full width
   final bool wrapWidth;
@@ -55,16 +53,17 @@ class Button extends StatelessWidget {
   final double? height;
 
   /// background color of the button
-  final Color? color;
+  final Color? backgroundColor;
+
+  /// text color of the button
+  final Color? textColor;
 
   @override
   Widget build(BuildContext context) {
     final button = switch (type) {
       ButtonType.primary => _buildPrimaryButton(context),
-      ButtonType.secondary => _buildSecondaryButton(context),
-      ButtonType.text => _buildTextButton(),
-      ButtonType.outlined => _buildOutlinedButton(),
-      ButtonType.icon => _buildIconButton(context),
+      ButtonType.outlined => _buildOutlinedButton(context),
+      ButtonType.text => _buildTextButton(context),
     };
 
     return SizedBox(
@@ -74,86 +73,70 @@ class Button extends StatelessWidget {
     );
   }
 
-  Widget _buildIconButton(BuildContext context) => TextButton.icon(
-        icon: loading
-            ? null
-            : Icon(
-                icon,
-                color: context.textTheme.labelLarge?.color,
-                size: 20,
-              ),
-        onPressed: disabled || loading ? null : _onButtonPressed,
-        label: loading
-            ? CupertinoActivityIndicator()
-            : Text(label, style: context.textTheme.labelLarge),
-      );
-
   Widget _buildPrimaryButton(BuildContext context) {
     return ElevatedButton(
-      onPressed: disabled || loading ? null : _onButtonPressed,
+      onPressed: disabled || loading ? null : onPressed,
       style: context.theme.elevatedButtonTheme.style?.copyWith(
         backgroundColor:
-            WidgetStateProperty.all(color ?? AppColors.primaryColor),
+            WidgetStateProperty.all(backgroundColor ?? AppColors.primaryColor),
       ),
       child: loading
           ? const CupertinoActivityIndicator()
-          : Row(
-              mainAxisSize: MainAxisSize.min,
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Flexible(
-                  child: Text(
-                    label,
-                    style: context.textTheme.bodyMedium?.copyWith(
-                      color: AppColors.textOnPrimary,
-                      fontWeight: FontWeight.bold,
-                    ),
-                    textAlign: TextAlign.center,
-                  ),
-                ),
-                if (suffixIcon != null) const SizedBox(width: 8),
-                if (suffixIcon != null)
-                  Icon(suffixIcon, color: AppColors.textOnPrimary),
-              ],
-            ),
+          : _buildButtonContent(context, textColor ?? AppColors.textOnPrimary),
     );
   }
 
-  Widget _buildSecondaryButton(BuildContext context) {
-    return FilledButton(
-      onPressed: disabled || loading ? null : _onButtonPressed,
-      style: FilledButton.styleFrom(
-        backgroundColor: color?.withOpacity(0.2) ?? AppColors.primaryColorLight,
+  Widget _buildOutlinedButton(BuildContext context) {
+    return OutlinedButton(
+      onPressed: disabled || loading ? null : onPressed,
+      style: ButtonStyle(
+        backgroundColor: WidgetStateProperty.all(Colors.transparent),
+        side: WidgetStateProperty.all(
+          BorderSide(color: backgroundColor ?? AppColors.neutralGreyLight),
+        ),
+        foregroundColor: WidgetStateProperty.all(disabled || loading
+            ? AppColors.neutralGrey
+            : AppColors.textPrimary),
       ),
       child: loading
           ? const CupertinoActivityIndicator()
-          : Text(
-              label,
-              style: context.textTheme.labelLarge?.copyWith(
-                color: color ?? AppColors.primaryColor,
+          : _buildButtonContent(context, textColor ?? AppColors.textPrimary),
+    );
+  }
+
+  Widget _buildTextButton(BuildContext context) {
+    return TextButton(
+      onPressed: disabled || loading ? null : onPressed,
+      child: loading
+          ? const CupertinoActivityIndicator()
+          : _buildButtonContent(context, textColor ?? AppColors.textPrimary),
+    );
+  }
+
+  Widget _buildButtonContent(BuildContext context, Color textColor) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        if (prefixIcon != null) prefixIcon!,
+        if (prefixIcon != null) const SizedBox(width: 6),
+        if (child != null)
+          child!
+        else
+          Flexible(
+            child: Text(
+              label ?? '',
+              style: context.textTheme.bodyMedium?.copyWith(
+                color: textColor,
                 fontWeight: FontWeight.bold,
               ),
               textAlign: TextAlign.center,
             ),
+          ),
+        if (suffixIcon != null) const SizedBox(width: 6),
+        if (suffixIcon != null) suffixIcon!,
+      ],
     );
-  }
-
-  Widget _buildTextButton() => TextButton(
-        onPressed: disabled || loading ? null : _onButtonPressed,
-        child: loading
-            ? const CupertinoActivityIndicator()
-            : Text(label, textAlign: TextAlign.center),
-      );
-
-  Widget _buildOutlinedButton() => OutlinedButton(
-        onPressed: disabled || loading ? null : _onButtonPressed,
-        child: loading
-            ? const CupertinoActivityIndicator()
-            : Text(label, textAlign: TextAlign.center),
-      );
-
-  void _onButtonPressed() {
-    if (!loading) onPressed?.call();
   }
 }
 
@@ -162,15 +145,9 @@ enum ButtonType {
   /// primary button
   primary,
 
-  /// secondary button
-  secondary,
-
-  /// text button
-  text,
-
   /// outlined button
   outlined,
 
-  /// icon button
-  icon,
+  /// text button
+  text,
 }

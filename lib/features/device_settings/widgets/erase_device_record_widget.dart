@@ -5,7 +5,9 @@ import 'package:airspothealth/core/widgets/app_bottomsheet.dart';
 import 'package:airspothealth/core/widgets/button.dart';
 import 'package:airspothealth/features/device_settings/models/progress_model.dart';
 import 'package:airspothealth/features/device_settings/models/setting_item.dart';
+import 'package:airspothealth/features/device_settings/providers/device_data_download_provider.dart';
 import 'package:airspothealth/features/device_settings/providers/device_data_erase_provider.dart';
+import 'package:airspothealth/features/device_settings/widgets/download_device_data_button.dart';
 import 'package:airspothealth/features/device_settings/widgets/setting_item_widget.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
@@ -67,6 +69,9 @@ class _DataEraseSheet extends ConsumerWidget {
     final AsyncProgressValue eraseProgress =
         ref.watch(deviceDataEraseProvider(deviceId));
 
+    final AsyncProgressValue downloadProgress =
+        ref.watch(deviceDataDownloadProvider(deviceId));
+
     return AppBottomSheet(
       canBeDismissed: eraseProgress is! AsyncInProgress,
       child: Padding(
@@ -85,6 +90,9 @@ class _DataEraseSheet extends ConsumerWidget {
                 color: AppColors.neutralGrey,
               ),
             ),
+            const SizedBox(height: 16),
+            // a outlined button to show the download historical data as csv
+            DownloadDeviceDataButton(deviceId: deviceId),
             if (eraseProgress is AsyncFailure)
               Padding(
                 padding: const EdgeInsets.only(top: 8),
@@ -100,7 +108,8 @@ class _DataEraseSheet extends ConsumerWidget {
               mainAxisAlignment: MainAxisAlignment.spaceEvenly,
               children: [
                 Button(
-                  disabled: eraseProgress is AsyncInProgress,
+                  disabled: eraseProgress is AsyncInProgress ||
+                      downloadProgress is AsyncInProgress,
                   label: 'Cancel',
                   type: ButtonType.outlined,
                   wrapWidth: true,
@@ -109,10 +118,12 @@ class _DataEraseSheet extends ConsumerWidget {
                   },
                 ),
                 Button(
-                  disabled: eraseProgress is AsyncInProgress,
+                  disabled: eraseProgress is AsyncInProgress ||
+                      downloadProgress is AsyncInProgress,
                   label: eraseProgress is AsyncInProgress
                       ? eraseProgress.message ?? 'Erasing device data....'
-                      : 'Erase All',
+                      : 'Erase Device Data',
+                  backgroundColor: Colors.red,
                   wrapWidth: true,
                   onPressed: () {
                     ref
