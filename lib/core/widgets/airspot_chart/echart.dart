@@ -114,7 +114,8 @@ class _EChartState extends State<EChart> {
             chart.setOption(parsedOption, true);
           }
         } catch (e) {
-          console.log(e);
+          const parsedOption = typeof $_currentOption === 'string' ? JSON.parse($_currentOption) : $_currentOption;
+          chart.setOption(parsedOption, true);
         }
 ''');
     }
