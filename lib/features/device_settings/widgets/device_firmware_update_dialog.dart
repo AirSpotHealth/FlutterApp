@@ -105,8 +105,14 @@ class _DeviceFirmwareUpdateDialogState
             textAlign: TextAlign.center,
           ),
           if (remoteVersion != null) ...[
-            Text(remoteVersion!.changeLog ?? 'No change log available',
-                style: context.textTheme.bodySmall),
+            Text(
+              remoteVersion!.changeLog ?? 'No change log available',
+              style: context.textTheme.bodySmall?.copyWith(
+                letterSpacing: 0.5,
+                fontWeight: FontWeight.w400,
+              ),
+              textAlign: TextAlign.start,
+            ),
             const SizedBox(height: 16)
           ],
           if (remoteVersion?.requireErase == true) ...[
@@ -136,9 +142,7 @@ class _DeviceFirmwareUpdateDialogState
                   .updateFirmware(
                       url: remoteVersion!.downloadUrl, deviceId: deviceId),
               child: Text(
-                remoteVersion?.requireErase == true
-                    ? 'Erase and Update Now'
-                    : 'Update Now',
+                'Update Now',
                 style: TextStyle(
                   color: Colors.white,
                   fontWeight: FontWeight.bold,

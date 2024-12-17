@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:airspothealth/core/models/ble_device.dart';
 import 'package:airspothealth/core/models/device_data.dart';
 import 'package:airspothealth/core/models/device_settings.dart';
 import 'package:airspothealth/core/providers/ble_connected_devices_provider.dart';
@@ -141,6 +142,7 @@ class _BleDeviceCommunicationNotifier extends FamilyNotifier<dynamic, String> {
         'Subscribed to notifications: $deviceId, Was previousNotifySubscription: ${_notifySubscription != null}');
 
     _notifySubscription?.cancel();
+    notifySubscriptionRetryCount = 0;
 
     _notifySubscription = notificationStream.listen((data) {
       _handleNotificationData(data);
@@ -152,7 +154,8 @@ class _BleDeviceCommunicationNotifier extends FamilyNotifier<dynamic, String> {
 
     _checkIfLogData(data, DateTime.now());
 
-    final dynamic value = BleDataUtils.parseResponseCommand(deviceId, data);
+    final BleDevice device = ref.read(bleDeviceProvider(deviceId));
+    final dynamic value = BleDataUtils.parseResponseCommand(device, data);
 
     if (value == null) return;
 

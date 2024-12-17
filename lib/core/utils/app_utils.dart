@@ -39,4 +39,20 @@ class AppUtils {
 
     return false;
   }
+
+  static bool isNewFirmwareVersion(String firmwareVersion) {
+    // it version is less than 3.0.0 then return false
+    final List<String> versionList = firmwareVersion.split('.');
+    if (versionList.length < 3) {
+      return false;
+    }
+
+    final int majorVersion = int.tryParse(versionList[0]) ?? 0;
+
+    if (majorVersion < 3) {
+      return false;
+    }
+
+    return true;
+  }
 }

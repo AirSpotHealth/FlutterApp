@@ -35,7 +35,11 @@ class _DeviceDataDownloadNotifier
 
       final List<DeviceData> deviceDatas = ref.read(isarServiceProvider).read(
         (isar) {
-          return isar.deviceDatas.where().deviceIdEqualTo(deviceId).findAll();
+          return isar.deviceDatas
+              .where()
+              .deviceIdEqualTo(deviceId)
+              .sortByDateTime()
+              .findAll();
         },
       );
 

@@ -2,6 +2,7 @@ import 'package:airspothealth/core/models/ble_device.dart';
 import 'package:airspothealth/core/models/device_data.dart';
 import 'package:airspothealth/core/models/device_settings.dart';
 import 'package:airspothealth/core/services/isar_service.dart';
+import 'package:airspothealth/core/utils/app_utils.dart';
 import 'package:flutter/material.dart';
 import 'package:isar/isar.dart';
 
@@ -20,11 +21,11 @@ class BleDataUtils {
   static const int timestampFrom2000 = 946645200;
 
   /// Parses the response command based on device ID and data
-  static dynamic parseResponseCommand(String deviceId, List<int> data) {
+  static dynamic parseResponseCommand(BleDevice bleDevice, List<int> data) {
     if (data.length < 6) return null;
 
     final responseCommand = ResponseCommand.fromValue(data[2]);
-    final parser = ResponseCommandParser(deviceId);
+    final parser = ResponseCommandParser(bleDevice);
 
     final responseParsers = {
       ResponseCommand.co2Value: parser.parseCo2Value,
@@ -89,9 +90,12 @@ class BleDataUtils {
 /// Response command parser class
 /// Provides methods to parse response commands
 class ResponseCommandParser {
-  ResponseCommandParser(this.deviceId);
+  ResponseCommandParser(this.device);
 
-  final String deviceId;
+  final BleDevice device;
+
+  String get deviceId => device.deviceId;
+
   final IsarService isarService = IsarService();
   int parseCo2Value(List<int> data) => (data[4] * 256 + (data[5] & 0xff));
 
@@ -169,6 +173,12 @@ class ResponseCommandParser {
       return true;
     }
 
+    // check if the firmware is less than v3.0.0
+    // if so, parse it in old format
+    if (!AppUtils.isNewFirmwareVersion(device.firmwareVersion)) {
+      return _parseCo2OldHistoryData(data);
+    }
+
     // Check if the data length is valid
     if (data.length < 9 ||
         (data.length - 5) % BleDataUtils.deviceDataLength != 0) {
@@ -212,6 +222,102 @@ class ResponseCommandParser {
 
     isarService.write((isar) {
       isar.deviceDatas.putAll(deviceData);
+    });
+
+    return false;
+  }
+
+  bool _parseCo2OldHistoryData(List<int> data) {
+    // Check if the data length is at least 6 bytes (minimum valid length)
+    if (data.length < 6) return false;
+
+    // check if it is a co2 history done command
+    if (data.length == 6 && data[3] == 0x01 && data[5] == 0xb8) {
+      return true;
+    }
+
+    // total data count (3rd byte)
+    int dataCount = data[3];
+
+    if (dataCount == 0) {
+      return false;
+    }
+
+    if (data.length < dataCount + 4) {
+      return false;
+    }
+
+    // Extract the timestamp (6th to 9th bytes)
+    int timestamp = _byteArrayToInt(data, 4, 7);
+
+    // Calculate the timestamp from 2000-01-01 00:00:00 UTC
+    int timestampFrom2000 = timestamp + BleDataUtils.timestampFrom2000;
+
+    // Extract the mode (9th byte)
+    int mode = data[8];
+
+    // Calculate the mute time based on the mode
+    int muteTime = 0;
+
+    switch (mode) {
+      case 0:
+        muteTime = 3 * 60;
+        break;
+      case 1:
+        muteTime = 1 * 60;
+        break;
+      case 2:
+        muteTime = 5;
+        break;
+    }
+
+    // Extract the CO2 data count (10th byte)
+    int co2DataCount = dataCount - 5;
+
+    // Extract the CO2 data bytes
+    final co2DataBytes = data.sublist(9, 9 + co2DataCount);
+
+    // Extract the CO2 data values
+    final co2Data = <DateTime, int>{};
+
+    // if co2 data count is 1, the it is a single value and we don't need to loop
+    if (co2DataCount == 1) {
+      final value = co2DataBytes[0];
+      co2Data.putIfAbsent(
+        DateTime.fromMillisecondsSinceEpoch(timestampFrom2000 * 1000),
+        () => value,
+      );
+    } else {
+      for (var i = 0; i < co2DataCount; i += 2) {
+        // Extract two bytes and combine them into a single value
+        final highByte = co2DataBytes[i] & 0xFF;
+        final lowByte = co2DataBytes[i + 1] & 0xFF;
+        final combinedValue = (highByte << 8) | lowByte;
+
+        // Increment the timestamp after every 2 values
+        timestampFrom2000 += muteTime;
+
+        // Store the CO₂ data
+        co2Data.putIfAbsent(
+          DateTime.fromMillisecondsSinceEpoch(timestampFrom2000 * 1000),
+          () => combinedValue,
+        );
+      }
+    }
+
+    final List<DeviceData> dd = co2Data.entries.map((e) {
+      return DeviceData(
+        deviceId: deviceId,
+        dateTime: e.key,
+        value: e.value,
+      );
+    }).toList()
+      ..sort((a, b) => a.dateTime.compareTo(b.dateTime));
+
+    debugPrint('LogData: ${dd.map((e) => e.toString()).toList()}');
+
+    isarService.write((isar) {
+      isar.deviceDatas.putAll(dd);
     });
 
     return false;

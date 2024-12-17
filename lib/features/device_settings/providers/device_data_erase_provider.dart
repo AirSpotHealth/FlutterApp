@@ -33,9 +33,9 @@ class _DeviceDataEraseNotifier
         .catchError((error) {
       state = AsyncFailure(error.toString());
 
-      // wait for 3 minutes so that data can be erased
+      // wait for 1 minutes so that data can be erased
       // if the state is not updated to success, then show failure
-      Future.delayed(const Duration(minutes: 3), () {
+      Future.delayed(const Duration(minutes: 1), () {
         if (state is AsyncInProgress) {
           state = AsyncFailure('Failed to erase device data: Timeout');
         }

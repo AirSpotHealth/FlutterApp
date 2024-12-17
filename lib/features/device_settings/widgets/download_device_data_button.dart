@@ -2,6 +2,7 @@ import 'package:airspothealth/core/theme/app_colors.dart';
 import 'package:airspothealth/core/widgets/button.dart';
 import 'package:airspothealth/features/device_settings/models/progress_model.dart';
 import 'package:airspothealth/features/device_settings/providers/device_data_download_provider.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -31,28 +32,34 @@ class DownloadDeviceDataButton extends ConsumerWidget {
                   .read(deviceDataDownloadProvider(deviceId).notifier)
                   .downloadDeviceData();
             },
-      prefixIcon: _buildPrefixIcon(progress),
+      prefixIcon: Icon(Icons.download_rounded,
+          size: 18,
+          color: progress is AsyncSuccess
+              ? AppColors.brandColorGreen
+              : AppColors.primaryColorDark),
+      suffixIcon: _buildSuffixIcon(progress),
       textColor: _getTextColor(progress),
       disabled: progress is AsyncInProgress || progress is AsyncSuccess,
-      loading: progress is AsyncInProgress,
       label: _getLabel(progress),
     );
   }
 
-  Icon _buildPrefixIcon(AsyncProgressValue progress) {
-    return Icon(
-      progress is AsyncSuccess
-          ? Icons.download_done_rounded
-          : Icons.download_rounded,
-      size: 18,
-      color: _getTextColor(progress),
-    );
+  Widget? _buildSuffixIcon(AsyncProgressValue progress) {
+    return switch (progress) {
+      AsyncInProgress() => CupertinoActivityIndicator(),
+      AsyncSuccess() => Icon(Icons.check_circle_outline_rounded,
+          size: 18, color: AppColors.brandColorGreen),
+      AsyncFailure() => Icon(Icons.error_rounded, size: 18, color: Colors.red),
+      _ => null
+    };
   }
 
   Color _getTextColor(AsyncProgressValue progress) {
-    return progress is AsyncInProgress || progress is AsyncSuccess
-        ? AppColors.brandColorGreen
-        : AppColors.primaryColorDark;
+    return switch (progress) {
+      AsyncSuccess() => AppColors.brandColorGreen,
+      AsyncError() => Colors.red,
+      _ => AppColors.primaryColorDark
+    };
   }
 
   String _getLabel(AsyncProgressValue progress) {

@@ -7,7 +7,6 @@ import 'package:airspothealth/features/device_settings/models/progress_model.dar
 import 'package:airspothealth/features/device_settings/models/setting_item.dart';
 import 'package:airspothealth/features/device_settings/providers/device_data_download_provider.dart';
 import 'package:airspothealth/features/device_settings/providers/device_data_erase_provider.dart';
-import 'package:airspothealth/features/device_settings/widgets/download_device_data_button.dart';
 import 'package:airspothealth/features/device_settings/widgets/setting_item_widget.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
@@ -91,8 +90,6 @@ class _DataEraseSheet extends ConsumerWidget {
               ),
             ),
             const SizedBox(height: 16),
-            // a outlined button to show the download historical data as csv
-            DownloadDeviceDataButton(deviceId: deviceId),
             if (eraseProgress is AsyncFailure)
               Padding(
                 padding: const EdgeInsets.only(top: 8),
