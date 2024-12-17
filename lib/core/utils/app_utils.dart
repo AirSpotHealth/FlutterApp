@@ -47,9 +47,11 @@ class AppUtils {
       return false;
     }
 
-    final int majorVersion = int.tryParse(versionList[0]) ?? 0;
+    debugPrint('versionList: $versionList');
 
-    if (majorVersion < 3) {
+    final int minorVersion = int.tryParse(versionList[1]) ?? 0;
+
+    if (minorVersion < 3) {
       return false;
     }
 
