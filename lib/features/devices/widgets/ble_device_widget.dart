@@ -11,6 +11,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_blue_plus/flutter_blue_plus.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:go_router/go_router.dart';
 
 class BleDeviceWidget extends ConsumerWidget {
@@ -110,18 +111,21 @@ class BleDeviceWidget extends ConsumerWidget {
       GestureDetector(
         onTap: () =>
             _showDeviceAliasDialog(ref, bleDevice.deviceId, bleDevice.alias),
-        child: const Icon(
-          Icons.edit_outlined,
+        child: const FaIcon(
+          FontAwesomeIcons.solidPenToSquare,
           color: AppColors.primaryColor,
-          size: 24,
+          size: 16,
         ),
       ),
-      const SizedBox(width: 8),
+      const SizedBox(width: 6),
       Expanded(
         child: Text(
           bleDevice.alias ?? 'No Nickname',
           style: ref.context.textTheme.labelLarge?.copyWith(
-              color: bleDevice.alias == null ? AppColors.neutralGrey : null),
+            color: bleDevice.alias == null
+                ? AppColors.neutralGrey
+                : AppColors.textSecondary,
+          ),
         ),
       ),
       Text(

@@ -3,6 +3,7 @@ import 'package:airspothealth/core/models/device_settings.dart';
 import 'package:airspothealth/core/providers/device_settings_provider.dart';
 import 'package:airspothealth/core/router/route_names.dart';
 import 'package:airspothealth/core/theme/app_colors.dart';
+import 'package:airspothealth/core/utils/app_utils.dart';
 import 'package:airspothealth/core/utils/assets.dart';
 import 'package:airspothealth/core/utils/constants.dart';
 import 'package:airspothealth/core/utils/extensions.dart';
@@ -11,6 +12,7 @@ import 'package:airspothealth/features/app_setup/providers/dev_mode_provider.dar
 import 'package:airspothealth/features/device_graph/providers/ble_device_provider.dart';
 import 'package:airspothealth/features/device_settings/models/progress_model.dart';
 import 'package:airspothealth/features/device_settings/models/setting_item.dart';
+import 'package:airspothealth/features/device_settings/providers/ble_device_version_provider.dart';
 import 'package:airspothealth/features/device_settings/providers/device_data_download_provider.dart';
 import 'package:airspothealth/features/device_settings/widgets/alarm_setting_widget.dart';
 import 'package:airspothealth/features/device_settings/widgets/auto_connect_setting_widget.dart';
@@ -93,7 +95,9 @@ class DeviceSettingsPage extends ConsumerWidget {
           PowerModeSettingWidget(deviceId: deviceId),
           ..._buildSettingsList(ref),
           DeviceDataDownloadSettingWidget(deviceId: deviceId),
-          EraseDeviceRecordWidget(deviceId: deviceId),
+          if (AppUtils.isNewFirmwareVersion(
+              ref.read(bleDeviceVersionProvider(deviceId))))
+            EraseDeviceRecordWidget(deviceId: deviceId),
           DisconnectDeviceWidget(device: device),
           ForgetDeviceWidget(deviceId: deviceId),
         ],
@@ -171,7 +175,8 @@ class DeviceDataDownloadSettingWidget extends StatelessWidget {
                 : progress is AsyncSuccess
                     ? Icon(Icons.download_done_rounded,
                         size: 20, color: AppColors.primaryColor)
-                    : Icon(Icons.download, size: 20),
+                    : Icon(Icons.download,
+                        size: 20, color: AppColors.neutralGrey),
             leadingWidget: Container(
               width: 32,
               height: 32,
