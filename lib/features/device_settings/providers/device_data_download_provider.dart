@@ -86,10 +86,8 @@ class _DeviceDataDownloadNotifier
   Future<void> downloadDeviceData() async {
     state = AsyncInProgress(0.0, message: 'Downloading device data....');
 
-    ref
-        .read(deviceHistoricalDataProvider(
-            (deviceId, GraphDataDuration.last7Days)).notifier)
-        .fetchDataFromDevice(force: true);
+    ref.read(
+        deviceHistoricalDataProvider((deviceId, GraphDataDuration.last7Days)));
 
     state = AsyncInProgress(0.1, message: 'Fetching device data....');
   }

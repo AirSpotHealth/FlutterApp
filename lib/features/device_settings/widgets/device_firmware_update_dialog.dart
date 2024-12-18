@@ -150,9 +150,11 @@ class _DeviceFirmwareUpdateDialogState
               ),
             ),
           if (updateState is AsyncFailure)
-            Text(
-              updateState.error.toString(),
-              style: context.textTheme.bodySmall?.copyWith(color: Colors.red),
+            Flexible(
+              child: Text(
+                updateState.error.toString(),
+                style: context.textTheme.bodySmall?.copyWith(color: Colors.red),
+              ),
             ),
         ],
       ),

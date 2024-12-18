@@ -1,6 +1,7 @@
 import 'package:airspothealth/core/theme/app_colors.dart';
 import 'package:airspothealth/core/utils/app_utils.dart';
 import 'package:airspothealth/core/utils/extensions.dart';
+import 'package:airspothealth/core/widgets/button.dart';
 import 'package:airspothealth/features/device_settings/models/remote_version.dart';
 import 'package:airspothealth/features/device_settings/providers/ble_device_version_provider.dart';
 import 'package:airspothealth/features/device_settings/providers/firmware_remote_version_provider.dart';
@@ -75,11 +76,12 @@ class _DeviceVersionUpdateWidgetState
                 AppUtils.isVersionGreater(
                     currentVersion, remoteVersion.value!.versionName)) ...[
               const SizedBox(width: 16),
-              ElevatedButton(
+              Button(
+                wrapWidth: true,
                 onPressed: () {
                   _showUpdateDialog(context, remoteVersion.value!);
                 },
-                child: const Text('Update'),
+                label: 'Update',
               ),
             ]
           ],
