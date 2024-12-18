@@ -173,10 +173,9 @@ class DeviceDataDownloadSettingWidget extends StatelessWidget {
             suffixWidget: progress is AsyncInProgress
                 ? CupertinoActivityIndicator()
                 : progress is AsyncSuccess
-                    ? Icon(Icons.download_done_rounded,
+                    ? const Icon(Icons.download_done_rounded,
                         size: 20, color: AppColors.primaryColor)
-                    : Icon(Icons.download,
-                        size: 20, color: AppColors.neutralGrey),
+                    : const SizedBox(),
             leadingWidget: Container(
               width: 32,
               height: 32,

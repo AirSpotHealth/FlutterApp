@@ -6,8 +6,13 @@ import 'package:airspothealth/features/device_graph/widgets/data_graph_wrapper.d
 import 'package:airspothealth/features/device_graph/widgets/device_current_value_widget.dart';
 import 'package:airspothealth/features/device_graph/widgets/device_data_aggregate_card.dart';
 import 'package:airspothealth/features/device_graph/widgets/graph_settings_widget.dart';
+import 'package:airspothealth/features/device_settings/models/progress_model.dart';
+import 'package:airspothealth/features/device_settings/providers/device_data_download_provider.dart';
+import 'package:airspothealth/features/device_settings/widgets/download_device_data_button.dart';
+import 'package:animated_icon/animated_icon.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 
 class DeviceGraphPage extends ConsumerWidget {
   const DeviceGraphPage({required this.deviceId, super.key});
@@ -21,7 +26,35 @@ class DeviceGraphPage extends ConsumerWidget {
     return Scaffold(
       appBar: AppBar(
         title: const AppLogo(width: 100),
-        actions: const [
+        actions: [
+          DownloadDeviceDataButton(
+            deviceId: deviceId,
+            builder: (ref, progress) {
+              return IconButton(
+                  onPressed: () {
+                    if (progress is AsyncInProgress) return;
+
+                    ref
+                        .read(deviceDataDownloadProvider(deviceId).notifier)
+                        .downloadDeviceData();
+                  },
+                  icon: switch (progress) {
+                    AsyncSuccess() => FaIcon(
+                        Icons.download_done,
+                        color: Colors.white,
+                      ),
+                    AsyncInProgress() => AnimateIcon(
+                        onTap: () {},
+                        iconType: IconType.continueAnimation,
+                        animateIcon: AnimateIcons.download,
+                        color: Colors.white,
+                        height: 24,
+                        width: 24,
+                      ),
+                    _ => FaIcon(FontAwesomeIcons.fileCsv),
+                  });
+            },
+          ),
           GraphSettingsWidget(),
           SizedBox(width: 8),
         ],
