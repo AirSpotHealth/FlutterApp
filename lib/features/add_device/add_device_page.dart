@@ -1,5 +1,5 @@
-import 'package:airspothealth/core/utils/extensions.dart';
 import 'package:airspothealth/core/utils/permission_utils.dart';
+import 'package:airspothealth/core/widgets/button.dart';
 import 'package:airspothealth/features/add_device/providers/ble_device_connection_provider.dart';
 import 'package:airspothealth/features/add_device/providers/ble_search_results_provider.dart';
 import 'package:airspothealth/features/add_device/widgets/ble_new_device_item.dart';
@@ -7,6 +7,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_blue_plus/flutter_blue_plus.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:permission_handler/permission_handler.dart';
 
 class AddDevicePage extends ConsumerStatefulWidget {
   const AddDevicePage({super.key});
@@ -19,16 +20,36 @@ class _AddDevicePageState extends ConsumerState<AddDevicePage> {
   @override
   void initState() {
     super.initState();
-    PermissionUtils.requestPermissions().then((granted) {
+    PermissionUtils.requestPermissions().then((deniedPermissions) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (!granted) {
-          context.showSnackBar(
-              'Our app needs location and bluetooth permission to scan for devices');
+        if (deniedPermissions?.isNotEmpty == true) {
+          _showPermissionDeniedDialog(deniedPermissions!);
           return;
         }
         ref.read(bluetoothSearchResultsProvider.notifier).startScan();
       });
     });
+  }
+
+  void _showPermissionDeniedDialog(String deniedPermissions) {
+    showAdaptiveDialog(
+      context: context,
+      barrierDismissible: true,
+      builder: (context) => AlertDialog(
+        backgroundColor: Colors.white,
+        surfaceTintColor: Colors.white,
+        title: const Text('Permission Denied'),
+        content: Text(
+          'Please enable $deniedPermissions permission to continue',
+        ),
+        actions: [
+          Button(
+            onPressed: () => openAppSettings(),
+            child: const Text('Open Settings'),
+          ),
+        ],
+      ),
+    );
   }
 
   @override
