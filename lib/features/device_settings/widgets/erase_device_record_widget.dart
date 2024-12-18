@@ -80,7 +80,7 @@ class _DataEraseSheet extends ConsumerWidget {
             ),
             const SizedBox(height: 4),
             Text(
-              'Erasing data will remove all records from the device. This action cannot be undone.',
+              'Erasing data will remove all the CO2 history stored in the device. This action cannot be undone.',
               style: context.textTheme.bodySmall?.copyWith(
                 color: AppColors.neutralGrey,
               ),
