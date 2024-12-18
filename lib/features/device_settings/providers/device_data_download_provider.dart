@@ -53,7 +53,7 @@ class _DeviceDataDownloadNotifier
       final headerRow = 'DateTime,Value,Type\n';
 
       final csvData = deviceDatas.map((data) {
-        return '${data.dateTime.toIso8601String()},${data.value},${data.type.name}';
+        return '${data.dateTime.toIso8601String().replaceAll("T", " ")},${data.value},${data.type.name.toUpperCase()}';
       }).join('\n');
 
       final directory = await getApplicationDocumentsDirectory();
