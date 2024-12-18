@@ -1,12 +1,13 @@
 import 'package:airspothealth/core/utils/permission_utils.dart';
+import 'package:airspothealth/core/widgets/app_bottomsheet.dart';
 import 'package:airspothealth/core/widgets/button.dart';
-import 'package:airspothealth/features/add_device/providers/ble_device_connection_provider.dart';
 import 'package:airspothealth/features/add_device/providers/ble_search_results_provider.dart';
 import 'package:airspothealth/features/add_device/widgets/ble_new_device_item.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_blue_plus/flutter_blue_plus.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:permission_handler/permission_handler.dart';
 
 class AddDevicePage extends ConsumerStatefulWidget {
@@ -16,10 +17,33 @@ class AddDevicePage extends ConsumerStatefulWidget {
   ConsumerState<ConsumerStatefulWidget> createState() => _AddDevicePageState();
 }
 
-class _AddDevicePageState extends ConsumerState<AddDevicePage> {
+class _AddDevicePageState extends ConsumerState<AddDevicePage>
+    with WidgetsBindingObserver {
+  bool _navigatedToSettings = false;
+
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
+    _requestPermissions();
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    debugPrint('AppLifecycleState: $state');
+    if (state == AppLifecycleState.resumed && _navigatedToSettings) {
+      _requestPermissions();
+      _navigatedToSettings = false;
+    }
+  }
+
+  void _requestPermissions() {
     PermissionUtils.requestPermissions().then((deniedPermissions) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (deniedPermissions?.isNotEmpty == true) {
@@ -32,24 +56,43 @@ class _AddDevicePageState extends ConsumerState<AddDevicePage> {
   }
 
   void _showPermissionDeniedDialog(String deniedPermissions) {
-    showAdaptiveDialog(
-      context: context,
-      barrierDismissible: true,
-      builder: (context) => AlertDialog(
-        backgroundColor: Colors.white,
-        surfaceTintColor: Colors.white,
-        title: const Text('Permission Denied'),
-        content: Text(
-          'Please enable $deniedPermissions permission to continue',
-        ),
-        actions: [
-          Button(
-            onPressed: () => openAppSettings(),
-            child: const Text('Open Settings'),
-          ),
-        ],
-      ),
-    );
+    showModalBottomSheet(
+        context: context,
+        builder: (context) {
+          return AppBottomSheet(
+              child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              spacing: 16,
+              children: [
+                const Text(
+                  'Please enable the following permissions to continue:',
+                  style: TextStyle(fontSize: 16),
+                ),
+                Text(
+                  deniedPermissions,
+                  style: const TextStyle(
+                      fontSize: 16, fontWeight: FontWeight.bold),
+                ),
+                Button(
+                  label: 'Open Settings',
+                  onPressed: () {
+                    _navigatedToSettings = true;
+                    openAppSettings();
+                    context.pop(true);
+                  },
+                ),
+              ],
+            ),
+          ));
+        }).then((_) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (_navigatedToSettings == false) {
+          context.pop();
+        }
+      });
+    });
   }
 
   @override
@@ -100,29 +143,6 @@ class _AddDevicePageState extends ConsumerState<AddDevicePage> {
           ],
         ),
       ),
-      floatingActionButton: devices.length > 1 &&
-              devices.every((dev) => !dev.isConnected)
-          ? FloatingActionButton.extended(
-              backgroundColor: Colors.blueGrey,
-              label: const Text('Connect All'),
-              onPressed: () {
-                if (isScanning) {
-                  ref.read(bluetoothSearchResultsProvider.notifier).stopScan();
-                }
-
-                _connectAllDevices(devices);
-              },
-              icon: const Icon(Icons.bluetooth_searching),
-            )
-          : null,
     );
-  }
-
-  void _connectAllDevices(List<BluetoothDevice> devices) {
-    for (final device in devices) {
-      ref
-          .read(bleDeviceConnectionProvider(device.remoteId.str).notifier)
-          .connect();
-    }
   }
 }

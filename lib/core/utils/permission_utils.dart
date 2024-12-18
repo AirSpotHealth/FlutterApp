@@ -7,10 +7,11 @@ class PermissionUtils {
     Permission.bluetoothConnect,
     Permission.bluetoothScan
   ];
+
   static Future<String?> requestPermissions() async {
     final statuses = await _permissionList.request();
 
-    debugPrint('Permission statuses: $statuses');
+    debugPrint('statuses: $statuses');
 
     // check each permission status is denied or permanently denied
     // if permantly denied then show dialog to open settings
@@ -38,6 +39,7 @@ class PermissionUtils {
   static final _permissionNames = {
     Permission.bluetoothConnect: 'Bluetooth',
     Permission.bluetoothScan: 'Bluetooth',
+    Permission.bluetooth: 'Bluetooth',
     Permission.locationWhenInUse: 'Location',
     Permission.locationAlways: 'Location',
   };
