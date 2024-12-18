@@ -1,12 +1,16 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:permission_handler/permission_handler.dart';
 
 class PermissionUtils {
-  static const _permissionList = [
-    Permission.locationWhenInUse,
-    Permission.bluetoothConnect,
-    Permission.bluetoothScan
-  ];
+  static final _permissionList = Platform.isIOS
+      ? [Permission.locationWhenInUse, Permission.bluetooth]
+      : [
+          Permission.locationWhenInUse,
+          Permission.bluetoothConnect,
+          Permission.bluetoothScan
+        ];
 
   static Future<String?> requestPermissions() async {
     final statuses = await _permissionList.request();
