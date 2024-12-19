@@ -40,7 +40,7 @@ class ForgetDeviceWidget extends ConsumerWidget {
         leadingWidget: Container(
           padding: const EdgeInsets.all(5),
           decoration: BoxDecoration(
-            color: Colors.red.withOpacity(0.1),
+            color: Colors.red.withValues(alpha: 0.1),
             borderRadius: BorderRadius.circular(8),
           ),
           child: const Icon(

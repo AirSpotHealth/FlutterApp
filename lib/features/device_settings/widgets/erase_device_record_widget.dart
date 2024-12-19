@@ -27,7 +27,7 @@ class EraseDeviceRecordWidget extends ConsumerWidget {
         leadingWidget: Container(
           padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 5),
           decoration: BoxDecoration(
-            color: Colors.redAccent.withOpacity(0.1),
+            color: Colors.redAccent.withValues(alpha: 0.1),
             borderRadius: BorderRadius.circular(8),
           ),
           child: const Icon(

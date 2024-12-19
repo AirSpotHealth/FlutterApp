@@ -174,7 +174,7 @@ class _OverlayShape extends SfOverlayShape {
           ..isAntiAlias = true
           ..strokeWidth = 0
           ..color = (thumb == SfThumb.start ? leftThumbColor : rightThumbColor)
-              .withOpacity(0.12));
+              .withValues(alpha: 0.12));
   }
 }
 

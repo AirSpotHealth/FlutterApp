@@ -47,7 +47,7 @@ class BleDeviceWidget extends ConsumerWidget {
           boxShadow: [
             if (deviceConnected)
               BoxShadow(
-                color: AppColors.primaryColor.withOpacity(0.2),
+                color: AppColors.primaryColor.withValues(alpha: 0.2),
                 blurRadius: 10,
                 offset: const Offset(0, 2),
               ),
@@ -113,6 +113,7 @@ class BleDeviceWidget extends ConsumerWidget {
                   ),
                 ),
                 Button(
+                  backgroundColor: Colors.red,
                   onPressed: () {
                     ref
                         .read(deviceForgetStatusProvider(deviceId).notifier)

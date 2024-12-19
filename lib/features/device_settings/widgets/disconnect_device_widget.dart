@@ -21,7 +21,7 @@ class DisconnectDeviceWidget extends ConsumerWidget {
         leadingWidget: Container(
           padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 5),
           decoration: BoxDecoration(
-            color: AppColors.primaryColorDark.withOpacity(0.1),
+            color: AppColors.primaryColorDark.withValues(alpha: 0.1),
             borderRadius: BorderRadius.circular(8),
           ),
           child: const Icon(
