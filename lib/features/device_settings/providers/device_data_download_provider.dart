@@ -1,8 +1,10 @@
 import 'dart:io';
 
+import 'package:airspothealth/core/models/ble_device.dart';
 import 'package:airspothealth/core/models/device_data.dart';
 import 'package:airspothealth/core/providers/isar_service_provider.dart';
 import 'package:airspothealth/features/device_graph/models/graph_data_duration.dart';
+import 'package:airspothealth/features/device_graph/providers/ble_device_provider.dart';
 import 'package:airspothealth/features/device_graph/providers/device_historical_data_provider.dart';
 import 'package:airspothealth/features/device_settings/models/progress_model.dart';
 import 'package:file_saver/file_saver.dart';
@@ -52,13 +54,18 @@ class _DeviceDataDownloadNotifier
 
       final headerRow = 'DateTime,Value,Type\n';
 
+      final BleDevice device = ref.read(bleDeviceProvider(deviceId));
+      final deviceName = device.alias ?? device.name;
+      final dateRange =
+          '${deviceDatas.first.dateTime.toIso8601String()} - ${deviceDatas.last.dateTime.toIso8601String()}';
+
       final csvData = deviceDatas.map((data) {
         return '${data.dateTime.toIso8601String().replaceAll("T", " ")},${data.value},${data.type.name.toUpperCase()}';
       }).join('\n');
 
       final directory = await getApplicationDocumentsDirectory();
 
-      final File file = File('${directory.path}/device_data_$deviceId.csv');
+      final File file = File('${directory.path}/$deviceName.csv');
 
       state = AsyncInProgress(0.8, message: 'Generating CSV file....');
 
@@ -67,7 +74,7 @@ class _DeviceDataDownloadNotifier
 
       final bytes = await file.readAsBytes();
 
-      final String name = 'device_data_$deviceId.csv';
+      final String name = "${deviceName}_data_$dateRange.csv";
 
       state =
           AsyncInProgress(1.0, message: 'Device data ready for download....');
