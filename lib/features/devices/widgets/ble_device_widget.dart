@@ -4,7 +4,10 @@ import 'package:airspothealth/core/router/route_names.dart';
 import 'package:airspothealth/core/theme/app_colors.dart';
 import 'package:airspothealth/core/utils/assets.dart';
 import 'package:airspothealth/core/utils/extensions.dart';
+import 'package:airspothealth/core/widgets/app_bottomsheet.dart';
+import 'package:airspothealth/core/widgets/button.dart';
 import 'package:airspothealth/features/add_device/providers/ble_device_connection_provider.dart';
+import 'package:airspothealth/features/device_settings/providers/device_forget_status_provider.dart';
 import 'package:airspothealth/features/devices/widgets/device_connect_button.dart';
 import 'package:airspothealth/features/devices/widgets/device_value_widget.dart';
 import 'package:flutter/cupertino.dart';
@@ -28,14 +31,7 @@ class BleDeviceWidget extends ConsumerWidget {
         deviceConnectionState == BluetoothBondState.bonded;
 
     return GestureDetector(
-      onLongPress: () {
-        if (deviceConnected) {
-          ref
-              .read(bleDeviceConnectionProvider(bleDevice.deviceId).notifier)
-              .disconnect();
-          return;
-        }
-      },
+      onLongPress: () => _showForgetDeviceSheet(ref, bleDevice.deviceId),
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 300),
         padding: const EdgeInsets.all(12),
@@ -87,6 +83,49 @@ class BleDeviceWidget extends ConsumerWidget {
           ],
         ),
       ),
+    );
+  }
+
+  void _showForgetDeviceSheet(WidgetRef ref, String deviceId) {
+    showModalBottomSheet(
+      context: ref.context,
+      builder: (context) {
+        return AppBottomSheet(
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              spacing: 12,
+              children: [
+                const Text(
+                  'Forget Device',
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                const Text(
+                  'Are you sure you want to forget this device?',
+                  style: TextStyle(
+                    fontSize: 16,
+                    color: AppColors.neutralGrey,
+                  ),
+                ),
+                Button(
+                  onPressed: () {
+                    ref
+                        .read(deviceForgetStatusProvider(deviceId).notifier)
+                        .forget();
+                    ref.context.pop();
+                  },
+                  child: const Text('Forget Device'),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
     );
   }
 
