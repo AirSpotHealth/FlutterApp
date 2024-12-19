@@ -4,6 +4,7 @@ import 'package:airspothealth/core/utils/extensions.dart';
 import 'package:airspothealth/core/utils/external_urls.dart';
 import 'package:airspothealth/features/home/models/menu_item.dart';
 import 'package:flutter/material.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:go_router/go_router.dart';
 
 class MenuItemWidget extends StatelessWidget {
@@ -39,7 +40,8 @@ class MenuItemWidget extends StatelessWidget {
         menuItem.iconAsset,
         width: 32,
       ),
-      trailing: Icon(menuItem.enabled ? Icons.arrow_forward_ios : Icons.lock,
+      trailing: Icon(
+          menuItem.enabled ? Icons.arrow_forward_ios : FontAwesomeIcons.ban,
           size: 16),
       onTap: () {
         WidgetsBinding.instance.addPostFrameCallback((_) {

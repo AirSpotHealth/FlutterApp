@@ -1,6 +1,7 @@
 import 'package:airspothealth/core/utils/extensions.dart';
 import 'package:airspothealth/features/device_settings/models/setting_item.dart';
 import 'package:flutter/material.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 
 class SettingItemWidget extends StatelessWidget {
   const SettingItemWidget({
@@ -56,7 +57,7 @@ class SettingItemWidget extends StatelessWidget {
                         const SizedBox(width: 8),
                         if (!item.enabled)
                           const Icon(
-                            Icons.lock,
+                            FontAwesomeIcons.ban,
                             size: 16,
                             color: Colors.grey,
                           )

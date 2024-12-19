@@ -14,12 +14,12 @@ class AppSetupPage extends ConsumerWidget {
   const AppSetupPage({super.key});
 
   static final _items = <MenuItem>[
-    MenuItem(
-      title: 'Latest News',
-      iconAsset: Assets.latestNews,
-      route: RouteNames.latestNews,
-      enabled: false,
-    ),
+    // MenuItem(
+    //   title: 'Latest News',
+    //   iconAsset: Assets.latestNews,
+    //   route: RouteNames.latestNews,
+    //   enabled: false,
+    // ),
     MenuItem(
         title: 'AirSpot App Updates',
         iconAsset: Assets.deviceUpdate,
