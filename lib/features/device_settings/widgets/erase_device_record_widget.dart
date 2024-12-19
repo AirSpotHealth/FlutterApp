@@ -7,6 +7,7 @@ import 'package:airspothealth/features/device_settings/models/progress_model.dar
 import 'package:airspothealth/features/device_settings/models/setting_item.dart';
 import 'package:airspothealth/features/device_settings/providers/device_data_erase_provider.dart';
 import 'package:airspothealth/features/device_settings/widgets/setting_item_widget.dart';
+import 'package:animated_icon/animated_icon.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -114,6 +115,16 @@ class _DataEraseSheet extends ConsumerWidget {
                   label: eraseProgress is AsyncInProgress
                       ? eraseProgress.message ?? 'Erasing device data....'
                       : 'Erase Device Data',
+                  suffixIcon: eraseProgress is AsyncInProgress
+                      ? AnimateIcon(
+                          onTap: () {},
+                          iconType: IconType.continueAnimation,
+                          animateIcon: AnimateIcons.trashBin,
+                          color: Colors.white,
+                          height: 20,
+                          width: 20,
+                        )
+                      : null,
                   backgroundColor: Colors.red,
                   wrapWidth: true,
                   onPressed: () {
