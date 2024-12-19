@@ -216,6 +216,10 @@ class _BleDeviceCommunicationNotifier extends FamilyNotifier<dynamic, String> {
     // _setHomeValue(value);
 
     try {
+      if (value == 0) {
+        state = null;
+        return;
+      }
       final DateTime dateTime = DateTime.now();
 
       // final DeviceSettings? deviceSettings =
