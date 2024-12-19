@@ -83,6 +83,24 @@ class _BleSavedDevicesNotifier extends Notifier<List<BleDevice>> {
     state = build();
   }
 
+  void resetDeviceFetchTime(String deviceId) {
+    final device = state.firstWhereOrNull((d) => d.deviceId == deviceId);
+
+    if (device == null) {
+      return;
+    }
+
+    ref.read(isarServiceProvider).write((isar) {
+      isar.bleDevices.put(device.copyWith(
+        lastFetchedStartDate: null,
+        lastFetchedEndDate: null,
+      ));
+    });
+
+    state =
+        state.map((d) => d.deviceId == device.deviceId ? device : d).toList();
+  }
+
   BleDevice? getDeviceById(String deviceId) =>
       state.firstWhereOrNull((d) => d.deviceId == deviceId);
 }

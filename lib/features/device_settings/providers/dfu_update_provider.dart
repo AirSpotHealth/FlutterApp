@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:airspothealth/core/providers/ble_device_communication_provider.dart';
+import 'package:airspothealth/core/providers/ble_saved_devices_provider.dart';
 import 'package:airspothealth/core/services/network_service.dart';
 import 'package:airspothealth/features/add_device/providers/ble_device_connection_provider.dart';
 import 'package:airspothealth/features/device_settings/models/progress_model.dart';
@@ -122,6 +123,7 @@ class _DfuUpdateNotifier extends AutoDisposeNotifier<AsyncProgressValue> {
 
     ref.read(bleDeviceConnectionProvider(deviceId).notifier).connect();
     ref.invalidate(bleDeviceCommunicationProvider(deviceId));
+    ref.read(bleSavedDevicesProvider.notifier).resetDeviceFetchTime(deviceId);
 
     state = const AsyncSuccess(null);
   }
