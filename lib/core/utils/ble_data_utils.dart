@@ -202,13 +202,13 @@ class ResponseCommandParser {
 
       debugPrint('Timestamp: $timestamp, Date: $date');
 
-      /// Extract the type (1 byte)
-      final type = historyData[i + 4];
-
       // Extract the value (2 bytes)
-      final highByte = historyData[i + 5] & 0xFF;
-      final lowByte = historyData[i + 6] & 0xFF;
+      final highByte = historyData[i + 4] & 0xFF;
+      final lowByte = historyData[i + 5] & 0xFF;
       final value = (highByte << 8) | lowByte;
+
+      /// Extract the type (1 byte)
+      final type = historyData[i + 6];
 
       deviceData.add(DeviceData(
         deviceId: deviceId,
