@@ -5,6 +5,7 @@ import 'package:airspothealth/features/device_settings/providers/device_data_dow
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 
 class DownloadDeviceDataButton extends ConsumerWidget {
   const DownloadDeviceDataButton(
@@ -32,7 +33,7 @@ class DownloadDeviceDataButton extends ConsumerWidget {
                   .read(deviceDataDownloadProvider(deviceId).notifier)
                   .downloadDeviceData();
             },
-      prefixIcon: Icon(Icons.download_rounded,
+      prefixIcon: FaIcon(FontAwesomeIcons.fileExport,
           size: 18,
           color: progress is AsyncSuccess
               ? AppColors.brandColorGreen
@@ -66,9 +67,9 @@ class DownloadDeviceDataButton extends ConsumerWidget {
     if (progress is AsyncInProgress) {
       return 'Downloading...';
     } else if (progress is AsyncSuccess) {
-      return 'Device data downloaded';
+      return 'CSV Data Exported';
     } else {
-      return 'Download Device Data';
+      return 'Export CSV Data';
     }
   }
 }

@@ -169,7 +169,7 @@ class DeviceDataDownloadSettingWidget extends StatelessWidget {
       builder: (ref, progress) {
         return SettingItemWidget(
           item: SettingItem(
-            title: 'Download Device Data',
+            title: 'Export CSV Data',
             suffixWidget: progress is AsyncInProgress
                 ? CupertinoActivityIndicator()
                 : progress is AsyncSuccess
