@@ -9,7 +9,7 @@ import 'package:airspothealth/features/device_graph/widgets/graph_settings_widge
 import 'package:airspothealth/features/device_settings/models/progress_model.dart';
 import 'package:airspothealth/features/device_settings/providers/device_data_download_provider.dart';
 import 'package:airspothealth/features/device_settings/widgets/download_device_data_button.dart';
-import 'package:animated_icon/animated_icon.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
@@ -43,14 +43,7 @@ class DeviceGraphPage extends ConsumerWidget {
                         Icons.download_done,
                         color: Colors.white,
                       ),
-                    AsyncInProgress() => AnimateIcon(
-                        onTap: () {},
-                        iconType: IconType.continueAnimation,
-                        animateIcon: AnimateIcons.download,
-                        color: Colors.white,
-                        height: 24,
-                        width: 24,
-                      ),
+                    AsyncInProgress() => CupertinoActivityIndicator(),
                     _ => FaIcon(FontAwesomeIcons.fileCsv),
                   });
             },
