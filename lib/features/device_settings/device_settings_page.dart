@@ -21,6 +21,7 @@ import 'package:airspothealth/features/device_settings/widgets/disconnect_device
 import 'package:airspothealth/features/device_settings/widgets/download_device_data_button.dart';
 import 'package:airspothealth/features/device_settings/widgets/erase_device_record_widget.dart';
 import 'package:airspothealth/features/device_settings/widgets/forget_device_widget.dart';
+import 'package:airspothealth/features/device_settings/widgets/sensor_error_widget.dart';
 import 'package:airspothealth/features/device_settings/widgets/setting_item_widget.dart';
 import 'package:airspothealth/features/device_settings/widgets/vibrate_setting_widget.dart';
 import 'package:flutter/cupertino.dart';
@@ -100,6 +101,7 @@ class DeviceSettingsPage extends ConsumerWidget {
             EraseDeviceRecordWidget(deviceId: deviceId),
           DisconnectDeviceWidget(device: device),
           ForgetDeviceWidget(deviceId: deviceId),
+          if (devMode) SensorErrorWidget(deviceId: deviceId),
         ],
       ),
     );

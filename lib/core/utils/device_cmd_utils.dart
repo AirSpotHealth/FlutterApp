@@ -249,4 +249,8 @@ class DeviceCmdUtils {
   static Uint8List eraseData() {
     return _buildCommand([prefixHigh, prefixLow, 0xFD, 1, 1]);
   }
+
+  static Uint8List setSensorError(bool high) {
+    return _buildCommand([prefixHigh, prefixLow, 0xFF, 1, high ? 1 : 0]);
+  }
 }

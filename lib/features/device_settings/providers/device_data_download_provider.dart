@@ -55,12 +55,17 @@ class _DeviceDataDownloadNotifier
       final headerRow = 'DateTime,Value,Type\n';
 
       final BleDevice device = ref.read(bleDeviceProvider(deviceId));
-      final deviceName = device.alias ?? device.name;
+      final deviceName = device.alias == null || device.alias == "AirSpot"
+          ? device.name
+          : device.alias;
       final dateRange =
           '${deviceDatas.first.dateTime.toIso8601String()} - ${deviceDatas.last.dateTime.toIso8601String()}';
 
       final csvData = deviceDatas.map((data) {
-        return '${data.dateTime.toIso8601String().replaceAll("T", " ")},${data.value},${data.type.name.toUpperCase()}';
+        final row =
+            '${data.dateTime.toIso8601String().replaceAll("T", " ")},${data.value},${data.type.name.toUpperCase()}';
+        debugPrint('Row: $row');
+        return row;
       }).join('\n');
 
       final directory = await getApplicationDocumentsDirectory();
