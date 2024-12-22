@@ -253,4 +253,26 @@ class DeviceCmdUtils {
   static Uint8List setSensorError(bool high) {
     return _buildCommand([prefixHigh, prefixLow, 0xFF, 1, high ? 1 : 0]);
   }
+
+  static Uint8List getSensorErrors() {
+    final DateTime now = DateTime.now();
+
+    // Calculate the total seconds since January 1, 2000, to today start and current time
+    int since2000ToStartDate =
+        calculateSecondsSince2000(now.subtract(Duration(days: 7)));
+    int since2000ToEndDate = calculateSecondsSince2000(now);
+
+    // Convert the calculated seconds to byte arrays
+    var byteArrayStart = ByteData(4)
+      ..setInt32(0, since2000ToStartDate, Endian.big);
+    var byteArrayNow = ByteData(4)..setInt32(0, since2000ToEndDate, Endian.big);
+
+    // Construct the BLE command
+    return _buildCommand([
+      ...[prefixHigh, prefixLow, 0x0C, 0x08],
+      ...byteArrayStart.buffer.asUint8List(),
+      ...byteArrayNow.buffer.asUint8List(),
+      3
+    ]);
+  }
 }
