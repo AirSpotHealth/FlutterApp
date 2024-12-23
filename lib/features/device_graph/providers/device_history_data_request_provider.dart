@@ -243,4 +243,14 @@ class _DeviceHistoryDataRequestNotifier
 
     debugPrint('Pending date time range: $pendingDateTimeRange');
   }
+
+  void clear() {
+    state = AsyncNone();
+
+    currentPageNumber = null;
+    numberOfPagesFetched = 0;
+    requestedDateTimeRange = null;
+    pendingDateTimeRange = null;
+    duration = null;
+  }
 }
