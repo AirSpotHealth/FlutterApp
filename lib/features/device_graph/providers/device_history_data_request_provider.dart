@@ -6,6 +6,7 @@ import 'package:airspothealth/core/providers/ble_device_communication_provider.d
 import 'package:airspothealth/core/providers/isar_service_provider.dart';
 import 'package:airspothealth/core/utils/constants.dart';
 import 'package:airspothealth/core/utils/device_cmd_utils.dart';
+import 'package:airspothealth/core/utils/extensions.dart';
 import 'package:airspothealth/features/device_graph/models/graph_data_duration.dart';
 import 'package:airspothealth/features/device_graph/providers/ble_device_provider.dart';
 import 'package:airspothealth/features/device_settings/models/progress_model.dart';
@@ -23,10 +24,11 @@ class _DeviceHistoryDataRequestNotifier
   String get deviceId => arg;
 
   int? currentPageNumber;
-  int get maxFlashPageCount => Constants.maxFlashPageCount;
   int numberOfPagesFetched = 0;
 
   DateTimeRange? requestedDateTimeRange;
+  DateTimeRange? pendingDateTimeRange;
+
   GraphDataDuration? duration;
 
   BleDevice? bleDevice;
@@ -42,7 +44,7 @@ class _DeviceHistoryDataRequestNotifier
 
   void request(GraphDataDuration duration) {
     this.duration = duration;
-    requestedDateTimeRange = duration.getDateTimeRange();
+    requestedDateTimeRange = duration.getDateTimeRange(isTonightEnd: false);
 
     debugPrint('Requesting historical data for $requestedDateTimeRange');
 
@@ -56,6 +58,7 @@ class _DeviceHistoryDataRequestNotifier
       _sendCommand(DeviceCmdUtils.getCurrentFlashPage(),
           "Getting the last recorded data");
     } else {
+      _setPendingDateTimeRange();
       _sendCommand(DeviceCmdUtils.getCo2History(currentPageNumber!),
           "Getting historical data for page $currentPageNumber");
     }
@@ -90,7 +93,7 @@ class _DeviceHistoryDataRequestNotifier
     currentPageNumber = (currentPageNumber ?? 0) - 1;
 
     if (currentPageNumber! < 0) {
-      currentPageNumber = maxFlashPageCount - 1;
+      currentPageNumber = Constants.maxFlashPageCount - 1;
     }
 
     debugPrint(
@@ -114,12 +117,17 @@ class _DeviceHistoryDataRequestNotifier
   bool _shouldFetchMoreData(List<DeviceData> deviceDataList) {
     final DateTime firstDateTime = deviceDataList.first.dateTime;
 
-    if (firstDateTime.isAfter(_unsyncedThresholdDate) &&
-        firstDateTime.isBefore(requestedDateTimeRange!.start)) {
+    if (pendingDateTimeRange == null) {
       return false;
     }
 
-    if (numberOfPagesFetched >= maxFlashPageCount) {
+    // Check if the data is within the requested range
+    if (firstDateTime.isAfter(_unsyncedThresholdDate) &&
+        firstDateTime.isBefore(pendingDateTimeRange!.start)) {
+      return false;
+    }
+
+    if (numberOfPagesFetched >= Constants.maxFlashPageCount) {
       return false;
     }
 
@@ -141,6 +149,7 @@ class _DeviceHistoryDataRequestNotifier
     requestedDateTimeRange = null;
     duration = null;
     currentPageNumber = null;
+    numberOfPagesFetched = 0;
     state = AsyncSuccess(null);
   }
 
@@ -151,11 +160,13 @@ class _DeviceHistoryDataRequestNotifier
 
     final DateTimeRange fetchedDateTimeRange = _calculateFetchedDateTimeRange();
 
+    bleDevice = bleDevice!.copyWith(
+      lastFetchedStartDate: fetchedDateTimeRange.start,
+      lastFetchedEndDate: fetchedDateTimeRange.end,
+    );
+
     ref.read(isarServiceProvider).write((isar) {
-      isar.bleDevices.put(bleDevice!.copyWith(
-        lastFetchedStartDate: fetchedDateTimeRange.start,
-        lastFetchedEndDate: fetchedDateTimeRange.end,
-      ));
+      isar.bleDevices.put(bleDevice!);
     });
 
     debugPrint('Last fetched date time range: $fetchedDateTimeRange');
@@ -176,5 +187,60 @@ class _DeviceHistoryDataRequestNotifier
             : bleDevice!.lastFetchedEndDate!;
 
     return DateTimeRange(start: start, end: end);
+  }
+
+  void _setPendingDateTimeRange() {
+    debugPrint(
+        'Setting pending date time range, Last fetched: ${bleDevice?.lastFetchedDateTimeRange}');
+
+    if (bleDevice?.lastFetchedDateTimeRange == null) {
+      debugPrint('No last fetched date time range');
+      pendingDateTimeRange = requestedDateTimeRange;
+      return;
+    }
+
+    final DateTime lastFetchedStartDate = bleDevice!.lastFetchedStartDate!;
+    final DateTime lastFetchedEndDate = bleDevice!.lastFetchedEndDate!;
+
+    final DateTime startDate = requestedDateTimeRange!.start;
+    final DateTime endDate = requestedDateTimeRange!.end;
+
+    // Condition 1: Check if the lastFetched range fully includes the requested range
+    if (lastFetchedStartDate.isBeforeOrEqual(startDate) &&
+        lastFetchedEndDate.isAfterOrEqual(endDate)) {
+      // No need to fetch data; the required range is already covered
+      debugPrint(
+          'No need to fetch data; the required range is already covered');
+      return;
+    }
+
+    // Determine the range(s) to fetch
+    DateTime? fetchStart;
+    DateTime? fetchEnd;
+
+    if (startDate.isAfterOrEqual(lastFetchedEndDate)) {
+      // Condition 2: Requested range is after the last fetched range
+      fetchStart = startDate;
+      fetchEnd = endDate;
+    } else if (endDate.isBeforeOrEqual(lastFetchedStartDate)) {
+      // Condition 3: Requested range is before the last fetched range
+      fetchStart = startDate;
+      fetchEnd = endDate;
+    } else {
+      // Condition 4: Requested range overlaps with the last fetched range
+      if (startDate.isBefore(lastFetchedStartDate)) {
+        fetchStart = startDate;
+        fetchEnd = lastFetchedStartDate.subtract(const Duration(seconds: 1));
+      } else if (endDate.isAfter(lastFetchedEndDate)) {
+        fetchStart = lastFetchedEndDate.add(const Duration(seconds: 1));
+        fetchEnd = endDate;
+      }
+    }
+
+    if (fetchStart != null && fetchEnd != null) {
+      pendingDateTimeRange = DateTimeRange(start: fetchStart, end: fetchEnd);
+    }
+
+    debugPrint('Pending date time range: $pendingDateTimeRange');
   }
 }
