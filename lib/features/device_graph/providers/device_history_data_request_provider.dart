@@ -25,6 +25,12 @@ class _DeviceHistoryDataRequestNotifier
   DateTimeRange? dateTimeRange;
   GraphDataDuration? duration;
 
+  // this is the date time range of the data fetched from the device
+  // it is used to determine if the data is already fetched from the device
+  // it is stored in the local database
+  // so that the data is not fetched again
+  DateTimeRange? deviceFetchedDateTimeRange;
+
   static final _unsyncedThresholdDate =
       DateTime.fromMillisecondsSinceEpoch(Constants.syncedTimeThreshold * 1000);
 
@@ -34,11 +40,6 @@ class _DeviceHistoryDataRequestNotifier
   }
 
   void request(GraphDataDuration duration) {
-    if (this.duration != duration) {
-      currentPageNumber = null;
-      numberOfPagesFetched = 0;
-    }
-
     this.duration = duration;
     dateTimeRange = duration.getDateTimeRange();
 
@@ -131,6 +132,8 @@ class _DeviceHistoryDataRequestNotifier
     }
 
     dateTimeRange = null;
+    duration = null;
+    currentPageNumber = null;
     state = AsyncSuccess(null);
   }
 }
