@@ -3,7 +3,9 @@ import 'package:airspothealth/core/providers/ble_device_communication_provider.d
 import 'package:airspothealth/core/providers/isar_service_provider.dart';
 import 'package:airspothealth/core/utils/constants.dart';
 import 'package:airspothealth/core/utils/device_cmd_utils.dart';
+import 'package:airspothealth/features/device_graph/models/graph_data_duration.dart';
 import 'package:airspothealth/features/device_settings/models/progress_model.dart';
+import 'package:airspothealth/features/device_settings/providers/device_data_download_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -21,6 +23,7 @@ class _DeviceHistoryDataRequestNotifier
   int numberOfPagesFetched = 0;
 
   DateTimeRange? dateTimeRange;
+  GraphDataDuration? duration;
 
   static final _unsyncedThresholdDate =
       DateTime.fromMillisecondsSinceEpoch(Constants.syncedTimeThreshold * 1000);
@@ -30,13 +33,14 @@ class _DeviceHistoryDataRequestNotifier
     return AsyncNone();
   }
 
-  void request(DateTimeRange dateTimeRange) {
-    if (this.dateTimeRange != dateTimeRange) {
+  void request(GraphDataDuration duration) {
+    if (this.duration != duration) {
       currentPageNumber = null;
       numberOfPagesFetched = 0;
     }
 
-    this.dateTimeRange = dateTimeRange;
+    this.duration = duration;
+    dateTimeRange = duration.getDateTimeRange();
 
     debugPrint('Requesting historical data for $dateTimeRange');
 
@@ -68,7 +72,6 @@ class _DeviceHistoryDataRequestNotifier
     }
 
     if (data is List && data.isEmpty) {
-      dateTimeRange = null;
       handleHistoricalDataFetchComplete();
       return;
     }
@@ -98,7 +101,6 @@ class _DeviceHistoryDataRequestNotifier
 
     if (firstDateTime.isAfter(_unsyncedThresholdDate) &&
         firstDateTime.isBefore(dateTimeRange!.start)) {
-      dateTimeRange = null;
       handleHistoricalDataFetchComplete();
       return;
     }
@@ -109,7 +111,6 @@ class _DeviceHistoryDataRequestNotifier
       debugPrint('Current page number reset to $currentPageNumber');
 
       if (numberOfPagesFetched >= Constants.maxFlashPageCount) {
-        dateTimeRange = null;
         handleHistoricalDataFetchComplete();
         return;
       }
@@ -121,6 +122,15 @@ class _DeviceHistoryDataRequestNotifier
   void handleHistoricalDataFetchComplete() {
     debugPrint(
         'That was last: Total number of pages fetched: $numberOfPagesFetched');
+
+    // if the date time range is last 7 days, then update the download data provider that the data is downloaded
+    if (duration == GraphDataDuration.last7Days) {
+      ref
+          .read(deviceDataDownloadProvider(deviceId).notifier)
+          .setDataDownloadedFromDevice();
+    }
+
+    dateTimeRange = null;
     state = AsyncSuccess(null);
   }
 }

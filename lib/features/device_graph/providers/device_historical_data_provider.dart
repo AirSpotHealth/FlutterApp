@@ -70,7 +70,7 @@ class _DeviceHistoricalDataNotifier extends AutoDisposeFamilyAsyncNotifier<
 
     ref
         .read(deviceHistoryDataRequestProvider(deviceId).notifier)
-        .request(dateTimeRange);
+        .request(duration);
 
     return future;
   }
