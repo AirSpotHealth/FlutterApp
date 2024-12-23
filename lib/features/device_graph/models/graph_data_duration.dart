@@ -1,4 +1,4 @@
-typedef DateTimeRange = (DateTime start, DateTime end);
+import 'package:flutter/material.dart';
 
 enum GraphDataDuration {
   today,
@@ -85,6 +85,6 @@ enum GraphDataDuration {
         break;
     }
 
-    return (start, end);
+    return DateTimeRange(start: start, end: end);
   }
 }

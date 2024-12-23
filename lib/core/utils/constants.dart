@@ -108,4 +108,8 @@ class Constants {
       }
     }
 ''';
+
+  static const int maxFlashPageCount = 16384;
+
+  static const int syncedTimeThreshold = 10000000;
 }

@@ -15,7 +15,7 @@ import 'package:airspothealth/core/utils/device_cmd_utils.dart';
 import 'package:airspothealth/core/utils/extensions.dart';
 import 'package:airspothealth/features/app_setup/providers/dev_mode_provider.dart';
 import 'package:airspothealth/features/device_graph/providers/ble_device_provider.dart';
-import 'package:airspothealth/features/device_settings/providers/device_data_download_provider.dart';
+import 'package:airspothealth/features/device_graph/providers/device_history_data_request_provider.dart';
 import 'package:airspothealth/features/device_settings/providers/device_data_erase_provider.dart';
 import 'package:airspothealth/features/device_settings/providers/recalibration_time_provider.dart';
 import 'package:flutter/material.dart';
@@ -205,11 +205,10 @@ class _BleDeviceCommunicationNotifier extends FamilyNotifier<dynamic, String> {
 
     // co2 history done confirmation
     if (data[2] == ResponseCommand.getCo2History.value) {
-      if (value) {
-        ref
-            .read(deviceDataDownloadProvider(deviceId).notifier)
-            .setDataDownloadedFromDevice();
-      }
+      ref
+          .read(deviceHistoryDataRequestProvider(deviceId).notifier)
+          .handleHistoricalDataResponse(value);
+
       return;
     }
 
