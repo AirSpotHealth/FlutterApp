@@ -53,10 +53,7 @@ class DataGraphWidget extends ConsumerStatefulWidget {
 }
 
 class _DataGraphWidgetState extends ConsumerState<DataGraphWidget> {
-  List<DeviceData> get currentDataList => List.from(widget.deviceDataList)
-    ..sort(
-      (a, b) => a.dateTime.compareTo(b.dateTime),
-    );
+  List<DeviceData> get currentDataList => List.from(widget.deviceDataList);
 
   bool get loading => widget.loading;
 

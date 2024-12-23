@@ -11,6 +11,7 @@ class GraphRangeSelector extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final GraphDataDuration selectedRange = ref.watch(graphDurationProvider);
+
     return Container(
       constraints: BoxConstraints(maxWidth: context.width * 0.7),
       padding: const EdgeInsets.symmetric(horizontal: 8.0),

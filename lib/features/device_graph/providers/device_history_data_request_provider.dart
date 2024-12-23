@@ -1,9 +1,13 @@
+import 'dart:typed_data';
+
+import 'package:airspothealth/core/models/ble_device.dart';
 import 'package:airspothealth/core/models/device_data.dart';
 import 'package:airspothealth/core/providers/ble_device_communication_provider.dart';
 import 'package:airspothealth/core/providers/isar_service_provider.dart';
 import 'package:airspothealth/core/utils/constants.dart';
 import 'package:airspothealth/core/utils/device_cmd_utils.dart';
 import 'package:airspothealth/features/device_graph/models/graph_data_duration.dart';
+import 'package:airspothealth/features/device_graph/providers/ble_device_provider.dart';
 import 'package:airspothealth/features/device_settings/models/progress_model.dart';
 import 'package:airspothealth/features/device_settings/providers/device_data_download_provider.dart';
 import 'package:flutter/material.dart';
@@ -25,17 +29,14 @@ class _DeviceHistoryDataRequestNotifier
   DateTimeRange? dateTimeRange;
   GraphDataDuration? duration;
 
-  // this is the date time range of the data fetched from the device
-  // it is used to determine if the data is already fetched from the device
-  // it is stored in the local database
-  // so that the data is not fetched again
-  DateTimeRange? deviceFetchedDateTimeRange;
+  BleDevice? bleDevice;
 
   static final _unsyncedThresholdDate =
       DateTime.fromMillisecondsSinceEpoch(Constants.syncedTimeThreshold * 1000);
 
   @override
   build(String arg) {
+    bleDevice = ref.read(bleDeviceProvider(deviceId));
     return AsyncNone();
   }
 
@@ -52,17 +53,19 @@ class _DeviceHistoryDataRequestNotifier
     debugPrint('Current page number: $currentPageNumber');
 
     if (currentPageNumber == null) {
-      ref
-          .read(bleDeviceCommunicationProvider(deviceId).notifier)
-          .sendCommand(DeviceCmdUtils.getCurrentFlashPage());
-      state = AsyncInProgress(0.1, message: "Getting the last recorded data");
+      _sendCommand(DeviceCmdUtils.getCurrentFlashPage(),
+          "Getting the last recorded data");
     } else {
-      ref
-          .read(bleDeviceCommunicationProvider(deviceId).notifier)
-          .sendCommand(DeviceCmdUtils.getCo2History(currentPageNumber!));
-      state = AsyncInProgress(0.1,
-          message: "Getting historical data for page $currentPageNumber");
+      _sendCommand(DeviceCmdUtils.getCo2History(currentPageNumber!),
+          "Getting historical data for page $currentPageNumber");
     }
+  }
+
+  void _sendCommand(Uint8List command, String message) {
+    ref
+        .read(bleDeviceCommunicationProvider(deviceId).notifier)
+        .sendCommand(command);
+    state = AsyncInProgress(0.1, message: message);
   }
 
   void handleHistoricalDataResponse(dynamic data) {
@@ -83,57 +86,95 @@ class _DeviceHistoryDataRequestNotifier
 
     final List<DeviceData> deviceDataList = data as List<DeviceData>;
 
-    numberOfPagesFetched = numberOfPagesFetched + 1;
+    numberOfPagesFetched++;
     currentPageNumber = (currentPageNumber ?? 0) - 1;
 
-    // print first and last timestamp
-    debugPrint(
-        'First timestamp: ${deviceDataList.first.dateTime.toIso8601String()}');
-    debugPrint(
-        'Last timestamp: ${deviceDataList.last.dateTime.toIso8601String()}');
+    if (currentPageNumber! < 0) {
+      currentPageNumber = maxFlashPageCount - 1;
+    }
 
-    // save the data to the local database
+    debugPrint(
+        'Current page number: $currentPageNumber, number of pages fetched: $numberOfPagesFetched');
+
+    _saveData(deviceDataList);
+
+    if (_shouldFetchMoreData(deviceDataList)) {
+      _requestData();
+    } else {
+      handleHistoricalDataFetchComplete();
+    }
+  }
+
+  void _saveData(List<DeviceData> deviceDataList) {
     ref.read(isarServiceProvider).write((isar) {
       isar.deviceDatas.putAll(deviceDataList);
     });
+  }
 
-    // first datetime of the list
+  bool _shouldFetchMoreData(List<DeviceData> deviceDataList) {
     final DateTime firstDateTime = deviceDataList.first.dateTime;
 
     if (firstDateTime.isAfter(_unsyncedThresholdDate) &&
         firstDateTime.isBefore(dateTimeRange!.start)) {
-      handleHistoricalDataFetchComplete();
-      return;
+      return false;
     }
 
-    if (currentPageNumber! < 0) {
-      currentPageNumber = Constants.maxFlashPageCount - 1;
-
-      debugPrint('Current page number reset to $currentPageNumber');
-
-      if (numberOfPagesFetched >= Constants.maxFlashPageCount) {
-        handleHistoricalDataFetchComplete();
-        return;
-      }
+    if (numberOfPagesFetched >= maxFlashPageCount) {
+      return false;
     }
 
-    _requestData();
+    return true;
   }
 
   void handleHistoricalDataFetchComplete() {
     debugPrint(
         'That was last: Total number of pages fetched: $numberOfPagesFetched');
 
-    // if the date time range is last 7 days, then update the download data provider that the data is downloaded
     if (duration == GraphDataDuration.last7Days) {
       ref
           .read(deviceDataDownloadProvider(deviceId).notifier)
           .setDataDownloadedFromDevice();
     }
 
+    _saveLastFetchedDateTimeRange();
+
     dateTimeRange = null;
     duration = null;
     currentPageNumber = null;
     state = AsyncSuccess(null);
+  }
+
+  void _saveLastFetchedDateTimeRange() {
+    if (bleDevice == null) {
+      return;
+    }
+
+    final DateTimeRange fetchedDateTimeRange = _calculateFetchedDateTimeRange();
+
+    ref.read(isarServiceProvider).write((isar) {
+      isar.bleDevices.put(bleDevice!.copyWith(
+        lastFetchedStartDate: fetchedDateTimeRange.start,
+        lastFetchedEndDate: fetchedDateTimeRange.end,
+      ));
+    });
+
+    debugPrint('Last fetched date time range: $fetchedDateTimeRange');
+  }
+
+  DateTimeRange _calculateFetchedDateTimeRange() {
+    if (bleDevice?.lastFetchedDateTimeRange == null) {
+      return dateTimeRange!;
+    }
+
+    final DateTime start =
+        dateTimeRange!.start.isBefore(bleDevice!.lastFetchedStartDate!)
+            ? dateTimeRange!.start
+            : bleDevice!.lastFetchedStartDate!;
+    final DateTime end =
+        dateTimeRange!.end.isAfter(bleDevice!.lastFetchedEndDate!)
+            ? dateTimeRange!.end
+            : bleDevice!.lastFetchedEndDate!;
+
+    return DateTimeRange(start: start, end: end);
   }
 }
