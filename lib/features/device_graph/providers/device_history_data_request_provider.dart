@@ -26,7 +26,7 @@ class _DeviceHistoryDataRequestNotifier
   int get maxFlashPageCount => Constants.maxFlashPageCount;
   int numberOfPagesFetched = 0;
 
-  DateTimeRange? dateTimeRange;
+  DateTimeRange? requestedDateTimeRange;
   GraphDataDuration? duration;
 
   BleDevice? bleDevice;
@@ -42,9 +42,9 @@ class _DeviceHistoryDataRequestNotifier
 
   void request(GraphDataDuration duration) {
     this.duration = duration;
-    dateTimeRange = duration.getDateTimeRange();
+    requestedDateTimeRange = duration.getDateTimeRange();
 
-    debugPrint('Requesting historical data for $dateTimeRange');
+    debugPrint('Requesting historical data for $requestedDateTimeRange');
 
     _requestData();
   }
@@ -80,7 +80,7 @@ class _DeviceHistoryDataRequestNotifier
       return;
     }
 
-    if (dateTimeRange == null) {
+    if (requestedDateTimeRange == null) {
       throw Exception('Date range is null');
     }
 
@@ -115,7 +115,7 @@ class _DeviceHistoryDataRequestNotifier
     final DateTime firstDateTime = deviceDataList.first.dateTime;
 
     if (firstDateTime.isAfter(_unsyncedThresholdDate) &&
-        firstDateTime.isBefore(dateTimeRange!.start)) {
+        firstDateTime.isBefore(requestedDateTimeRange!.start)) {
       return false;
     }
 
@@ -138,7 +138,7 @@ class _DeviceHistoryDataRequestNotifier
 
     _saveLastFetchedDateTimeRange();
 
-    dateTimeRange = null;
+    requestedDateTimeRange = null;
     duration = null;
     currentPageNumber = null;
     state = AsyncSuccess(null);
@@ -163,16 +163,16 @@ class _DeviceHistoryDataRequestNotifier
 
   DateTimeRange _calculateFetchedDateTimeRange() {
     if (bleDevice?.lastFetchedDateTimeRange == null) {
-      return dateTimeRange!;
+      return requestedDateTimeRange!;
     }
 
     final DateTime start =
-        dateTimeRange!.start.isBefore(bleDevice!.lastFetchedStartDate!)
-            ? dateTimeRange!.start
+        requestedDateTimeRange!.start.isBefore(bleDevice!.lastFetchedStartDate!)
+            ? requestedDateTimeRange!.start
             : bleDevice!.lastFetchedStartDate!;
     final DateTime end =
-        dateTimeRange!.end.isAfter(bleDevice!.lastFetchedEndDate!)
-            ? dateTimeRange!.end
+        requestedDateTimeRange!.end.isAfter(bleDevice!.lastFetchedEndDate!)
+            ? requestedDateTimeRange!.end
             : bleDevice!.lastFetchedEndDate!;
 
     return DateTimeRange(start: start, end: end);
