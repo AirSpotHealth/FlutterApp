@@ -9,7 +9,6 @@ import 'package:airspothealth/core/router/app_router.dart';
 import 'package:airspothealth/core/router/route_names.dart';
 import 'package:airspothealth/core/services/ble_service.dart';
 import 'package:airspothealth/core/utils/extensions.dart';
-import 'package:airspothealth/features/device_graph/providers/device_history_data_request_provider.dart';
 import 'package:airspothealth/features/device_settings/models/progress_model.dart';
 import 'package:airspothealth/features/device_settings/providers/dfu_update_provider.dart';
 import 'package:flutter/cupertino.dart';
@@ -69,7 +68,7 @@ class _BleDeviceConnectionNotifier
         if (state == BluetoothBondState.none) return;
 
         _checkRouteAndPop();
-        _checkIfHisoricalDataWasRequestedAndInProgess();
+        // _checkIfHisoricalDataWasRequestedAndInProgess();
 
         state = BluetoothBondState.none;
       }
@@ -103,11 +102,7 @@ class _BleDeviceConnectionNotifier
     state = BluetoothBondState.none;
   }
 
-  void _checkIfHisoricalDataWasRequestedAndInProgess() {
-    if (ref.read(deviceHistoryDataRequestProvider(arg)) is AsyncInProgress) {
-      ref.read(deviceHistoryDataRequestProvider(arg).notifier).clear();
-    }
-  }
+  // void _checkIfHisoricalDataWasRequestedAndInProgess() {}
 
   void _checkRouteAndPop() {
     // check whether the disconnect was intitiated from the dfu update
