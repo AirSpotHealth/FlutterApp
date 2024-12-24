@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:airspothealth/core/models/ble_device.dart';
 import 'package:airspothealth/core/models/device_data.dart';
 import 'package:airspothealth/core/providers/isar_service_provider.dart';
+import 'package:airspothealth/core/utils/constants.dart';
 import 'package:airspothealth/features/device_graph/models/graph_data_duration.dart';
 import 'package:airspothealth/features/device_graph/providers/ble_device_provider.dart';
 import 'package:airspothealth/features/device_graph/providers/device_historical_data_provider.dart';
@@ -20,6 +21,8 @@ final deviceDataDownloadProvider = NotifierProvider.family
 class _DeviceDataDownloadNotifier
     extends AutoDisposeFamilyNotifier<AsyncProgressValue, String> {
   String get deviceId => arg;
+
+  static final _2010Date = DateTime(2010);
 
   @override
   AsyncProgressValue build(String arg) {
@@ -40,6 +43,7 @@ class _DeviceDataDownloadNotifier
           return isar.deviceDatas
               .where()
               .deviceIdEqualTo(deviceId)
+              .dateTimeGreaterThan(_2010Date)
               .sortByDateTimeDesc()
               .findAll();
         },
@@ -63,7 +67,7 @@ class _DeviceDataDownloadNotifier
 
       final csvData = deviceDatas.map((data) {
         final row =
-            '${data.dateTime.toIso8601String().replaceAll("T", " ")},${data.value},${data.type.name.toUpperCase()}';
+            '${Constants.csvDateFormat.format(data.dateTime)},${data.value},${data.type.name.toUpperCase()}';
         debugPrint('Row: $row');
         return row;
       }).join('\n');

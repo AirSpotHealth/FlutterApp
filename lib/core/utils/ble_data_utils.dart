@@ -99,6 +99,18 @@ class ResponseCommandParser {
   final IsarService isarService = IsarService();
 
   DeviceData parseCo2Value(List<int> data) {
+    if (data.length < 10) {
+      final value = (data[4] * 256 + (data[5] & 0xff));
+      final datetime = DateTime.now();
+
+      return DeviceData(
+        deviceId: deviceId,
+        dateTime: datetime,
+        value: value,
+        type: DeviceDataType.co2,
+      );
+    }
+
     int datetimeMillis =
         (data[4] << 24) | (data[5] << 16) | (data[6] << 8) | data[7];
 
