@@ -18,7 +18,8 @@ class _FirmwareRemoteVersionNotifier
 
   @override
   FutureOr<RemoteVersion?> build() {
-    return null;
+    fetchRemoteVersion();
+    return future;
   }
 
   Future<void> fetchRemoteVersion() async {
