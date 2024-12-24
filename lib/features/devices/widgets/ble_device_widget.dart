@@ -81,7 +81,8 @@ class BleDeviceWidget extends ConsumerWidget {
                       : bleDevice.alias ?? bleDevice.name,
                   style: context.textTheme.labelLarge,
                 ),
-                if (remoteVersion is AsyncData<RemoteVersion?> &&
+                if (deviceConnected &&
+                    remoteVersion is AsyncData<RemoteVersion?> &&
                     remoteVersion.value != null &&
                     AppUtils.isVersionGreater(bleDevice.firmwareVersion,
                         remoteVersion.value!.versionName))
