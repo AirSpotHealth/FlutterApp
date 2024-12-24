@@ -52,7 +52,7 @@ class BleDataUtils {
     final dynamic result = responseParsers[responseCommand]?.call(data);
 
     if (responseCommand == ResponseCommand.co2Value) {
-      return result as int;
+      return result as DeviceData;
     }
 
     if (responseCommand == ResponseCommand.recalibrationTime) {
@@ -97,7 +97,27 @@ class ResponseCommandParser {
   String get deviceId => device.deviceId;
 
   final IsarService isarService = IsarService();
-  int parseCo2Value(List<int> data) => (data[4] * 256 + (data[5] & 0xff));
+
+  DeviceData parseCo2Value(List<int> data) {
+    int datetimeMillis =
+        (data[4] << 24) | (data[5] << 16) | (data[6] << 8) | data[7];
+
+    final value = (data[8] * 256 + (data[9] & 0xff));
+
+    datetimeMillis = datetimeMillis + BleDataUtils.timestampFrom2000;
+
+    final datetime = DateTime.fromMillisecondsSinceEpoch(datetimeMillis * 1000);
+
+    debugPrint(
+        'CO2 Value: $value, DateTime: ${datetime.toIso8601String()}, millis: $datetimeMillis');
+
+    return DeviceData(
+      deviceId: deviceId,
+      dateTime: datetime,
+      value: value,
+      type: DeviceDataType.co2,
+    );
+  }
 
   bool parseAlarm(List<int> data) => _parseBoolean(data, 4);
 

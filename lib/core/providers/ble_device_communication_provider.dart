@@ -213,66 +213,50 @@ class _BleDeviceCommunicationNotifier extends FamilyNotifier<dynamic, String> {
     }
 
     // _setHomeValue(value);
+    if (value is DeviceData) _saveData(value);
 
-    try {
-      if (value == 0) {
-        state = null;
-        return;
-      }
-      final DateTime dateTime = DateTime.now();
+    // void _checkAndShowNotification(DeviceSettings? deviceSettings, value) {
+    //   if (deviceSettings == null) return;
 
-      // final DeviceSettings? deviceSettings =
-      //     ref.read(deviceSettingsProvider(deviceId));
+    //   if (deviceSettings.co2HighAlertEnabled &&
+    //       value > deviceSettings.yellowUpperLimit) {
+    //     NotificationService.showNotification(
+    //       title:
+    //           'Alert! ${Constants.co2Text} > ${deviceSettings.yellowUpperLimit} ppm',
+    //       body: 'Now $value ppm',
+    //       suffixIcon: value > state
+    //           ? 'asset://assets/images/trending-up.png'
+    //           : 'asset://assets/images/trending-down.png',
+    //     ).ignore();
+    //   } else if (deviceSettings.co2MedAlertEnabled &&
+    //       value > deviceSettings.greenUpperLimit) {
+    //     NotificationService.showNotification(
+    //       title:
+    //           'Alert! ${Constants.co2Text} > ${deviceSettings.greenUpperLimit} ppm',
+    //       body: 'Now $value ppm',
+    //       suffixIcon: value > state
+    //           ? 'asset://assets/images/trending-up.png'
+    //           : 'asset://assets/images/trending-down.png',
+    //     ).ignore();
+    //   }
+    // }
 
-      // _checkAndShowNotification(deviceSettings, value);
-
-      _isarService.write((isar) {
-        isar.deviceDatas.put(DeviceData(
-          deviceId: deviceId,
-          value: value,
-          dateTime: dateTime,
-        ));
-      });
-    } catch (e) {
-      debugPrint('Error saving data: $e');
-    }
-
-    state = value;
+    // void _setHomeValue(dynamic value) {
+    //   HomeWidget.saveWidgetData(Constants.homeWidgetKey, value.toString());
+    //   HomeWidget.updateWidget(
+    //     iOSName: Constants.iOSWidgetName,
+    //     androidName: Constants.androidWidgetName,
+    //   );
+    // }
   }
 
-  // void _checkAndShowNotification(DeviceSettings? deviceSettings, value) {
-  //   if (deviceSettings == null) return;
+  void _saveData(DeviceData deviceData) {
+    ref.read(isarServiceProvider).write((isar) {
+      isar.deviceDatas.put(deviceData);
+    });
 
-  //   if (deviceSettings.co2HighAlertEnabled &&
-  //       value > deviceSettings.yellowUpperLimit) {
-  //     NotificationService.showNotification(
-  //       title:
-  //           'Alert! ${Constants.co2Text} > ${deviceSettings.yellowUpperLimit} ppm',
-  //       body: 'Now $value ppm',
-  //       suffixIcon: value > state
-  //           ? 'asset://assets/images/trending-up.png'
-  //           : 'asset://assets/images/trending-down.png',
-  //     ).ignore();
-  //   } else if (deviceSettings.co2MedAlertEnabled &&
-  //       value > deviceSettings.greenUpperLimit) {
-  //     NotificationService.showNotification(
-  //       title:
-  //           'Alert! ${Constants.co2Text} > ${deviceSettings.greenUpperLimit} ppm',
-  //       body: 'Now $value ppm',
-  //       suffixIcon: value > state
-  //           ? 'asset://assets/images/trending-up.png'
-  //           : 'asset://assets/images/trending-down.png',
-  //     ).ignore();
-  //   }
-  // }
-
-  // void _setHomeValue(dynamic value) {
-  //   HomeWidget.saveWidgetData(Constants.homeWidgetKey, value.toString());
-  //   HomeWidget.updateWidget(
-  //     iOSName: Constants.iOSWidgetName,
-  //     androidName: Constants.androidWidgetName,
-  //   );
-  // }
+    state = deviceData.value == 0 ? null : deviceData.value;
+  }
 
   Future<void> _getInitialData() async {
     final DeviceSettings? deviceSettings =
