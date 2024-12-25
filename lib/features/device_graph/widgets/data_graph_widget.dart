@@ -53,10 +53,7 @@ class DataGraphWidget extends ConsumerStatefulWidget {
 }
 
 class _DataGraphWidgetState extends ConsumerState<DataGraphWidget> {
-  List<DeviceData> get currentDataList => List.from(widget.deviceDataList)
-    ..sort(
-      (a, b) => a.dateTime.compareTo(b.dateTime),
-    );
+  List<DeviceData> get currentDataList => List.from(widget.deviceDataList);
 
   bool get loading => widget.loading;
 
@@ -291,18 +288,18 @@ class _DataGraphWidgetState extends ConsumerState<DataGraphWidget> {
 
   List<List<dynamic>> _generatePreviousAndAfterFakeData(
       GraphDataDuration duration) {
-    final (graphStartDate, graphEndDate) = duration.getDateTimeRange();
+    final range = duration.getDateTimeRange();
 
     final fakeData = <List<dynamic>>[];
 
     for (int i = 0; i < fakeDataLength; i++) {
       final fakeDate =
-          graphStartDate.subtract(Duration(hours: fakeDataLength - i));
+          range.start.subtract(Duration(hours: fakeDataLength - i));
       fakeData.add([fakeDate.toIso8601String(), null]);
     }
 
     for (int i = 0; i < fakeDataLength; i++) {
-      final fakeDate = graphEndDate.add(Duration(hours: i + 1));
+      final fakeDate = range.end.add(Duration(hours: i + 1));
       fakeData.add([fakeDate.toIso8601String(), null]);
     }
 

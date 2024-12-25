@@ -1,5 +1,6 @@
 import 'package:airspothealth/core/models/device_settings.dart';
 import 'package:airspothealth/core/services/isar_service.dart';
+import 'package:flutter/material.dart';
 import 'package:isar/isar.dart';
 
 part 'ble_device.g.dart';
@@ -68,5 +69,17 @@ class BleDevice {
   @override
   String toString() {
     return 'BleDevice{deviceId: $deviceId, name: $name, address: $address, platform: $platform, alias: $alias, firmwareVersion: $firmwareVersion, lastFetchedStartDate: $lastFetchedStartDate, lastFetchedEndDate: $lastFetchedEndDate}';
+  }
+
+  @ignore
+  DateTimeRange? get lastFetchedDateTimeRange {
+    if (lastFetchedStartDate == null || lastFetchedEndDate == null) {
+      return null;
+    }
+
+    return DateTimeRange(
+      start: lastFetchedStartDate!,
+      end: lastFetchedEndDate!,
+    );
   }
 }

@@ -52,7 +52,7 @@ class BleDataUtils {
     final dynamic result = responseParsers[responseCommand]?.call(data);
 
     if (responseCommand == ResponseCommand.co2Value) {
-      return result as int;
+      return result as DeviceData;
     }
 
     if (responseCommand == ResponseCommand.recalibrationTime) {
@@ -79,8 +79,8 @@ class BleDataUtils {
       return result as bool;
     }
 
-    if (responseCommand == ResponseCommand.getCo2History && result == true) {
-      return result as bool;
+    if (responseCommand == ResponseCommand.getCo2History) {
+      return result;
     }
 
     return null;
@@ -97,7 +97,39 @@ class ResponseCommandParser {
   String get deviceId => device.deviceId;
 
   final IsarService isarService = IsarService();
-  int parseCo2Value(List<int> data) => (data[4] * 256 + (data[5] & 0xff));
+
+  DeviceData parseCo2Value(List<int> data) {
+    if (data.length < 10) {
+      final value = (data[4] * 256 + (data[5] & 0xff));
+      final datetime = DateTime.now();
+
+      return DeviceData(
+        deviceId: deviceId,
+        dateTime: datetime,
+        value: value,
+        type: DeviceDataType.co2,
+      );
+    }
+
+    int datetimeMillis =
+        (data[4] << 24) | (data[5] << 16) | (data[6] << 8) | data[7];
+
+    final value = (data[8] * 256 + (data[9] & 0xff));
+
+    datetimeMillis = datetimeMillis + BleDataUtils.timestampFrom2000;
+
+    final datetime = DateTime.fromMillisecondsSinceEpoch(datetimeMillis * 1000);
+
+    debugPrint(
+        'CO2 Value: $value, DateTime: ${datetime.toIso8601String()}, millis: $datetimeMillis');
+
+    return DeviceData(
+      deviceId: deviceId,
+      dateTime: datetime,
+      value: value,
+      type: DeviceDataType.co2,
+    );
+  }
 
   bool parseAlarm(List<int> data) => _parseBoolean(data, 4);
 
@@ -169,25 +201,35 @@ class ResponseCommandParser {
     debugPrint('Parsing CO2 history data Length: ${data.length}');
 
     // Check if it is a CO2 history done command
-    if (data.length == 6 && data[3] == 0x01 && data[5] == 0xb8) {
-      return true;
+    if (data.length == 7 && data[3] == 0x01) {
+      // return the 4th and 5th bytes are the current page number as uint16_t
+      return (data[4] << 8) | data[5];
     }
 
     // check if the firmware is less than v3.0.0
     // if so, parse it in old format
     if (!AppUtils.isNewFirmwareVersion(device.firmwareVersion)) {
-      return _parseCo2OldHistoryData(data);
+      _parseCo2OldHistoryData(data);
+
+      return [];
+    }
+
+    // check if the record count is 00
+    if (data[3] == 0x00) {
+      return [];
     }
 
     // Check if the data length is valid
+    // 5 bytes for the frame headers and checksum
+    // 2 bytes for the page number
     if (data.length < 9 ||
-        (data.length - 5) % BleDataUtils.deviceDataLength != 0) {
+        (data.length - 7) % BleDataUtils.deviceDataLength != 0) {
       debugPrint('Invalid data length');
-      return false;
+      return [];
     }
 
-    // Extract the CO2 history data (ignore header and checksum)
-    final List<int> historyData = List.from(data.sublist(4, data.length - 1));
+    // Extract the CO2 history data (ignore header and checksum (1 byte), page number (2bytes))
+    final List<int> historyData = List.from(data.sublist(4, data.length - 3));
 
     final List<DeviceData> deviceData = [];
 
@@ -199,8 +241,6 @@ class ResponseCommandParser {
       final timestamp = _byteArrayToInt(historyData, i, i + 3) +
           BleDataUtils.timestampFrom2000;
       final date = DateTime.fromMillisecondsSinceEpoch(timestamp * 1000);
-
-      debugPrint('Timestamp: $timestamp, Date: $date');
 
       // Extract the value (2 bytes)
       final highByte = historyData[i + 4] & 0xFF;
@@ -220,11 +260,11 @@ class ResponseCommandParser {
 
     debugPrint('CO2 Data: ${deviceData.map((e) => e.toString())}');
 
-    isarService.write((isar) {
-      isar.deviceDatas.putAll(deviceData);
-    });
+    // isarService.write((isar) {
+    //   isar.deviceDatas.putAll(deviceData);
+    // });
 
-    return false;
+    return deviceData;
   }
 
   bool _parseCo2OldHistoryData(List<int> data) {

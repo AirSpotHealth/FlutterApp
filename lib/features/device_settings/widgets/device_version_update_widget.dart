@@ -10,28 +10,13 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-class DeviceVersionUpdateWidget extends ConsumerStatefulWidget {
+class DeviceVersionUpdateWidget extends ConsumerWidget {
   const DeviceVersionUpdateWidget({required this.deviceId, super.key});
 
   final String deviceId;
 
   @override
-  ConsumerState<ConsumerStatefulWidget> createState() =>
-      _DeviceVersionUpdateWidgetState();
-}
-
-class _DeviceVersionUpdateWidgetState
-    extends ConsumerState<DeviceVersionUpdateWidget> {
-  @override
-  void initState() {
-    super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      ref.read(firmwareRemoteVersionProvider.notifier).fetchRemoteVersion();
-    });
-  }
-
-  @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     ref.listen(firmwareRemoteVersionProvider, (oldState, newState) {
       if (newState is AsyncError) {
         context.showSnackBar(newState.error.toString());
@@ -42,8 +27,7 @@ class _DeviceVersionUpdateWidgetState
     final AsyncValue<RemoteVersion?> remoteVersion =
         ref.watch(firmwareRemoteVersionProvider);
 
-    final String currentVersion =
-        ref.read(bleDeviceVersionProvider(widget.deviceId));
+    final String currentVersion = ref.read(bleDeviceVersionProvider(deviceId));
 
     return Container(
         padding: const EdgeInsets.all(16),
@@ -93,7 +77,7 @@ class _DeviceVersionUpdateWidgetState
       context: context,
       barrierDismissible: false,
       builder: (context) => DeviceFirmwareUpdateDialog(
-          deviceId: widget.deviceId, remoteVersion: remoteVersion),
+          deviceId: deviceId, remoteVersion: remoteVersion),
     );
   }
 }

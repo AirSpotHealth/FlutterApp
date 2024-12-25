@@ -1,5 +1,6 @@
 import 'package:airspothealth/core/utils/constants.dart';
 import 'package:airspothealth/core/widgets/airspot_bar.dart';
+import 'package:airspothealth/features/device_settings/providers/firmware_remote_version_provider.dart';
 import 'package:airspothealth/features/home/widgets/menu_item_widget.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -17,7 +18,12 @@ class _HomePageState extends ConsumerState<HomePage> {
   void initState() {
     _setAppGroupId();
     // NotificationService.checkNotificationPermission();
+    _checkFirmwareVersion();
     super.initState();
+  }
+
+  void _checkFirmwareVersion() {
+    ref.read(firmwareRemoteVersionProvider);
   }
 
   void _setAppGroupId() => HomeWidget.setAppGroupId(Constants.appGroupId);

@@ -1,3 +1,5 @@
+import 'package:intl/intl.dart';
+
 class Constants {
   static const String baseUrl = 'https://update.airspothealth.com/api';
 
@@ -108,4 +110,10 @@ class Constants {
       }
     }
 ''';
+
+  static const int maxFlashPageCount = 16384;
+
+  static const int syncedTimeThreshold = 10000000;
+
+  static final DateFormat csvDateFormat = DateFormat('yyyy-MM-dd HH:mm:ss');
 }

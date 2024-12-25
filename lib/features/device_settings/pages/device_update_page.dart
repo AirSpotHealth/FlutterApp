@@ -4,6 +4,7 @@ import 'package:airspothealth/core/utils/extensions.dart';
 import 'package:airspothealth/core/widgets/app_logo.dart';
 import 'package:airspothealth/core/widgets/tappable_widget.dart';
 import 'package:airspothealth/features/device_settings/providers/ble_device_version_provider.dart';
+import 'package:airspothealth/features/device_settings/providers/firmware_remote_version_provider.dart';
 import 'package:airspothealth/features/device_settings/widgets/device_firmware_update_dialog.dart';
 import 'package:airspothealth/features/device_settings/widgets/device_settings_name_widget.dart';
 import 'package:airspothealth/features/device_settings/widgets/device_version_update_widget.dart';
@@ -26,20 +27,24 @@ class DeviceUpdatePage extends ConsumerWidget {
           suffixText: 'Device Update',
         ),
       ),
-      body: ListView(padding: const EdgeInsets.all(16), children: [
-        TappableWidget(
-          onTap: () => _showLocalFilePicker(ref, deviceId),
-          tapCount: 8,
-          child: const SizedBox(
-            height: 64,
-            child: AppLogo(),
+      body: RefreshIndicator.adaptive(
+        onRefresh:
+            ref.read(firmwareRemoteVersionProvider.notifier).fetchRemoteVersion,
+        child: ListView(padding: const EdgeInsets.all(16), children: [
+          TappableWidget(
+            onTap: () => _showLocalFilePicker(ref, deviceId),
+            tapCount: 8,
+            child: const SizedBox(
+              height: 64,
+              child: AppLogo(),
+            ),
           ),
-        ),
-        const SizedBox(height: 16),
-        CurrentDeviceVersionWidget(deviceId: deviceId),
-        const SizedBox(height: 16),
-        DeviceVersionUpdateWidget(deviceId: deviceId),
-      ]),
+          const SizedBox(height: 16),
+          CurrentDeviceVersionWidget(deviceId: deviceId),
+          const SizedBox(height: 16),
+          DeviceVersionUpdateWidget(deviceId: deviceId),
+        ]),
+      ),
     );
   }
 

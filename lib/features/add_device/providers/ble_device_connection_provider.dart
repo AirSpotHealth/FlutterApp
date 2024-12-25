@@ -68,6 +68,7 @@ class _BleDeviceConnectionNotifier
         if (state == BluetoothBondState.none) return;
 
         _checkRouteAndPop();
+        // _checkIfHisoricalDataWasRequestedAndInProgess();
 
         state = BluetoothBondState.none;
       }
@@ -100,6 +101,8 @@ class _BleDeviceConnectionNotifier
     deviceSubscription?.cancel();
     state = BluetoothBondState.none;
   }
+
+  // void _checkIfHisoricalDataWasRequestedAndInProgess() {}
 
   void _checkRouteAndPop() {
     // check whether the disconnect was intitiated from the dfu update

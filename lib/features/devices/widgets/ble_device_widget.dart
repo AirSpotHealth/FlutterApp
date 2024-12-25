@@ -2,12 +2,15 @@ import 'package:airspothealth/core/models/ble_device.dart';
 import 'package:airspothealth/core/providers/ble_saved_devices_provider.dart';
 import 'package:airspothealth/core/router/route_names.dart';
 import 'package:airspothealth/core/theme/app_colors.dart';
+import 'package:airspothealth/core/utils/app_utils.dart';
 import 'package:airspothealth/core/utils/assets.dart';
 import 'package:airspothealth/core/utils/extensions.dart';
 import 'package:airspothealth/core/widgets/app_bottomsheet.dart';
 import 'package:airspothealth/core/widgets/button.dart';
 import 'package:airspothealth/features/add_device/providers/ble_device_connection_provider.dart';
+import 'package:airspothealth/features/device_settings/models/remote_version.dart';
 import 'package:airspothealth/features/device_settings/providers/device_forget_status_provider.dart';
+import 'package:airspothealth/features/device_settings/providers/firmware_remote_version_provider.dart';
 import 'package:airspothealth/features/devices/widgets/device_connect_button.dart';
 import 'package:airspothealth/features/devices/widgets/device_value_widget.dart';
 import 'package:flutter/cupertino.dart';
@@ -26,6 +29,9 @@ class BleDeviceWidget extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final BluetoothBondState deviceConnectionState =
         ref.watch(bleDeviceConnectionProvider(bleDevice.deviceId));
+
+    final AsyncValue<RemoteVersion?> remoteVersion =
+        ref.watch(firmwareRemoteVersionProvider);
 
     final bool deviceConnected =
         deviceConnectionState == BluetoothBondState.bonded;
@@ -67,11 +73,37 @@ class BleDeviceWidget extends ConsumerWidget {
                   Expanded(child: _buildConnectButton(ref)),
               ],
             ),
-            Text(
-              deviceConnected
-                  ? bleDevice.name
-                  : bleDevice.alias ?? bleDevice.name,
-              style: context.textTheme.labelLarge,
+            Row(
+              children: [
+                Text(
+                  deviceConnected
+                      ? bleDevice.name
+                      : bleDevice.alias ?? bleDevice.name,
+                  style: context.textTheme.labelLarge,
+                ),
+                if (deviceConnected &&
+                    remoteVersion is AsyncData<RemoteVersion?> &&
+                    remoteVersion.value != null &&
+                    AppUtils.isVersionGreater(bleDevice.firmwareVersion,
+                        remoteVersion.value!.versionName))
+                  Expanded(
+                    child: GestureDetector(
+                      onTap: () {
+                        context.pushNamed(
+                          RouteNames.deviceUpdate,
+                          pathParameters: {'deviceId': bleDevice.deviceId},
+                        );
+                      },
+                      child: Text(
+                        'Tap to update firmware',
+                        style: context.textTheme.labelLarge?.copyWith(
+                          color: AppColors.brandColorRed,
+                        ),
+                        textAlign: TextAlign.end,
+                      ),
+                    ),
+                  ),
+              ],
             ),
             if (deviceConnected) ...[
               const SizedBox(height: 16),
