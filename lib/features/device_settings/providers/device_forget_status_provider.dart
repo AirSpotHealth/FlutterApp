@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:airspothealth/core/providers/ble_saved_devices_provider.dart';
 import 'package:airspothealth/features/add_device/providers/ble_device_connection_provider.dart';
+import 'package:airspothealth/features/device_graph/providers/device_history_data_request_provider.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 final deviceForgetStatusProvider = AsyncNotifierProvider.family
@@ -22,6 +23,8 @@ class _DeviceForgetStatusNotifier
       await ref.read(bleDeviceConnectionProvider(arg).notifier).disconnect();
 
       ref.read(bleSavedDevicesProvider.notifier).removeDeviceById(arg);
+
+      ref.invalidate(deviceHistoryDataRequestProvider);
 
       state = const AsyncData(true);
     } catch (e) {
