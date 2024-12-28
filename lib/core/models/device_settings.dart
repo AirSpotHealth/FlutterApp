@@ -67,7 +67,7 @@ class DeviceSettings {
   DeviceSettings.empty({required this.deviceId})
       : alarmEnabled = false,
         vibrationEnabled = false,
-        powerMode = PowerMode.low,
+        powerMode = PowerMode.onDemand,
         continuosScreenEnabled = false,
         thresholds = DeviceThresholds.empty(),
         co2MedAlertEnabled = false,
@@ -300,15 +300,15 @@ class DeviceThresholds {
 }
 
 enum PowerMode {
-  // onDemand,
+  onDemand,
   low,
   medium,
   high;
 
   Uint8List get _deviceCmd {
     switch (this) {
-      // case PowerMode.onDemand:
-      //   return DeviceCmdUtils.setPowerOnDemand();
+      case PowerMode.onDemand:
+        return DeviceCmdUtils.setPowerOnDemand();
       case PowerMode.low:
         return DeviceCmdUtils.setPowerLow();
       case PowerMode.medium:
@@ -320,23 +320,23 @@ enum PowerMode {
 
   static PowerMode fromValue(int value) {
     switch (value) {
-      // case 0:
-      //   return PowerMode.onDemand;
       case 0:
-        return PowerMode.low;
+        return PowerMode.onDemand;
       case 1:
-        return PowerMode.medium;
+        return PowerMode.low;
       case 2:
+        return PowerMode.medium;
+      case 3:
         return PowerMode.high;
       default:
-        return PowerMode.low;
+        return PowerMode.onDemand;
     }
   }
 
   String get assetIcon {
     switch (this) {
-      // case PowerMode.onDemand:
-      //   return Assets.powerModeOnDemand;
+      case PowerMode.onDemand:
+        return Assets.powerModeOnDemand;
       case PowerMode.low:
         return Assets.powerMode3min;
       case PowerMode.medium:

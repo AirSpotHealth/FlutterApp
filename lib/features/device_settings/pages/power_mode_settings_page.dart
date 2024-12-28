@@ -34,15 +34,15 @@ class PowerModeSettingsPage extends ConsumerWidget {
             crossAxisAlignment: CrossAxisAlignment.baseline,
             textBaseline: TextBaseline.alphabetic,
             children: [
-              // Expanded(
-              //   child: _buildPowerModeItem(
-              //       asset: Assets.powerModeOnDemand,
-              //       isSelected: deviceSettings.powerMode == PowerMode.onDemand,
-              //       onTap: () => _updatePowerMode(ref,
-              //           deviceSettings.copyWith(powerMode: PowerMode.onDemand)),
-              //       description:
-              //           '${Constants.co2Text} level updates on button press'),
-              // ),
+              Expanded(
+                child: _buildPowerModeItem(
+                    asset: Assets.powerModeOnDemand,
+                    isSelected: deviceSettings.powerMode == PowerMode.onDemand,
+                    onTap: () => _updatePowerMode(ref,
+                        deviceSettings.copyWith(powerMode: PowerMode.onDemand)),
+                    description:
+                        '${Constants.co2Text} level updates on button press'),
+              ),
               Expanded(
                 child: _buildPowerModeItem(
                     asset: Assets.powerMode3min,

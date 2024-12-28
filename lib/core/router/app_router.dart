@@ -9,7 +9,7 @@ import 'package:airspothealth/features/device_settings/device_settings_page.dart
 import 'package:airspothealth/features/device_settings/pages/co2_alert_settings_page.dart';
 import 'package:airspothealth/features/device_settings/pages/device_log_page.dart';
 import 'package:airspothealth/features/device_settings/pages/device_update_page.dart';
-import 'package:airspothealth/features/device_settings/pages/powe_mode_settings_page.dart';
+import 'package:airspothealth/features/device_settings/pages/power_mode_settings_page.dart';
 import 'package:airspothealth/features/device_settings/pages/recalibrate_device_page.dart';
 import 'package:airspothealth/features/device_settings/pages/time_settings_page.dart';
 import 'package:airspothealth/features/devices/devices_page.dart';

@@ -88,16 +88,20 @@ class DeviceCmdUtils {
   }
 
   // ======= Power Mode Commands =======
-  static Uint8List setPowerLow() {
+  static Uint8List setPowerOnDemand() {
     return _buildCommand([prefixHigh, prefixLow, 5, 1, 0]);
   }
 
-  static Uint8List setPowerMed() {
+  static Uint8List setPowerLow() {
     return _buildCommand([prefixHigh, prefixLow, 5, 1, 1]);
   }
 
-  static Uint8List setPowerHi() {
+  static Uint8List setPowerMed() {
     return _buildCommand([prefixHigh, prefixLow, 5, 1, 2]);
+  }
+
+  static Uint8List setPowerHi() {
+    return _buildCommand([prefixHigh, prefixLow, 5, 1, 3]);
   }
 
   // ======= Bluetooth Commands =======
