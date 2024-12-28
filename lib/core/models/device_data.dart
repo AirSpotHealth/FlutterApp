@@ -18,6 +18,7 @@ class DeviceData {
 
   final dynamic value;
 
+  @enumValue
   final DeviceDataType type;
 
   String get id => deviceId + dateTime.millisecondsSinceEpoch.toString();
@@ -59,7 +60,8 @@ class DeviceData {
 enum DeviceDataType {
   co2,
   batteryLow,
-  calibration;
+  calibration,
+  sensorError;
 
   static DeviceDataType fromByte(int byte) {
     switch (byte) {
@@ -69,6 +71,8 @@ enum DeviceDataType {
         return DeviceDataType.batteryLow;
       case 2:
         return DeviceDataType.calibration;
+      case 3:
+        return DeviceDataType.sensorError;
       default:
         throw Exception('Unknown DeviceDataType: $byte');
     }

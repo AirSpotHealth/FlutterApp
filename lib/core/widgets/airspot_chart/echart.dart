@@ -52,7 +52,6 @@ class _EChartState extends State<EChart> {
       $script;
       var chart = echarts.init(document.getElementById('chart'));
       chart.setOption($_currentOption, true);
-      Print.postMessage('Chart initialized');
     ''');
   }
 
@@ -115,6 +114,7 @@ class _EChartState extends State<EChart> {
           }
         } catch (e) {
           const parsedOption = typeof $_currentOption === 'string' ? JSON.parse($_currentOption) : $_currentOption;
+          console.error(e);
           chart.setOption(parsedOption, true);
         }
 ''');

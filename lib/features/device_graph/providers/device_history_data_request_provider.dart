@@ -34,7 +34,7 @@ class _DeviceHistoryDataRequestNotifier
   BleDevice? bleDevice;
 
   static final _unsyncedThresholdDate =
-      DateTime.fromMillisecondsSinceEpoch(Constants.syncedTimeThreshold * 1000);
+      DateTime.fromMillisecondsSinceEpoch(Constants.syncedTimeThreshold);
 
   @override
   build(String arg) {
@@ -120,6 +120,9 @@ class _DeviceHistoryDataRequestNotifier
     if (pendingDateTimeRange == null) {
       return false;
     }
+
+    debugPrint(
+        'First date time: $firstDateTime, Pending date time range: $pendingDateTimeRange');
 
     // Check if the data is within the requested range
     if (firstDateTime.isAfter(_unsyncedThresholdDate) &&

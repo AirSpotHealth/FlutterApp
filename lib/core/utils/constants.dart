@@ -113,7 +113,9 @@ class Constants {
 
   static const int maxFlashPageCount = 16384;
 
-  static const int syncedTimeThreshold = 10000000;
+  static const int syncedTimeThreshold = 978267600000;
+
+  static const int emptyFlashDate = 0xFFFFFFFF;
 
   static final DateFormat csvDateFormat = DateFormat('yyyy-MM-dd HH:mm:ss');
 }

@@ -35,7 +35,12 @@ const DeviceDataSchema = IsarGeneratedSchema(
       IsarPropertySchema(
         name: 'type',
         type: IsarType.byte,
-        enumMap: {"co2": 0, "batteryLow": 1, "calibration": 2},
+        enumMap: {
+          "co2": 0,
+          "batteryLow": 1,
+          "calibration": 2,
+          "sensorError": 3
+        },
       ),
       IsarPropertySchema(
         name: 'id',
@@ -278,6 +283,7 @@ const _deviceDataType = {
   0: DeviceDataType.co2,
   1: DeviceDataType.batteryLow,
   2: DeviceDataType.calibration,
+  3: DeviceDataType.sensorError,
 };
 
 extension DeviceDataQueryFilter
