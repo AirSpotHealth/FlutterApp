@@ -4,6 +4,7 @@ import 'package:airspothealth/core/services/notification_service.dart';
 import 'package:airspothealth/core/services/prefs_service.dart';
 import 'package:airspothealth/core/theme/app_theme.dart';
 import 'package:airspothealth/core/utils/storage_keys.dart';
+import 'package:airspothealth/features/home/widgets/services_banner.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:package_info_plus/package_info_plus.dart';
@@ -48,7 +49,15 @@ class AirspotApp extends StatelessWidget {
         data: MediaQuery.of(context).copyWith(
           textScaler: const TextScaler.linear(1.0),
         ),
-        child: child!,
+        child: Stack(
+          children: [
+            child!,
+            const Align(
+              alignment: Alignment.bottomCenter,
+              child: ServicesBanner(),
+            ),
+          ],
+        ),
       ),
     );
   }
