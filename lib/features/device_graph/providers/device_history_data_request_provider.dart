@@ -47,6 +47,9 @@ class _DeviceHistoryDataRequestNotifier
     requestedDateTimeRange = duration.getDateTimeRange(isTonightEnd: false);
 
     debugPrint('Requesting historical data for $requestedDateTimeRange');
+    numberOfPagesFetched = 0;
+    currentPageNumber = null;
+    bleDevice = ref.read(bleDeviceProvider(deviceId));
 
     _requestData();
   }
