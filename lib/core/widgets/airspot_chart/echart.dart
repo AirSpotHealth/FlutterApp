@@ -127,12 +127,6 @@ class _EChartState extends State<EChart> {
   }
 
   @override
-  void dispose() {
-    _controller?.clearCache();
-    super.dispose();
-  }
-
-  @override
   Widget build(BuildContext context) {
     return WebViewWidget(controller: _controller!);
   }
