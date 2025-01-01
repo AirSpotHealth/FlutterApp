@@ -102,7 +102,7 @@ class _AddDevicePageState extends ConsumerState<AddDevicePage>
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Add Device'),
+        title: const Text('Add Airspot Device'),
       ),
       body: RefreshIndicator.adaptive(
         onRefresh: () async {

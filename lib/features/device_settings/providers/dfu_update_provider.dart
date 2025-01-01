@@ -61,60 +61,69 @@ class _DfuUpdateNotifier extends AutoDisposeNotifier<AsyncProgressValue> {
     NordicDfu().startDfu(
       deviceId,
       filePath,
-      onProgressChanged:
-          (address, percent, speed, avgSpeed, currentPart, totalParts) {
-        state = AsyncInProgress(
-          percent / 100,
-          message: 'Updating firmware.... $percent%',
-        );
-      },
-      iosSpecialParameter: const IosSpecialParameter(
+      darwinParameters: const DarwinParameters(
         connectionTimeout: 30,
         alternativeAdvertisingNameEnabled: false,
       ),
-      onDeviceDisconnected: (error) {
-        state = state is AsyncInProgress
-            ? (state as AsyncInProgress).copyWithMessage('Device disconnected')
-            : const AsyncInProgress(0.0, message: 'Device disconnected');
-      },
-      onDeviceConnected: (address) {
-        state = state is AsyncInProgress
-            ? (state as AsyncInProgress).copyWithMessage('Device connected')
-            : const AsyncInProgress(0.0, message: 'Device connected');
-      },
-      onDeviceConnecting: (address) {
-        state = const AsyncInProgress(0.0, message: 'Connecting to device...');
-      },
-      onDeviceDisconnecting: (address) {
-        state = state is AsyncInProgress
-            ? (state as AsyncInProgress).copyWithMessage('Disconnecting device')
-            : const AsyncInProgress(0.0, message: 'Disconnecting device...');
-      },
-      onEnablingDfuMode: (address) {
-        state = const AsyncInProgress(0.0, message: 'Enabling DFU mode...');
-      },
-      onDfuAborted: (error) {
-        state = AsyncFailure('DFU aborted, update failed $error');
-      },
-      onDfuCompleted: (res) {
-        state = const AsyncInProgress(
-          1,
-          message: 'DFU completed!!, rebooting...',
-        );
-        _disconnectDevice(deviceId);
-      },
-      onFirmwareValidating: (address) {
-        state = const AsyncInProgress(1.0, message: 'Validating firmware...');
-      },
-      onDfuProcessStarting: (address) {
-        state = const AsyncInProgress(0.0, message: 'Starting DFU process...');
-      },
-      onDfuProcessStarted: (address) {
-        state = const AsyncInProgress(0.0, message: 'DFU process started...');
-      },
-      onError: (address, error, errorType, message) {
-        state = AsyncFailure('Update failed: $message');
-      },
+      dfuEventHandler: DfuEventHandler(
+        onProgressChanged:
+            (address, percent, speed, avgSpeed, currentPart, totalParts) {
+          state = AsyncInProgress(
+            percent / 100,
+            message: 'Updating firmware.... $percent%',
+          );
+        },
+        onDeviceDisconnected: (error) {
+          state = state is AsyncInProgress
+              ? (state as AsyncInProgress)
+                  .copyWithMessage('Device disconnected')
+              : const AsyncInProgress(0.0, message: 'Device disconnected');
+        },
+        onDeviceConnected: (address) {
+          state = state is AsyncInProgress
+              ? (state as AsyncInProgress).copyWithMessage('Device connected')
+              : const AsyncInProgress(0.0, message: 'Device connected');
+        },
+        onDeviceConnecting: (address) {
+          state =
+              const AsyncInProgress(0.0, message: 'Connecting to device...');
+        },
+        onDeviceDisconnecting: (address) {
+          state = state is AsyncInProgress
+              ? (state as AsyncInProgress)
+                  .copyWithMessage('Disconnecting device')
+              : const AsyncInProgress(0.0, message: 'Disconnecting device...');
+        },
+        onEnablingDfuMode: (address) {
+          state = const AsyncInProgress(0.0, message: 'Enabling DFU mode...');
+        },
+        onDfuAborted: (error) {
+          state = AsyncFailure('DFU aborted, update failed $error');
+        },
+        onDfuCompleted: (res) {
+          state = const AsyncInProgress(
+            1,
+            message: 'DFU completed!!, rebooting...',
+          );
+          _disconnectDevice(deviceId);
+        },
+        onFirmwareValidating: (address) {
+          state = const AsyncInProgress(1.0, message: 'Validating firmware...');
+        },
+        onDfuProcessStarting: (address) {
+          state =
+              const AsyncInProgress(0.0, message: 'Starting DFU process...');
+        },
+        onDfuProcessStarted: (address) {
+          state = const AsyncInProgress(0.0, message: 'DFU process started...');
+        },
+        onError: (address, error, errorType, message) {
+          state = AsyncFailure('Update failed: $message');
+        },
+        onFirmwareUploading: (address) {
+          state = const AsyncInProgress(0.0, message: 'Uploading firmware...');
+        },
+      ),
     );
   }
 

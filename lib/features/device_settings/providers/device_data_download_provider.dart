@@ -22,7 +22,7 @@ class _DeviceDataDownloadNotifier
     extends AutoDisposeFamilyNotifier<AsyncProgressValue, String> {
   String get deviceId => arg;
 
-  static final _2010Date = DateTime(2010);
+  static final _baseDateForCalculation = DateTime(2010);
 
   @override
   AsyncProgressValue build(String arg) {
@@ -43,7 +43,7 @@ class _DeviceDataDownloadNotifier
           return isar.deviceDatas
               .where()
               .deviceIdEqualTo(deviceId)
-              .dateTimeGreaterThan(_2010Date)
+              .dateTimeGreaterThan(_baseDateForCalculation)
               .sortByDateTimeDesc()
               .findAll();
         },

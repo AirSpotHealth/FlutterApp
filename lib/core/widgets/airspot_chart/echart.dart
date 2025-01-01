@@ -55,46 +55,45 @@ class _EChartState extends State<EChart> {
     ''');
   }
 
-  static const String showTipScript = '''
-      chart.on('datazoom', function (params) {
+//   static const String showTipScript = '''
+//       chart.on('datazoom', function (params) {
 
-        try {
-          const series = chart.getOption().series[0]; // Get the series data
-          const data = series.data; // Access the data array
+//         try {
+//           const series = chart.getOption().series[0]; // Get the series data
+//           const data = series.data; // Access the data array
 
-          Print.postMessage("SeriesName: " + series.name);
+//           Print.postMessage("SeriesName: " + series.name);
 
-          // Get the current dataZoom range (start and end)
-          const dataZoomComponent = chart.getModel().getComponent('dataZoom').option;
-          const startPercent = dataZoomComponent.start;
-          const endPercent = dataZoomComponent.end;
+//           // Get the current dataZoom range (start and end)
+//           const dataZoomComponent = chart.getModel().getComponent('dataZoom').option;
+//           const startPercent = dataZoomComponent.start;
+//           const endPercent = dataZoomComponent.end;
 
-          // Calculate the indices of the visible range
-          const startIndex = Math.floor((startPercent / 100) * data.length);
-          const endIndex = Math.floor((endPercent / 100) * data.length);
+//           // Calculate the indices of the visible range
+//           const startIndex = Math.floor((startPercent / 100) * data.length);
+//           const endIndex = Math.floor((endPercent / 100) * data.length);
 
-          // Calculate the middle index of the visible range
-          const middleIndex = Math.floor((startIndex + endIndex) / 2);
+//           // Calculate the middle index of the visible range
+//           const middleIndex = Math.floor((startIndex + endIndex) / 2);
 
-          Print.postMessage("Middle index: " + middleIndex);
-          Print.postMessage("Middle data point: " + data[middleIndex]);
-          Print.postMessage("Data length: " + data.length);
+//           Print.postMessage("Middle index: " + middleIndex);
+//           Print.postMessage("Middle data point: " + data[middleIndex]);
+//           Print.postMessage("Data length: " + data.length);
 
-          if (middleIndex < 0 || middleIndex >= data.length) {
-            return;
-          }
-        
+//           if (middleIndex < 0 || middleIndex >= data.length) {
+//             return;
+//           }
 
-          chart.dispatchAction({
-              type: 'showTip',
-              seriesIndex: 0,
-              dataIndex: middleIndex
-          });
-        } catch (e) {
-          Print.postMessage("Error: " + e);
-        }
-      });
-''';
+//           chart.dispatchAction({
+//               type: 'showTip',
+//               seriesIndex: 0,
+//               dataIndex: middleIndex
+//           });
+//         } catch (e) {
+//           Print.postMessage("Error: " + e);
+//         }
+//       });
+// ''';
 
   void update(String preOption) {
     if (_currentOption != preOption) {
