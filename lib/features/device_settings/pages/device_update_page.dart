@@ -12,13 +12,33 @@ import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-class DeviceUpdatePage extends ConsumerWidget {
+class DeviceUpdatePage extends ConsumerStatefulWidget {
   const DeviceUpdatePage({required this.deviceId, super.key});
 
   final String deviceId;
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<ConsumerStatefulWidget> createState() =>
+      _DeviceUpdatePageState();
+}
+
+class _DeviceUpdatePageState extends ConsumerState<DeviceUpdatePage> {
+  String get deviceId => widget.deviceId;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _fetchRemoteVersion();
+    });
+  }
+
+  Future<void> _fetchRemoteVersion() async {
+    ref.read(firmwareRemoteVersionProvider.notifier).fetchRemoteVersion();
+  }
+
+  @override
+  Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: AppBar(
@@ -29,7 +49,7 @@ class DeviceUpdatePage extends ConsumerWidget {
       ),
       body: RefreshIndicator.adaptive(
         onRefresh:
-            ref.read(firmwareRemoteVersionProvider.notifier).fetchRemoteVersion,
+            _fetchRemoteVersion, // refresh the remote version on pull down
         child: ListView(padding: const EdgeInsets.all(16), children: [
           TappableWidget(
             onTap: () => _showLocalFilePicker(ref, deviceId),
