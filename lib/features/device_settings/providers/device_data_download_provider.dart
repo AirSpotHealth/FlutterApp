@@ -44,7 +44,7 @@ class _DeviceDataDownloadNotifier
               .where()
               .deviceIdEqualTo(deviceId)
               .dateTimeGreaterThan(_baseDateForCalculation)
-              .sortByDateTimeDesc()
+              .sortByDateTime()
               .findAll();
         },
       );
