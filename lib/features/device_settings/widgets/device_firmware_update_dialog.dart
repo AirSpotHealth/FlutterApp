@@ -117,7 +117,7 @@ class _DeviceFirmwareUpdateDialogState
           ],
           if (remoteVersion?.requireErase == true) ...[
             Text(
-              'Warning: This device update will erase the CO2 history stored on the device. If you want to keep it, download it first. I will be saved as a .csv (spreadsheet).',
+              'Warning: This device update will erase the CO2 history stored on the device. If you want to keep it, download it first. It will be saved as a .csv (spreadsheet).',
               style: context.textTheme.bodySmall?.copyWith(color: Colors.red),
             ),
             const SizedBox(height: 16),
