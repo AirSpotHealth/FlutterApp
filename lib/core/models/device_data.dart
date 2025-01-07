@@ -74,7 +74,7 @@ enum DeviceDataType {
       case 3:
         return DeviceDataType.sensorError;
       default:
-        throw Exception('Unknown DeviceDataType: $byte');
+        return DeviceDataType.co2;
     }
   }
 }

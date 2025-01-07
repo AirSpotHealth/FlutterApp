@@ -49,7 +49,6 @@ class _DeviceHistoryDataRequestNotifier
     debugPrint('Requesting historical data for $requestedDateTimeRange');
     numberOfPagesFetched = 0;
     currentPageNumber = null;
-    bleDevice = ref.read(bleDeviceProvider(deviceId));
 
     _requestData();
   }
@@ -82,6 +81,7 @@ class _DeviceHistoryDataRequestNotifier
     }
 
     if (data is List && data.isEmpty) {
+      debugPrint('No data received');
       handleHistoricalDataFetchComplete();
       return;
     }
@@ -133,6 +133,11 @@ class _DeviceHistoryDataRequestNotifier
       return false;
     }
 
+    // if the first date is ahead of the pending date range end then stop fetching
+    if (firstDateTime.isAfter(pendingDateTimeRange!.end)) {
+      return false;
+    }
+
     if (numberOfPagesFetched >= Constants.maxFlashPageCount) {
       return false;
     }
@@ -175,7 +180,8 @@ class _DeviceHistoryDataRequestNotifier
       isar.bleDevices.put(bleDevice!);
     });
 
-    debugPrint('Last fetched date time range: $fetchedDateTimeRange');
+    debugPrint(
+        'Last fetched date time range: ${bleDevice!.lastFetchedDateTimeRange}');
   }
 
   DateTimeRange _calculateFetchedDateTimeRange() {
@@ -223,6 +229,10 @@ class _DeviceHistoryDataRequestNotifier
     // Determine the range(s) to fetch
     DateTime? fetchStart;
     DateTime? fetchEnd;
+
+    debugPrint(
+        'Last fetched start: $lastFetchedStartDate, Last fetched end: $lastFetchedEndDate');
+    debugPrint('Requested start: $startDate, Requested end: $endDate');
 
     if (startDate.isAfterOrEqual(lastFetchedEndDate)) {
       // Condition 2: Requested range is after the last fetched range
