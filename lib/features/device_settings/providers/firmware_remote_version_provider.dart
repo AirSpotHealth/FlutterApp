@@ -45,7 +45,8 @@ class _FirmwareRemoteVersionNotifier
       debugPrint('Beta mode: $beta');
 
       final Response<dynamic> result = await _networkService.get(
-          beta ? ApiEndpoints.versionCheckBeta : ApiEndpoints.versionCheck, {});
+          "${ApiEndpoints.versionCheck}?beta=$beta&app_version=$currentVersion",
+          {});
 
       if (result.statusCode == 200) {
         final RemoteVersion remoteVersion =
