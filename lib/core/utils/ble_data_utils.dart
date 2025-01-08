@@ -200,10 +200,15 @@ class ResponseCommandParser {
   dynamic parseGetCo2History(List<int> data) {
     debugPrint('Parsing CO2 history data Length: ${data.length}');
 
-    // Check if it is a CO2 history done command
+    // Check if it is a page number response
     if (data.length == 7 && data[3] == 0x01) {
       // return the 4th and 5th bytes are the current page number as uint16_t
       return (data[4] << 8) | data[5];
+    }
+
+    // check if it is a co2 history done command
+    if (data.length == 6 && data[3] == 0x01 && data[5] == 0xb8) {
+      return true;
     }
 
     // check if the firmware is less than v3.0.0
@@ -211,7 +216,8 @@ class ResponseCommandParser {
     if (!AppUtils.isNewFirmwareVersion(device.firmwareVersion)) {
       _parseCo2OldHistoryData(data);
 
-      return [];
+      // return null to indicate that the data is not a page number and has been parsed and saved
+      return null;
     }
 
     // check if the record count is 00

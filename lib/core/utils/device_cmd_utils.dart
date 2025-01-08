@@ -144,6 +144,25 @@ class DeviceCmdUtils {
     return _buildCommand([prefixHigh, prefixLow, 0x0B, 1, 0]);
   }
 
+  static Uint8List getCo2HistoryOld(
+      {required DateTime startDate, required DateTime endDate}) {
+    // Calculate the total seconds since January 1, 2000, to today start and current time
+    int since2000ToStartDate = calculateSecondsSince2000(startDate);
+    int since2000ToEndDate = calculateSecondsSince2000(endDate);
+
+    // Convert the calculated seconds to byte arrays
+    var byteArrayStart = ByteData(4)
+      ..setInt32(0, since2000ToStartDate, Endian.big);
+    var byteArrayNow = ByteData(4)..setInt32(0, since2000ToEndDate, Endian.big);
+
+    // Construct the BLE command
+    return _buildCommand([
+      ...[prefixHigh, prefixLow, 0x0C, 0x08],
+      ...byteArrayStart.buffer.asUint8List(),
+      ...byteArrayNow.buffer.asUint8List()
+    ]);
+  }
+
   static Uint8List getCo2History(int pageNumber) {
     if (pageNumber < 0 || pageNumber > Constants.maxFlashPageCount - 1) {
       throw Exception(
