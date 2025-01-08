@@ -4,8 +4,8 @@ import 'package:airspothealth/features/device_settings/models/progress_model.dar
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-class DeviceDataFetchingIndicator extends ConsumerWidget {
-  const DeviceDataFetchingIndicator({required this.deviceId, super.key});
+class DeviceDataTransmissionIndicator extends ConsumerWidget {
+  const DeviceDataTransmissionIndicator({required this.deviceId, super.key});
 
   final String deviceId;
 
