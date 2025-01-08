@@ -16,6 +16,7 @@ import 'package:airspothealth/core/utils/extensions.dart';
 import 'package:airspothealth/features/app_setup/providers/dev_mode_provider.dart';
 import 'package:airspothealth/features/device_graph/providers/ble_device_provider.dart';
 import 'package:airspothealth/features/device_graph/providers/device_history_data_request_provider.dart';
+import 'package:airspothealth/features/device_settings/providers/ble_device_version_provider.dart';
 import 'package:airspothealth/features/device_settings/providers/device_data_download_provider.dart';
 import 'package:airspothealth/features/device_settings/providers/device_data_erase_provider.dart';
 import 'package:airspothealth/features/device_settings/providers/recalibration_time_provider.dart';
@@ -163,6 +164,7 @@ class _BleDeviceCommunicationNotifier extends FamilyNotifier<dynamic, String> {
     if (data[2] == ResponseCommand.firmwareVersion.value) {
       ref.read(bleSavedDevicesProvider.notifier).reloadDevices();
       ref.invalidate(bleDeviceProvider(deviceId));
+      ref.invalidate(bleDeviceVersionProvider(deviceId));
       return;
     }
 
