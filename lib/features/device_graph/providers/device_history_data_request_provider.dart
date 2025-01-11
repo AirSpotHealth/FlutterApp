@@ -118,7 +118,12 @@ class _DeviceHistoryDataRequestNotifier
   }
 
   bool _shouldFetchMoreData(List<DeviceData> deviceDataList) {
-    final DateTime firstDateTime = deviceDataList.first.dateTime;
+    final DateTime firstDateTime = deviceDataList
+        .firstWhere(
+          (element) => element.type == DeviceDataType.co2,
+          orElse: () => deviceDataList.first,
+        )
+        .dateTime;
 
     if (pendingDateTimeRange == null) {
       return false;
@@ -133,10 +138,8 @@ class _DeviceHistoryDataRequestNotifier
       return false;
     }
 
-    // if the first date is ahead of the pending date range end then stop fetching
-    if (firstDateTime.isAfter(pendingDateTimeRange!.end)) {
-      return false;
-    }
+    // if the first date is the date of the empty data, then we don't need to fetch more data
+    if (firstDateTime.isAfter(DateTime(2100))) return false;
 
     if (numberOfPagesFetched >= Constants.maxFlashPageCount) {
       return false;
