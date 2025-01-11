@@ -4,6 +4,7 @@ import 'package:airspothealth/core/providers/device_settings_provider.dart';
 import 'package:airspothealth/core/utils/assets.dart';
 import 'package:airspothealth/core/utils/device_cmd_utils.dart';
 import 'package:airspothealth/core/utils/extensions.dart';
+import 'package:airspothealth/features/device_settings/models/progress_model.dart';
 import 'package:airspothealth/features/device_settings/providers/recalibration_time_provider.dart';
 import 'package:airspothealth/features/device_settings/widgets/device_settings_name_widget.dart';
 import 'package:flutter/material.dart';
@@ -16,22 +17,16 @@ class RecalibrateDevicePage extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    ref.listen(recalibrationTimeProvider(deviceId), (oldState, newState) {
-      if (newState != null &&
-          newState <= 0 &&
-          oldState != null &&
-          oldState > 0) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-                'Recalibration completed successfully, Correction value: $newState'),
-          ),
-        );
-
+    ref.listen<AsyncProgressValue>(recalibrationTimeProvider(deviceId),
+        (_, nStatus) {
+      if (nStatus.isSuccess) {
+        // reset the calibration status after 5 seconds
         WidgetsBinding.instance.addPostFrameCallback((_) {
-          ref
-              .read(recalibrationTimeProvider(deviceId).notifier)
-              .setRecalibrationDone();
+          Future.delayed(const Duration(seconds: 5), () {
+            ref
+                .read(recalibrationTimeProvider(deviceId).notifier)
+                .setRecalibrationTime(null);
+          });
         });
       }
     });
@@ -39,7 +34,7 @@ class RecalibrateDevicePage extends ConsumerWidget {
     final DeviceSettings deviceSettings =
         ref.watch(deviceSettingsProvider(deviceId));
 
-    final int? recalibrationTime =
+    final AsyncProgressValue calibrationStatus =
         ref.watch(recalibrationTimeProvider(deviceId));
 
     return Scaffold(
@@ -67,44 +62,57 @@ class RecalibrateDevicePage extends ConsumerWidget {
             const Text(
                 'If your AirSpot requires forced calibration then place it in a well-ventilated outdoor space, stand at least 1.5 meters away from it, and press the calibration icon above.'),
             const Spacer(),
-            if (recalibrationTime == null)
-              SwitchListTile(
-                title: const Text('Auto Calibration',
-                    style:
-                        TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
-                value: deviceSettings.autoCalibration,
-                onChanged: (bool value) {
-                  ref
-                      .read(deviceSettingsProvider(deviceId).notifier)
-                      .updateSettings(
-                          deviceSettings.copyWith(autoCalibration: value));
-                },
-              )
-            else if (recalibrationTime > 0) ...[
-              const SizedBox(height: 16),
-              Text.rich(
-                TextSpan(
-                  text: 'Calibration in Progress\n',
-                  children: [
+            ...calibrationStatus.when(
+              none: () {
+                return [
+                  SwitchListTile(
+                    title: const Text('Auto Calibration',
+                        style: TextStyle(
+                            fontWeight: FontWeight.bold, fontSize: 14)),
+                    value: deviceSettings.autoCalibration,
+                    onChanged: (bool value) {
+                      ref
+                          .read(deviceSettingsProvider(deviceId).notifier)
+                          .updateSettings(
+                              deviceSettings.copyWith(autoCalibration: value));
+                    },
+                  )
+                ];
+              },
+              inProgress: (progress, message) {
+                return [
+                  const SizedBox(height: 16),
+                  Text.rich(
                     TextSpan(
-                      text: 'Remaining Time: $recalibrationTime seconds',
-                      style: const TextStyle(
-                          fontWeight: FontWeight.bold, fontSize: 14),
+                      text: 'Calibration in Progress\n',
+                      children: [
+                        TextSpan(
+                          text: 'Remaining Time: ${progress.toInt()} seconds',
+                          style: const TextStyle(
+                              fontWeight: FontWeight.bold, fontSize: 14),
+                        ),
+                      ],
                     ),
-                  ],
-                ),
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: 16),
-            ] else ...[
-              Text('Calibration Completed',
-                  style: context.textTheme.bodyLarge?.weight600),
-              const SizedBox(height: 16),
-              Text(
-                'Correction Value: $recalibrationTime',
-                style: context.textTheme.bodyMedium,
-              ),
-            ]
+                    textAlign: TextAlign.center,
+                  ),
+                  const SizedBox(height: 16)
+                ];
+              },
+              success: (data) {
+                return [
+                  Text('Calibration Completed',
+                      style: context.textTheme.bodyLarge?.weight600),
+                  const SizedBox(height: 16),
+                  Text(
+                    'Correction Value: $data',
+                    style: context.textTheme.bodyMedium,
+                  ),
+                ];
+              },
+              failure: (error) {
+                return [];
+              },
+            )
           ],
         ),
       ),

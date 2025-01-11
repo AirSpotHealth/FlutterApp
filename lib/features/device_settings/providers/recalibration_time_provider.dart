@@ -1,21 +1,26 @@
+import 'package:airspothealth/features/device_settings/models/progress_model.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 final recalibrationTimeProvider = NotifierProvider.family
-    .autoDispose<_RecalibrationTimeNotifier, int?, String>(
+    .autoDispose<_RecalibrationTimeNotifier, AsyncProgressValue, String>(
         _RecalibrationTimeNotifier.new);
 
 class _RecalibrationTimeNotifier
-    extends AutoDisposeFamilyNotifier<int?, String> {
+    extends AutoDisposeFamilyNotifier<AsyncProgressValue, String> {
   @override
-  int? build(String arg) {
-    return null;
+  AsyncProgressValue build(String arg) {
+    return AsyncNone();
   }
 
   void setRecalibrationTime(int? time) {
-    state = time;
+    if (time == null) {
+      state = AsyncNone();
+    } else {
+      state = AsyncInProgress(time.toDouble());
+    }
   }
 
-  void setRecalibrationDone() {
-    state = null;
+  void setRecalibrationDone(int frc) {
+    state = AsyncSuccess(frc);
   }
 }
