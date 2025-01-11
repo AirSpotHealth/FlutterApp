@@ -61,7 +61,8 @@ enum DeviceDataType {
   co2,
   batteryLow,
   calibration,
-  sensorError;
+  sensorError,
+  empty;
 
   static DeviceDataType fromByte(int byte) {
     switch (byte) {
@@ -74,7 +75,7 @@ enum DeviceDataType {
       case 3:
         return DeviceDataType.sensorError;
       default:
-        return DeviceDataType.co2;
+        return DeviceDataType.empty;
     }
   }
 }

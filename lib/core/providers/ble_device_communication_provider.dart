@@ -61,6 +61,7 @@ class _BleDeviceCommunicationNotifier extends FamilyNotifier<dynamic, String> {
       final deviceData = isar.deviceDatas
           .where()
           .deviceIdEqualTo(deviceId)
+          .typeEqualTo(DeviceDataType.co2)
           .sortByDateTimeDesc()
           .findFirst();
 
@@ -173,7 +174,8 @@ class _BleDeviceCommunicationNotifier extends FamilyNotifier<dynamic, String> {
       return;
     }
 
-    if (data[2] == ResponseCommand.recalibrationTime.value) {
+    if (data[2] == ResponseCommand.recalibrationTime.value ||
+        data[2] == ResponseCommand.recalibrationConfirm.value) {
       ref
           .read(recalibrationTimeProvider(deviceId).notifier)
           .setRecalibrationTime(value);
@@ -183,11 +185,10 @@ class _BleDeviceCommunicationNotifier extends FamilyNotifier<dynamic, String> {
     // Recalibration done confirmation
     // value is 0x02 for start confirmation and 0x03 for end confirmation
     if (data[2] == ResponseCommand.recalibrationConfirm.value &&
-        value == 0x03) {
+        value != null) {
       ref
           .read(recalibrationTimeProvider(deviceId).notifier)
-          // set recalibration time to -1 to indicate that the recalibration is done
-          .setRecalibrationTime(-1);
+          .setRecalibrationTime(value as int);
       return;
     }
 
