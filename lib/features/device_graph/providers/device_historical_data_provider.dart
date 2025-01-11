@@ -69,6 +69,7 @@ class _DeviceHistoricalDataNotifier extends AutoDisposeFamilyAsyncNotifier<
         .where()
         .deviceIdEqualTo(deviceId)
         .dateTimeBetween(dateTimeRange.start, dateTimeRange.end)
+        .typeEqualTo(DeviceDataType.co2)
         .sortByDateTime()
         .watch(fireImmediately: true)
         .listen((event) {
