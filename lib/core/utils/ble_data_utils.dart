@@ -44,7 +44,7 @@ class BleDataUtils {
           parser.parseSetContinuosDisplay,
       ResponseCommand.firmwareVersion: parser.parseFirmwareVersion,
       ResponseCommand.recalibrationTime: parser.parseRecalibrationTime,
-      ResponseCommand.recalibrationConfirm: parser.parseRecalibrationTime,
+      ResponseCommand.recalibrationConfirm: parser.parseRecalibrationConfirm,
       ResponseCommand.locateMyAirspot: parser.parseLocateMyAirspot,
       ResponseCommand.dataEraseDone: parser.parseEraseDataDone,
     };
@@ -60,7 +60,7 @@ class BleDataUtils {
     }
 
     if (responseCommand == ResponseCommand.recalibrationConfirm) {
-      return result as int;
+      return result as int?;
     }
 
     if (responseCommand == ResponseCommand.firmwareVersion) {
@@ -383,6 +383,12 @@ class ResponseCommandParser {
   bool parseSetContinuosDisplay(List<int> data) => _parseBoolean(data, 4);
 
   int parseRecalibrationTime(List<int> data) => data[4];
+
+  int? parseRecalibrationConfirm(List<int> data) {
+    if (data.length < 6) return null;
+
+    return _parseTwoBytesToInt(data, 4);
+  }
 
   bool parseLocateMyAirspot(List<int> data) => _parseBoolean(data, 4);
 

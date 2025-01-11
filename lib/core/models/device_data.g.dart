@@ -39,7 +39,8 @@ const DeviceDataSchema = IsarGeneratedSchema(
           "co2": 0,
           "batteryLow": 1,
           "calibration": 2,
-          "sensorError": 3
+          "sensorError": 3,
+          "empty": 4
         },
       ),
       IsarPropertySchema(
@@ -284,6 +285,7 @@ const _deviceDataType = {
   1: DeviceDataType.batteryLow,
   2: DeviceDataType.calibration,
   3: DeviceDataType.sensorError,
+  4: DeviceDataType.empty,
 };
 
 extension DeviceDataQueryFilter

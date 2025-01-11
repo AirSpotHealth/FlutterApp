@@ -14,4 +14,8 @@ class _RecalibrationTimeNotifier
   void setRecalibrationTime(int? time) {
     state = time;
   }
+
+  void setRecalibrationDone() {
+    state = null;
+  }
 }

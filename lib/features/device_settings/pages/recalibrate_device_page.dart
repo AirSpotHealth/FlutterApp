@@ -3,6 +3,7 @@ import 'package:airspothealth/core/providers/ble_device_communication_provider.d
 import 'package:airspothealth/core/providers/device_settings_provider.dart';
 import 'package:airspothealth/core/utils/assets.dart';
 import 'package:airspothealth/core/utils/device_cmd_utils.dart';
+import 'package:airspothealth/core/utils/extensions.dart';
 import 'package:airspothealth/features/device_settings/providers/recalibration_time_provider.dart';
 import 'package:airspothealth/features/device_settings/widgets/device_settings_name_widget.dart';
 import 'package:flutter/material.dart';
@@ -16,12 +17,22 @@ class RecalibrateDevicePage extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     ref.listen(recalibrationTimeProvider(deviceId), (oldState, newState) {
-      if (newState == -1 && oldState != -1) {
+      if (newState != null &&
+          newState <= 0 &&
+          oldState != null &&
+          oldState > 0) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Recalibration completed successfully'),
+          SnackBar(
+            content: Text(
+                'Recalibration completed successfully, Correction value: $newState'),
           ),
         );
+
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          ref
+              .read(recalibrationTimeProvider(deviceId).notifier)
+              .setRecalibrationDone();
+        });
       }
     });
 
@@ -56,7 +67,20 @@ class RecalibrateDevicePage extends ConsumerWidget {
             const Text(
                 'If your AirSpot requires forced calibration then place it in a well-ventilated outdoor space, stand at least 1.5 meters away from it, and press the calibration icon above.'),
             const Spacer(),
-            if (recalibrationTime != null && recalibrationTime > 0) ...[
+            if (recalibrationTime == null)
+              SwitchListTile(
+                title: const Text('Auto Calibration',
+                    style:
+                        TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+                value: deviceSettings.autoCalibration,
+                onChanged: (bool value) {
+                  ref
+                      .read(deviceSettingsProvider(deviceId).notifier)
+                      .updateSettings(
+                          deviceSettings.copyWith(autoCalibration: value));
+                },
+              )
+            else if (recalibrationTime > 0) ...[
               const SizedBox(height: 16),
               Text.rich(
                 TextSpan(
@@ -72,19 +96,15 @@ class RecalibrateDevicePage extends ConsumerWidget {
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: 16),
-            ] else
-              SwitchListTile(
-                title: const Text('Auto Calibration',
-                    style:
-                        TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
-                value: deviceSettings.autoCalibration,
-                onChanged: (bool value) {
-                  ref
-                      .read(deviceSettingsProvider(deviceId).notifier)
-                      .updateSettings(
-                          deviceSettings.copyWith(autoCalibration: value));
-                },
+            ] else ...[
+              Text('Calibration Completed',
+                  style: context.textTheme.bodyLarge?.weight600),
+              const SizedBox(height: 16),
+              Text(
+                'Correction Value: $recalibrationTime',
+                style: context.textTheme.bodyMedium,
               ),
+            ]
           ],
         ),
       ),

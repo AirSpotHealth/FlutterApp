@@ -125,7 +125,7 @@ class _DeviceHistoryDataRequestNotifier
     }
 
     debugPrint(
-        'First date time: $firstDateTime, Pending date time range: $pendingDateTimeRange');
+        '''First date time: $firstDateTime, Last date time: ${deviceDataList.last.dateTime}, Pending date time range: $pendingDateTimeRange''');
 
     // Check if the data is within the requested range
     if (firstDateTime.isAfter(_unsyncedThresholdDate) &&
