@@ -57,10 +57,7 @@ class RecalibrateDevicePage extends ConsumerWidget {
                 child: Image.asset(Assets.recalibrateImage, height: 100)),
             const SizedBox(height: 100),
             const Text(
-                'The AirSpot device automatically calibrates itself to the lowest CO₂ levels it sees over a week.'),
-            const SizedBox(height: 16),
-            const Text(
-                'If your AirSpot requires forced calibration then place it in a well-ventilated outdoor space, stand at least 1.5 meters away from it, and press the calibration icon above.'),
+                'If Autocalibration is enabled, AirSpot will calibrate itself on the assumption that it has made measurements in fresh air at least once a week. It is usually best to to leave this OFF. See full manual for details.'),
             const Spacer(),
             ...calibrationStatus.when(
               none: () {
