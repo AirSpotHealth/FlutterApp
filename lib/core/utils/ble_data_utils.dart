@@ -385,10 +385,17 @@ class ResponseCommandParser {
   int parseRecalibrationTime(List<int> data) => data[4];
 
   int? parseRecalibrationConfirm(List<int> data) {
-    if (data.length < 7) return null;
+    if (data.length < 8) return null;
 
     // combine the 5th and 6th bytes to get the recalibration time
-    return (data[4] << 8) | data[5];
+    int frc = (data[4] << 8) | data[5];
+
+    // if the 7th byte is 0x00 then it is negative value else positive
+    if (data[6] == 0x00) {
+      frc = -frc;
+    }
+
+    return frc;
   }
 
   bool parseLocateMyAirspot(List<int> data) => _parseBoolean(data, 4);

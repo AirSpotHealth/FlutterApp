@@ -187,7 +187,7 @@ class _BleDeviceCommunicationNotifier extends FamilyNotifier<dynamic, String> {
         value != null) {
       ref
           .read(recalibrationTimeProvider(deviceId).notifier)
-          .setRecalibrationDone(-(value as int));
+          .setRecalibrationDone(value as int);
       return;
     }
 
