@@ -41,7 +41,7 @@ class RecalibrateDevicePage extends ConsumerWidget {
       backgroundColor: Colors.white,
       appBar: AppBar(
         title: DeviceSettingsNameWidget(
-            deviceId: deviceId, suffixText: 'Recalibrate'),
+            deviceId: deviceId, suffixText: 'Calibrate'),
       ),
       body: Padding(
         padding: const EdgeInsets.all(16),

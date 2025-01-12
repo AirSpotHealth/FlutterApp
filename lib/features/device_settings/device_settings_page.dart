@@ -49,7 +49,7 @@ class DeviceSettingsPage extends ConsumerWidget {
       route: RouteNames.deviceUpdate,
     ),
     SettingItem(
-      title: 'Recalibrate Device',
+      title: 'Calibrate Device',
       assetIcon: Assets.recalibrateSettings,
       route: RouteNames.recalibrateSettings,
     ),
