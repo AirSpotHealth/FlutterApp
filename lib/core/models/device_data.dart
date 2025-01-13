@@ -62,6 +62,7 @@ enum DeviceDataType {
   batteryLow,
   calibration,
   sensorError,
+  reset,
   empty;
 
   static DeviceDataType fromByte(int byte) {
@@ -74,6 +75,8 @@ enum DeviceDataType {
         return DeviceDataType.calibration;
       case 3:
         return DeviceDataType.sensorError;
+      case 4:
+        return DeviceDataType.reset;
       default:
         return DeviceDataType.empty;
     }
