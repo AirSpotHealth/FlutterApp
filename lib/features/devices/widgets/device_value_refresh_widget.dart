@@ -20,24 +20,26 @@ class _DeviceValueRefreshWidgetState
 
   @override
   Widget build(BuildContext context) {
-    return IconButton(
-      key: ValueKey(isRefreshing),
-      icon: isRefreshing
-          ? AnimateIcon(
-              onTap: () {},
-              iconType: IconType.continueAnimation,
-              animateIcon: AnimateIcons.refresh,
-              height: 24,
-              width: 24,
-            )
-          : AnimateIcon(
-              onTap: () {},
-              iconType: IconType.onlyIcon,
-              animateIcon: AnimateIcons.refresh,
-              height: 24,
-              width: 24,
-            ),
-      onPressed: _refreshValue,
+    debugPrint('DeviceValueRefreshWidget build: $isRefreshing');
+
+    if (isRefreshing) {
+      return AnimateIcon(
+        key: UniqueKey(),
+        onTap: () {},
+        iconType: IconType.continueAnimation,
+        animateIcon: AnimateIcons.refresh,
+        height: 24,
+        width: 24,
+      );
+    }
+
+    return AnimateIcon(
+      key: UniqueKey(),
+      onTap: _refreshValue,
+      iconType: IconType.onlyIcon,
+      animateIcon: AnimateIcons.refresh,
+      height: 24,
+      width: 24,
     );
   }
 
