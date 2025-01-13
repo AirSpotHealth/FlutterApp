@@ -47,6 +47,7 @@ class BleDataUtils {
       ResponseCommand.recalibrationConfirm: parser.parseRecalibrationConfirm,
       ResponseCommand.locateMyAirspot: parser.parseLocateMyAirspot,
       ResponseCommand.dataEraseDone: parser.parseEraseDataDone,
+      ResponseCommand.batteryLevel: parser.parseBatteryLevel,
     };
 
     final dynamic result = responseParsers[responseCommand]?.call(data);
@@ -81,6 +82,10 @@ class BleDataUtils {
 
     if (responseCommand == ResponseCommand.getCo2History) {
       return result;
+    }
+
+    if (responseCommand == ResponseCommand.batteryLevel) {
+      return result as int;
     }
 
     return null;
@@ -141,6 +146,22 @@ class ResponseCommandParser {
 
   bool parseDisconnect(List<int> data) => _parseBoolean(data, 4);
 
+  bool parseBatteryLevel(List<int> data) {
+    final batteryLevel = data[4];
+
+    isarService.write((isar) {
+      final device =
+          isar.deviceSettings.where().deviceIdEqualTo(deviceId).findFirst();
+      if (device == null) {
+        return;
+      }
+
+      isar.deviceSettings.put(device.copyWith(batteryLevel: batteryLevel));
+    });
+
+    return true;
+  }
+
   bool parseSetCo2Ppm(List<int> data) => _parseBoolean(data, 4);
 
   String parseFirmwareVersion(List<int> data) {
@@ -174,6 +195,7 @@ class ResponseCommandParser {
             yellowUpperLimit: _parseTwoBytesToInt(data, 9),
           ),
           autoCalibration: _parseBoolean(data, 12),
+          batteryLevel: data[13],
         );
       },
     );
@@ -467,7 +489,8 @@ enum ResponseCommand {
   recalibrationTime(0x0F),
   recalibrationConfirm(0x0D),
   locateMyAirspot(0x10),
-  dataEraseDone(0xFD);
+  dataEraseDone(0xFD),
+  batteryLevel(0xFE);
 
   const ResponseCommand(this.value);
   final int value;

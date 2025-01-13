@@ -49,6 +49,9 @@ class DeviceSettings {
   /// log data bool
   final bool logData;
 
+  /// battery level
+  final int? batteryLevel;
+
   DeviceSettings({
     required this.alarmEnabled,
     required this.vibrationEnabled,
@@ -62,6 +65,7 @@ class DeviceSettings {
     this.autoCalibration = false,
     this.autoConnect = true,
     this.logData = false,
+    this.batteryLevel,
   });
 
   DeviceSettings.empty({required this.deviceId})
@@ -75,7 +79,8 @@ class DeviceSettings {
         autoSyncTime = true,
         autoCalibration = true,
         autoConnect = true,
-        logData = false;
+        logData = false,
+        batteryLevel = null;
 
   DeviceSettings copyWith({
     bool? alarmEnabled,
@@ -91,6 +96,7 @@ class DeviceSettings {
     bool? autoCalibration,
     bool? autoConnect,
     bool? logData,
+    int? batteryLevel,
   }) {
     return DeviceSettings(
       alarmEnabled: alarmEnabled ?? this.alarmEnabled,
@@ -106,6 +112,7 @@ class DeviceSettings {
       autoCalibration: autoCalibration ?? this.autoCalibration,
       autoConnect: autoConnect ?? this.autoConnect,
       logData: logData ?? this.logData,
+      batteryLevel: batteryLevel ?? this.batteryLevel,
     );
   }
 
@@ -152,8 +159,8 @@ class DeviceSettings {
 
   @ignore
   Uint8List get continuousScreenCmd => continuosScreenEnabled
-      ? DeviceCmdUtils.keepDeviceLight()
-      : DeviceCmdUtils.closeDeviceLight();
+      ? DeviceCmdUtils.setScreenOnContinuously()
+      : DeviceCmdUtils.resetScreenOnContinuously();
 
   @ignore
   Uint8List get autoSyncTimeCmd => DeviceCmdUtils.setTime();
@@ -195,6 +202,7 @@ class DeviceSettings {
       'autoCalibration': autoCalibration,
       'autoConnect': autoConnect,
       'logData': logData,
+      'batteryLevel': batteryLevel,
     };
   }
 
@@ -214,7 +222,8 @@ class DeviceSettings {
         other.autoSyncTime == autoSyncTime &&
         other.autoCalibration == autoCalibration &&
         other.autoConnect == autoConnect &&
-        other.logData == logData;
+        other.logData == logData &&
+        other.batteryLevel == batteryLevel;
   }
 
   @override
@@ -230,11 +239,12 @@ class DeviceSettings {
       autoSyncTime.hashCode ^
       autoCalibration.hashCode ^
       autoConnect.hashCode ^
-      logData.hashCode;
+      logData.hashCode ^
+      batteryLevel.hashCode;
 
   @override
   String toString() {
-    return 'DeviceSettings(alarmEnabled: $alarmEnabled, vibrationEnabled: $vibrationEnabled, powerMode: $powerMode, continuosScreenEnabled: $continuosScreenEnabled, thresholds: $thresholds, deviceId: $deviceId, co2MedAlertEnabled: $co2MedAlertEnabled, co2HighAlertEnabled: $co2HighAlertEnabled, autoSyncTime: $autoSyncTime, autoCalibration: $autoCalibration, autoConnect: $autoConnect, logData: $logData)';
+    return 'DeviceSettings(alarmEnabled: $alarmEnabled, vibrationEnabled: $vibrationEnabled, powerMode: $powerMode, continuosScreenEnabled: $continuosScreenEnabled, thresholds: $thresholds, deviceId: $deviceId, co2MedAlertEnabled: $co2MedAlertEnabled, co2HighAlertEnabled: $co2HighAlertEnabled, autoSyncTime: $autoSyncTime, autoCalibration: $autoCalibration, autoConnect: $autoConnect, logData: $logData, batteryLevel: $batteryLevel)';
   }
 }
 

@@ -62,6 +62,14 @@ class DeviceCmdUtils {
     return _buildCommand([prefixHigh, prefixLow, 1, 1, 1]);
   }
 
+  static Uint8List getBatteryLevel() {
+    return _buildCommand([prefixHigh, prefixLow, 20, 1, 1]);
+  }
+
+  static Uint8List refreshCO2() {
+    return _buildCommand([prefixHigh, prefixLow, 21, 1, 1]);
+  }
+
   static Uint8List openAlarm() {
     return _buildCommand([prefixHigh, prefixLow, 2, 1, 1]);
   }
@@ -122,19 +130,15 @@ class DeviceCmdUtils {
   }
 
   // ======= Device Light Commands =======
-  static Uint8List keepDeviceLight() {
+  static Uint8List setScreenOnContinuously() {
     return _buildCommand([prefixHigh, prefixLow, 0x0e, 1, 1]);
   }
 
-  static Uint8List closeDeviceLight() {
+  static Uint8List resetScreenOnContinuously() {
     return _buildCommand([prefixHigh, prefixLow, 0x0e, 1, 2]);
   }
 
   // ======= CO2 History and Value Commands =======
-  static Uint8List setCo2Notify() {
-    return _buildCommand([prefixHigh, prefixLow, 6, 1, 1]);
-  }
-
   static int calculateSecondsSince2000(DateTime targetDate) {
     DateTime startDate2000 = DateTime(2000, 1, 1);
     return targetDate.difference(startDate2000).inSeconds;

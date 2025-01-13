@@ -11,7 +11,9 @@ import 'package:airspothealth/features/add_device/providers/ble_device_connectio
 import 'package:airspothealth/features/device_settings/models/remote_version.dart';
 import 'package:airspothealth/features/device_settings/providers/device_forget_status_provider.dart';
 import 'package:airspothealth/features/device_settings/providers/firmware_remote_version_provider.dart';
+import 'package:airspothealth/features/devices/widgets/device_battery_level_widget.dart';
 import 'package:airspothealth/features/devices/widgets/device_connect_button.dart';
+import 'package:airspothealth/features/devices/widgets/device_value_refresh_widget.dart';
 import 'package:airspothealth/features/devices/widgets/device_value_widget.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
@@ -63,58 +65,67 @@ class BleDeviceWidget extends ConsumerWidget {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Row(
-              children: [
-                if (deviceConnected)
-                  ..._getConnectedWidgets(ref)
-                else if (deviceConnectionState == BluetoothBondState.bonding)
-                  const CupertinoActivityIndicator()
-                else
-                  Expanded(child: _buildConnectButton(ref)),
-              ],
-            ),
-            Row(
-              children: [
-                Text(
-                  deviceConnected
-                      ? bleDevice.name
-                      : bleDevice.alias ?? bleDevice.name,
-                  style: context.textTheme.labelLarge,
-                ),
-                if (deviceConnected &&
-                    remoteVersion is AsyncData<RemoteVersion?> &&
-                    remoteVersion.value != null &&
-                    AppUtils.isVersionGreater(bleDevice.firmwareVersion,
-                        remoteVersion.value!.versionName))
-                  Expanded(
-                    child: GestureDetector(
-                      onTap: () {
-                        context.pushNamed(
-                          RouteNames.deviceUpdate,
-                          pathParameters: {'deviceId': bleDevice.deviceId},
-                        );
-                      },
-                      child: Text(
-                        'Tap to update firmware',
-                        style: context.textTheme.labelLarge?.copyWith(
-                          color: AppColors.brandColorRed,
-                        ),
-                        textAlign: TextAlign.end,
-                      ),
-                    ),
-                  ),
-              ],
-            ),
+            _buildConnectionRow(ref, deviceConnectionState, deviceConnected),
+            _buildDeviceInfoRow(context, ref, deviceConnected, remoteVersion),
             if (deviceConnected) ...[
               const SizedBox(height: 16),
-              Align(
-                alignment: Alignment.center,
-                child: DeviceValueWidget(deviceId: bleDevice.deviceId),
-              )
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                children: [
+                  DeviceBatteryLevelWidget(deviceId: bleDevice.deviceId),
+                  DeviceValueWidget(deviceId: bleDevice.deviceId),
+                  DeviceValueRefreshWidget(deviceId: bleDevice.deviceId),
+                ],
+              ),
             ],
           ],
         ),
       ),
+    );
+  }
+
+  Widget _buildConnectionRow(WidgetRef ref,
+      BluetoothBondState deviceConnectionState, bool deviceConnected) {
+    if (deviceConnected) {
+      return Row(children: _getConnectedWidgets(ref));
+    } else if (deviceConnectionState == BluetoothBondState.bonding) {
+      return const CupertinoActivityIndicator();
+    } else {
+      return _buildConnectButton(ref);
+    }
+  }
+
+  Widget _buildDeviceInfoRow(BuildContext context, WidgetRef ref,
+      bool deviceConnected, AsyncValue<RemoteVersion?> remoteVersion) {
+    return Row(
+      children: [
+        Text(
+          deviceConnected ? bleDevice.name : bleDevice.alias ?? bleDevice.name,
+          style: context.textTheme.labelLarge,
+        ),
+        if (deviceConnected &&
+            remoteVersion is AsyncData<RemoteVersion?> &&
+            remoteVersion.value != null &&
+            AppUtils.isVersionGreater(
+                bleDevice.firmwareVersion, remoteVersion.value!.versionName))
+          Expanded(
+            child: GestureDetector(
+              onTap: () {
+                context.pushNamed(
+                  RouteNames.deviceUpdate,
+                  pathParameters: {'deviceId': bleDevice.deviceId},
+                );
+              },
+              child: Text(
+                'Tap to update firmware',
+                style: context.textTheme.labelLarge?.copyWith(
+                  color: AppColors.brandColorRed,
+                ),
+                textAlign: TextAlign.end,
+              ),
+            ),
+          ),
+      ],
     );
   }
 
@@ -128,7 +139,6 @@ class BleDeviceWidget extends ConsumerWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               mainAxisSize: MainAxisSize.min,
-              spacing: 12,
               children: [
                 const Text(
                   'Forget Device',
@@ -137,6 +147,7 @@ class BleDeviceWidget extends ConsumerWidget {
                     fontWeight: FontWeight.w600,
                   ),
                 ),
+                const SizedBox(height: 12),
                 const Text(
                   'Are you sure you want to forget this device?',
                   style: TextStyle(
@@ -144,6 +155,7 @@ class BleDeviceWidget extends ConsumerWidget {
                     color: AppColors.neutralGrey,
                   ),
                 ),
+                const SizedBox(height: 12),
                 Button(
                   backgroundColor: Colors.red,
                   onPressed: () {
@@ -233,58 +245,59 @@ class BleDeviceWidget extends ConsumerWidget {
 
   void _showDeviceAliasDialog(WidgetRef ref, String deviceId, String? alias) {
     showAdaptiveDialog(
-        context: ref.context,
-        barrierDismissible: true,
-        builder: (context) {
-          final TextEditingController controller =
-              TextEditingController(text: alias);
-          return AlertDialog(
-            backgroundColor: Colors.white,
-            surfaceTintColor: Colors.white,
-            content: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Text(
-                  'Change Device Nickname',
-                  style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.w600,
-                  ),
+      context: ref.context,
+      barrierDismissible: true,
+      builder: (context) {
+        final TextEditingController controller =
+            TextEditingController(text: alias);
+        return AlertDialog(
+          backgroundColor: Colors.white,
+          surfaceTintColor: Colors.white,
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text(
+                'Change Device Nickname',
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.w600,
                 ),
-                const SizedBox(height: 16),
-                TextFormField(
-                  controller: controller,
-                  decoration: const InputDecoration(
-                    hintText: 'Enter nickname',
-                    border: OutlineInputBorder(
-                        borderSide: BorderSide(color: AppColors.primaryColor)),
-                    enabledBorder: OutlineInputBorder(
-                        borderSide: BorderSide(color: AppColors.primaryColor)),
-                    focusedBorder: OutlineInputBorder(
-                        borderSide: BorderSide(color: AppColors.primaryColor)),
-                  ),
-                ),
-              ],
-            ),
-            actions: [
-              TextButton(
-                onPressed: () {
-                  Navigator.of(context).pop();
-                },
-                child: const Text('Cancel'),
               ),
-              ElevatedButton(
-                onPressed: () {
-                  ref
-                      .read(bleSavedDevicesProvider.notifier)
-                      .updateDeviceAlias(deviceId, controller.text);
-                  Navigator.of(context).pop();
-                },
-                child: const Text('Save'),
+              const SizedBox(height: 16),
+              TextFormField(
+                controller: controller,
+                decoration: const InputDecoration(
+                  hintText: 'Enter nickname',
+                  border: OutlineInputBorder(
+                      borderSide: BorderSide(color: AppColors.primaryColor)),
+                  enabledBorder: OutlineInputBorder(
+                      borderSide: BorderSide(color: AppColors.primaryColor)),
+                  focusedBorder: OutlineInputBorder(
+                      borderSide: BorderSide(color: AppColors.primaryColor)),
+                ),
               ),
             ],
-          );
-        });
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+              child: const Text('Cancel'),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                ref
+                    .read(bleSavedDevicesProvider.notifier)
+                    .updateDeviceAlias(deviceId, controller.text);
+                Navigator.of(context).pop();
+              },
+              child: const Text('Save'),
+            ),
+          ],
+        );
+      },
+    );
   }
 }
