@@ -63,11 +63,11 @@ class DeviceCmdUtils {
   }
 
   static Uint8List getBatteryLevel() {
-    return _buildCommand([prefixHigh, prefixLow, 20, 1, 1]);
+    return _buildCommand([prefixHigh, prefixLow, 0x20, 1, 1]);
   }
 
   static Uint8List refreshCO2() {
-    return _buildCommand([prefixHigh, prefixLow, 21, 1, 1]);
+    return _buildCommand([prefixHigh, prefixLow, 0x21, 1, 1]);
   }
 
   static Uint8List openAlarm() {
