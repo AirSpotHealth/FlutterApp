@@ -315,6 +315,19 @@ enum PowerMode {
   medium,
   high;
 
+  String get name {
+    switch (this) {
+      case PowerMode.onDemand:
+        return 'Now';
+      case PowerMode.low:
+        return '3 Min';
+      case PowerMode.medium:
+        return '1 Min';
+      case PowerMode.high:
+        return '5 Sec';
+    }
+  }
+
   Uint8List get _deviceCmd {
     switch (this) {
       case PowerMode.onDemand:

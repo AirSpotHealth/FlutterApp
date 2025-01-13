@@ -13,6 +13,7 @@ import 'package:airspothealth/features/add_device/providers/ble_device_connectio
 import 'package:flutter/material.dart';
 import 'package:flutter_blue_plus/flutter_blue_plus.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 
 class DeviceMockWidget extends ConsumerWidget {
   const DeviceMockWidget({required this.device, super.key});
@@ -66,7 +67,7 @@ class DeviceMockWidget extends ConsumerWidget {
                 _buildHeader(deviceSettings),
                 const SizedBox(height: 6),
                 _buildCo2Value(co2Value),
-                _buildBluetooth(isConnected),
+                _buildPowerModeBluetooth(deviceSettings.powerMode, isConnected),
                 _buildActiveIndicator(co2Value, deviceSettings),
                 _showBrandColors(),
               ],
@@ -81,12 +82,12 @@ class DeviceMockWidget extends ConsumerWidget {
     return Align(
       alignment: Alignment.center,
       child: Text(
-        co2Value?.toString() ?? "0000",
+        co2Value?.toString() ?? "----",
         style: TextStyle(
             color: co2Value == null
                 ? Colors.white
                 : AppUtils.getDataColorFromValue(co2Value),
-            fontSize: 24),
+            fontSize: 32),
         textAlign: TextAlign.center,
       ),
     );
@@ -94,35 +95,48 @@ class DeviceMockWidget extends ConsumerWidget {
 
   Row _buildHeader(DeviceSettings deviceSettings) {
     return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      mainAxisAlignment: MainAxisAlignment.center,
       children: [
+        const SizedBox(width: 8),
         Icon(
           deviceSettings.alarmEnabled ? Icons.volume_up : Icons.volume_off,
           color: Colors.white,
-          size: 16,
+          size: 14,
         ),
+        Icon(
+          deviceSettings.vibrationEnabled ? Icons.power : Icons.power_off,
+          color: Colors.white,
+          size: 14,
+        ),
+        const Spacer(),
         Text(
           "${DateTime.now().hour} : ${DateTime.now().minute}",
           style: const TextStyle(color: Colors.white, fontSize: 12),
         ),
-        Text(
-          deviceSettings.powerMode.name.capitalize(),
-          style: const TextStyle(color: Colors.white, fontSize: 12),
+        const Spacer(),
+        const Icon(
+          FontAwesomeIcons.batteryEmpty,
+          color: Colors.white,
+          size: 16,
         ),
+        const SizedBox(width: 8),
       ],
     );
   }
 
-  Padding _buildBluetooth(bool isConnected) {
+  Padding _buildPowerModeBluetooth(PowerMode mode, bool isConnected) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 4),
       child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          const Text(Constants.co2Text,
+          Text(mode.name, style: TextStyle(color: Colors.white, fontSize: 10)),
+          const Spacer(),
+          Text(Constants.co2Text,
               style: TextStyle(color: Colors.white, fontSize: 10)),
+          const SizedBox(width: 8),
           const Text('PPM',
               style: TextStyle(color: Colors.white, fontSize: 10)),
+          const Spacer(),
           Icon(
             Icons.bluetooth,
             color: isConnected ? AppColors.primaryColor : Colors.white,
@@ -136,13 +150,13 @@ class DeviceMockWidget extends ConsumerWidget {
   Align _buildActiveIndicator(co2Value, DeviceSettings deviceSettings) {
     return Align(
       alignment: (co2Value ?? 0) < deviceSettings.greenUpperLimit
-          ? Alignment.centerLeft
+          ? Alignment.topLeft
           : (co2Value ?? 0) < deviceSettings.yellowUpperLimit
-              ? Alignment.center
-              : Alignment.centerRight,
+              ? Alignment.topCenter
+              : Alignment.topRight,
       child: const Icon(
         Icons.arrow_drop_down_sharp,
-        size: 24,
+        size: 20,
         color: Colors.white,
       ),
     );
