@@ -72,7 +72,7 @@ class _DeviceDataDownloadNotifier
         return isar.deviceDatas
             .where()
             .deviceIdEqualTo(deviceId)
-            .dateTimeGreaterThan(DateTime(2010))
+            .typeLessThan(DeviceDataType.empty)
             .sortByDateTime()
             .findAll();
       },
