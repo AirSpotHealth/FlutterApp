@@ -1,14 +1,24 @@
 import 'package:airspothealth/core/models/ble_device.dart';
 import 'package:airspothealth/core/models/device_data.dart';
 import 'package:airspothealth/core/models/device_settings.dart';
+import 'package:airspothealth/core/providers/ble_saved_devices_provider.dart';
+import 'package:airspothealth/core/providers/device_settings_provider.dart';
+import 'package:airspothealth/core/providers/isar_service_provider.dart';
 import 'package:airspothealth/core/services/isar_service.dart';
 import 'package:airspothealth/core/utils/app_utils.dart';
+import 'package:airspothealth/features/device_graph/providers/ble_device_provider.dart';
+import 'package:airspothealth/features/device_graph/providers/device_history_data_request_provider.dart';
+import 'package:airspothealth/features/device_settings/providers/ble_device_version_provider.dart';
+import 'package:airspothealth/features/device_settings/providers/device_data_download_provider.dart';
+import 'package:airspothealth/features/device_settings/providers/device_data_erase_provider.dart';
+import 'package:airspothealth/features/device_settings/providers/recalibration_time_provider.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:isar/isar.dart';
 
 /// BLE data utils class to handle BLE data operations
 /// This class provides methods to handle BLE data operations.
-class BleDataUtils {
+class BleDataService {
   /// Converts bytes to hex string
   static String? bytesToHexStr(List<int>? bytes) =>
       bytes?.map((byt) => byt.toRadixString(16).padLeft(2, '0')).join();
@@ -21,11 +31,16 @@ class BleDataUtils {
   static const int timestampFrom2000 = 946645200;
 
   /// Parses the response command based on device ID and data
-  static dynamic parseResponseCommand(BleDevice bleDevice, List<int> data) {
+  static dynamic parseResponseCommand(
+    NotifierProviderRef<dynamic> ref,
+    BleDevice bleDevice,
+    List<int> data,
+  ) {
     if (data.length < 6) return null;
 
     final responseCommand = ResponseCommand.fromValue(data[2]);
     final parser = ResponseCommandParser(bleDevice);
+    final deviceId = bleDevice.deviceId;
 
     final responseParsers = {
       ResponseCommand.co2Value: parser.parseCo2Value,
@@ -50,42 +65,60 @@ class BleDataUtils {
       ResponseCommand.batteryLevel: parser.parseBatteryLevel,
     };
 
-    final dynamic result = responseParsers[responseCommand]?.call(data);
+    final dynamic value = responseParsers[responseCommand]?.call(data);
 
-    if (responseCommand == ResponseCommand.co2Value) {
-      return result as DeviceData;
-    }
+    switch (responseCommand) {
+      case ResponseCommand.co2Value:
+        return value as DeviceData;
+      case ResponseCommand.recalibrationTime:
+        ref
+            .read(recalibrationTimeProvider(deviceId).notifier)
+            .setRecalibrationTime(value);
+        break;
+      case ResponseCommand.recalibrationConfirm:
+        if (value != null) {
+          ref
+              .read(recalibrationTimeProvider(deviceId).notifier)
+              .setRecalibrationDone(value);
+        }
+        break;
+      case ResponseCommand.firmwareVersion:
+        ref.read(bleSavedDevicesProvider.notifier).reloadDevices();
+        ref.invalidate(bleDeviceProvider(deviceId));
+        ref.invalidate(bleDeviceVersionProvider(deviceId));
+        break;
+      case ResponseCommand.initialData:
+        ref.invalidate(deviceSettingsProvider(deviceId));
+        break;
+      case ResponseCommand.getAlias:
+        ref.invalidate(bleSavedDevicesProvider);
+        break;
+      case ResponseCommand.dataEraseDone:
+        ref.read(isarServiceProvider).write((isar) {
+          isar.deviceDatas.where().deviceIdEqualTo(deviceId).deleteAll();
+        });
+        ref.read(deviceDataEraseProvider(deviceId).notifier).setSuccess();
+        break;
+      case ResponseCommand.batteryLevel:
+        ref.invalidate(deviceSettingsProvider(deviceId));
+        break;
+      case ResponseCommand.getCo2History:
+        // if value is true, then data is downloaded from device
+        if (value is bool && value == true) {
+          ref
+              .read(deviceDataDownloadProvider(deviceId).notifier)
+              .setDataDownloadedFromDevice();
+          return;
+        }
 
-    if (responseCommand == ResponseCommand.recalibrationTime) {
-      return result as int;
-    }
+        // else handle new data
+        ref
+            .read(deviceHistoryDataRequestProvider(deviceId).notifier)
+            .handleHistoricalDataResponse(value);
 
-    if (responseCommand == ResponseCommand.recalibrationConfirm) {
-      return result as int?;
-    }
-
-    if (responseCommand == ResponseCommand.firmwareVersion) {
-      return result as String;
-    }
-
-    if (responseCommand == ResponseCommand.initialData) {
-      return true;
-    }
-
-    if (responseCommand == ResponseCommand.getAlias) {
-      return result as String;
-    }
-
-    if (responseCommand == ResponseCommand.dataEraseDone) {
-      return result as bool;
-    }
-
-    if (responseCommand == ResponseCommand.getCo2History) {
-      return result;
-    }
-
-    if (responseCommand == ResponseCommand.batteryLevel) {
-      return result as int;
+        break;
+      default:
+        break;
     }
 
     return null;
@@ -121,7 +154,7 @@ class ResponseCommandParser {
 
     final value = (data[8] * 256 + (data[9] & 0xff));
 
-    datetimeMillis = datetimeMillis + BleDataUtils.timestampFrom2000;
+    datetimeMillis = datetimeMillis + BleDataService.timestampFrom2000;
 
     final datetime = DateTime.fromMillisecondsSinceEpoch(datetimeMillis * 1000);
 
@@ -251,7 +284,7 @@ class ResponseCommandParser {
     // 5 bytes for the frame headers and checksum
     // 2 bytes for the page number
     if (data.length < 9 ||
-        (data.length - 7) % BleDataUtils.deviceDataLength != 0) {
+        (data.length - 7) % BleDataService.deviceDataLength != 0) {
       debugPrint('Invalid data length');
       return [];
     }
@@ -264,10 +297,10 @@ class ResponseCommandParser {
     // Parse each record (6 bytes per record: 4 bytes timestamp, 2 bytes CO₂ value)
     for (var i = 0;
         i < historyData.length;
-        i += BleDataUtils.deviceDataLength) {
+        i += BleDataService.deviceDataLength) {
       // Extract the timestamp (4 bytes)
       final timestamp = _byteArrayToInt(historyData, i, i + 3) +
-          BleDataUtils.timestampFrom2000;
+          BleDataService.timestampFrom2000;
       final date = DateTime.fromMillisecondsSinceEpoch(timestamp * 1000);
 
       // Extract the value (2 bytes)
@@ -319,7 +352,7 @@ class ResponseCommandParser {
     int timestamp = _byteArrayToInt(data, 4, 7);
 
     // Calculate the timestamp from 2000-01-01 00:00:00 UTC
-    int timestampFrom2000 = timestamp + BleDataUtils.timestampFrom2000;
+    int timestampFrom2000 = timestamp + BleDataService.timestampFrom2000;
 
     // Extract the mode (9th byte)
     int mode = data[8];
