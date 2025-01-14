@@ -11,12 +11,18 @@ class DeviceBatteryLevelWidget extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final int? batteryLevel = ref.watch(deviceBatteryLevelProvider(deviceId));
 
-    // create a battery level indicator custom widget using paint method
-    return CustomPaint(
-      painter: BatteryLevelIndicatorPainter(batteryLevel),
-      child: SizedBox(
-        width: 40,
-        height: 25,
+    // create a battery level indicator
+    // when tapped it will show a tooltip with the battery level
+
+    return Tooltip(
+      message: batteryLevel != null ? "$batteryLevel%" : "Unknown",
+      triggerMode: TooltipTriggerMode.tap,
+      child: CustomPaint(
+        painter: BatteryLevelIndicatorPainter(batteryLevel),
+        child: SizedBox(
+          width: 40,
+          height: 25,
+        ),
       ),
     );
   }
