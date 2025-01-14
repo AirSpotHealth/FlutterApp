@@ -71,10 +71,6 @@ const DeviceSettingsSchema = IsarGeneratedSchema(
         name: 'logData',
         type: IsarType.bool,
       ),
-      IsarPropertySchema(
-        name: 'batteryLevel',
-        type: IsarType.long,
-      ),
     ],
     indexes: [],
   ),
@@ -105,7 +101,6 @@ int serializeDeviceSettings(IsarWriter writer, DeviceSettings object) {
   IsarCore.writeBool(writer, 10, object.autoCalibration);
   IsarCore.writeBool(writer, 11, object.autoConnect);
   IsarCore.writeBool(writer, 12, object.logData);
-  IsarCore.writeLong(writer, 13, object.batteryLevel ?? -9223372036854775808);
   return Isar.fastHash(object.deviceId);
 }
 
@@ -166,15 +161,6 @@ DeviceSettings deserializeDeviceSettings(IsarReader reader) {
   }
   final bool _logData;
   _logData = IsarCore.readBool(reader, 12);
-  final int? _batteryLevel;
-  {
-    final value = IsarCore.readLong(reader, 13);
-    if (value == -9223372036854775808) {
-      _batteryLevel = null;
-    } else {
-      _batteryLevel = value;
-    }
-  }
   final object = DeviceSettings(
     alarmEnabled: _alarmEnabled,
     vibrationEnabled: _vibrationEnabled,
@@ -188,7 +174,6 @@ DeviceSettings deserializeDeviceSettings(IsarReader reader) {
     autoCalibration: _autoCalibration,
     autoConnect: _autoConnect,
     logData: _logData,
-    batteryLevel: _batteryLevel,
   );
   return object;
 }
@@ -251,15 +236,6 @@ dynamic deserializeDeviceSettingsProp(IsarReader reader, int property) {
       }
     case 12:
       return IsarCore.readBool(reader, 12);
-    case 13:
-      {
-        final value = IsarCore.readLong(reader, 13);
-        if (value == -9223372036854775808) {
-          return null;
-        } else {
-          return value;
-        }
-      }
     default:
       throw ArgumentError('Unknown property: $property');
   }
@@ -278,7 +254,6 @@ sealed class _DeviceSettingsUpdate {
     bool? autoCalibration,
     bool? autoConnect,
     bool? logData,
-    int? batteryLevel,
   });
 }
 
@@ -300,7 +275,6 @@ class _DeviceSettingsUpdateImpl implements _DeviceSettingsUpdate {
     Object? autoCalibration = ignore,
     Object? autoConnect = ignore,
     Object? logData = ignore,
-    Object? batteryLevel = ignore,
   }) {
     return collection.updateProperties([
           deviceId
@@ -316,7 +290,6 @@ class _DeviceSettingsUpdateImpl implements _DeviceSettingsUpdate {
           if (autoCalibration != ignore) 10: autoCalibration as bool?,
           if (autoConnect != ignore) 11: autoConnect as bool?,
           if (logData != ignore) 12: logData as bool?,
-          if (batteryLevel != ignore) 13: batteryLevel as int?,
         }) >
         0;
   }
@@ -335,7 +308,6 @@ sealed class _DeviceSettingsUpdateAll {
     bool? autoCalibration,
     bool? autoConnect,
     bool? logData,
-    int? batteryLevel,
   });
 }
 
@@ -357,7 +329,6 @@ class _DeviceSettingsUpdateAllImpl implements _DeviceSettingsUpdateAll {
     Object? autoCalibration = ignore,
     Object? autoConnect = ignore,
     Object? logData = ignore,
-    Object? batteryLevel = ignore,
   }) {
     return collection.updateProperties(deviceId, {
       if (alarmEnabled != ignore) 1: alarmEnabled as bool?,
@@ -370,7 +341,6 @@ class _DeviceSettingsUpdateAllImpl implements _DeviceSettingsUpdateAll {
       if (autoCalibration != ignore) 10: autoCalibration as bool?,
       if (autoConnect != ignore) 11: autoConnect as bool?,
       if (logData != ignore) 12: logData as bool?,
-      if (batteryLevel != ignore) 13: batteryLevel as int?,
     });
   }
 }
@@ -393,7 +363,6 @@ sealed class _DeviceSettingsQueryUpdate {
     bool? autoCalibration,
     bool? autoConnect,
     bool? logData,
-    int? batteryLevel,
   });
 }
 
@@ -415,7 +384,6 @@ class _DeviceSettingsQueryUpdateImpl implements _DeviceSettingsQueryUpdate {
     Object? autoCalibration = ignore,
     Object? autoConnect = ignore,
     Object? logData = ignore,
-    Object? batteryLevel = ignore,
   }) {
     return query.updateProperties(limit: limit, {
       if (alarmEnabled != ignore) 1: alarmEnabled as bool?,
@@ -428,7 +396,6 @@ class _DeviceSettingsQueryUpdateImpl implements _DeviceSettingsQueryUpdate {
       if (autoCalibration != ignore) 10: autoCalibration as bool?,
       if (autoConnect != ignore) 11: autoConnect as bool?,
       if (logData != ignore) 12: logData as bool?,
-      if (batteryLevel != ignore) 13: batteryLevel as int?,
     });
   }
 }
@@ -460,7 +427,6 @@ class _DeviceSettingsQueryBuilderUpdateImpl
     Object? autoCalibration = ignore,
     Object? autoConnect = ignore,
     Object? logData = ignore,
-    Object? batteryLevel = ignore,
   }) {
     final q = query.build();
     try {
@@ -476,7 +442,6 @@ class _DeviceSettingsQueryBuilderUpdateImpl
         if (autoCalibration != ignore) 10: autoCalibration as bool?,
         if (autoConnect != ignore) 11: autoConnect as bool?,
         if (logData != ignore) 12: logData as bool?,
-        if (batteryLevel != ignore) 13: batteryLevel as int?,
       });
     } finally {
       q.close();
@@ -893,106 +858,6 @@ extension DeviceSettingsQueryFilter
       );
     });
   }
-
-  QueryBuilder<DeviceSettings, DeviceSettings, QAfterFilterCondition>
-      batteryLevelIsNull() {
-    return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(const IsNullCondition(property: 13));
-    });
-  }
-
-  QueryBuilder<DeviceSettings, DeviceSettings, QAfterFilterCondition>
-      batteryLevelIsNotNull() {
-    return QueryBuilder.apply(not(), (query) {
-      return query.addFilterCondition(const IsNullCondition(property: 13));
-    });
-  }
-
-  QueryBuilder<DeviceSettings, DeviceSettings, QAfterFilterCondition>
-      batteryLevelEqualTo(
-    int? value,
-  ) {
-    return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(
-        EqualCondition(
-          property: 13,
-          value: value,
-        ),
-      );
-    });
-  }
-
-  QueryBuilder<DeviceSettings, DeviceSettings, QAfterFilterCondition>
-      batteryLevelGreaterThan(
-    int? value,
-  ) {
-    return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(
-        GreaterCondition(
-          property: 13,
-          value: value,
-        ),
-      );
-    });
-  }
-
-  QueryBuilder<DeviceSettings, DeviceSettings, QAfterFilterCondition>
-      batteryLevelGreaterThanOrEqualTo(
-    int? value,
-  ) {
-    return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(
-        GreaterOrEqualCondition(
-          property: 13,
-          value: value,
-        ),
-      );
-    });
-  }
-
-  QueryBuilder<DeviceSettings, DeviceSettings, QAfterFilterCondition>
-      batteryLevelLessThan(
-    int? value,
-  ) {
-    return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(
-        LessCondition(
-          property: 13,
-          value: value,
-        ),
-      );
-    });
-  }
-
-  QueryBuilder<DeviceSettings, DeviceSettings, QAfterFilterCondition>
-      batteryLevelLessThanOrEqualTo(
-    int? value,
-  ) {
-    return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(
-        LessOrEqualCondition(
-          property: 13,
-          value: value,
-        ),
-      );
-    });
-  }
-
-  QueryBuilder<DeviceSettings, DeviceSettings, QAfterFilterCondition>
-      batteryLevelBetween(
-    int? lower,
-    int? upper,
-  ) {
-    return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(
-        BetweenCondition(
-          property: 13,
-          lower: lower,
-          upper: upper,
-        ),
-      );
-    });
-  }
 }
 
 extension DeviceSettingsQueryObject
@@ -1165,20 +1030,6 @@ extension DeviceSettingsQuerySortBy
       return query.addSortBy(12, sort: Sort.desc);
     });
   }
-
-  QueryBuilder<DeviceSettings, DeviceSettings, QAfterSortBy>
-      sortByBatteryLevel() {
-    return QueryBuilder.apply(this, (query) {
-      return query.addSortBy(13);
-    });
-  }
-
-  QueryBuilder<DeviceSettings, DeviceSettings, QAfterSortBy>
-      sortByBatteryLevelDesc() {
-    return QueryBuilder.apply(this, (query) {
-      return query.addSortBy(13, sort: Sort.desc);
-    });
-  }
 }
 
 extension DeviceSettingsQuerySortThenBy
@@ -1334,20 +1185,6 @@ extension DeviceSettingsQuerySortThenBy
       return query.addSortBy(12, sort: Sort.desc);
     });
   }
-
-  QueryBuilder<DeviceSettings, DeviceSettings, QAfterSortBy>
-      thenByBatteryLevel() {
-    return QueryBuilder.apply(this, (query) {
-      return query.addSortBy(13);
-    });
-  }
-
-  QueryBuilder<DeviceSettings, DeviceSettings, QAfterSortBy>
-      thenByBatteryLevelDesc() {
-    return QueryBuilder.apply(this, (query) {
-      return query.addSortBy(13, sort: Sort.desc);
-    });
-  }
 }
 
 extension DeviceSettingsQueryWhereDistinct
@@ -1419,13 +1256,6 @@ extension DeviceSettingsQueryWhereDistinct
       distinctByLogData() {
     return QueryBuilder.apply(this, (query) {
       return query.addDistinctBy(12);
-    });
-  }
-
-  QueryBuilder<DeviceSettings, DeviceSettings, QAfterDistinct>
-      distinctByBatteryLevel() {
-    return QueryBuilder.apply(this, (query) {
-      return query.addDistinctBy(13);
     });
   }
 }
@@ -1506,12 +1336,6 @@ extension DeviceSettingsQueryProperty1
   QueryBuilder<DeviceSettings, bool, QAfterProperty> logDataProperty() {
     return QueryBuilder.apply(this, (query) {
       return query.addProperty(12);
-    });
-  }
-
-  QueryBuilder<DeviceSettings, int?, QAfterProperty> batteryLevelProperty() {
-    return QueryBuilder.apply(this, (query) {
-      return query.addProperty(13);
     });
   }
 }
@@ -1599,13 +1423,6 @@ extension DeviceSettingsQueryProperty2<R>
       return query.addProperty(12);
     });
   }
-
-  QueryBuilder<DeviceSettings, (R, int?), QAfterProperty>
-      batteryLevelProperty() {
-    return QueryBuilder.apply(this, (query) {
-      return query.addProperty(13);
-    });
-  }
 }
 
 extension DeviceSettingsQueryProperty3<R1, R2>
@@ -1690,13 +1507,6 @@ extension DeviceSettingsQueryProperty3<R1, R2>
   QueryBuilder<DeviceSettings, (R1, R2, bool), QOperations> logDataProperty() {
     return QueryBuilder.apply(this, (query) {
       return query.addProperty(12);
-    });
-  }
-
-  QueryBuilder<DeviceSettings, (R1, R2, int?), QOperations>
-      batteryLevelProperty() {
-    return QueryBuilder.apply(this, (query) {
-      return query.addProperty(13);
     });
   }
 }

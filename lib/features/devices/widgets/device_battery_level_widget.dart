@@ -1,4 +1,4 @@
-import 'package:airspothealth/core/providers/device_settings_provider.dart';
+import 'package:airspothealth/features/devices/providers/device_battery_level_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -9,8 +9,7 @@ class DeviceBatteryLevelWidget extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final int? batteryLevel = ref.watch(
-        deviceSettingsProvider(deviceId).select((value) => value.batteryLevel));
+    final int? batteryLevel = ref.watch(deviceBatteryLevelProvider(deviceId));
 
     // create a battery level indicator custom widget using paint method
     return CustomPaint(
@@ -89,6 +88,29 @@ class BatteryLevelIndicatorPainter extends CustomPainter {
         Radius.circular(cornerRadius / 2), // Smaller rounding for fill
       );
       canvas.drawRRect(fillRect, fillPaint);
+    }
+
+    // if the battery level is null, draw a unknown battery level indicator with a question mark
+    if (batteryLevel == null) {
+      final TextPainter textPainter = TextPainter(
+        text: TextSpan(
+          text: "?",
+          style: TextStyle(
+            color: Colors.black,
+            fontSize: 12,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        textDirection: TextDirection.ltr,
+      )..layout();
+
+      textPainter.paint(
+        canvas,
+        Offset(
+          size.width / 2 - textPainter.width / 2,
+          size.height / 2 - textPainter.height / 2,
+        ),
+      );
     }
   }
 

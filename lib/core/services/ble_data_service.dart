@@ -12,6 +12,7 @@ import 'package:airspothealth/features/device_settings/providers/ble_device_vers
 import 'package:airspothealth/features/device_settings/providers/device_data_download_provider.dart';
 import 'package:airspothealth/features/device_settings/providers/device_data_erase_provider.dart';
 import 'package:airspothealth/features/device_settings/providers/recalibration_time_provider.dart';
+import 'package:airspothealth/features/devices/providers/device_battery_level_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:isar/isar.dart';
@@ -89,6 +90,10 @@ class BleDataService {
         break;
       case ResponseCommand.initialData:
         ref.invalidate(deviceSettingsProvider(deviceId));
+        // update battery level
+        ref
+            .read(deviceBatteryLevelProvider(deviceId).notifier)
+            .updateBatteryLevel(value);
         break;
       case ResponseCommand.getAlias:
         ref.invalidate(bleSavedDevicesProvider);
@@ -100,7 +105,9 @@ class BleDataService {
         ref.read(deviceDataEraseProvider(deviceId).notifier).setSuccess();
         break;
       case ResponseCommand.batteryLevel:
-        ref.invalidate(deviceSettingsProvider(deviceId));
+        ref
+            .read(deviceBatteryLevelProvider(deviceId).notifier)
+            .updateBatteryLevel(value);
         break;
       case ResponseCommand.getCo2History:
         // if value is true, then data is downloaded from device
@@ -179,21 +186,7 @@ class ResponseCommandParser {
 
   bool parseDisconnect(List<int> data) => _parseBoolean(data, 4);
 
-  bool parseBatteryLevel(List<int> data) {
-    final batteryLevel = data[4];
-
-    isarService.write((isar) {
-      final device =
-          isar.deviceSettings.where().deviceIdEqualTo(deviceId).findFirst();
-      if (device == null) {
-        return;
-      }
-
-      isar.deviceSettings.put(device.copyWith(batteryLevel: batteryLevel));
-    });
-
-    return true;
-  }
+  int parseBatteryLevel(List<int> data) => data[4];
 
   bool parseSetCo2Ppm(List<int> data) => _parseBoolean(data, 4);
 
@@ -228,10 +221,11 @@ class ResponseCommandParser {
             yellowUpperLimit: _parseTwoBytesToInt(data, 9),
           ),
           autoCalibration: _parseBoolean(data, 12),
-          batteryLevel: data[13],
         );
       },
     );
+
+    return data[13];
   }
 
   String parseAlias(List<int> data) {
