@@ -517,7 +517,7 @@ enum ResponseCommand {
   recalibrationConfirm(0x0D),
   locateMyAirspot(0x10),
   dataEraseDone(0xFD),
-  batteryLevel(0xFE);
+  batteryLevel(0x20);
 
   const ResponseCommand(this.value);
   final int value;
