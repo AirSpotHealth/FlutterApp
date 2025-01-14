@@ -22,6 +22,8 @@ class _DeviceDataDownloadNotifier
     extends AutoDisposeFamilyNotifier<AsyncProgressValue, String> {
   String get deviceId => arg;
 
+  static final _dateFormat = DateFormat('yyyy-MM-dd HH:mm:ss');
+
   @override
   AsyncProgressValue build(String arg) {
     return AsyncNone();
@@ -60,8 +62,11 @@ class _DeviceDataDownloadNotifier
     final deviceName = device.alias == null || device.alias == "AirSpot"
         ? device.name
         : device.alias;
+
+    final DateTime firstDateTime = deviceDatas.first.dateTime;
+    final DateTime lastDateTime = deviceDatas.last.dateTime;
     final dateRange =
-        '${deviceDatas.first.dateTime.toIso8601String()} - ${deviceDatas.last.dateTime.toIso8601String()}';
+        '${_dateFormat.format(firstDateTime)} - ${_dateFormat.format(lastDateTime)}';
 
     return '$deviceName-$dateRange';
   }
@@ -81,10 +86,9 @@ class _DeviceDataDownloadNotifier
 
   String _generateCsvContent(List<DeviceData> deviceDatas) {
     final headerRow = 'DateTime,Value,Type\n';
-    final DateFormat dateFormat = DateFormat('yyyy-MM-dd HH:mm:ss');
 
     final csvRows = deviceDatas.map((data) {
-      return '"${dateFormat.format(data.dateTime)}","${data.value}","${data.type.name.toUpperCase()}"';
+      return '"${_dateFormat.format(data.dateTime)}","${data.value}","${data.type.name.toUpperCase()}"';
     }).join('\n');
 
     return headerRow + csvRows;
