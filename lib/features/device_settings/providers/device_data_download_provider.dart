@@ -63,8 +63,18 @@ class _DeviceDataDownloadNotifier
         ? device.name
         : device.alias;
 
-    final DateTime firstDateTime = deviceDatas.first.dateTime;
-    final DateTime lastDateTime = deviceDatas.last.dateTime;
+    final DateTime firstDateTime = deviceDatas
+        .firstWhere(
+          (data) => data.dateTime.isAfter(DateTime(2020)),
+          orElse: () => deviceDatas.first,
+        )
+        .dateTime;
+    final DateTime lastDateTime = deviceDatas
+        .lastWhere(
+          (data) => data.dateTime.isAfter(DateTime(2020)),
+          orElse: () => deviceDatas.last,
+        )
+        .dateTime;
     final dateRange =
         '${_dateFormat.format(firstDateTime)} - ${_dateFormat.format(lastDateTime)}';
 
@@ -72,7 +82,7 @@ class _DeviceDataDownloadNotifier
   }
 
   Future<List<DeviceData>> _fetchDeviceData() async {
-    return ref.read(isarServiceProvider).read(
+    final List<DeviceData> dataList = ref.read(isarServiceProvider).read(
       (isar) {
         return isar.deviceDatas
             .where()
@@ -82,6 +92,12 @@ class _DeviceDataDownloadNotifier
             .findAll();
       },
     );
+
+    // remove the data that has 0 value and is of type co2
+    dataList.removeWhere(
+        (element) => element.value == 0 && element.type == DeviceDataType.co2);
+
+    return dataList;
   }
 
   String _generateCsvContent(List<DeviceData> deviceDatas) {
@@ -97,19 +113,18 @@ class _DeviceDataDownloadNotifier
   Future<void> _saveCsvFile(String csvContent,
       {required String fileName}) async {
     final directory = await getApplicationDocumentsDirectory();
-    final File file = File('${directory.path}/$fileName.csv');
+    final File file = File('${directory.path}/$fileName');
 
     state = AsyncInProgress(0.8, message: 'Generating CSV file....');
 
     await file.writeAsString(csvContent);
 
     final bytes = await file.readAsBytes();
-    final String name = "$fileName.csv";
 
     state = AsyncInProgress(1.0, message: 'Device data ready for download....');
 
-    await FileSaver.instance
-        .saveAs(name: name, bytes: bytes, mimeType: MimeType.csv, ext: 'csv');
+    await FileSaver.instance.saveAs(
+        name: fileName, bytes: bytes, mimeType: MimeType.csv, ext: 'csv');
   }
 
   Future<void> downloadDeviceData() async {
