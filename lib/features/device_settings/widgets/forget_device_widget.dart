@@ -1,4 +1,3 @@
-import 'package:airspothealth/core/theme/app_colors.dart';
 import 'package:airspothealth/core/utils/assets.dart';
 import 'package:airspothealth/core/utils/extensions.dart';
 import 'package:airspothealth/features/device_settings/models/setting_item.dart';
@@ -37,16 +36,9 @@ class ForgetDeviceWidget extends ConsumerWidget {
       item: SettingItem(
         title: 'Forget This Device',
         assetIcon: Assets.findMyDevice,
-        leadingWidget: Container(
-          padding: const EdgeInsets.all(5),
-          decoration: BoxDecoration(
-            color: Colors.red.withValues(alpha: 0.1),
-            borderRadius: BorderRadius.circular(8),
-          ),
-          child: const Icon(
-            Icons.logout,
-            color: AppColors.brandColorRed,
-          ),
+        leadingWidget: Image.asset(
+          Assets.forgetIcon,
+          width: 32,
         ),
         suffixWidget: const SizedBox(),
       ),

@@ -1,9 +1,7 @@
-import 'package:airspothealth/core/models/ble_device.dart';
 import 'package:airspothealth/core/models/device_settings.dart';
 import 'package:airspothealth/core/providers/device_settings_provider.dart';
-import 'package:airspothealth/core/utils/constants.dart';
 import 'package:airspothealth/core/utils/extensions.dart';
-import 'package:airspothealth/features/device_graph/providers/ble_device_provider.dart';
+import 'package:airspothealth/features/device_settings/widgets/device_settings_name_widget.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -17,20 +15,25 @@ class DndSettingsPage extends ConsumerWidget {
     final DeviceSettings deviceSettings =
         ref.watch(deviceSettingsProvider(deviceId));
 
-    final BleDevice bleDevice = ref.watch(bleDeviceProvider(deviceId));
-
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: AppBar(
-        title: Text(
-            '${bleDevice.alias ?? bleDevice.name} ${Constants.co2Text} DND settings'),
+        title: DeviceSettingsNameWidget(
+            deviceId: deviceId, suffixText: 'DND Settings'),
       ),
-      body: Column(
-        children: [
-          _buildDndModeTile(context, ref, deviceSettings),
-          _buildStartTimeTile(context, ref, deviceSettings),
-          _buildEndTimeTile(context, ref, deviceSettings),
-        ],
+      body: Padding(
+        padding: const EdgeInsets.all(12.0),
+        child: Column(
+          children: [
+            _buildDndModeTile(context, ref, deviceSettings),
+            const SizedBox(height: 16),
+            if (deviceSettings.dndEnabled)
+              _buildStartTimeTile(context, ref, deviceSettings),
+            const SizedBox(height: 16),
+            if (deviceSettings.dndEnabled)
+              _buildEndTimeTile(context, ref, deviceSettings),
+          ],
+        ),
       ),
     );
   }
@@ -38,8 +41,15 @@ class DndSettingsPage extends ConsumerWidget {
   Widget _buildDndModeTile(
       BuildContext context, WidgetRef ref, DeviceSettings deviceSettings) {
     return ListTile(
-      title: const Text('DND mode'),
-      subtitle: const Text('Turn on DND mode'),
+      contentPadding: const EdgeInsets.symmetric(horizontal: 16.0),
+      title: const Text(
+        'DND mode',
+        style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
+      ),
+      subtitle: const Text(
+        'Turn on DND mode',
+        style: TextStyle(fontSize: 14, color: Colors.grey),
+      ),
       trailing: Switch(
         value: deviceSettings.dndEnabled,
         onChanged: (value) {
@@ -58,11 +68,20 @@ class DndSettingsPage extends ConsumerWidget {
   Widget _buildStartTimeTile(
       BuildContext context, WidgetRef ref, DeviceSettings deviceSettings) {
     return ListTile(
-      title: const Text('Start time'),
+      contentPadding: const EdgeInsets.symmetric(horizontal: 16.0),
+      title: const Text(
+        'Start time',
+        style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
+      ),
       subtitle: deviceSettings.dndStartTime == null
-          ? const Text('Not set')
+          ? const Text(
+              'Not set',
+              style: TextStyle(fontSize: 14, color: Colors.grey),
+            )
           : Text(
-              '${deviceSettings.dndStartTime!.hour}:${deviceSettings.dndStartTime!.minute}'),
+              '${deviceSettings.dndStartTime!.hour.toString().padLeft(2, '0')}:${deviceSettings.dndStartTime!.minute.toString().padLeft(2, '0')}',
+              style: const TextStyle(fontSize: 14, color: Colors.grey),
+            ),
       onTap: () async {
         final TimeOfDay? selectedTime = await showTimePicker(
           context: context,
@@ -87,11 +106,20 @@ class DndSettingsPage extends ConsumerWidget {
   Widget _buildEndTimeTile(
       BuildContext context, WidgetRef ref, DeviceSettings deviceSettings) {
     return ListTile(
-      title: const Text('End time'),
+      contentPadding: const EdgeInsets.symmetric(horizontal: 16.0),
+      title: const Text(
+        'End time',
+        style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
+      ),
       subtitle: deviceSettings.dndEndTime == null
-          ? const Text('Not set')
+          ? const Text(
+              'Not set',
+              style: TextStyle(fontSize: 14, color: Colors.grey),
+            )
           : Text(
-              '${deviceSettings.dndEndTime!.hour}:${deviceSettings.dndEndTime!.minute}'),
+              '${deviceSettings.dndEndTime!.hour.toString().padLeft(2, '0')}:${deviceSettings.dndEndTime!.minute.toString().padLeft(2, '0')}',
+              style: const TextStyle(fontSize: 14, color: Colors.grey),
+            ),
       onTap: () async {
         final TimeOfDay? selectedTime = await showTimePicker(
           context: context,

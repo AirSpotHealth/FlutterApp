@@ -28,7 +28,6 @@ import 'package:airspothealth/features/device_settings/widgets/vibrate_setting_w
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:go_router/go_router.dart';
 
 class DeviceSettingsPage extends ConsumerWidget {
@@ -185,19 +184,9 @@ class DeviceDataDownloadSettingWidget extends StatelessWidget {
                     ? const Icon(Icons.download_done_rounded,
                         size: 20, color: AppColors.primaryColor)
                     : const SizedBox(),
-            leadingWidget: Container(
+            leadingWidget: Image.asset(
+              Assets.csvIcon,
               width: 32,
-              height: 32,
-              alignment: Alignment.center,
-              decoration: BoxDecoration(
-                color: Colors.blue,
-                borderRadius: BorderRadius.circular(4),
-              ),
-              child: FaIcon(
-                FontAwesomeIcons.fileCsv,
-                size: 20,
-                color: Colors.white,
-              ),
             ),
           ),
           onTap: () {

@@ -3,13 +3,11 @@ import 'package:airspothealth/core/utils/assets.dart';
 import 'package:airspothealth/core/utils/extensions.dart';
 import 'package:airspothealth/core/widgets/app_bottomsheet.dart';
 import 'package:airspothealth/core/widgets/button.dart';
-import 'package:airspothealth/core/widgets/icon_bg_widget.dart';
 import 'package:airspothealth/features/device_settings/models/progress_model.dart';
 import 'package:airspothealth/features/device_settings/models/setting_item.dart';
 import 'package:airspothealth/features/device_settings/providers/device_data_erase_provider.dart';
 import 'package:airspothealth/features/device_settings/widgets/setting_item_widget.dart';
 import 'package:animated_icon/animated_icon.dart';
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -25,12 +23,9 @@ class EraseDeviceRecordWidget extends ConsumerWidget {
       item: SettingItem(
         title: 'Erase Device Data',
         assetIcon: Assets.airGraph,
-        leadingWidget: IconBgWidget(
-          backgroundColor: Colors.redAccent.withValues(alpha: 0.1),
-          child: const Icon(
-            CupertinoIcons.delete,
-            color: AppColors.brandColorRed,
-          ),
+        leadingWidget: Image.asset(
+          Assets.eraseIcon,
+          width: 32,
         ),
         suffixWidget: const SizedBox(),
       ),

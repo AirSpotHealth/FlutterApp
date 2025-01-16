@@ -1,5 +1,4 @@
 import 'package:airspothealth/core/models/ble_device.dart';
-import 'package:airspothealth/core/theme/app_colors.dart';
 import 'package:airspothealth/core/utils/assets.dart';
 import 'package:airspothealth/features/add_device/providers/ble_device_connection_provider.dart';
 import 'package:airspothealth/features/device_settings/models/setting_item.dart';
@@ -18,16 +17,9 @@ class DisconnectDeviceWidget extends ConsumerWidget {
       item: SettingItem(
         title: 'Disconnect Device',
         assetIcon: Assets.airGraph,
-        leadingWidget: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 5),
-          decoration: BoxDecoration(
-            color: AppColors.primaryColorDark.withValues(alpha: 0.1),
-            borderRadius: BorderRadius.circular(8),
-          ),
-          child: const Icon(
-            Icons.bluetooth_disabled,
-            color: AppColors.primaryColorDark,
-          ),
+        leadingWidget: Image.asset(
+          Assets.disconnectIcon,
+          width: 32,
         ),
         suffixWidget: const SizedBox(),
       ),

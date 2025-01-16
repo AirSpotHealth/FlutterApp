@@ -54,4 +54,9 @@ class Assets {
   static const String uvLightIcon = 'assets/images/uv_light_icon.png';
 
   static const String airSpotBg = 'assets/images/airspot_bg.png';
+
+  static const String csvIcon = 'assets/images/icon_csv.png';
+  static const String eraseIcon = 'assets/images/icon_erase.png';
+  static const String forgetIcon = 'assets/images/icon_forget.png';
+  static const String disconnectIcon = 'assets/images/icon_disconnect.png';
 }
