@@ -1,10 +1,10 @@
 import 'dart:typed_data';
-import 'dart:ui';
 
 import 'package:airspothealth/core/theme/app_colors.dart';
 import 'package:airspothealth/core/utils/assets.dart';
 import 'package:airspothealth/core/utils/constants.dart';
 import 'package:airspothealth/core/utils/device_cmd_utils.dart';
+import 'package:flutter/material.dart';
 import 'package:isar/isar.dart';
 
 part 'device_settings.g.dart';
@@ -49,6 +49,15 @@ class DeviceSettings {
   /// log data bool
   final bool logData;
 
+  /// Dnd enabled bool
+  final bool dndEnabled;
+
+  /// Dnd start time
+  final DateTime? dndStartTime;
+
+  /// Dnd end time
+  final DateTime? dndEndTime;
+
   DeviceSettings({
     required this.alarmEnabled,
     required this.vibrationEnabled,
@@ -62,6 +71,9 @@ class DeviceSettings {
     this.autoCalibration = false,
     this.autoConnect = true,
     this.logData = false,
+    this.dndEnabled = false,
+    this.dndStartTime,
+    this.dndEndTime,
   });
 
   DeviceSettings.empty({required this.deviceId})
@@ -75,7 +87,10 @@ class DeviceSettings {
         autoSyncTime = true,
         autoCalibration = true,
         autoConnect = true,
-        logData = false;
+        logData = false,
+        dndEnabled = false,
+        dndStartTime = null,
+        dndEndTime = null;
 
   DeviceSettings copyWith({
     bool? alarmEnabled,
@@ -91,6 +106,9 @@ class DeviceSettings {
     bool? autoCalibration,
     bool? autoConnect,
     bool? logData,
+    bool? dndEnabled,
+    DateTime? dndStartTime,
+    DateTime? dndEndTime,
   }) {
     return DeviceSettings(
       alarmEnabled: alarmEnabled ?? this.alarmEnabled,
@@ -106,6 +124,9 @@ class DeviceSettings {
       autoCalibration: autoCalibration ?? this.autoCalibration,
       autoConnect: autoConnect ?? this.autoConnect,
       logData: logData ?? this.logData,
+      dndEnabled: dndEnabled ?? this.dndEnabled,
+      dndStartTime: dndStartTime ?? this.dndStartTime,
+      dndEndTime: dndEndTime ?? this.dndEndTime,
     );
   }
 
@@ -181,6 +202,18 @@ class DeviceSettings {
     }
   }
 
+  @ignore
+  Uint8List get dndCmd => dndEnabled
+      ? DeviceCmdUtils.setDND(dndStartTime, dndEndTime)
+      : DeviceCmdUtils.resetDND();
+
+  @ignore
+  DateTime get defaultDndStartTime =>
+      DateTime.now().copyWith(hour: 22, minute: 0);
+
+  @ignore
+  DateTime get defaultDndEndTime => DateTime.now().copyWith(hour: 6, minute: 0);
+
   Map<String, dynamic> toJson() {
     return {
       'alarmEnabled': alarmEnabled,
@@ -195,6 +228,9 @@ class DeviceSettings {
       'autoCalibration': autoCalibration,
       'autoConnect': autoConnect,
       'logData': logData,
+      'dndEnabled': dndEnabled,
+      'dndStartTime': dndStartTime,
+      'dndEndTime': dndEndTime,
     };
   }
 
@@ -214,7 +250,10 @@ class DeviceSettings {
         other.autoSyncTime == autoSyncTime &&
         other.autoCalibration == autoCalibration &&
         other.autoConnect == autoConnect &&
-        other.logData == logData;
+        other.logData == logData &&
+        other.dndEnabled == dndEnabled &&
+        other.dndStartTime == dndStartTime &&
+        other.dndEndTime == dndEndTime;
   }
 
   @override
@@ -230,10 +269,14 @@ class DeviceSettings {
       autoSyncTime.hashCode ^
       autoCalibration.hashCode ^
       autoConnect.hashCode ^
-      logData.hashCode;
+      logData.hashCode ^
+      dndEnabled.hashCode ^
+      dndStartTime.hashCode ^
+      dndEndTime.hashCode;
+
   @override
   String toString() {
-    return 'DeviceSettings(alarmEnabled: $alarmEnabled, vibrationEnabled: $vibrationEnabled, powerMode: $powerMode, continuosScreenEnabled: $continuosScreenEnabled, thresholds: $thresholds, deviceId: $deviceId, co2MedAlertEnabled: $co2MedAlertEnabled, co2HighAlertEnabled: $co2HighAlertEnabled, autoSyncTime: $autoSyncTime, autoCalibration: $autoCalibration, autoConnect: $autoConnect, logData: $logData)';
+    return 'DeviceSettings(alarmEnabled: $alarmEnabled, vibrationEnabled: $vibrationEnabled, powerMode: $powerMode, continuosScreenEnabled: $continuosScreenEnabled, thresholds: $thresholds, deviceId: $deviceId, co2MedAlertEnabled: $co2MedAlertEnabled, co2HighAlertEnabled: $co2HighAlertEnabled, autoSyncTime: $autoSyncTime, autoCalibration: $autoCalibration, autoConnect: $autoConnect, logData: $logData, dndEnabled: $dndEnabled, dndStartTime: $dndStartTime, dndEndTime: $dndEndTime)';
   }
 }
 

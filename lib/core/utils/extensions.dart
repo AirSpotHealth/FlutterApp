@@ -120,6 +120,9 @@ extension DateTimeExtension on DateTime {
   /// end of the day
   DateTime get endOfDay => DateTime(year, month, day, 23, 59, 59, 999, 999);
 
+  /// time of day
+  TimeOfDay get timeOfDay => TimeOfDay(hour: hour, minute: minute);
+
   // is before or equal
   bool isBeforeOrEqual(DateTime other) {
     return isBefore(other) || isAtSameMomentAs(other);

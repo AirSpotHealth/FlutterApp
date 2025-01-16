@@ -60,4 +60,7 @@ class RouteNames {
 
   /// data log route
   static const String dataLog = '/data-log';
+
+  /// do not disturb settings route
+  static const String doNotDisturbSettings = '/do-not-disturb-settings';
 }

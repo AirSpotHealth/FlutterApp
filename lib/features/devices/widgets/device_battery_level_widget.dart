@@ -9,10 +9,16 @@ class DeviceBatteryLevelWidget extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final int? batteryLevel = ref.watch(deviceBatteryLevelProvider(deviceId));
+    int? batteryLevel = ref.watch(deviceBatteryLevelProvider(deviceId));
+
+    if (batteryLevel != null && batteryLevel > 100) {
+      batteryLevel = null;
+    }
 
     // create a battery level indicator
     // when tapped it will show a tooltip with the battery level
+
+    debugPrint('Battery level: $batteryLevel');
 
     return Tooltip(
       message: batteryLevel != null ? "$batteryLevel%" : "Unknown",
@@ -113,8 +119,8 @@ class BatteryLevelIndicatorPainter extends CustomPainter {
       textPainter.paint(
         canvas,
         Offset(
-          size.width / 2 - textPainter.width / 2,
-          size.height / 2 - textPainter.height / 2,
+          size.width / 2 - textPainter.width / 2 - 2,
+          size.height / 2 - textPainter.height / 2 - 2,
         ),
       );
     }

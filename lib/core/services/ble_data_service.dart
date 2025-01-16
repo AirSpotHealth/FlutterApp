@@ -247,8 +247,6 @@ class ResponseCommandParser {
   bool parseSetAlias(List<int> data) => _parseBoolean(data, 4);
 
   dynamic parseGetCo2History(List<int> data) {
-    debugPrint('Parsing CO2 history data Length: ${data.length}');
-
     // Check if it is a page number response
     if (data.length == 7 && data[3] == 0x01) {
       // return the 4th and 5th bytes are the current page number as uint16_t

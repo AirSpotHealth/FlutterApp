@@ -1,6 +1,6 @@
 import 'dart:convert';
 
-import 'package:flutter/widgets.dart';
+import 'package:flutter/material.dart';
 import 'package:webview_flutter/webview_flutter.dart';
 
 import 'echart_script.dart' show script;
@@ -24,6 +24,8 @@ class _EChartState extends State<EChart> {
   WebViewController? _controller;
 
   String get _currentOption => widget.option;
+
+  bool _zoomed = false;
 
   @override
   void initState() {
@@ -128,6 +130,56 @@ class _EChartState extends State<EChart> {
 
   @override
   Widget build(BuildContext context) {
-    return WebViewWidget(controller: _controller!);
+    return Stack(
+      children: [
+        WebViewWidget(controller: _controller!),
+        Positioned(
+          right: 8,
+          top: 48,
+          child: IconButton(
+            onPressed: _toggleZoom,
+            icon: Icon(_zoomed ? Icons.zoom_out : Icons.zoom_in),
+          ),
+        )
+      ],
+    );
+  }
+
+  void _toggleZoom() {
+    final zoomScript = _zoomed
+        ? '''
+        // Reset the zoom to show all data
+        chart.dispatchAction({
+          type: 'dataZoom',
+          start: 0,
+          end: 100
+        });
+      '''
+        : '''
+        // Zoom to focus on the last data point
+        const option = chart.getOption();
+        const data = option.series && option.series[0].data ? option.series[0].data : null;
+        if (data) {
+          const dataLength = data.length;
+          if (dataLength > 0) {
+            const lastIndex = dataLength - 1;
+            const zoomWindow = 10; // Adjust this value to control the zoom window size
+
+            const startPercent = Math.max((lastIndex - zoomWindow + 1) / dataLength * 100, 0);
+            const endPercent = Math.min((lastIndex + 1) / dataLength * 100, 100);
+
+            chart.dispatchAction({
+              type: 'dataZoom',
+              start: startPercent,
+              end: endPercent
+            });
+          }
+        }
+      ''';
+
+    _controller?.runJavaScript(zoomScript);
+    setState(() {
+      _zoomed = !_zoomed;
+    });
   }
 }

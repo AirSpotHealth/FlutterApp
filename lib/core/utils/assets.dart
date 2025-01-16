@@ -30,6 +30,7 @@ class Assets {
   static const String recalibrateSettings =
       'assets/images/recalibrate_icon.png';
   static const String autoConnectSettings = 'assets/images/bluetooth_icon.png';
+  static const String doNotDisturbSettings = 'assets/images/icon_dnd.png';
 
   static const String powerMode5sec = 'assets/images/5secblue.png';
   static const String powerMode3min = 'assets/images/3minblue.png';

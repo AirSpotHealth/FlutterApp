@@ -44,6 +44,11 @@ class DeviceSettingsPage extends ConsumerWidget {
     //   enabled: true,
     // ),
     SettingItem(
+      title: 'Do Not Disturb',
+      assetIcon: Assets.doNotDisturbSettings,
+      route: RouteNames.doNotDisturbSettings,
+    ),
+    SettingItem(
       title: 'AirSpot Device Update',
       assetIcon: Assets.deviceUpdate,
       route: RouteNames.deviceUpdate,

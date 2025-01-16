@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'dart:typed_data';
 
 import 'package:airspothealth/core/utils/constants.dart';
+import 'package:flutter/material.dart';
 
 class DeviceCmdUtils {
   static const int prefixHigh = 0xFF;
@@ -208,6 +209,32 @@ class DeviceCmdUtils {
 
   static Uint8List startRecalibration() {
     return _buildCommand([prefixHigh, prefixLow, 0x0D, 1, 1]);
+  }
+
+  // ======= DND Commands =======
+  static Uint8List setDND(DateTime? startTime, DateTime? endTime) {
+    if (startTime == null || endTime == null) {
+      throw Exception('Start and end time must be provided');
+    }
+
+    debugPrint('Start Time: $startTime, End Time: $endTime');
+
+    // format should be h,m, h,m
+    return _buildCommand([
+      prefixHigh,
+      prefixLow,
+      0x22,
+      0x05,
+      1,
+      startTime.hour.toUnsigned(8),
+      startTime.minute.toUnsigned(8),
+      endTime.hour.toUnsigned(8),
+      endTime.minute.toUnsigned(8),
+    ]);
+  }
+
+  static Uint8List resetDND() {
+    return _buildCommand([prefixHigh, prefixLow, 0x22, 1, 0]);
   }
 
   // ======= Helper Functions =======

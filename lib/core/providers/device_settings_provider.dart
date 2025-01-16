@@ -63,6 +63,14 @@ class _DeviceSettingsNotifier extends FamilyNotifier<DeviceSettings, String> {
           .sendCommand(settings.autoCalibrationCmd);
     }
 
+    if (settings.dndEnabled != state.dndEnabled ||
+        settings.dndStartTime != state.dndStartTime ||
+        settings.dndEndTime != state.dndEndTime) {
+      ref
+          .read(bleDeviceCommunicationProvider(settings.deviceId).notifier)
+          .sendCommand(settings.dndCmd);
+    }
+
     _isarService.write((isar) {
       isar.deviceSettings.put(settings);
     });
