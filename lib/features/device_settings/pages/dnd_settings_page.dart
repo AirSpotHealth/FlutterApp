@@ -19,17 +19,15 @@ class DndSettingsPage extends ConsumerWidget {
       backgroundColor: Colors.white,
       appBar: AppBar(
         title: DeviceSettingsNameWidget(
-            deviceId: deviceId, suffixText: 'DND Settings'),
+            deviceId: deviceId, suffixText: 'Do not disturb Settings'),
       ),
       body: Padding(
         padding: const EdgeInsets.all(12.0),
         child: Column(
           children: [
             _buildDndModeTile(context, ref, deviceSettings),
-            const SizedBox(height: 16),
             if (deviceSettings.dndEnabled)
               _buildStartTimeTile(context, ref, deviceSettings),
-            const SizedBox(height: 16),
             if (deviceSettings.dndEnabled)
               _buildEndTimeTile(context, ref, deviceSettings),
           ],
@@ -43,12 +41,8 @@ class DndSettingsPage extends ConsumerWidget {
     return ListTile(
       contentPadding: const EdgeInsets.symmetric(horizontal: 16.0),
       title: const Text(
-        'DND mode',
+        'Do not disturb',
         style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
-      ),
-      subtitle: const Text(
-        'Turn on DND mode',
-        style: TextStyle(fontSize: 14, color: Colors.grey),
       ),
       trailing: Switch(
         value: deviceSettings.dndEnabled,

@@ -70,7 +70,7 @@ class BleDeviceWidget extends ConsumerWidget {
             if (deviceConnected) ...[
               const SizedBox(height: 16),
               Row(
-                crossAxisAlignment: CrossAxisAlignment.center,
+                crossAxisAlignment: CrossAxisAlignment.end,
                 children: [
                   const SizedBox(width: 8),
                   DeviceBatteryLevelWidget(deviceId: bleDevice.deviceId),
