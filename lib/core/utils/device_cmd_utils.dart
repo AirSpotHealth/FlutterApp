@@ -237,6 +237,11 @@ class DeviceCmdUtils {
     return _buildCommand([prefixHigh, prefixLow, 0x22, 1, 0]);
   }
 
+  // ======= Device Power Commands =======
+  static Uint8List powerOff() {
+    return _buildCommand([prefixHigh, prefixLow, 0xEE, 1, 1]);
+  }
+
   // ======= Helper Functions =======
   static Uint8List _getHex2Bytes(int value) {
     var byteArray = Uint8List(2);

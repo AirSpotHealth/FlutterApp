@@ -59,4 +59,6 @@ class Assets {
   static const String eraseIcon = 'assets/images/icon_erase.png';
   static const String forgetIcon = 'assets/images/icon_forget.png';
   static const String disconnectIcon = 'assets/images/icon_disconnect.png';
+
+  static const String powerOff = 'assets/images/power_off.png';
 }
