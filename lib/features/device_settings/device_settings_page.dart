@@ -16,7 +16,6 @@ import 'package:airspothealth/features/device_settings/providers/ble_device_vers
 import 'package:airspothealth/features/device_settings/providers/device_data_download_provider.dart';
 import 'package:airspothealth/features/device_settings/widgets/alarm_setting_widget.dart';
 import 'package:airspothealth/features/device_settings/widgets/auto_connect_setting_widget.dart';
-import 'package:airspothealth/features/device_settings/widgets/device_sensor_errors_widget.dart';
 import 'package:airspothealth/features/device_settings/widgets/device_settings_name_widget.dart';
 import 'package:airspothealth/features/device_settings/widgets/disconnect_device_widget.dart';
 import 'package:airspothealth/features/device_settings/widgets/download_device_data_button.dart';
@@ -107,7 +106,6 @@ class DeviceSettingsPage extends ConsumerWidget {
           DisconnectDeviceWidget(device: device),
           ForgetDeviceWidget(deviceId: deviceId),
           if (devMode) SensorErrorWidget(deviceId: deviceId),
-          if (devMode) DeviceSensorErrorsWidget(deviceId: deviceId),
         ],
       ),
     );
