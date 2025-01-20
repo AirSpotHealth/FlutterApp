@@ -18,7 +18,7 @@ class PowerOffDeviceWidget extends ConsumerWidget {
       item: SettingItem(
         title: 'Power Off Device',
         assetIcon: Assets.powerOff,
-        suffixWidget: const Icon(Icons.power_settings_new),
+        suffixWidget: const SizedBox(),
       ),
       onTap: () {
         // show a dialog to confirm the power off action
