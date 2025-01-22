@@ -185,7 +185,7 @@ class BleDeviceWidget extends ConsumerWidget {
       mainAxisSize: MainAxisSize.min,
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        const Flexible(
+        const Expanded(
           child: Text(
             'Not Connected/Unavailable',
             style: TextStyle(color: AppColors.neutralGrey),
