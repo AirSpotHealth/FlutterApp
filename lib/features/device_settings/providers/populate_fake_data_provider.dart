@@ -3,12 +3,13 @@ import 'package:airspothealth/core/utils/device_cmd_utils.dart';
 import 'package:airspothealth/features/device_settings/models/progress_model.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-final populateFakeDataProvider = NotifierProvider.family
-    .autoDispose<_PopulateFakeDataNotifier, AsyncProgressValue, String>(
-        _PopulateFakeDataNotifier.new);
+final populateFakeDataProvider = NotifierProvider.family<
+    _PopulateFakeDataNotifier,
+    AsyncProgressValue,
+    String>(_PopulateFakeDataNotifier.new);
 
 class _PopulateFakeDataNotifier
-    extends AutoDisposeFamilyNotifier<AsyncProgressValue, String> {
+    extends FamilyNotifier<AsyncProgressValue, String> {
   @override
   AsyncProgressValue build(String arg) {
     return AsyncNone();

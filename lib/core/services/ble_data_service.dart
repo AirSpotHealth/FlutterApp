@@ -65,8 +65,8 @@ class BleDataService {
       ResponseCommand.locateMyAirspot: parser.parseLocateMyAirspot,
       ResponseCommand.dataEraseDone: parser.parseEraseDataDone,
       ResponseCommand.batteryLevel: parser.parseBatteryLevel,
-      ResponseCommand.dndMode: () => null,
-      ResponseCommand.populateFakeData: () => null,
+      ResponseCommand.dndMode: (_) => null,
+      ResponseCommand.populateFakeData: (_) => null,
     };
 
     final dynamic value = responseParsers[responseCommand]?.call(data);

@@ -3,6 +3,7 @@ import 'package:airspothealth/features/device_settings/models/progress_model.dar
 import 'package:airspothealth/features/device_settings/models/setting_item.dart';
 import 'package:airspothealth/features/device_settings/providers/populate_fake_data_provider.dart';
 import 'package:airspothealth/features/device_settings/widgets/setting_item_widget.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -25,7 +26,7 @@ class PopulateFakeDataWidget extends ConsumerWidget {
         ),
         suffixWidget: state.when<Widget>(
           none: () => SizedBox(),
-          inProgress: (_, __) => CircularProgressIndicator.adaptive(),
+          inProgress: (_, __) => CupertinoActivityIndicator(),
           success: (_) => Icon(Icons.check, color: Colors.green),
           failure: (Object error) => Icon(Icons.error, color: Colors.red),
         ),
