@@ -11,6 +11,7 @@ import 'package:airspothealth/features/device_graph/providers/device_history_dat
 import 'package:airspothealth/features/device_settings/providers/ble_device_version_provider.dart';
 import 'package:airspothealth/features/device_settings/providers/device_data_download_provider.dart';
 import 'package:airspothealth/features/device_settings/providers/device_data_erase_provider.dart';
+import 'package:airspothealth/features/device_settings/providers/populate_fake_data_provider.dart';
 import 'package:airspothealth/features/device_settings/providers/recalibration_time_provider.dart';
 import 'package:airspothealth/features/devices/providers/device_battery_level_provider.dart';
 import 'package:flutter/material.dart';
@@ -65,6 +66,7 @@ class BleDataService {
       ResponseCommand.dataEraseDone: parser.parseEraseDataDone,
       ResponseCommand.batteryLevel: parser.parseBatteryLevel,
       ResponseCommand.dndMode: () => null,
+      ResponseCommand.populateFakeData: () => null,
     };
 
     final dynamic value = responseParsers[responseCommand]?.call(data);
@@ -125,6 +127,10 @@ class BleDataService {
             .handleHistoricalDataResponse(value);
 
         break;
+      case ResponseCommand.populateFakeData:
+        ref
+            .read(populateFakeDataProvider(deviceId).notifier)
+            .populateFakeDataComplete();
       default:
         break;
     }
@@ -517,7 +523,8 @@ enum ResponseCommand {
   locateMyAirspot(0x10),
   dataEraseDone(0xFD),
   batteryLevel(0x20),
-  dndMode(0x22);
+  dndMode(0x22),
+  populateFakeData(0x23);
 
   const ResponseCommand(this.value);
   final int value;

@@ -242,6 +242,11 @@ class DeviceCmdUtils {
     return _buildCommand([prefixHigh, prefixLow, 0xEE, 1, 1]);
   }
 
+  // ======= Other Commands =======
+  static Uint8List populateFakeData() {
+    return _buildCommand([prefixHigh, prefixLow, 0x23, 1, 1]);
+  }
+
   // ======= Helper Functions =======
   static Uint8List _getHex2Bytes(int value) {
     var byteArray = Uint8List(2);
