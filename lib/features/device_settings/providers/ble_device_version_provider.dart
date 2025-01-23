@@ -4,11 +4,11 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:isar/isar.dart';
 
 final bleDeviceVersionProvider =
-    Provider.family.autoDispose<String, String>((ref, deviceId) {
+    Provider.family.autoDispose<String?, String>((ref, deviceId) {
   return ref.read(isarServiceProvider).read((isar) {
     final device =
         isar.bleDevices.where().deviceIdEqualTo(deviceId).findFirst();
 
-    return device?.firmwareVersion ?? '-.-.-';
+    return device?.firmwareVersion;
   });
 });

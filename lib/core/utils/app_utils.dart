@@ -20,8 +20,12 @@ class AppUtils {
   }
 
   /// check the version is greater than the current version
-  static bool isVersionGreater(String currentVersion, String newVersion) {
+  static bool isVersionGreater(String? currentVersion, String newVersion) {
     if (newVersion.contains('beta')) {
+      return true;
+    }
+
+    if (currentVersion == null) {
       return true;
     }
 
@@ -40,7 +44,11 @@ class AppUtils {
     return false;
   }
 
-  static bool isNewFirmwareVersion(String firmwareVersion) {
+  static bool isNewFirmwareVersion(String? firmwareVersion) {
+    if (firmwareVersion == null) {
+      return false;
+    }
+
     // it version is less than 3.0.0 then return false
     final List<String> versionList = firmwareVersion.split('.');
     if (versionList.length < 3) {

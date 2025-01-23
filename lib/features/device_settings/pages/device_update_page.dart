@@ -79,7 +79,10 @@ class _DeviceUpdatePageState extends ConsumerState<DeviceUpdatePage> {
           context: ref.context,
           barrierDismissible: false,
           builder: (context) => DeviceFirmwareUpdateDialog.local(
-              deviceId: deviceId, localFilePath: result.files.single.path),
+            deviceId: deviceId,
+            localFilePath: result.files.single.path,
+            currentVersion: ref.read(bleDeviceVersionProvider(deviceId)),
+          ),
         );
       } else {
         ref.context.showSnackBar('No file selected');
@@ -97,7 +100,7 @@ class CurrentDeviceVersionWidget extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final String version = ref.read(bleDeviceVersionProvider(deviceId));
+    final String? version = ref.read(bleDeviceVersionProvider(deviceId));
 
     return Container(
       padding: const EdgeInsets.all(16),
@@ -109,7 +112,7 @@ class CurrentDeviceVersionWidget extends ConsumerWidget {
         children: [
           const Text('Installed Version: '),
           const Spacer(),
-          Text(version.isEmpty ? 'N/A' : version),
+          Text(version ?? 'N/A'),
         ],
       ),
     );

@@ -27,7 +27,7 @@ class DeviceVersionUpdateWidget extends ConsumerWidget {
     final AsyncValue<RemoteVersion?> remoteVersion =
         ref.watch(firmwareRemoteVersionProvider);
 
-    final String currentVersion = ref.read(bleDeviceVersionProvider(deviceId));
+    final String? currentVersion = ref.read(bleDeviceVersionProvider(deviceId));
 
     return Container(
         padding: const EdgeInsets.all(16),
@@ -63,7 +63,8 @@ class DeviceVersionUpdateWidget extends ConsumerWidget {
               Button(
                 wrapWidth: true,
                 onPressed: () {
-                  _showUpdateDialog(context, remoteVersion.value!);
+                  _showUpdateDialog(
+                      context, remoteVersion.value!, currentVersion);
                 },
                 label: 'Update',
               ),
@@ -72,12 +73,16 @@ class DeviceVersionUpdateWidget extends ConsumerWidget {
         ));
   }
 
-  void _showUpdateDialog(BuildContext context, RemoteVersion remoteVersion) {
+  void _showUpdateDialog(BuildContext context, RemoteVersion remoteVersion,
+      String? currentVersion) {
     showAdaptiveDialog(
       context: context,
       barrierDismissible: false,
       builder: (context) => DeviceFirmwareUpdateDialog(
-          deviceId: deviceId, remoteVersion: remoteVersion),
+        deviceId: deviceId,
+        remoteVersion: remoteVersion,
+        currentVersion: currentVersion,
+      ),
     );
   }
 }
