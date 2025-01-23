@@ -134,6 +134,13 @@ class _DeviceDataDownloadNotifier
         deviceHistoricalDataProvider((deviceId, GraphDataDuration.last7Days)));
 
     state = AsyncInProgress(0.1, message: 'Fetching device data....');
+
+    // set a timeout if incase there was an issue with fetching the data
+    Future.delayed(const Duration(minutes: 4), () {
+      if (state is AsyncInProgress) {
+        state = AsyncFailure('Failed to fetch device data: Timeout');
+      }
+    });
   }
 
   void setProgress(double progress) {

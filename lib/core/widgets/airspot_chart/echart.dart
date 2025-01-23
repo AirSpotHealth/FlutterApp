@@ -133,14 +133,14 @@ class _EChartState extends State<EChart> {
     return Stack(
       children: [
         WebViewWidget(controller: _controller!),
-        Positioned(
-          right: 8,
-          top: 48,
-          child: IconButton(
-            onPressed: _toggleZoom,
-            icon: Icon(_zoomed ? Icons.zoom_out : Icons.zoom_in),
-          ),
-        )
+        // Positioned(
+        //   right: 8,
+        //   top: 48,
+        //   child: IconButton(
+        //     onPressed: _toggleZoom,
+        //     icon: Icon(_zoomed ? Icons.zoom_out : Icons.zoom_in),
+        //   ),
+        // )
       ],
     );
   }
