@@ -49,42 +49,22 @@ class RecalibrateDevicePage extends ConsumerWidget {
           children: [
             const SizedBox(height: 16),
             GestureDetector(
-                onTap: () {
-                  ref
-                      .read(bleDeviceCommunicationProvider(deviceId).notifier)
-                      .sendCommand(DeviceCmdUtils.startRecalibration());
-                },
-                child: Image.asset(Assets.recalibrateImage, height: 100)),
-            const SizedBox(height: 100),
-            const Text(
-                'To calibrate this AirSpot, place the device outdoors, away from any people or CO2 sources, then tap the icon above. See full manual for details.'),
-            const Spacer(),
-            const Text(
-                'If Autocalibration is enabled, AirSpot will calibrate itself on the assumption that it has made measurements in fresh air at least once a week. It is usually best to to leave this OFF. See full manual for details.'),
-            const SizedBox(height: 16),
-            ...calibrationStatus.when(
-              none: () {
-                return [
-                  SwitchListTile(
-                    title: const Text('Auto Calibration',
-                        style: TextStyle(
-                            fontWeight: FontWeight.bold, fontSize: 14)),
-                    value: deviceSettings.autoCalibration,
-                    onChanged: (bool value) {
-                      ref
-                          .read(deviceSettingsProvider(deviceId).notifier)
-                          .updateSettings(
-                              deviceSettings.copyWith(autoCalibration: value));
-                    },
-                  )
-                ];
+              onTap: () {
+                ref
+                    .read(bleDeviceCommunicationProvider(deviceId).notifier)
+                    .sendCommand(DeviceCmdUtils.startRecalibration());
               },
+              child: Image.asset(Assets.recalibrateImage, height: 100),
+            ),
+            ...calibrationStatus.when(
               inProgress: (progress, message) {
                 return [
                   const SizedBox(height: 16),
                   Text.rich(
                     TextSpan(
                       text: 'Calibration in Progress\n',
+                      style: const TextStyle(
+                          fontWeight: FontWeight.bold, fontSize: 14),
                       children: [
                         TextSpan(
                           text: 'Remaining Time: ${progress.toInt()} seconds',
@@ -105,14 +85,33 @@ class RecalibrateDevicePage extends ConsumerWidget {
                   const SizedBox(height: 16),
                   Text(
                     'Correction Value: $data',
-                    style: context.textTheme.bodyMedium,
+                    style: context.textTheme.bodyMedium?.weight600,
                   ),
                 ];
               },
-              failure: (error) {
-                return [];
-              },
-            )
+              failure: (error) => [],
+              none: () => [],
+            ),
+            const SizedBox(height: 100),
+            const Text(
+                'To calibrate this AirSpot, place the device outdoors, away from any people or CO2 sources, then tap the icon above. See full manual for details.'),
+            const Spacer(),
+            const Text(
+                'If Autocalibration is enabled, AirSpot will calibrate itself on the assumption that it has made measurements in fresh air at least once a week. It is usually best to to leave this OFF. See full manual for details.'),
+            const SizedBox(height: 16),
+            if (calibrationStatus is AsyncNone)
+              SwitchListTile(
+                title: const Text('Auto Calibration',
+                    style:
+                        TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+                value: deviceSettings.autoCalibration,
+                onChanged: (bool value) {
+                  ref
+                      .read(deviceSettingsProvider(deviceId).notifier)
+                      .updateSettings(
+                          deviceSettings.copyWith(autoCalibration: value));
+                },
+              ),
           ],
         ),
       ),

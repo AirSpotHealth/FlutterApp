@@ -38,7 +38,7 @@ class Assets {
   static const String powerModeOnDemand =
       'assets/images/power_mode_ondemand.png';
 
-  static const String recalibrateImage = 'assets/images/recalibrate_image.png';
+  static const String recalibrateImage = 'assets/images/recalibrate_icon.png';
 
   static const String airFiltersIcon = 'assets/images/air_filters_icon.png';
   static const String co2MonitorIcon = 'assets/images/co2_monitors_icon.png';
