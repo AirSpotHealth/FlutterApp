@@ -93,10 +93,6 @@ class BleDataService {
         break;
       case ResponseCommand.initialData:
         ref.invalidate(deviceSettingsProvider(deviceId));
-        // update battery level
-        ref
-            .read(deviceBatteryLevelProvider(deviceId).notifier)
-            .updateBatteryLevel(value);
         break;
       case ResponseCommand.getAlias:
         ref.invalidate(bleSavedDevicesProvider);
@@ -193,7 +189,8 @@ class ResponseCommandParser {
 
   bool parseDisconnect(List<int> data) => _parseBoolean(data, 4);
 
-  int parseBatteryLevel(List<int> data) => data[4];
+  BatteryState parseBatteryLevel(List<int> data) =>
+      BatteryState(data[4], data[5] == 0x01);
 
   bool parseSetCo2Ppm(List<int> data) => _parseBoolean(data, 4);
 
@@ -217,17 +214,26 @@ class ResponseCommandParser {
     _updateDeviceSettings(
       (settings) {
         debugPrint('LogData: ${settings.logData}');
+        final dndEnabled = data.length > 13 ? _parseBoolean(data, 13) : false;
+        final dndStartHour = data.length > 14 ? data[14] : 0;
+        final dndStartMinute = data.length > 15 ? data[15] : 0;
+        final dndEndHour = data.length > 16 ? data[16] : 0;
+        final dndEndMinute = data.length > 17 ? data[17] : 0;
+
         return settings.copyWith(
           deviceId: deviceId,
           alarmEnabled: _parseBoolean(data, 4),
           vibrationEnabled: _parseBoolean(data, 5),
           powerMode: PowerMode.fromValue(data[6]),
-          continuosScreenEnabled: _parseBoolean(data, 11),
           thresholds: DeviceThresholds(
             greenUpperLimit: _parseTwoBytesToInt(data, 7),
             yellowUpperLimit: _parseTwoBytesToInt(data, 9),
           ),
+          continuosScreenEnabled: _parseBoolean(data, 11),
           autoCalibration: _parseBoolean(data, 12),
+          dndEnabled: dndEnabled,
+          dndStartTime: DateTime(0, 0, 0, dndStartHour, dndStartMinute),
+          dndEndTime: DateTime(0, 0, 0, dndEndHour, dndEndMinute),
         );
       },
     );

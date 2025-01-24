@@ -9,25 +9,38 @@ class DeviceBatteryLevelWidget extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    int? batteryLevel = ref.watch(deviceBatteryLevelProvider(deviceId));
+    BatteryState batteryState = ref.watch(deviceBatteryLevelProvider(deviceId));
 
-    if (batteryLevel != null && batteryLevel > 100) {
-      batteryLevel = null;
+    if (batteryState.level != null && batteryState.level! > 100) {
+      batteryState = batteryState.copyWith(level: null);
     }
 
     // create a battery level indicator
     // when tapped it will show a tooltip with the battery level
 
-    debugPrint('Battery level: $batteryLevel');
+    debugPrint(
+        'Battery level: ${batteryState.level}, isCharging: ${batteryState.isCharging}');
 
     return Tooltip(
-      message: batteryLevel != null ? "$batteryLevel%" : "Unknown",
+      message: batteryState.level != null
+          ? "${batteryState.level}% ${batteryState.isCharging ? ": Charging" : ''}"
+          : "Unknown",
       triggerMode: TooltipTriggerMode.tap,
       child: CustomPaint(
-        painter: BatteryLevelIndicatorPainter(batteryLevel),
-        child: SizedBox(
+        painter: BatteryLevelIndicatorPainter(
+            batteryState.level, batteryState.isCharging),
+        child: Container(
+          alignment: Alignment.topCenter,
           width: 40,
           height: 25,
+          padding: EdgeInsets.only(top: 1, right: 4),
+          child: batteryState.isCharging
+              ? const Icon(
+                  Icons.bolt,
+                  color: Colors.amberAccent,
+                  size: 16,
+                )
+              : null,
         ),
       ),
     );
@@ -37,7 +50,9 @@ class DeviceBatteryLevelWidget extends ConsumerWidget {
 class BatteryLevelIndicatorPainter extends CustomPainter {
   final int? batteryLevel;
 
-  BatteryLevelIndicatorPainter(this.batteryLevel);
+  final bool isCharging;
+
+  BatteryLevelIndicatorPainter(this.batteryLevel, this.isCharging);
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -87,9 +102,10 @@ class BatteryLevelIndicatorPainter extends CustomPainter {
     canvas.drawRRect(terminal, terminalPaint);
 
     // Draw the battery fill level
-    if (batteryLevel != null && batteryLevel! > 0) {
-      final double fillWidth =
-          ((batteryLevel! / 100) * (batteryWidth - borderWidth * 2));
+    if (isCharging || batteryLevel != null && batteryLevel! > 0) {
+      final double fillWidth = isCharging
+          ? batteryWidth - borderWidth * 2
+          : ((batteryLevel! / 100) * (batteryWidth - borderWidth * 2));
       final RRect fillRect = RRect.fromRectAndRadius(
         Rect.fromLTWH(
           borderWidth,
@@ -102,7 +118,6 @@ class BatteryLevelIndicatorPainter extends CustomPainter {
       canvas.drawRRect(fillRect, fillPaint);
     }
 
-    // if the battery level is null, draw a unknown battery level indicator with a question mark
     if (batteryLevel == null) {
       final TextPainter textPainter = TextPainter(
         text: TextSpan(
