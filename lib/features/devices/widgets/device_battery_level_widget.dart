@@ -25,7 +25,7 @@ class DeviceBatteryLevelWidget extends ConsumerWidget {
       message: batteryState.isCharging
           ? 'Charging'
           : batteryState.level != null
-              ? "${batteryState.level}%}"
+              ? "${batteryState.level}%"
               : "Unknown",
       triggerMode: TooltipTriggerMode.tap,
       child: CustomPaint(
