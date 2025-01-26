@@ -1,5 +1,6 @@
 import 'package:airspothealth/core/utils/constants.dart';
 import 'package:airspothealth/core/widgets/airspot_bar.dart';
+import 'package:airspothealth/features/add_device/providers/ble_search_results_provider.dart';
 import 'package:airspothealth/features/device_settings/providers/firmware_remote_version_provider.dart';
 import 'package:airspothealth/features/home/widgets/menu_item_widget.dart';
 import 'package:flutter/material.dart';
@@ -19,11 +20,16 @@ class _HomePageState extends ConsumerState<HomePage> {
     _setAppGroupId();
     // NotificationService.checkNotificationPermission();
     _checkFirmwareVersion();
+    _scanForDevices();
     super.initState();
   }
 
   void _checkFirmwareVersion() {
     ref.read(firmwareRemoteVersionProvider);
+  }
+
+  void _scanForDevices() {
+    ref.read(bluetoothSearchResultsProvider.notifier).startScan();
   }
 
   void _setAppGroupId() => HomeWidget.setAppGroupId(Constants.appGroupId);

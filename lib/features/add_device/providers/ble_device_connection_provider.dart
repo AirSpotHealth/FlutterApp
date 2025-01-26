@@ -53,6 +53,8 @@ class _BleDeviceConnectionNotifier
 
     state = BluetoothBondState.bonding;
 
+    debugPrint('Connecting to device: ${device.advName}, State: $state');
+
     deviceSubscription = device.connectionState.listen((bState) {
       debugPrint('Device connection state: $bState');
 

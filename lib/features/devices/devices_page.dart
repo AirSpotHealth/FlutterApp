@@ -22,6 +22,7 @@ class DevicesPage extends ConsumerWidget {
               separatorBuilder: (context, index) => const SizedBox(height: 12),
               itemCount: savedDevicesList.length,
               padding: const EdgeInsets.all(16),
+              physics: AlwaysScrollableScrollPhysics(),
               itemBuilder: (context, index) =>
                   BleDeviceWidget(bleDevice: savedDevicesList[index]),
             ),
