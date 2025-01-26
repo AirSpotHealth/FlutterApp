@@ -106,7 +106,11 @@ class BleDeviceWidget extends ConsumerWidget {
     return Row(
       children: [
         Text(
-          deviceConnected ? bleDevice.name : bleDevice.alias ?? bleDevice.name,
+          deviceConnected
+              ? bleDevice.name
+              : (bleDevice.alias == null || bleDevice.alias == "Airspot")
+                  ? bleDevice.name
+                  : bleDevice.alias!,
           style: context.textTheme.labelLarge,
         ),
         if (deviceConnected &&
