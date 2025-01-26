@@ -113,7 +113,8 @@ class _DeviceDataDownloadNotifier
   Future<void> _saveCsvFile(String csvContent,
       {required String fileName}) async {
     final directory = await getApplicationDocumentsDirectory();
-    final File file = File('${directory.path}/$fileName');
+    final File file =
+        File('${directory.path}/$fileName${Platform.isIOS ? '.csv' : ''}');
 
     state = AsyncInProgress(0.8, message: 'Generating CSV file....');
 
