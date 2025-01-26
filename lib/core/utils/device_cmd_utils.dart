@@ -247,6 +247,14 @@ class DeviceCmdUtils {
     return _buildCommand([prefixHigh, prefixLow, 0x23, 1, 1]);
   }
 
+  static Uint8List turnOffBluetooth() {
+    return _buildCommand([prefixHigh, prefixLow, 0x06, 1, 1]);
+  }
+
+  static Uint8List resetSensor() {
+    return _buildCommand([prefixHigh, prefixLow, 0x24, 1, 1]);
+  }
+
   // ======= Helper Functions =======
   static Uint8List _getHex2Bytes(int value) {
     var byteArray = Uint8List(2);

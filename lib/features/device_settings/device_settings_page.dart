@@ -1,12 +1,15 @@
 import 'package:airspothealth/core/models/ble_device.dart';
 import 'package:airspothealth/core/models/device_settings.dart';
+import 'package:airspothealth/core/providers/ble_device_communication_provider.dart';
 import 'package:airspothealth/core/providers/device_settings_provider.dart';
 import 'package:airspothealth/core/router/route_names.dart';
 import 'package:airspothealth/core/theme/app_colors.dart';
 import 'package:airspothealth/core/utils/app_utils.dart';
 import 'package:airspothealth/core/utils/assets.dart';
 import 'package:airspothealth/core/utils/constants.dart';
+import 'package:airspothealth/core/utils/device_cmd_utils.dart';
 import 'package:airspothealth/core/utils/extensions.dart';
+import 'package:airspothealth/core/widgets/icon_bg_widget.dart';
 import 'package:airspothealth/features/add_device/providers/ble_device_connection_provider.dart';
 import 'package:airspothealth/features/app_setup/providers/dev_mode_provider.dart';
 import 'package:airspothealth/features/device_graph/providers/ble_device_provider.dart';
@@ -107,9 +110,22 @@ class DeviceSettingsPage extends ConsumerWidget {
             EraseDeviceRecordWidget(deviceId: deviceId),
           DisconnectDeviceWidget(device: device),
           ForgetDeviceWidget(deviceId: deviceId),
-          if (devMode) SensorErrorWidget(deviceId: deviceId),
           PowerOffDeviceWidget(deviceId: deviceId),
-          if (devMode) PopulateFakeDataWidget(deviceId: deviceId),
+          if (devMode) ...[
+            const SizedBox(height: 16),
+            Text(
+              'Dev Settings',
+              style: TextStyle(
+                color: Colors.black,
+                fontSize: 14,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            const SizedBox(height: 8),
+            SensorErrorWidget(deviceId: deviceId),
+            PopulateFakeDataWidget(deviceId: deviceId),
+            TurnOffBluetoothWidget(deviceId: deviceId),
+          ],
         ],
       ),
     );
@@ -233,6 +249,31 @@ class PowerModeSettingWidget extends ConsumerWidget {
 
         ref.context.pushNamed(RouteNames.powerModeSettings,
             pathParameters: {'deviceId': deviceId});
+      },
+    );
+  }
+}
+
+class TurnOffBluetoothWidget extends ConsumerWidget {
+  const TurnOffBluetoothWidget({required this.deviceId, super.key});
+
+  final String deviceId;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    return SettingItemWidget(
+      item: SettingItem(
+        title: 'Turn off Device BT',
+        assetIcon: Assets.autoConnectSettings,
+        suffixWidget: const SizedBox(),
+        leadingWidget: IconBgWidget(
+            backgroundColor: Colors.deepOrange,
+            child: Icon(Icons.bluetooth_disabled, color: Colors.black)),
+      ),
+      onTap: () {
+        ref
+            .read(bleDeviceCommunicationProvider(deviceId).notifier)
+            .sendCommand(DeviceCmdUtils.turnOffBluetooth());
       },
     );
   }

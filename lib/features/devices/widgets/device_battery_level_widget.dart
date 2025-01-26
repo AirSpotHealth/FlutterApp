@@ -68,7 +68,7 @@ class BatteryLevelIndicatorPainter extends CustomPainter {
 
     final Paint fillPaint = Paint()
       ..style = PaintingStyle.fill
-      ..color = Colors.green;
+      ..color = batteryLevel == 0 ? Colors.red : Colors.green;
 
     final Paint terminalPaint = Paint()
       ..style = PaintingStyle.fill
@@ -141,10 +141,35 @@ class BatteryLevelIndicatorPainter extends CustomPainter {
         ),
       );
     }
+
+    if (batteryLevel == 0) {
+      // show Low text
+      final TextPainter textPainter = TextPainter(
+        text: TextSpan(
+          text: "Low",
+          style: TextStyle(
+            color: Colors.black,
+            fontSize: 12,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        textDirection: TextDirection.ltr,
+      )..layout();
+
+      textPainter.paint(
+        canvas,
+        Offset(
+          size.width / 2 - textPainter.width / 2 - 2,
+          size.height / 2 - textPainter.height / 2 - 2,
+        ),
+      );
+    }
   }
 
   @override
   bool shouldRepaint(covariant CustomPainter oldDelegate) {
-    return true;
+    return oldDelegate is! BatteryLevelIndicatorPainter ||
+        oldDelegate.batteryLevel != batteryLevel ||
+        oldDelegate.isCharging != isCharging;
   }
 }

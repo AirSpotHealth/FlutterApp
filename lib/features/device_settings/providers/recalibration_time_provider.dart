@@ -1,3 +1,5 @@
+import 'package:airspothealth/core/providers/ble_device_communication_provider.dart';
+import 'package:airspothealth/core/utils/device_cmd_utils.dart';
 import 'package:airspothealth/features/device_settings/models/progress_model.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -10,6 +12,13 @@ class _RecalibrationTimeNotifier
   @override
   AsyncProgressValue build(String arg) {
     return AsyncNone();
+  }
+
+  void startRecalibration() {
+    state = AsyncInProgress(-1, message: 'Starting recalibration...');
+    ref
+        .read(bleDeviceCommunicationProvider(arg).notifier)
+        .sendCommand(DeviceCmdUtils.startRecalibration());
   }
 
   void setRecalibrationTime(int? time) {

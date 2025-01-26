@@ -30,7 +30,7 @@ class _SensorErrorWidgetState extends ConsumerState<SensorErrorWidget> {
             child: FaIcon(
               Icons.warning_amber,
               size: 22,
-              color: Colors.teal,
+              color: Colors.black,
             ),
           ),
           suffixWidget: SizedBox(

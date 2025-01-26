@@ -67,7 +67,10 @@ class _BleDeviceConnectionNotifier
 
         ref.read(bleDeviceCommunicationProvider(arg).notifier).setConnected();
       } else if (bState == BluetoothConnectionState.disconnected) {
-        if (state == BluetoothBondState.none) return;
+        if (state == BluetoothBondState.none ||
+            state == BluetoothBondState.bonding) {
+          return;
+        }
 
         _checkRouteAndPop();
         // _checkIfHisoricalDataWasRequestedAndInProgess();
