@@ -15,6 +15,8 @@ class DeviceBatteryLevelWidget extends ConsumerWidget {
       batteryState = batteryState.copyWith(level: null);
     }
 
+    // batteryState = batteryState.copyWith(level: 0, isCharging: false);
+
     // create a battery level indicator
     // when tapped it will show a tooltip with the battery level
 
@@ -148,7 +150,7 @@ class BatteryLevelIndicatorPainter extends CustomPainter {
         text: TextSpan(
           text: "Low",
           style: TextStyle(
-            color: Colors.black,
+            color: Colors.red,
             fontSize: 12,
             fontWeight: FontWeight.bold,
           ),
@@ -160,7 +162,7 @@ class BatteryLevelIndicatorPainter extends CustomPainter {
         canvas,
         Offset(
           size.width / 2 - textPainter.width / 2 - 2,
-          size.height / 2 - textPainter.height / 2 - 2,
+          size.height / 2 - textPainter.height / 2 - 3,
         ),
       );
     }
