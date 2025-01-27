@@ -4,7 +4,7 @@ import 'package:airspothealth/core/utils/assets.dart';
 import 'package:airspothealth/core/utils/extensions.dart';
 import 'package:airspothealth/core/widgets/button.dart';
 import 'package:airspothealth/features/device_settings/models/progress_model.dart';
-import 'package:airspothealth/features/device_settings/providers/device_reset_sensor_notifier.dart';
+import 'package:airspothealth/features/device_settings/providers/device_reset_sensor_provider.dart';
 import 'package:airspothealth/features/device_settings/providers/recalibration_time_provider.dart';
 import 'package:airspothealth/features/device_settings/widgets/device_settings_name_widget.dart';
 import 'package:flutter/cupertino.dart';

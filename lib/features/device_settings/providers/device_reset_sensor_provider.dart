@@ -22,6 +22,13 @@ class _DevicerSensorResetNotifier
     ref
         .read(bleDeviceCommunicationProvider(arg).notifier)
         .sendCommand(DeviceCmdUtils.resetSensor());
+
+    // add a timeout of 15 seconds to see if the sensor reset was successful
+    Future.delayed(const Duration(seconds: 15), () {
+      if (state is AsyncInProgress) {
+        state = AsyncFailure('Sensor reset failed: Timeout');
+      }
+    });
   }
 
   void setSensorResetDone() {

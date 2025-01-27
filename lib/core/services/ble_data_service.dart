@@ -11,7 +11,7 @@ import 'package:airspothealth/features/device_graph/providers/device_history_dat
 import 'package:airspothealth/features/device_settings/providers/ble_device_version_provider.dart';
 import 'package:airspothealth/features/device_settings/providers/device_data_download_provider.dart';
 import 'package:airspothealth/features/device_settings/providers/device_data_erase_provider.dart';
-import 'package:airspothealth/features/device_settings/providers/device_reset_sensor_notifier.dart';
+import 'package:airspothealth/features/device_settings/providers/device_reset_sensor_provider.dart';
 import 'package:airspothealth/features/device_settings/providers/populate_fake_data_provider.dart';
 import 'package:airspothealth/features/device_settings/providers/recalibration_time_provider.dart';
 import 'package:airspothealth/features/devices/providers/device_battery_level_provider.dart';
