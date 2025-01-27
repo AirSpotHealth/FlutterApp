@@ -79,19 +79,19 @@ class RecalibrateDevicePage extends ConsumerWidget {
         ),
         // Additional Information
         const Text(
-          'If Auto Calibration is enabled, AirSpot will calibrate itself on the assumption that it has made measurements in fresh air at least once a week. It is usually best to leave this OFF. See full manual for details.',
+          'If Auto Calibration is enabled, AirSpot will calibrate itself on the assumption that it has made measurements in fresh air at least once a week. It is usually best to leave this OFF unless you are sure AirSpot will be measuring fresh air at least every few days. See full manual for details.',
           style: TextStyle(fontSize: 12, color: Colors.grey),
         ),
         const SizedBox(height: 16),
         const Divider(),
         const Text(
-          'Forced Calibration',
+          'Manual Calibration',
           style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
         ),
         const SizedBox(height: 8),
 
         const Text(
-          'To calibrate this AirSpot, place the device outdoors for atleast 5 minutes, away from any people or CO2 sources, then tap the icon below. See full manual for details.',
+          'To calibrate this AirSpot, place the device outdoors for at least 5 minutes, away from any people or CO2 sources, then tap the icon below. See full manual for details.',
           style: TextStyle(fontSize: 12, color: Colors.grey),
         ),
         GestureDetector(
@@ -110,7 +110,7 @@ class RecalibrateDevicePage extends ConsumerWidget {
         ),
         const SizedBox(height: 8),
         const Text(
-          'If you are experiencing issues with your AirSpot, you can reset the sensor to its factory settings. This will erase all calibration data and settings.',
+          'If you are experiencing issues with your AirSpot\'s, you can reset the sensor to its factory settings. This will erase all calibration data and settings.',
           style: TextStyle(fontSize: 12, color: Colors.grey),
         ),
         const SizedBox(height: 16),
