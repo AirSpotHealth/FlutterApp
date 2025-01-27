@@ -458,7 +458,7 @@ class ResponseCommandParser {
     int frc = (data[4] << 8) | data[5];
 
     // if the 7th byte is 0x00 then it is negative value else positive
-    if (data[6] == 0x00) {
+    if (data[6] == 0x01) {
       frc = -frc;
     }
 
