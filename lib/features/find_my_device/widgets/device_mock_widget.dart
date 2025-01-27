@@ -10,6 +10,7 @@ import 'package:airspothealth/core/utils/device_cmd_utils.dart';
 import 'package:airspothealth/core/utils/extensions.dart';
 import 'package:airspothealth/core/widgets/tappable_widget.dart';
 import 'package:airspothealth/features/add_device/providers/ble_device_connection_provider.dart';
+import 'package:airspothealth/features/devices/providers/device_battery_level_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_blue_plus/flutter_blue_plus.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -31,6 +32,9 @@ class DeviceMockWidget extends ConsumerWidget {
     final bool isConnected =
         ref.watch(bleDeviceConnectionProvider(device.deviceId)) ==
             BluetoothBondState.bonded;
+
+    final BatteryState batteryState =
+        ref.watch(deviceBatteryLevelProvider(device.deviceId));
 
     return TappableWidget(
       debounceTime: 5000,
@@ -64,7 +68,7 @@ class DeviceMockWidget extends ConsumerWidget {
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                _buildHeader(deviceSettings),
+                _buildHeader(deviceSettings, batteryState),
                 const SizedBox(height: 6),
                 _buildCo2Value(co2Value),
                 _buildPowerModeBluetooth(deviceSettings.powerMode, isConnected),
@@ -93,7 +97,7 @@ class DeviceMockWidget extends ConsumerWidget {
     );
   }
 
-  Row _buildHeader(DeviceSettings deviceSettings) {
+  Row _buildHeader(DeviceSettings deviceSettings, BatteryState batteryState) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
@@ -110,14 +114,41 @@ class DeviceMockWidget extends ConsumerWidget {
         ),
         const Spacer(),
         Text(
-          "${DateTime.now().hour} : ${DateTime.now().minute}",
+          "${DateTime.now().hour.toString().padLeft(2)} : ${DateTime.now().minute.toString().padLeft(2, '0')}",
           style: const TextStyle(color: Colors.white, fontSize: 12),
         ),
         const Spacer(),
-        const Icon(
-          FontAwesomeIcons.batteryEmpty,
-          color: Colors.white,
-          size: 16,
+        Stack(
+          children: [
+            const Icon(
+              FontAwesomeIcons.batteryEmpty,
+              color: Colors.white,
+              size: 16,
+            ),
+            !batteryState.isCharging
+                ? const Positioned(
+                    right: 2,
+                    bottom: 4,
+                    left: 2,
+                    child: Icon(
+                      Icons.bolt,
+                      color: Colors.amberAccent,
+                      size: 8,
+                    ),
+                  )
+                : Positioned(
+                    right: 1,
+                    bottom: 4,
+                    child: Text(
+                      '${batteryState.level}%',
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 5,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+          ],
         ),
         const SizedBox(width: 8),
       ],
