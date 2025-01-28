@@ -22,7 +22,7 @@ class _DeviceDataDownloadNotifier
     extends AutoDisposeFamilyNotifier<AsyncProgressValue, String> {
   String get deviceId => arg;
 
-  static final _dateFormat = DateFormat('yyyy-MM-dd HH:mm:ss');
+  static final _dateFormat = DateFormat.yMMMMd().add_Hms();
 
   @override
   AsyncProgressValue build(String arg) {
@@ -104,7 +104,7 @@ class _DeviceDataDownloadNotifier
     final headerRow = 'DateTime,Value,Type\n';
 
     final csvRows = deviceDatas.map((data) {
-      return '"${_dateFormat.format(data.dateTime)}","${data.value}","${data.type.name.toUpperCase()}"';
+      return '"${_dateFormat.format(data.dateTime)}","${data.value}","${data.type.humanizedName().toUpperCase()}"';
     }).join('\n');
 
     return headerRow + csvRows;

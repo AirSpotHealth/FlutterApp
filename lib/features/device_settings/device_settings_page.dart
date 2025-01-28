@@ -1,7 +1,10 @@
 import 'package:airspothealth/core/models/ble_device.dart';
+import 'package:airspothealth/core/models/device_data.dart';
 import 'package:airspothealth/core/models/device_settings.dart';
 import 'package:airspothealth/core/providers/ble_device_communication_provider.dart';
+import 'package:airspothealth/core/providers/ble_saved_devices_provider.dart';
 import 'package:airspothealth/core/providers/device_settings_provider.dart';
+import 'package:airspothealth/core/providers/isar_service_provider.dart';
 import 'package:airspothealth/core/router/route_names.dart';
 import 'package:airspothealth/core/theme/app_colors.dart';
 import 'package:airspothealth/core/utils/app_utils.dart';
@@ -13,6 +16,7 @@ import 'package:airspothealth/core/widgets/icon_bg_widget.dart';
 import 'package:airspothealth/features/add_device/providers/ble_device_connection_provider.dart';
 import 'package:airspothealth/features/app_setup/providers/dev_mode_provider.dart';
 import 'package:airspothealth/features/device_graph/providers/ble_device_provider.dart';
+import 'package:airspothealth/features/device_graph/providers/device_history_data_request_provider.dart';
 import 'package:airspothealth/features/device_settings/models/progress_model.dart';
 import 'package:airspothealth/features/device_settings/models/setting_item.dart';
 import 'package:airspothealth/features/device_settings/providers/ble_device_version_provider.dart';
@@ -33,6 +37,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:isar/isar.dart';
 
 class DeviceSettingsPage extends ConsumerWidget {
   const DeviceSettingsPage({required this.deviceId, super.key});
@@ -125,6 +130,7 @@ class DeviceSettingsPage extends ConsumerWidget {
             SensorErrorWidget(deviceId: deviceId),
             PopulateFakeDataWidget(deviceId: deviceId),
             TurnOffBluetoothWidget(deviceId: deviceId),
+            DeleteLocalCacheWidget(deviceId: deviceId),
           ],
         ],
       ),
@@ -267,13 +273,46 @@ class TurnOffBluetoothWidget extends ConsumerWidget {
         assetIcon: Assets.autoConnectSettings,
         suffixWidget: const SizedBox(),
         leadingWidget: IconBgWidget(
-            backgroundColor: Colors.deepOrange,
+            backgroundColor: Colors.deepPurpleAccent,
             child: Icon(Icons.bluetooth_disabled, color: Colors.black)),
       ),
       onTap: () {
         ref
             .read(bleDeviceCommunicationProvider(deviceId).notifier)
             .sendCommand(DeviceCmdUtils.turnOffBluetooth());
+      },
+    );
+  }
+}
+
+class DeleteLocalCacheWidget extends ConsumerWidget {
+  const DeleteLocalCacheWidget({required this.deviceId, super.key});
+
+  final String deviceId;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    return SettingItemWidget(
+      item: SettingItem(
+        title: 'Delete Local Cache',
+        assetIcon: Assets.autoConnectSettings,
+        suffixWidget: const SizedBox(),
+        leadingWidget: IconBgWidget(
+            backgroundColor: Colors.deepOrange,
+            child: Icon(Icons.delete, color: Colors.black)),
+      ),
+      onTap: () {
+        ref.read(isarServiceProvider).write((isar) {
+          isar.deviceDatas.where().deviceIdEqualTo(deviceId).deleteAll();
+        });
+        // remove last fetched date from the cache
+        ref
+            .read(bleSavedDevicesProvider.notifier)
+            .resetDeviceFetchTime(deviceId);
+
+        ref.invalidate(deviceHistoryDataRequestProvider(deviceId));
+
+        ref.context.showSnackBar('Local cache deleted');
       },
     );
   }

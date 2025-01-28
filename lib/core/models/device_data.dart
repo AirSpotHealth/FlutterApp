@@ -55,6 +55,23 @@ class DeviceData {
   @override
   String toString() =>
       'DeviceData(deviceId: $deviceId, dateTime: $dateTime, value: $value), type: $type';
+
+  @ignore
+  String get toHexString {
+    // convert whole value to hex string
+    // first date time to hex
+    // then value to hex with swap endian
+    // then type to hex
+    // then add 0x00 for reserved byte
+    final dateTimeHex = dateTime.millisecondsSinceEpoch.toRadixString(16);
+    final valueHex = value.toRadixString(16);
+    final typeHex = type.index.toRadixString(16);
+
+    final hexString =
+        '${dateTimeHex + valueHex.padLeft(16, '0')}${typeHex.padLeft(2, '0')}00';
+
+    return hexString;
+  }
 }
 
 enum DeviceDataType {
@@ -63,6 +80,8 @@ enum DeviceDataType {
   calibration,
   sensorError,
   reset,
+  sensorFactoryReset,
+  calibrationCorrection,
   empty;
 
   static DeviceDataType fromByte(int byte) {
@@ -77,8 +96,33 @@ enum DeviceDataType {
         return DeviceDataType.sensorError;
       case 4:
         return DeviceDataType.reset;
+      case 5:
+        return DeviceDataType.sensorFactoryReset;
+      case 6:
+        return DeviceDataType.calibrationCorrection;
       default:
         return DeviceDataType.empty;
+    }
+  }
+
+  String humanizedName() {
+    switch (this) {
+      case DeviceDataType.co2:
+        return 'CO2';
+      case DeviceDataType.batteryLow:
+        return 'Battery Low';
+      case DeviceDataType.calibration:
+        return 'Calibration Start';
+      case DeviceDataType.sensorError:
+        return 'Sensor Error';
+      case DeviceDataType.reset:
+        return 'Device Reset';
+      case DeviceDataType.sensorFactoryReset:
+        return 'Sensor Factory Reset';
+      case DeviceDataType.calibrationCorrection:
+        return 'Calibration Correction';
+      default:
+        return '-';
     }
   }
 }

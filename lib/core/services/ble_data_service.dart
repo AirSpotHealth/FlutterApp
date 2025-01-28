@@ -326,7 +326,8 @@ class ResponseCommandParser {
       deviceData.add(DeviceData(
         deviceId: deviceId,
         dateTime: date,
-        value: value,
+        value: // if value is > 63000 and less than 65535, then it is a negative value
+            value > 33000 && value <= 65535 ? value - 65536 : value,
         type: DeviceDataType.fromByte(type),
       ));
     }

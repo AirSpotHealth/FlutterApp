@@ -41,7 +41,9 @@ const DeviceDataSchema = IsarGeneratedSchema(
           "calibration": 2,
           "sensorError": 3,
           "reset": 4,
-          "empty": 5
+          "sensorFactoryReset": 5,
+          "calibrationCorrection": 6,
+          "empty": 7
         },
       ),
       IsarPropertySchema(
@@ -287,7 +289,9 @@ const _deviceDataType = {
   2: DeviceDataType.calibration,
   3: DeviceDataType.sensorError,
   4: DeviceDataType.reset,
-  5: DeviceDataType.empty,
+  5: DeviceDataType.sensorFactoryReset,
+  6: DeviceDataType.calibrationCorrection,
+  7: DeviceDataType.empty,
 };
 
 extension DeviceDataQueryFilter
