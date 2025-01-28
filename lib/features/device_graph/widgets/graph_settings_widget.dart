@@ -19,11 +19,11 @@ class GraphSettingsWidget extends ConsumerWidget {
         final GraphSettings settings = ref.read(graphSettingsProvider);
 
         return [
-          _buildPopupMenuItem(
-              'Zoom Slider',
-              settings.showZoomSlider,
-              () => ref.read(graphSettingsProvider.notifier).setSettings(
-                  settings.copyWith(showZoomSlider: !settings.showZoomSlider))),
+          // _buildPopupMenuItem(
+          //     'Zoom Slider',
+          //     settings.showZoomSlider,
+          //     () => ref.read(graphSettingsProvider.notifier).setSettings(
+          //         settings.copyWith(showZoomSlider: !settings.showZoomSlider))),
           _buildPopupMenuItem(
               'Area Fill',
               settings.showAreaFill,
