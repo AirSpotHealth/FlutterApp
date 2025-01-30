@@ -72,6 +72,15 @@ class DeviceData {
 
     return hexString;
   }
+
+  @ignore
+  String get parsedValue {
+    if (type == DeviceDataType.reset) {
+      return resetReasonMap[value] ?? 'Unknown';
+    }
+
+    return value.toString();
+  }
 }
 
 enum DeviceDataType {
@@ -126,3 +135,15 @@ enum DeviceDataType {
     }
   }
 }
+
+const resetReasonMap = {
+  0: 'Unknown',
+  1: 'Pin Reset',
+  2: 'Watchdog',
+  3: 'Soft Reset',
+  4: 'CPU Lock-up',
+  5: 'Wake up from System OFF mode (GPIO)',
+  6: 'Wake up from System OFF mode (LPCOMP)',
+  7: 'Wake up from System OFF mode (Debug Interface)',
+  8: 'Wake up from System OFF mode (NFC)',
+};

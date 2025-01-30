@@ -104,7 +104,7 @@ class _DeviceDataDownloadNotifier
     final headerRow = 'DateTime,Value,Type\n';
 
     final csvRows = deviceDatas.map((data) {
-      return '"${_dateFormat.format(data.dateTime)}","${data.value}","${data.type.humanizedName().toUpperCase()}"';
+      return '"${_dateFormat.format(data.dateTime)}","${data.parsedValue}","${data.type.humanizedName().toUpperCase()}"';
     }).join('\n');
 
     return headerRow + csvRows;
