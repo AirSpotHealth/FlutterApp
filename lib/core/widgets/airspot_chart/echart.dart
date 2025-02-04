@@ -111,6 +111,8 @@ class _EChartState extends State<EChart> {
             parsedOption.dataZoom[0].start = zoom.start;
             parsedOption.dataZoom[0].end = zoom.end;
 
+            console.log('Old zoom: ', zoom.start, zoom.end);
+
             chart.setOption(parsedOption, true);
           }
         } catch (e) {
@@ -133,14 +135,14 @@ class _EChartState extends State<EChart> {
     return Stack(
       children: [
         WebViewWidget(controller: _controller!),
-        // Positioned(
-        //   right: 8,
-        //   top: 48,
-        //   child: IconButton(
-        //     onPressed: _toggleZoom,
-        //     icon: Icon(_zoomed ? Icons.zoom_out : Icons.zoom_in),
-        //   ),
-        // )
+        Positioned(
+          right: 8,
+          top: 48,
+          child: IconButton(
+            onPressed: _toggleZoom,
+            icon: Icon(_zoomed ? Icons.zoom_out : Icons.zoom_in),
+          ),
+        )
       ],
     );
   }
@@ -148,7 +150,11 @@ class _EChartState extends State<EChart> {
   void _toggleZoom() {
     final zoomScript = _zoomed
         ? '''
-        // Reset the zoom to show all data
+        // hide tooltip
+        chart.dispatchAction({
+          type: 'hideTip'
+        });
+
         chart.dispatchAction({
           type: 'dataZoom',
           start: 0,
@@ -156,25 +162,65 @@ class _EChartState extends State<EChart> {
         });
       '''
         : '''
-        // Zoom to focus on the last data point
-        const option = chart.getOption();
-        const data = option.series && option.series[0].data ? option.series[0].data : null;
-        if (data) {
-          const dataLength = data.length;
-          if (dataLength > 0) {
-            const lastIndex = dataLength - 1;
-            const zoomWindow = 10; // Adjust this value to control the zoom window size
+        (function() {
+          try {
+            const data = chart.getOption().series[0].data;
 
-            const startPercent = Math.max((lastIndex - zoomWindow + 1) / dataLength * 100, 0);
-            const endPercent = Math.min((lastIndex + 1) / dataLength * 100, 100);
+            if (!data || data.length === 0) {
+              console.error("No data available");
+              return;
+            }
 
+            const lastIndex = data.length - 1;
+            const lastData = data[lastIndex];
+            const lastTimestamp = new Date(lastData[0]);
+
+            // Extract the hour & minute
+            const lastHour = lastTimestamp.getHours();
+            const lastMinute = lastTimestamp.getMinutes();
+
+            // Convert hour + fraction of hour (e.g., 10:30 AM -> 10.5)
+            const lastTimeValue = lastHour + (lastMinute / 60);
+
+            // Normalize between 0 (midnight) and 23 (end of day)
+            const normalized = lastTimeValue / 24;
+
+            // Calculate zoom center
+            const zoomCenter = 15 + (normalized * (85 - 15));
+
+            // Define zoom range ensuring the last point is centered
+            const zoomOffset = 0.5;
+            const zoomStart = Math.max(15, zoomCenter - zoomOffset);
+            const zoomEnd = Math.min(85, zoomCenter + zoomOffset);
+
+            console.log('Last Timestamp:', lastTimestamp);
+            console.log('Last Hour:', lastHour);
+            console.log('Last Minute:', lastMinute);
+            console.log('Normalized Time:', normalized);
+            console.log('Zoom Center:', zoomCenter);
+            console.log('Final Zoom Range:', zoomStart, zoomEnd);
+
+            // Apply zoom
             chart.dispatchAction({
               type: 'dataZoom',
-              start: startPercent,
-              end: endPercent
+              start: zoomStart,
+              end: zoomEnd
             });
+
+            // Wait for zoom animation to finish before showing tooltip
+            setTimeout(() => {
+              chart.dispatchAction({
+                type: 'showTip',
+                seriesIndex: 0,
+                dataIndex: lastIndex
+              });
+              console.log('Tooltip triggered for index:', lastIndex);
+            }, 500); // Adjust delay if needed
+
+          } catch (e) {
+            console.error("Zoom & Tooltip error:", e);
           }
-        }
+        })();
       ''';
 
     _controller?.runJavaScript(zoomScript);
