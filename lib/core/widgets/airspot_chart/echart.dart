@@ -54,48 +54,36 @@ class _EChartState extends State<EChart> {
       $script;
       var chart = echarts.init(document.getElementById('chart'));
       chart.setOption($_currentOption, true);
+      // Global tooltip auto-hide logic
+
+      (function() {
+        console.log("Global tooltip auto-hide script initialized.");
+
+        // Hide tooltip after 3 seconds whenever it appears
+        chart.on("showTip", function (params) {
+          console.log("Tooltip shown for index:", params.dataIndex);
+
+          setTimeout(() => {
+            chart.dispatchAction({ type: 'hideTip' });
+            chart.dispatchAction({
+              type: 'updateAxisPointer',
+              currTrigger: 'leave',
+              dataIndex: -1
+              });
+              
+            console.log("Tooltip auto-hidden after 3 seconds.");
+          }, 3000);
+        });
+
+        // Cancel auto-hide if tooltip is manually hidden
+        chart.on("hideTip", function () {
+          console.log("Tooltip manually hidden. Cancelling auto-hide.");
+          clearTimeout();
+        });
+
+      })();
     ''');
   }
-
-//   static const String showTipScript = '''
-//       chart.on('datazoom', function (params) {
-
-//         try {
-//           const series = chart.getOption().series[0]; // Get the series data
-//           const data = series.data; // Access the data array
-
-//           Print.postMessage("SeriesName: " + series.name);
-
-//           // Get the current dataZoom range (start and end)
-//           const dataZoomComponent = chart.getModel().getComponent('dataZoom').option;
-//           const startPercent = dataZoomComponent.start;
-//           const endPercent = dataZoomComponent.end;
-
-//           // Calculate the indices of the visible range
-//           const startIndex = Math.floor((startPercent / 100) * data.length);
-//           const endIndex = Math.floor((endPercent / 100) * data.length);
-
-//           // Calculate the middle index of the visible range
-//           const middleIndex = Math.floor((startIndex + endIndex) / 2);
-
-//           Print.postMessage("Middle index: " + middleIndex);
-//           Print.postMessage("Middle data point: " + data[middleIndex]);
-//           Print.postMessage("Data length: " + data.length);
-
-//           if (middleIndex < 0 || middleIndex >= data.length) {
-//             return;
-//           }
-
-//           chart.dispatchAction({
-//               type: 'showTip',
-//               seriesIndex: 0,
-//               dataIndex: middleIndex
-//           });
-//         } catch (e) {
-//           Print.postMessage("Error: " + e);
-//         }
-//       });
-// ''';
 
   void update(String preOption) {
     if (_currentOption != preOption) {
