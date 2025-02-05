@@ -47,20 +47,21 @@ class RecalibrateDevicePage extends ConsumerWidget {
           suffixText: 'Calibrate',
         ),
       ),
-      body: AnimatedContainer(
-          duration: const Duration(milliseconds: 300),
-          padding: const EdgeInsets.all(16.0),
-          child: calibrationStatus.isNone
-              ? _buildCalibrationSettings(
-                  calibrationStatus, deviceSettings, ref)
-              : _buildCalibrationStatusWidget(
-                  calibrationStatus, deviceSettings, ref)),
+      body: calibrationStatus.isNone
+          ? _buildCalibrationSettings(calibrationStatus, deviceSettings, ref)
+          : _buildCalibrationStatusWidget(
+              calibrationStatus, deviceSettings, ref),
     );
   }
 
-  Widget _buildCalibrationSettings(AsyncProgressValue calibrationStatus,
-      DeviceSettings deviceSettings, WidgetRef ref) {
+  Widget _buildCalibrationSettings(
+    AsyncProgressValue calibrationStatus,
+    DeviceSettings deviceSettings,
+    WidgetRef ref,
+  ) {
     return ListView(
+      padding: const EdgeInsets.all(16),
+      physics: const AlwaysScrollableScrollPhysics(),
       children: [
         // Auto Calibration Toggle
         SwitchListTile(
@@ -84,23 +85,54 @@ class RecalibrateDevicePage extends ConsumerWidget {
         ),
         const SizedBox(height: 16),
         const Divider(),
-        const Text(
-          'Manual Calibration',
-          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
-        ),
-        const SizedBox(height: 8),
+        Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            SwitchListTile(
+              contentPadding: EdgeInsets.zero,
+              title: const Text(
+                'Manual Calibration',
+                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+              ),
+              value: !deviceSettings.autoCalibration,
+              onChanged: (bool value) {
+                if (calibrationStatus.isInProgress) return;
 
-        const Text(
-          'To calibrate this AirSpot, place the device outdoors for at least 5 minutes, away from any people or CO2 sources, then tap the icon below. See full manual for details.',
-          style: TextStyle(fontSize: 12, color: Colors.grey),
-        ),
-        GestureDetector(
-          onTap: () {
-            ref
-                .read(recalibrationTimeProvider(deviceId).notifier)
-                .startRecalibration();
-          },
-          child: Image.asset(Assets.recalibrateImage, height: 120),
+                debugPrint('Manual Calibration: $value');
+
+                ref
+                    .read(deviceSettingsProvider(deviceId).notifier)
+                    .updateSettings(
+                        deviceSettings.copyWith(autoCalibration: value));
+              },
+            ),
+            const Text(
+              'To calibrate this AirSpot, place the device outdoors for at least 5 minutes, away from any people or CO2 sources, then tap the icon below. See full manual for details.',
+              style: TextStyle(fontSize: 12, color: Colors.grey),
+            ),
+            Opacity(
+              opacity: deviceSettings.autoCalibration ? 0.4 : 1.0,
+              child: IgnorePointer(
+                ignoring: deviceSettings.autoCalibration,
+                child: GestureDetector(
+                  onTap: () {
+                    if (!deviceSettings.autoCalibration) {
+                      ref
+                          .read(recalibrationTimeProvider(deviceId).notifier)
+                          .startRecalibration();
+                    }
+                  },
+                  child: Align(
+                    alignment: Alignment.center,
+                    child: Image.asset(
+                      Assets.recalibrateImage,
+                      height: 120,
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ],
         ),
         const Divider(),
         // Reset Sensor Button
