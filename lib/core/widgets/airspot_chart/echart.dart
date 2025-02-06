@@ -50,35 +50,39 @@ class _EChartState extends State<EChart> {
   }
 
   void init() {
+    debugPrint('Chart initialized.');
     _controller?.runJavaScript('''
       $script;
       var chart = echarts.init(document.getElementById('chart'));
       chart.setOption($_currentOption, true);
       // Global tooltip auto-hide logic
 
+      // Global tooltip debounce logic
       (function() {
         console.log("Global tooltip auto-hide script initialized.");
 
-        // Hide tooltip after 3 seconds whenever it appears
+        let tooltipTimeout = null;
+
         chart.on("showTip", function (params) {
           console.log("Tooltip shown for index:", params.dataIndex);
 
-          setTimeout(() => {
+          // If there is an active timeout, clear it
+          if (tooltipTimeout) {
+            clearTimeout(tooltipTimeout);
+            console.log("Existing timeout cleared.");
+          }
+
+          // Start a new timeout (always ensure tooltip hides)
+          tooltipTimeout = setTimeout(() => {
             chart.dispatchAction({ type: 'hideTip' });
             chart.dispatchAction({
               type: 'updateAxisPointer',
               currTrigger: 'leave',
               dataIndex: -1
-              });
-              
+            });
             console.log("Tooltip auto-hidden after 3 seconds.");
+            tooltipTimeout = null; // Reset timeout
           }, 3000);
-        });
-
-        // Cancel auto-hide if tooltip is manually hidden
-        chart.on("hideTip", function () {
-          console.log("Tooltip manually hidden. Cancelling auto-hide.");
-          clearTimeout();
         });
 
       })();
@@ -88,6 +92,7 @@ class _EChartState extends State<EChart> {
   void update(String preOption) {
     if (_currentOption != preOption) {
       _controller?.runJavaScript('''
+        ( function() {
         try {
           const parsedOption = typeof $_currentOption === 'string' ? JSON.parse($_currentOption) : $_currentOption;
 
@@ -108,6 +113,7 @@ class _EChartState extends State<EChart> {
           console.error(e);
           chart.setOption(parsedOption, true);
         }
+      })();
 ''');
     }
   }
@@ -115,7 +121,8 @@ class _EChartState extends State<EChart> {
   @override
   void didUpdateWidget(EChart oldWidget) {
     super.didUpdateWidget(oldWidget);
-    update(oldWidget.option);
+    WidgetsBinding.instance
+        .addPostFrameCallback((_) => update(oldWidget.option));
   }
 
   @override
