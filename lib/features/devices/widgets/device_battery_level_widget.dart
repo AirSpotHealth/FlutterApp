@@ -106,7 +106,7 @@ class BatteryLevelIndicatorPainter extends CustomPainter {
     canvas.drawRRect(terminal, terminalPaint);
 
     // Draw the battery fill level
-    if (isCharging || batteryLevel != null && batteryLevel! > 0) {
+    if (isCharging || (batteryLevel != null && batteryLevel! > 0)) {
       final double fillWidth = isCharging
           ? batteryWidth - borderWidth * 2
           : ((batteryLevel! / 100) * (batteryWidth - borderWidth * 2));
@@ -122,7 +122,7 @@ class BatteryLevelIndicatorPainter extends CustomPainter {
       canvas.drawRRect(fillRect, fillPaint);
     }
 
-    if (batteryLevel == null) {
+    if (!isCharging && batteryLevel == null) {
       final TextPainter textPainter = TextPainter(
         text: TextSpan(
           text: "?",
@@ -144,7 +144,7 @@ class BatteryLevelIndicatorPainter extends CustomPainter {
       );
     }
 
-    if (batteryLevel == 0) {
+    if (!isCharging && batteryLevel == 0) {
       // show Low text
       final TextPainter textPainter = TextPainter(
         text: TextSpan(
