@@ -458,7 +458,7 @@ class ResponseCommandParser {
 
   bool parseSetContinuosDisplay(List<int> data) => _parseBoolean(data, 4);
 
-  int parseRecalibrationTime(List<int> data) => data[4];
+  int parseRecalibrationTime(List<int> data) => (data[4] << 8) | data[5];
 
   int? parseRecalibrationConfirm(List<int> data) {
     if (data.length < 8) return null;
