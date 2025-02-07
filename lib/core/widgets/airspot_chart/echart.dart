@@ -59,17 +59,14 @@ class _EChartState extends State<EChart> {
 
       // Global tooltip debounce logic
       (function() {
-        console.log("Global tooltip auto-hide script initialized.");
 
         let tooltipTimeout = null;
 
         chart.on("showTip", function (params) {
-          console.log("Tooltip shown for index:", params.dataIndex);
 
           // If there is an active timeout, clear it
           if (tooltipTimeout) {
             clearTimeout(tooltipTimeout);
-            console.log("Existing timeout cleared.");
           }
 
           // Start a new timeout (always ensure tooltip hides)
@@ -80,7 +77,6 @@ class _EChartState extends State<EChart> {
               currTrigger: 'leave',
               dataIndex: -1
             });
-            console.log("Tooltip auto-hidden after 3 seconds.");
             tooltipTimeout = null; // Reset timeout
           }, 3000);
         });
@@ -137,9 +133,88 @@ class _EChartState extends State<EChart> {
             onPressed: _toggleZoom,
             icon: Icon(_zoomed ? Icons.zoom_out : Icons.zoom_in),
           ),
-        )
+        ),
+        // another set to now icon that keeps the zoom but moves the chart to the latest data
+        Positioned(
+          right: 8,
+          top: 80,
+          child: IconButton(
+            onPressed: _moveToLatestData,
+            icon: Icon(Icons.my_location),
+          ),
+        ),
       ],
     );
+  }
+
+  void _moveToLatestData() {
+    _controller?.runJavaScript('''
+      (function() {
+        try {
+          const data = chart.getOption().series[0].data;
+
+          if (!data || data.length === 0) {
+            console.error("No data available");
+            return;
+          }
+
+          // get the zoom range
+          const zoom = chart.getOption().dataZoom[0];
+          if (!zoom) {
+            console.error("No zoom data available");
+            return;
+          }
+
+          const start = zoom.start;
+          const end = zoom.end;
+          const diff = end - start;
+
+          const lastIndex = data.length - 1;
+          const lastData = data[lastIndex];
+          const lastTimestamp = new Date(lastData[0]);
+
+          // Extract the hour & minute
+          const lastHour = lastTimestamp.getHours();
+          const lastMinute = lastTimestamp.getMinutes();
+
+          // Convert hour + fraction of hour (e.g., 10:30 AM -> 10.5)
+          const lastTimeValue = lastHour + (lastMinute / 60);
+
+          // Normalize between 0 (midnight) and 23 (end of day)
+          const normalized = lastTimeValue / 24;
+
+          // Calculate zoom center
+          const zoomCenter = 15 + (normalized * (85 - 15));
+
+          // Define zoom range ensuring the last point is centered
+          const zoomOffset = 0.5;
+          const zoomEnd = Math.min(85, zoomCenter + zoomOffset) + diff / 2;
+          const zoomStart = Math.max(15, zoomEnd - diff) - diff / 2;
+
+          
+          // Apply zoom
+          chart.dispatchAction({
+            type: 'dataZoom',
+            start: zoomStart,
+            end: zoomEnd
+          });
+
+          // Wait for zoom animation to finish before showing tooltip
+          setTimeout(() => {
+            chart.dispatchAction({
+              type: 'showTip',
+              seriesIndex: 0,
+              dataIndex: lastIndex
+            });
+            console.log('Tooltip triggered for index:', lastIndex);
+          }, 500); // Adjust delay if needed
+
+          
+        } catch (e) {
+          console.error("Error moving to latest data:", e);
+        }
+      })();
+    ''');
   }
 
   void _toggleZoom() {
@@ -188,13 +263,6 @@ class _EChartState extends State<EChart> {
             const zoomStart = Math.max(15, zoomCenter - zoomOffset);
             const zoomEnd = Math.min(85, zoomCenter + zoomOffset);
 
-            console.log('Last Timestamp:', lastTimestamp);
-            console.log('Last Hour:', lastHour);
-            console.log('Last Minute:', lastMinute);
-            console.log('Normalized Time:', normalized);
-            console.log('Zoom Center:', zoomCenter);
-            console.log('Final Zoom Range:', zoomStart, zoomEnd);
-
             // Apply zoom
             chart.dispatchAction({
               type: 'dataZoom',
@@ -209,7 +277,6 @@ class _EChartState extends State<EChart> {
                 seriesIndex: 0,
                 dataIndex: lastIndex
               });
-              console.log('Tooltip triggered for index:', lastIndex);
             }, 500); // Adjust delay if needed
 
           } catch (e) {
