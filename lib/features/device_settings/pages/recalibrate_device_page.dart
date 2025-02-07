@@ -64,76 +64,19 @@ class RecalibrateDevicePage extends ConsumerWidget {
       physics: const AlwaysScrollableScrollPhysics(),
       children: [
         // Auto Calibration Toggle
-        SwitchListTile(
-          contentPadding: EdgeInsets.zero,
-          title: const Text(
-            'Auto Calibration',
-            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
-          ),
-          value: deviceSettings.autoCalibration,
-          onChanged: (bool value) {
-            if (calibrationStatus.isInProgress) return;
+        Text(
+          'Calibration Mode',
+          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+        ),
+        const SizedBox(height: 8),
+        _buildCalibrationButtons(deviceSettings, calibrationStatus, ref),
 
-            ref.read(deviceSettingsProvider(deviceId).notifier).updateSettings(
-                deviceSettings.copyWith(autoCalibration: value));
-          },
-        ),
-        // Additional Information
-        const Text(
-          'If Auto Calibration is enabled, AirSpot will calibrate itself on the assumption that it has made measurements in fresh air at least once a week. It is usually best to leave this OFF unless you are sure AirSpot will be measuring fresh air at least every few days. See full manual for details.',
-          style: TextStyle(fontSize: 12, color: Colors.grey),
-        ),
         const SizedBox(height: 16),
-        const Divider(),
-        Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            SwitchListTile(
-              contentPadding: EdgeInsets.zero,
-              title: const Text(
-                'Manual Calibration',
-                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
-              ),
-              value: !deviceSettings.autoCalibration,
-              onChanged: (bool value) {
-                if (calibrationStatus.isInProgress) return;
-
-                debugPrint('Manual Calibration: $value');
-
-                ref
-                    .read(deviceSettingsProvider(deviceId).notifier)
-                    .updateSettings(
-                        deviceSettings.copyWith(autoCalibration: value));
-              },
-            ),
-            const Text(
-              'To calibrate this AirSpot, place the device outdoors for at least 5 minutes, away from any people or CO2 sources, then tap the icon below. See full manual for details.',
-              style: TextStyle(fontSize: 12, color: Colors.grey),
-            ),
-            Opacity(
-              opacity: deviceSettings.autoCalibration ? 0.4 : 1.0,
-              child: IgnorePointer(
-                ignoring: deviceSettings.autoCalibration,
-                child: GestureDetector(
-                  onTap: () {
-                    if (!deviceSettings.autoCalibration) {
-                      ref
-                          .read(recalibrationTimeProvider(deviceId).notifier)
-                          .startRecalibration();
-                    }
-                  },
-                  child: Align(
-                    alignment: Alignment.center,
-                    child: Image.asset(
-                      Assets.recalibrateImage,
-                      height: 120,
-                    ),
-                  ),
-                ),
-              ),
-            ),
-          ],
-        ),
+        if (deviceSettings.autoCalibration)
+          _buildAutoCalibration()
+        else
+          _buildManualCalibration(deviceSettings, ref),
+        const SizedBox(height: 16),
         const Divider(),
         // Reset Sensor Button
         Text(
@@ -142,12 +85,96 @@ class RecalibrateDevicePage extends ConsumerWidget {
         ),
         const SizedBox(height: 8),
         const Text(
-          'If you are experiencing issues with your AirSpot\'s, you can reset the sensor to its factory settings. This will erase all calibration data and settings.',
+          "If you are experiencing issues with your AirSpot's accuracy, you can reset the sensor to its factory settings. This will erase all calibration data and settings.",
           style: TextStyle(fontSize: 12, color: Colors.grey),
         ),
         const SizedBox(height: 16),
         ResetSensorWidget(deviceId: deviceId),
       ],
+    );
+  }
+
+  Text _buildAutoCalibration() {
+    return const Text(
+      'If Auto Calibration is enabled, AirSpot will calibrate itself on the assumption that it has made measurements in fresh air at least once a week. It is usually best to leave this OFF unless you are sure AirSpot will be measuring fresh air at least every few days. See full manual for details.',
+      style: TextStyle(fontSize: 12, color: Colors.grey),
+    );
+  }
+
+  Column _buildManualCalibration(DeviceSettings deviceSettings, WidgetRef ref) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text(
+          'To calibrate this AirSpot, place the device outdoors for at least 5 minutes, away from any people or CO2 sources, then tap the icon below. See full manual for details.',
+          style: TextStyle(fontSize: 12, color: Colors.grey),
+        ),
+        Opacity(
+          opacity: deviceSettings.autoCalibration ? 0.4 : 1.0,
+          child: IgnorePointer(
+            ignoring: deviceSettings.autoCalibration,
+            child: GestureDetector(
+              onTap: () {
+                if (!deviceSettings.autoCalibration) {
+                  ref
+                      .read(recalibrationTimeProvider(deviceId).notifier)
+                      .startRecalibration();
+                }
+              },
+              child: Align(
+                alignment: Alignment.center,
+                child: Image.asset(
+                  Assets.recalibrateImage,
+                  height: 120,
+                ),
+              ),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  SegmentedButton<bool> _buildCalibrationButtons(DeviceSettings deviceSettings,
+      AsyncProgressValue calibrationStatus, WidgetRef ref) {
+    return SegmentedButton<bool>(
+      style: ButtonStyle(
+        backgroundColor: WidgetStateColor.resolveWith(
+          (states) => states.contains(WidgetState.selected)
+              ? Colors.greenAccent
+              : Colors.white,
+        ),
+        foregroundColor: WidgetStateColor.resolveWith(
+          (states) => states.contains(WidgetState.selected)
+              ? Colors.black
+              : Colors.black,
+        ),
+      ),
+      selectedIcon: Icon(
+        Icons.check,
+        size: 16,
+        color: Colors.black,
+      ),
+      segments: [
+        ButtonSegment(
+          label: Text('Auto'),
+          value: true,
+        ),
+        ButtonSegment(
+          label: Text('Manual'),
+          value: false,
+        ),
+      ],
+      selected: {
+        deviceSettings.autoCalibration,
+      },
+      onSelectionChanged: (p0) {
+        if (calibrationStatus.isInProgress) return;
+
+        ref
+            .read(deviceSettingsProvider(deviceId).notifier)
+            .updateSettings(deviceSettings.copyWith(autoCalibration: p0.first));
+      },
     );
   }
 
