@@ -255,6 +255,10 @@ class DeviceCmdUtils {
     return _buildCommand([prefixHigh, prefixLow, 0x24, 1, 1]);
   }
 
+  static Uint8List getAscData() {
+    return _buildCommand([prefixHigh, prefixLow, 0x25, 1, 1]);
+  }
+
   // ======= Helper Functions =======
   static Uint8List _getHex2Bytes(int value) {
     var byteArray = Uint8List(2);

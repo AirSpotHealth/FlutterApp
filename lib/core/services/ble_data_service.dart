@@ -8,7 +8,9 @@ import 'package:airspothealth/core/services/isar_service.dart';
 import 'package:airspothealth/core/utils/app_utils.dart';
 import 'package:airspothealth/features/device_graph/providers/ble_device_provider.dart';
 import 'package:airspothealth/features/device_graph/providers/device_history_data_request_provider.dart';
+import 'package:airspothealth/features/device_settings/models/asc_data.dart';
 import 'package:airspothealth/features/device_settings/providers/ble_device_version_provider.dart';
+import 'package:airspothealth/features/device_settings/providers/device_asc_data_provider.dart';
 import 'package:airspothealth/features/device_settings/providers/device_data_download_provider.dart';
 import 'package:airspothealth/features/device_settings/providers/device_data_erase_provider.dart';
 import 'package:airspothealth/features/device_settings/providers/device_reset_sensor_provider.dart';
@@ -69,6 +71,7 @@ class BleDataService {
       ResponseCommand.dndMode: (_) => null,
       ResponseCommand.populateFakeData: (_) => null,
       ResponseCommand.resetSensorResult: (_) => null,
+      ResponseCommand.ascData: parser.parseAscData,
     };
 
     final dynamic value = responseParsers[responseCommand]?.call(data);
@@ -133,6 +136,11 @@ class BleDataService {
         ref
             .read(deviceSensorResetProvider(deviceId).notifier)
             .setSensorResetDone();
+        break;
+      case ResponseCommand.ascData:
+        ref
+            .read(deviceASCDataProvider(deviceId).notifier)
+            .setAscData(value as AscData);
         break;
       default:
         break;
@@ -466,6 +474,18 @@ class ResponseCommandParser {
     return frc;
   }
 
+  AscData parseAscData(List<int> data) {
+    final count = (data[4] << 8) | data[5];
+    int correction = (data[6] << 8) | data[7];
+    if (data[8] == 0x01) {
+      correction = -correction;
+    }
+    return AscData(
+      count: count,
+      correction: correction,
+    );
+  }
+
   bool parseLocateMyAirspot(List<int> data) => _parseBoolean(data, 4);
 
   bool parseEraseDataDone(List<int> data) => _parseBoolean(data, 4);
@@ -539,7 +559,8 @@ enum ResponseCommand {
   batteryLevel(0x20),
   dndMode(0x22),
   populateFakeData(0x23),
-  resetSensorResult(0x24);
+  resetSensorResult(0x24),
+  ascData(0x25);
 
   const ResponseCommand(this.value);
   final int value;

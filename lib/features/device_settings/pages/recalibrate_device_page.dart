@@ -6,6 +6,7 @@ import 'package:airspothealth/core/widgets/button.dart';
 import 'package:airspothealth/features/device_settings/models/progress_model.dart';
 import 'package:airspothealth/features/device_settings/providers/device_reset_sensor_provider.dart';
 import 'package:airspothealth/features/device_settings/providers/recalibration_time_provider.dart';
+import 'package:airspothealth/features/device_settings/widgets/auto_calibration_widget.dart';
 import 'package:airspothealth/features/device_settings/widgets/device_settings_name_widget.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
@@ -62,6 +63,7 @@ class RecalibrateDevicePage extends ConsumerWidget {
     return ListView(
       padding: const EdgeInsets.all(16),
       physics: const AlwaysScrollableScrollPhysics(),
+      shrinkWrap: true,
       children: [
         // Auto Calibration Toggle
         Text(
@@ -70,10 +72,9 @@ class RecalibrateDevicePage extends ConsumerWidget {
         ),
         const SizedBox(height: 8),
         _buildCalibrationButtons(deviceSettings, calibrationStatus, ref),
-
         const SizedBox(height: 16),
         if (deviceSettings.autoCalibration)
-          _buildAutoCalibration()
+          AutoCalibrationWidget(deviceId: deviceId)
         else
           _buildManualCalibration(deviceSettings, ref),
         const SizedBox(height: 16),
@@ -91,13 +92,6 @@ class RecalibrateDevicePage extends ConsumerWidget {
         const SizedBox(height: 16),
         ResetSensorWidget(deviceId: deviceId),
       ],
-    );
-  }
-
-  Text _buildAutoCalibration() {
-    return const Text(
-      'If Auto Calibration is enabled, AirSpot will calibrate itself on the assumption that it has made measurements in fresh air at least once a week. It is usually best to leave this OFF unless you are sure AirSpot will be measuring fresh air at least every few days. See full manual for details.',
-      style: TextStyle(fontSize: 12, color: Colors.grey),
     );
   }
 
