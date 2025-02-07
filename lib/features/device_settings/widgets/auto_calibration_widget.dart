@@ -69,6 +69,7 @@ class _AutoCalibrationWidgetState extends ConsumerState<AutoCalibrationWidget> {
                       fontSize: 14,
                       fontWeight: FontWeight.w600,
                     ),
+                    textAlign: TextAlign.center,
                   ),
                   const SizedBox(height: 12),
                   Text(
