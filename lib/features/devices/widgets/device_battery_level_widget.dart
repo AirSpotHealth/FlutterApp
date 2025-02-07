@@ -70,7 +70,7 @@ class BatteryLevelIndicatorPainter extends CustomPainter {
 
     final Paint fillPaint = Paint()
       ..style = PaintingStyle.fill
-      ..color = batteryLevel == 0 ? Colors.red : Colors.green;
+      ..color = Colors.green;
 
     final Paint terminalPaint = Paint()
       ..style = PaintingStyle.fill
