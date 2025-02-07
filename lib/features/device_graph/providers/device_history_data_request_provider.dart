@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:typed_data';
 
 import 'package:airspothealth/core/models/ble_device.dart';
@@ -33,13 +34,25 @@ class _DeviceHistoryDataRequestNotifier
 
   BleDevice? bleDevice;
 
+  final List<DeviceData> _dataBuffer = [];
+  static final int _batchSize = 400; // Save in batches of 400 records
+
   static final _unsyncedThresholdDate =
       DateTime.fromMillisecondsSinceEpoch(Constants.syncedTimeThreshold);
+
+  Timer? _flushTimer;
 
   @override
   build(String arg) {
     bleDevice = ref.read(bleDeviceProvider(deviceId));
     return AsyncNone();
+  }
+
+  void _startFlushTimer() {
+    _flushTimer?.cancel();
+    _flushTimer = Timer(const Duration(seconds: 2), () {
+      _commitData();
+    });
   }
 
   void request(GraphDataDuration duration) {
@@ -112,9 +125,30 @@ class _DeviceHistoryDataRequestNotifier
   }
 
   void _saveData(List<DeviceData> deviceDataList) {
+    _dataBuffer.addAll(deviceDataList);
+
+    debugPrint('Buffer size: ${_dataBuffer.length}');
+
+    if (_dataBuffer.length >= _batchSize) {
+      _commitData();
+    } else {
+      _startFlushTimer(); // Ensure it gets saved if no more data arrives
+    }
+  }
+
+  void _commitData() {
+    debugPrint('Committing data: ${_dataBuffer.length}');
+    if (_dataBuffer.isEmpty) return;
+
+    // Write to Isar database in one operation
     ref.read(isarServiceProvider).write((isar) {
-      isar.deviceDatas.putAll(deviceDataList);
+      isar.deviceDatas.putAll(_dataBuffer);
     });
+
+    debugPrint('Saved ${_dataBuffer.length} records to database');
+
+    // Clear buffer
+    _dataBuffer.clear();
   }
 
   bool _shouldFetchMoreData(List<DeviceData> deviceDataList) {
@@ -151,6 +185,9 @@ class _DeviceHistoryDataRequestNotifier
   void handleHistoricalDataFetchComplete() {
     debugPrint(
         'That was last: Total number of pages fetched: $numberOfPagesFetched');
+
+    // Save any remaining buffered data
+    _commitData();
 
     if (duration == GraphDataDuration.last7Days) {
       ref
