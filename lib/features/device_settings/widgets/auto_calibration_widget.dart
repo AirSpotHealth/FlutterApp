@@ -38,41 +38,49 @@ class _AutoCalibrationWidgetState extends ConsumerState<AutoCalibrationWidget> {
           style: TextStyle(fontSize: 12, color: Colors.grey),
         ),
         const SizedBox(height: 16),
-        Container(
-          width: double.infinity,
-          decoration: BoxDecoration(
-            border: Border.all(color: Colors.grey),
-            borderRadius: BorderRadius.circular(8),
-          ),
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              if (ascDataProgress is AsyncInProgress)
-                CupertinoActivityIndicator()
-              else if (ascDataProgress is AsyncFailure)
-                Text(
-                  'Failed to get ASC data: ${ascDataProgress.error}',
-                  style: const TextStyle(color: Colors.red),
-                )
-              else if (ascDataProgress is AsyncSuccess) ...[
-                Text(
-                  'Correction Value: ${(ascDataProgress.data as AscData).correction}',
-                  style: const TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.bold,
+        GestureDetector(
+          onTap: () {
+            if (ascDataProgress is AsyncInProgress) return;
+
+            ref.read(deviceASCDataProvider(widget.deviceId).notifier).request();
+          },
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 300),
+            width: double.infinity,
+            decoration: BoxDecoration(
+              border: Border.all(color: Colors.grey),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                if (ascDataProgress is AsyncInProgress)
+                  CupertinoActivityIndicator()
+                else if (ascDataProgress is AsyncFailure)
+                  Text(
+                    'Failed to get ASC data: ${ascDataProgress.error}',
+                    style: const TextStyle(color: Colors.red),
+                  )
+                else if (ascDataProgress is AsyncSuccess) ...[
+                  Text(
+                    "The sensor has been calibrated itself ${(ascDataProgress.data as AscData).count} times since ASC was enabled. The last correction applied was ${(ascDataProgress.data as AscData).correction}.",
+                    style: const TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                    ),
                   ),
-                ),
-                const SizedBox(height: 12),
-                Text(
-                  'ASC Count: ${(ascDataProgress.data as AscData).count}',
-                  style: const TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.bold,
+                  const SizedBox(height: 12),
+                  Text(
+                    'Tap to get latest values',
+                    style: const TextStyle(
+                      fontSize: 12,
+                      color: Colors.grey,
+                    ),
                   ),
-                ),
+                ],
               ],
-            ],
+            ),
           ),
         ),
       ],
