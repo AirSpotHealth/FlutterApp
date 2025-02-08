@@ -124,6 +124,9 @@ class _DeviceDataDownloadNotifier
 
     state = AsyncInProgress(1.0, message: 'Device data ready for download....');
 
+    // await Share.shareXFiles([XFile(file.path)],
+    //     text: fileName, fileNameOverrides: [fileName]);
+
     await FileSaver.instance.saveAs(
         name: fileName, bytes: bytes, mimeType: MimeType.csv, ext: 'csv');
   }
