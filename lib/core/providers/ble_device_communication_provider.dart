@@ -241,6 +241,13 @@ class _BleDeviceCommunicationNotifier extends FamilyNotifier<dynamic, String> {
       return true;
     } catch (e) {
       debugPrint('Error sending command: $e');
+      DataLoggerService().logData(
+        deviceId: device?.advName ?? deviceId,
+        value: BleDataService.bytesToHexStr(data),
+        dateTime: DateTime.now(),
+        sent: false,
+        st: false,
+      );
       return false;
     }
   }
@@ -254,6 +261,7 @@ class _BleDeviceCommunicationNotifier extends FamilyNotifier<dynamic, String> {
         value: BleDataService.bytesToHexStr(value),
         dateTime: dateTime,
         sent: sent,
+        st: true,
       );
     }
   }
