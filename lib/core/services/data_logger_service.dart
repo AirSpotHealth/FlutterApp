@@ -11,7 +11,7 @@ class DataLoggerService {
     required dynamic value,
     required DateTime dateTime,
     required bool sent,
-    bool st = true,
+    bool st = false,
   }) async {
     try {
       // Get the local directory for storing files
@@ -21,7 +21,7 @@ class DataLoggerService {
 
       // Prepare the data entry with an additional boolean flag 'st'
       String entry =
-          '${dateTime.toIso8601String()},$value,${sent ? 'sent' : 'received'},$st\n';
+          '${dateTime.toIso8601String()},$value,${sent ? 'sent' : 'received'}${sent ? (st ? 'Success' : 'Failed') : ""}\n';
 
       // Append the data entry to the file
       await file.writeAsString(entry, mode: FileMode.append, flush: true);

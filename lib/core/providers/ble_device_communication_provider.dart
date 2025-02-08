@@ -236,7 +236,7 @@ class _BleDeviceCommunicationNotifier extends FamilyNotifier<dynamic, String> {
     try {
       await _writeCharacteristic!.write(data);
       final DateTime dateTime = DateTime.now();
-      _checkIfLogData(data, dateTime, sent: true);
+      _checkIfLogData(data, dateTime, sent: true, st: true);
       debugPrint('Command sent: ${BleDataService.bytesToHexStr(data)}');
       return true;
     } catch (e) {
@@ -245,14 +245,14 @@ class _BleDeviceCommunicationNotifier extends FamilyNotifier<dynamic, String> {
         deviceId: device?.advName ?? deviceId,
         value: BleDataService.bytesToHexStr(data),
         dateTime: DateTime.now(),
-        sent: false,
-        st: false,
+        sent: true,
       );
       return false;
     }
   }
 
-  void _checkIfLogData(dynamic value, DateTime dateTime, {bool sent = false}) {
+  void _checkIfLogData(dynamic value, DateTime dateTime,
+      {bool sent = false, bool st = false}) {
     final bool? devMode = ref.read(devModeProvider);
 
     if (devMode == true) {
@@ -261,7 +261,7 @@ class _BleDeviceCommunicationNotifier extends FamilyNotifier<dynamic, String> {
         value: BleDataService.bytesToHexStr(value),
         dateTime: dateTime,
         sent: sent,
-        st: true,
+        st: st,
       );
     }
   }
