@@ -64,7 +64,7 @@ class _AutoCalibrationWidgetState extends ConsumerState<AutoCalibrationWidget> {
                   )
                 else if (ascDataProgress is AsyncSuccess) ...[
                   Text(
-                    "The sensor has been calibrated itself ${(ascDataProgress.data as AscData).count} times since ASC was enabled. The last correction applied was ${(ascDataProgress.data as AscData).correction}.",
+                    "The sensor has calibrated itself ${(ascDataProgress.data as AscData).count} times since ASC was enabled. The last correction applied was ${(ascDataProgress.data as AscData).correction}.",
                     style: const TextStyle(
                       fontSize: 14,
                       fontWeight: FontWeight.w600,
