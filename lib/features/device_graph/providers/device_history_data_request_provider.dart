@@ -27,6 +27,8 @@ class _DeviceHistoryDataRequestNotifier
   int? currentPageNumber;
   int numberOfPagesFetched = 0;
 
+  int numberOfBlankPagesFetched = 0;
+
   DateTimeRange? requestedDateTimeRange;
   DateTimeRange? pendingDateTimeRange;
 
@@ -61,6 +63,7 @@ class _DeviceHistoryDataRequestNotifier
 
     debugPrint('Requesting historical data for $requestedDateTimeRange');
     numberOfPagesFetched = 0;
+    numberOfBlankPagesFetched = 0;
     currentPageNumber = null;
 
     _requestData();
@@ -125,6 +128,12 @@ class _DeviceHistoryDataRequestNotifier
   }
 
   void _saveData(List<DeviceData> deviceDataList) {
+    // check if the whole data is empty i.e every value is 0
+    if (deviceDataList.every((data) => data.value == 0)) {
+      debugPrint('All data values are 0, skipping save.');
+      return;
+    }
+
     _dataBuffer.addAll(deviceDataList);
 
     debugPrint('Buffer size: ${_dataBuffer.length}');
@@ -173,7 +182,17 @@ class _DeviceHistoryDataRequestNotifier
     }
 
     // if the first date is the date of the empty data, then we don't need to fetch more data
-    if (firstDateTime.isAfter(DateTime(2100))) return false;
+    if (firstDateTime.isAfter(DateTime(2100))) {
+      numberOfBlankPagesFetched += 1;
+      debugPrint(
+          'Blank page detected: Incrementing blank page count to $numberOfBlankPagesFetched');
+      if (numberOfBlankPagesFetched > 3) {
+        numberOfBlankPagesFetched = 0;
+        return false;
+      }
+
+      return true;
+    }
 
     if (numberOfPagesFetched >= Constants.maxFlashPageCount) {
       return false;
