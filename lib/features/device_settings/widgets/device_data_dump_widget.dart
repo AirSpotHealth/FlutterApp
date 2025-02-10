@@ -56,17 +56,13 @@ class DataDumpSheetWidget extends ConsumerStatefulWidget {
 }
 
 class _DataDumpSheetWidgetState extends ConsumerState<DataDumpSheetWidget> {
+  final TextEditingController _numberOfPagesController = TextEditingController()
+    ..text = '16384';
+
   @override
-  void initState() {
-    super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (ref.read(deviceDataDumpProvider(widget.deviceId)) is AsyncNone ||
-          ref.read(deviceDataDumpProvider(widget.deviceId)) is AsyncSuccess) {
-        ref
-            .read(deviceDataDumpProvider(widget.deviceId).notifier)
-            .startDataDump();
-      }
-    });
+  void dispose() {
+    _numberOfPagesController.dispose();
+    super.dispose();
   }
 
   @override
@@ -75,13 +71,56 @@ class _DataDumpSheetWidgetState extends ConsumerState<DataDumpSheetWidget> {
         ref.watch(deviceDataDumpProvider(widget.deviceId));
 
     return Padding(
-      padding: const EdgeInsets.all(16),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
+      padding: EdgeInsets.only(
+        top: 16,
+        left: 16,
+        right: 16,
+        bottom: 16,
+      ),
+      child: ListView(
         children: [
           Text('Device data dump',
               style: context.textTheme.bodyMedium?.weight700),
           const SizedBox(height: 16),
+          if (dataDumpState is AsyncNone) ...[
+            TextFormField(
+              controller: _numberOfPagesController,
+              decoration: const InputDecoration(
+                labelText: 'Number of pages',
+                hintText: 'Enter number of pages to dump',
+                border: OutlineInputBorder(),
+              ),
+              onTapOutside: (_) => FocusScope.of(context).unfocus(),
+              autovalidateMode: AutovalidateMode.onUserInteraction,
+              validator: (value) {
+                if (value == null || value.isEmpty) {
+                  return 'Please enter number of pages';
+                }
+
+                final int? numberOfPages = int.tryParse(value);
+
+                if (numberOfPages == null ||
+                    numberOfPages <= 1 ||
+                    numberOfPages > 16384) {
+                  return 'Please enter a valid number of pages';
+                }
+                return null; // added return for the successful case
+              },
+              keyboardType: TextInputType.number,
+              onFieldSubmitted: (value) => _startDump(value),
+            ),
+            const SizedBox(height: 16),
+            Button(
+              onPressed: () {
+                if (_numberOfPagesController.text.isEmpty) {
+                  return;
+                }
+
+                _startDump(_numberOfPagesController.text);
+              },
+              child: const Text('Start Data Dump'),
+            ),
+          ],
           if (dataDumpState is AsyncInProgress)
             _buildProgressWidget(dataDumpState),
           if (dataDumpState is AsyncFailure) _buildErrorWidget(dataDumpState),
@@ -89,6 +128,19 @@ class _DataDumpSheetWidgetState extends ConsumerState<DataDumpSheetWidget> {
         ],
       ),
     );
+  }
+
+  void _startDump(String value) {
+    final int? numberOfPages = int.tryParse(value);
+    if (numberOfPages != null) {
+      ref
+          .read(deviceDataDumpProvider(widget.deviceId).notifier)
+          .startDataDump(numberOfPages: numberOfPages - 1);
+    } else {
+      ref
+          .read(deviceDataDumpProvider(widget.deviceId).notifier)
+          .startDataDump();
+    }
   }
 
   Widget _buildProgressWidget(AsyncInProgress progress) {
@@ -128,9 +180,10 @@ class _DataDumpSheetWidgetState extends ConsumerState<DataDumpSheetWidget> {
       children: [
         Text('Device data dumped successfully'),
         const SizedBox(height: 16),
-        ElevatedButton(
+        Button(
           onPressed: () {
             ref.context.pop();
+            ref.invalidate(deviceDataDumpProvider(widget.deviceId));
           },
           child: const Text('Close'),
         ),

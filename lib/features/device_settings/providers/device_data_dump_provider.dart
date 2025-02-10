@@ -17,7 +17,7 @@ class _DeviceDataDumpNotifier
 
   int currentPageNumber = 0;
 
-  static const expectedPageCount = 16383;
+  int expectedPageCount = 16383;
   // static const expectedPageCount = 100;
 
   @override
@@ -27,7 +27,9 @@ class _DeviceDataDumpNotifier
     return AsyncNone();
   }
 
-  void startDataDump() {
+  void startDataDump({int? numberOfPages}) {
+    expectedPageCount = numberOfPages ?? 16383;
+
     state = const AsyncInProgress(0, message: 'Dumping data...');
     _dataDumpBuilder.createFile();
 
