@@ -186,7 +186,7 @@ class _DeviceHistoryDataRequestNotifier
       numberOfBlankPagesFetched += 1;
       debugPrint(
           'Blank page detected: Incrementing blank page count to $numberOfBlankPagesFetched');
-      if (numberOfBlankPagesFetched > 3) {
+      if (numberOfBlankPagesFetched > 2) {
         numberOfBlankPagesFetched = 0;
         return false;
       }
@@ -198,6 +198,7 @@ class _DeviceHistoryDataRequestNotifier
       return false;
     }
 
+    numberOfBlankPagesFetched = 0;
     return true;
   }
 
