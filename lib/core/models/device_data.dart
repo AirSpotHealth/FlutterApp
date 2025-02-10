@@ -95,6 +95,8 @@ enum DeviceDataType {
   reset,
   sensorFactoryReset,
   calibrationCorrection,
+  sensorAutoCalibration,
+  integrityError,
   empty;
 
   static DeviceDataType fromByte(int byte) {
@@ -113,6 +115,10 @@ enum DeviceDataType {
         return DeviceDataType.sensorFactoryReset;
       case 6:
         return DeviceDataType.calibrationCorrection;
+      case 7:
+        return DeviceDataType.sensorAutoCalibration;
+      case 8:
+        return DeviceDataType.integrityError;
       default:
         return DeviceDataType.empty;
     }
@@ -134,9 +140,18 @@ enum DeviceDataType {
         return 'Sensor Factory Reset';
       case DeviceDataType.calibrationCorrection:
         return 'Calibration Correction';
+      case DeviceDataType.sensorAutoCalibration:
+        return 'Sensor Auto Calibration';
+      case DeviceDataType.integrityError:
+        return 'Integrity Error';
       default:
         return '-';
     }
+  }
+
+  @override
+  String toString() {
+    return humanizedName();
   }
 }
 
