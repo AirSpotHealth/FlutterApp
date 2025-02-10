@@ -1,6 +1,5 @@
 import 'package:airspothealth/core/models/device_settings.dart';
 import 'package:airspothealth/core/providers/device_settings_provider.dart';
-import 'package:airspothealth/core/utils/assets.dart';
 import 'package:airspothealth/core/utils/extensions.dart';
 import 'package:airspothealth/core/widgets/button.dart';
 import 'package:airspothealth/features/device_settings/models/progress_model.dart';
@@ -8,6 +7,7 @@ import 'package:airspothealth/features/device_settings/providers/device_reset_se
 import 'package:airspothealth/features/device_settings/providers/recalibration_time_provider.dart';
 import 'package:airspothealth/features/device_settings/widgets/auto_calibration_widget.dart';
 import 'package:airspothealth/features/device_settings/widgets/device_settings_name_widget.dart';
+import 'package:airspothealth/features/device_settings/widgets/manual_calibration_widget.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -76,7 +76,7 @@ class RecalibrateDevicePage extends ConsumerWidget {
         if (deviceSettings.autoCalibration)
           AutoCalibrationWidget(deviceId: deviceId)
         else
-          _buildManualCalibration(deviceSettings, ref),
+          ManualCalibrationWidget(deviceId: deviceId),
         const SizedBox(height: 16),
         const Divider(),
         // Reset Sensor Button
@@ -91,40 +91,6 @@ class RecalibrateDevicePage extends ConsumerWidget {
         ),
         const SizedBox(height: 16),
         ResetSensorWidget(deviceId: deviceId),
-      ],
-    );
-  }
-
-  Column _buildManualCalibration(DeviceSettings deviceSettings, WidgetRef ref) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const Text(
-          'To calibrate this AirSpot, place the device outdoors for at least 5 minutes, away from any people or CO2 sources, then tap the icon below. See full manual for details.',
-          style: TextStyle(fontSize: 12, color: Colors.grey),
-        ),
-        Opacity(
-          opacity: deviceSettings.autoCalibration ? 0.4 : 1.0,
-          child: IgnorePointer(
-            ignoring: deviceSettings.autoCalibration,
-            child: GestureDetector(
-              onTap: () {
-                if (!deviceSettings.autoCalibration) {
-                  ref
-                      .read(recalibrationTimeProvider(deviceId).notifier)
-                      .startRecalibration();
-                }
-              },
-              child: Align(
-                alignment: Alignment.center,
-                child: Image.asset(
-                  Assets.recalibrateImage,
-                  height: 120,
-                ),
-              ),
-            ),
-          ),
-        ),
       ],
     );
   }

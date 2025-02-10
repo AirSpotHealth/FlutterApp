@@ -9,9 +9,11 @@ import 'package:airspothealth/core/utils/app_utils.dart';
 import 'package:airspothealth/features/device_graph/providers/ble_device_provider.dart';
 import 'package:airspothealth/features/device_graph/providers/device_history_data_request_provider.dart';
 import 'package:airspothealth/features/device_settings/models/asc_data.dart';
+import 'package:airspothealth/features/device_settings/models/progress_model.dart';
 import 'package:airspothealth/features/device_settings/providers/ble_device_version_provider.dart';
 import 'package:airspothealth/features/device_settings/providers/device_asc_data_provider.dart';
 import 'package:airspothealth/features/device_settings/providers/device_data_download_provider.dart';
+import 'package:airspothealth/features/device_settings/providers/device_data_dump_provider.dart';
 import 'package:airspothealth/features/device_settings/providers/device_data_erase_provider.dart';
 import 'package:airspothealth/features/device_settings/providers/device_reset_sensor_provider.dart';
 import 'package:airspothealth/features/device_settings/providers/populate_fake_data_provider.dart';
@@ -72,6 +74,7 @@ class BleDataService {
       ResponseCommand.populateFakeData: (_) => null,
       ResponseCommand.resetSensorResult: (_) => null,
       ResponseCommand.ascData: parser.parseAscData,
+      ResponseCommand.getMemoryDump: parser.parseMemoryDump,
     };
 
     final dynamic value = responseParsers[responseCommand]?.call(data);
@@ -123,10 +126,24 @@ class BleDataService {
         }
 
         // else handle new data
-        ref
-            .read(deviceHistoryDataRequestProvider(deviceId).notifier)
-            .handleHistoricalDataResponse(value);
+        if (ref.read(deviceHistoryDataRequestProvider(deviceId))
+            is! AsyncNone) {
+          ref
+              .read(deviceHistoryDataRequestProvider(deviceId).notifier)
+              .handleHistoricalDataResponse(value);
+        }
 
+        if (value is List<DeviceData> &&
+            ref.read(deviceDataDumpProvider(deviceId)) is AsyncInProgress) {
+          ref.read(deviceDataDumpProvider(deviceId).notifier).updateData(
+              data.map((e) => e.toRadixString(16).padLeft(2, '0')).join());
+        }
+
+        break;
+      case ResponseCommand.getMemoryDump:
+        ref
+            .read(deviceDataDumpProvider(deviceId).notifier)
+            .addMemoryDump(value as String);
         break;
       case ResponseCommand.populateFakeData:
         ref
@@ -490,6 +507,13 @@ class ResponseCommandParser {
 
   bool parseEraseDataDone(List<int> data) => _parseBoolean(data, 4);
 
+  String parseMemoryDump(List<int> data) {
+    final dumpData = data.sublist(4, data.length - 1);
+    final dumpString = dumpData.map((e) => e.toRadixString(16)).join();
+    debugPrint('Memory Dump: $dumpString');
+    return dumpString;
+  }
+
   // Helper Methods
   int _parseTwoBytesToInt(List<int> data, int startIndex) =>
       _byteArrayToInt(data, startIndex, startIndex + 1);
@@ -560,7 +584,8 @@ enum ResponseCommand {
   dndMode(0x22),
   populateFakeData(0x23),
   resetSensorResult(0x24),
-  ascData(0x25);
+  ascData(0x25),
+  getMemoryDump(0x26);
 
   const ResponseCommand(this.value);
   final int value;

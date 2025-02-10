@@ -259,6 +259,10 @@ class DeviceCmdUtils {
     return _buildCommand([prefixHigh, prefixLow, 0x25, 1, 1]);
   }
 
+  static Uint8List getMemoryDump() {
+    return _buildCommand([prefixHigh, prefixLow, 0x26, 1, 1]);
+  }
+
   // ======= Helper Functions =======
   static Uint8List _getHex2Bytes(int value) {
     var byteArray = Uint8List(2);
@@ -273,27 +277,5 @@ class DeviceCmdUtils {
 
   static Uint8List setSensorError(bool high) {
     return _buildCommand([prefixHigh, prefixLow, 0xFF, 1, high ? 1 : 0]);
-  }
-
-  static Uint8List getSensorErrors() {
-    final DateTime now = DateTime.now();
-
-    int since2000ToStartDate =
-        calculateSecondsSince2000(now.subtract(Duration(days: 7)));
-    int since2000ToEndDate = calculateSecondsSince2000(now);
-
-    var byteArrayStart = ByteData(4)
-      ..setInt32(0, since2000ToStartDate, Endian.big);
-    var byteArrayNow = ByteData(4)..setInt32(0, since2000ToEndDate, Endian.big);
-
-    return _buildCommand([
-      prefixHigh,
-      prefixLow,
-      0x0C,
-      0x08,
-      ...byteArrayStart.buffer.asUint8List(),
-      ...byteArrayNow.buffer.asUint8List(),
-      3
-    ]);
   }
 }

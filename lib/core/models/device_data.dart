@@ -57,7 +57,7 @@ class DeviceData {
       'DeviceData(deviceId: $deviceId, dateTime: $dateTime, value: $value), type: $type';
 
   @ignore
-  String get toHexString {
+  String get hexString {
     // convert whole value to hex string
     // first date time to hex
     // then value to hex with swap endian
@@ -80,6 +80,10 @@ class DeviceData {
     }
 
     return value.toString();
+  }
+
+  String toCsvString() {
+    return '$deviceId,$dateTime,$value,$type';
   }
 }
 
