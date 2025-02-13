@@ -207,8 +207,14 @@ class DeviceCmdUtils {
     return _buildCommand([prefixHigh, prefixLow, 0x11, 1, 0]);
   }
 
-  static Uint8List startRecalibration() {
-    return _buildCommand([prefixHigh, prefixLow, 0x0D, 1, 1]);
+  static Uint8List startRecalibration(int calibTarget) {
+    return _buildCommand([
+      prefixHigh,
+      prefixLow,
+      0x0D,
+      0x02,
+      ..._getHex2Bytes(calibTarget),
+    ]);
   }
 
   // ======= DND Commands =======

@@ -22,7 +22,7 @@ class DevicesPage extends ConsumerWidget {
               padding: EdgeInsets.only(top: 12), child: AppLogo()),
           centerTitle: true,
           actions: [
-            if (savedDevicesList.length > 4)
+            if (savedDevicesList.length > 3)
               GestureDetector(
                 onTap: () => context.pushNamed(RouteNames.addDevice),
                 child: Row(
@@ -52,7 +52,7 @@ class DevicesPage extends ConsumerWidget {
                 itemBuilder: (context, index) =>
                     BleDeviceWidget(bleDevice: savedDevicesList[index]),
               ),
-        floatingActionButton: savedDevicesList.length < 5
+        floatingActionButton: savedDevicesList.length < 4
             ? _buildAddDeviceButton(context)
             : null);
   }
