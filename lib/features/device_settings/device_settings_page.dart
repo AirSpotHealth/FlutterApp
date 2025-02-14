@@ -111,12 +111,12 @@ class DeviceSettingsPage extends ConsumerWidget {
           PowerModeSettingWidget(deviceId: deviceId),
           ..._buildSettingsList(ref),
           DeviceDataDownloadSettingWidget(deviceId: deviceId),
-          if (AppUtils.isNewFirmwareVersion(
-              ref.read(bleDeviceVersionProvider(deviceId))))
-            EraseDeviceRecordWidget(deviceId: deviceId),
           DisconnectDeviceWidget(device: device),
           ForgetDeviceWidget(deviceId: deviceId),
           PowerOffDeviceWidget(deviceId: deviceId),
+          if (AppUtils.isNewFirmwareVersion(
+              ref.read(bleDeviceVersionProvider(deviceId))))
+            EraseDeviceRecordWidget(deviceId: deviceId),
           if (devMode) ...[
             const SizedBox(height: 16),
             Text(

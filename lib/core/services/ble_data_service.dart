@@ -39,7 +39,7 @@ class BleDataService {
 
   /// Parses the response command based on device ID and data
   static dynamic parseResponseCommand(
-    NotifierProviderRef<dynamic> ref,
+    Ref<dynamic> ref,
     BleDevice bleDevice,
     List<int> data,
   ) {
