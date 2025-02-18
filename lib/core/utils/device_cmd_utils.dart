@@ -269,6 +269,10 @@ class DeviceCmdUtils {
     return _buildCommand([prefixHigh, prefixLow, 0x26, 1, 1]);
   }
 
+  static Uint8List restartDevice() {
+    return _buildCommand([prefixHigh, prefixLow, 0x27, 1, 1]);
+  }
+
   // ======= Helper Functions =======
   static Uint8List _getHex2Bytes(int value) {
     var byteArray = Uint8List(2);

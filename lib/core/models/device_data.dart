@@ -97,28 +97,34 @@ enum DeviceDataType {
   calibrationCorrection,
   sensorAutoCalibration,
   integrityError,
+  calibrationTarget,
+  timeSync,
   empty;
 
   static DeviceDataType fromByte(int byte) {
     switch (byte) {
-      case 0:
+      case 0x00:
         return DeviceDataType.co2;
-      case 1:
+      case 0x01:
         return DeviceDataType.batteryLow;
-      case 2:
+      case 0x02:
         return DeviceDataType.calibration;
-      case 3:
+      case 0x03:
         return DeviceDataType.sensorError;
-      case 4:
+      case 0x04:
         return DeviceDataType.reset;
-      case 5:
+      case 0x05:
         return DeviceDataType.sensorFactoryReset;
-      case 6:
+      case 0x06:
         return DeviceDataType.calibrationCorrection;
-      case 7:
+      case 0x07:
         return DeviceDataType.sensorAutoCalibration;
-      case 8:
+      case 0x08:
         return DeviceDataType.integrityError;
+      case 0x09:
+        return DeviceDataType.calibrationTarget;
+      case 0x0A:
+        return DeviceDataType.timeSync;
       default:
         return DeviceDataType.empty;
     }
@@ -144,6 +150,10 @@ enum DeviceDataType {
         return 'Sensor Auto Calibration';
       case DeviceDataType.integrityError:
         return 'Integrity Error';
+      case DeviceDataType.calibrationTarget:
+        return 'Calibration Target';
+      case DeviceDataType.timeSync:
+        return 'Time Sync';
       default:
         return '-';
     }

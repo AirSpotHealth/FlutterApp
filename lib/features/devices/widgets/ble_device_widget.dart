@@ -219,6 +219,12 @@ class BleDeviceWidget extends ConsumerWidget {
         child: Image.asset(
           Assets.deviceGraph,
           width: 28,
+          errorBuilder: (context, error, stackTrace) {
+            return const Icon(
+              Icons.line_axis,
+              size: 28,
+            );
+          },
         ),
       ),
       const SizedBox(width: 12),
@@ -230,6 +236,12 @@ class BleDeviceWidget extends ConsumerWidget {
         child: Image.asset(
           Assets.deviceSettings,
           width: 28,
+          errorBuilder: (context, error, stackTrace) {
+            return const Icon(
+              Icons.settings,
+              size: 28,
+            );
+          },
         ),
       ),
       const SizedBox(width: 8),

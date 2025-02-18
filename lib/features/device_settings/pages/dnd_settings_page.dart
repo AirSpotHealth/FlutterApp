@@ -1,5 +1,6 @@
 import 'package:airspothealth/core/models/device_settings.dart';
 import 'package:airspothealth/core/providers/device_settings_provider.dart';
+import 'package:airspothealth/core/utils/app_utils.dart';
 import 'package:airspothealth/core/utils/extensions.dart';
 import 'package:airspothealth/features/device_settings/widgets/device_settings_name_widget.dart';
 import 'package:flutter/material.dart';
@@ -77,8 +78,8 @@ class DndSettingsPage extends ConsumerWidget {
               style: const TextStyle(fontSize: 14, color: Colors.grey),
             ),
       onTap: () async {
-        final TimeOfDay? selectedTime = await showTimePicker(
-          context: context,
+        final TimeOfDay? selectedTime = await showCupertinoTimePicker(
+          context,
           initialTime: deviceSettings.dndStartTime?.timeOfDay ??
               const TimeOfDay(hour: 22, minute: 0),
         );
@@ -115,8 +116,8 @@ class DndSettingsPage extends ConsumerWidget {
               style: const TextStyle(fontSize: 14, color: Colors.grey),
             ),
       onTap: () async {
-        final TimeOfDay? selectedTime = await showTimePicker(
-          context: context,
+        final TimeOfDay? selectedTime = await showCupertinoTimePicker(
+          context,
           initialTime: deviceSettings.dndEndTime?.timeOfDay ??
               const TimeOfDay(hour: 6, minute: 0),
         );

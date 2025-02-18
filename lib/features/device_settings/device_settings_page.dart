@@ -133,6 +133,7 @@ class DeviceSettingsPage extends ConsumerWidget {
             TurnOffBluetoothWidget(deviceId: deviceId),
             DeleteLocalCacheWidget(deviceId: deviceId),
             DeviceDataDumpWidget(deviceId: deviceId),
+            RestartDeviceWidget(deviceId: deviceId),
           ],
         ],
       ),
@@ -315,6 +316,32 @@ class DeleteLocalCacheWidget extends ConsumerWidget {
         ref.invalidate(deviceHistoryDataRequestProvider(deviceId));
 
         ref.context.showSnackBar('Local cache deleted');
+      },
+    );
+  }
+}
+
+class RestartDeviceWidget extends ConsumerWidget {
+  const RestartDeviceWidget({required this.deviceId, super.key});
+
+  final String deviceId;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    return SettingItemWidget(
+      item: SettingItem(
+        title: 'Restart Device',
+        assetIcon: Assets.autoConnectSettings,
+        leadingWidget: IconBgWidget(
+          backgroundColor: Colors.deepPurpleAccent,
+          child: Icon(Icons.restart_alt, color: Colors.black),
+        ),
+        suffixWidget: const SizedBox(),
+      ),
+      onTap: () {
+        ref
+            .read(bleDeviceCommunicationProvider(deviceId).notifier)
+            .sendCommand(DeviceCmdUtils.restartDevice());
       },
     );
   }

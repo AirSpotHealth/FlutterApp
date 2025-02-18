@@ -76,7 +76,7 @@ class _DeviceDataDownloadNotifier
         )
         .dateTime;
     final dateRange =
-        '${_dateFormat.format(firstDateTime)} - ${_dateFormat.format(lastDateTime)}';
+        '${_dateFormat.format(firstDateTime).replaceAll("/", "-")} - ${_dateFormat.format(lastDateTime).replaceAll("/", "-")}';
 
     return '$deviceName-$dateRange';
   }
@@ -104,7 +104,7 @@ class _DeviceDataDownloadNotifier
     final headerRow = 'DateTime,Value,Type\n';
 
     final csvRows = deviceDatas.map((data) {
-      return '"${_dateFormat.format(data.dateTime)}","${data.parsedValue}","${data.type.humanizedName().toUpperCase()}"';
+      return '"${_dateFormat.format(data.dateTime).replaceAll("/", "-")}","${data.parsedValue}","${data.type.humanizedName().toUpperCase()}"';
     }).join('\n');
 
     return headerRow + csvRows;
