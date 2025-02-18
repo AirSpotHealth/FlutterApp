@@ -25,50 +25,57 @@ class _DeviceSettingsNotifier extends FamilyNotifier<DeviceSettings, String> {
     return setting;
   }
 
-  void updateSettings(DeviceSettings settings) {
-    // check which settings are changed and send the command to the device
-    if (settings.alarmEnabled != state.alarmEnabled) {
-      ref
-          .read(bleDeviceCommunicationProvider(settings.deviceId).notifier)
-          .sendCommand(settings.alarmCmd);
-    }
+  void updateSetting(DeviceSettings Function(DeviceSettings settings) update) {
+    final settings = update(state);
+    updateSettings(settings, sendCommands: false);
+  }
 
-    if (settings.vibrationEnabled != state.vibrationEnabled) {
-      ref
-          .read(bleDeviceCommunicationProvider(settings.deviceId).notifier)
-          .sendCommand(settings.vibrationCmd);
-    }
+  void updateSettings(DeviceSettings settings, {bool sendCommands = true}) {
+    if (sendCommands) {
+      // check which settings are changed and send the command to the device
+      if (settings.alarmEnabled != state.alarmEnabled && sendCommands) {
+        ref
+            .read(bleDeviceCommunicationProvider(settings.deviceId).notifier)
+            .sendCommand(settings.alarmCmd);
+      }
 
-    if (settings.powerMode != state.powerMode) {
-      ref
-          .read(bleDeviceCommunicationProvider(settings.deviceId).notifier)
-          .sendCommand(settings.powerModeCmd);
-    }
+      if (settings.vibrationEnabled != state.vibrationEnabled) {
+        ref
+            .read(bleDeviceCommunicationProvider(settings.deviceId).notifier)
+            .sendCommand(settings.vibrationCmd);
+      }
 
-    if (settings.continuosScreenEnabled != state.continuosScreenEnabled) {
-      ref
-          .read(bleDeviceCommunicationProvider(settings.deviceId).notifier)
-          .sendCommand(settings.continuousScreenCmd);
-    }
+      if (settings.powerMode != state.powerMode) {
+        ref
+            .read(bleDeviceCommunicationProvider(settings.deviceId).notifier)
+            .sendCommand(settings.powerModeCmd);
+      }
 
-    if (settings.autoSyncTime != state.autoSyncTime) {
-      ref
-          .read(bleDeviceCommunicationProvider(settings.deviceId).notifier)
-          .sendCommand(settings.autoSyncTimeCmd);
-    }
+      if (settings.continuosScreenEnabled != state.continuosScreenEnabled) {
+        ref
+            .read(bleDeviceCommunicationProvider(settings.deviceId).notifier)
+            .sendCommand(settings.continuousScreenCmd);
+      }
 
-    if (settings.autoCalibration != state.autoCalibration) {
-      ref
-          .read(bleDeviceCommunicationProvider(settings.deviceId).notifier)
-          .sendCommand(settings.autoCalibrationCmd);
-    }
+      if (settings.autoSyncTime != state.autoSyncTime) {
+        ref
+            .read(bleDeviceCommunicationProvider(settings.deviceId).notifier)
+            .sendCommand(settings.autoSyncTimeCmd);
+      }
 
-    if (settings.dndEnabled != state.dndEnabled ||
-        settings.dndStartTime != state.dndStartTime ||
-        settings.dndEndTime != state.dndEndTime) {
-      ref
-          .read(bleDeviceCommunicationProvider(settings.deviceId).notifier)
-          .sendCommand(settings.dndCmd);
+      if (settings.autoCalibration != state.autoCalibration) {
+        ref
+            .read(bleDeviceCommunicationProvider(settings.deviceId).notifier)
+            .sendCommand(settings.autoCalibrationCmd);
+      }
+
+      if (settings.dndEnabled != state.dndEnabled ||
+          settings.dndStartTime != state.dndStartTime ||
+          settings.dndEndTime != state.dndEndTime) {
+        ref
+            .read(bleDeviceCommunicationProvider(settings.deviceId).notifier)
+            .sendCommand(settings.dndCmd);
+      }
     }
 
     _isarService.write((isar) {

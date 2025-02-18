@@ -1,4 +1,5 @@
 import 'package:airspothealth/core/providers/ble_device_communication_provider.dart';
+import 'package:airspothealth/core/providers/device_settings_provider.dart';
 import 'package:airspothealth/core/utils/device_cmd_utils.dart';
 import 'package:airspothealth/features/device_settings/models/progress_model.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -31,8 +32,14 @@ class _DevicerSensorResetNotifier
     });
   }
 
-  void setSensorResetDone() {
-    state = AsyncSuccess(null);
+  void setSensorResetDone(int value) {
+    state = AsyncSuccess(value);
+
+    ref.read(deviceSettingsProvider(arg).notifier).updateSetting(
+          (settings) => settings.copyWith(
+            autoCalibration: value == 0 ? false : true,
+          ),
+        );
   }
 
   void setSensorResetFailed(String message) {

@@ -72,7 +72,7 @@ class BleDataService {
       ResponseCommand.batteryLevel: parser.parseBatteryLevel,
       ResponseCommand.dndMode: (_) => null,
       ResponseCommand.populateFakeData: (_) => null,
-      ResponseCommand.resetSensorResult: (_) => null,
+      ResponseCommand.resetSensorResult: (_) => parser.parseOneByte(data, 4),
       ResponseCommand.ascData: parser.parseAscData,
       ResponseCommand.getMemoryDump: parser.parseMemoryDump,
     };
@@ -152,7 +152,7 @@ class BleDataService {
       case ResponseCommand.resetSensorResult:
         ref
             .read(deviceSensorResetProvider(deviceId).notifier)
-            .setSensorResetDone();
+            .setSensorResetDone(value);
         break;
       case ResponseCommand.ascData:
         ref
@@ -513,6 +513,8 @@ class ResponseCommandParser {
     debugPrint('Memory Dump: $dumpString');
     return dumpString;
   }
+
+  int parseOneByte(List<int> data, int index) => data[index];
 
   // Helper Methods
   int _parseTwoBytesToInt(List<int> data, int startIndex) =>

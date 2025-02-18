@@ -79,6 +79,10 @@ class DeviceData {
       return resetReasonMap[value] ?? 'Unknown';
     }
 
+    if (type == DeviceDataType.sensorAutoCalibration) {
+      return value == 0 ? 'Disabled' : 'Enabled';
+    }
+
     return value.toString();
   }
 
