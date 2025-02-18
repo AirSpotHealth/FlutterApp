@@ -13,6 +13,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import 'package:isar/isar.dart';
 import 'package:path_provider/path_provider.dart';
+import 'package:share_plus/share_plus.dart';
 
 final deviceDataDownloadProvider = NotifierProvider.family
     .autoDispose<_DeviceDataDownloadNotifier, AsyncProgressValue, String>(
@@ -23,6 +24,8 @@ class _DeviceDataDownloadNotifier
   String get deviceId => arg;
 
   static final _dateFormat = DateFormat.yMMMMd().add_Hms();
+
+  bool share = false;
 
   @override
   AsyncProgressValue build(String arg) {
@@ -124,14 +127,18 @@ class _DeviceDataDownloadNotifier
 
     state = AsyncInProgress(1.0, message: 'Device data ready for download....');
 
-    // await Share.shareXFiles([XFile(file.path)],
-    //     text: fileName, fileNameOverrides: [fileName]);
-
-    await FileSaver.instance.saveAs(
-        name: fileName, bytes: bytes, mimeType: MimeType.csv, ext: 'csv');
+    if (share) {
+      await Share.shareXFiles([XFile(file.path)],
+          text: fileName, fileNameOverrides: [fileName]);
+    } else {
+      await FileSaver.instance.saveAs(
+          name: fileName, bytes: bytes, mimeType: MimeType.csv, ext: 'csv');
+    }
   }
 
-  Future<void> downloadDeviceData() async {
+  Future<void> downloadDeviceData({bool share = false}) async {
+    this.share = share;
+
     state = AsyncInProgress(0.0, message: 'Downloading device data....');
 
     ref.read(

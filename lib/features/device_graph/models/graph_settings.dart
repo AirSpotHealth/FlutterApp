@@ -12,7 +12,7 @@ class GraphSettings {
   factory GraphSettings.defaults() {
     return GraphSettings(
       showZoomSlider: false,
-      showAreaFill: false,
+      showAreaFill: true,
       showMarkLines: false,
     );
   }

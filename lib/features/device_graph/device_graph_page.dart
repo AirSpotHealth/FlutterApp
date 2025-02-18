@@ -8,7 +8,6 @@ import 'package:airspothealth/features/device_graph/widgets/device_data_aggregat
 import 'package:airspothealth/features/device_graph/widgets/graph_settings_widget.dart';
 import 'package:airspothealth/features/device_settings/models/progress_model.dart';
 import 'package:airspothealth/features/device_settings/providers/device_data_download_provider.dart';
-import 'package:airspothealth/features/device_settings/widgets/download_device_data_button.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -27,27 +26,7 @@ class DeviceGraphPage extends ConsumerWidget {
       appBar: AppBar(
         title: const AppLogo(width: 100),
         actions: [
-          DownloadDeviceDataButton(
-            deviceId: deviceId,
-            builder: (ref, progress) {
-              return IconButton(
-                  onPressed: () {
-                    if (progress is AsyncInProgress) return;
-
-                    ref
-                        .read(deviceDataDownloadProvider(deviceId).notifier)
-                        .downloadDeviceData();
-                  },
-                  icon: switch (progress) {
-                    AsyncSuccess() => FaIcon(
-                        Icons.download_done,
-                        color: Colors.white,
-                      ),
-                    AsyncInProgress() => CupertinoActivityIndicator(),
-                    _ => FaIcon(FontAwesomeIcons.fileCsv),
-                  });
-            },
-          ),
+          ExportDataButton(deviceId: deviceId),
           GraphSettingsWidget(),
           SizedBox(width: 8),
         ],
@@ -71,6 +50,64 @@ class DeviceGraphPage extends ConsumerWidget {
           Flexible(child: DataGraphWrapper(deviceId: device.deviceId)),
         ],
       ),
+    );
+  }
+}
+
+class ExportDataButton extends ConsumerWidget {
+  const ExportDataButton({required this.deviceId, super.key});
+
+  final String deviceId;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final AsyncProgressValue progress =
+        ref.watch(deviceDataDownloadProvider(deviceId));
+
+    return PopupMenuButton(
+      icon: switch (progress) {
+        AsyncSuccess() => FaIcon(
+            Icons.download_done,
+            color: Colors.white,
+          ),
+        AsyncInProgress() => CupertinoActivityIndicator(),
+        AsyncFailure() => FaIcon(FontAwesomeIcons.fileCsv),
+        _ => FaIcon(FontAwesomeIcons.fileCsv),
+      },
+      enabled: progress is! AsyncInProgress,
+      offset: const Offset(0, 48),
+      itemBuilder: (context) {
+        return [
+          PopupMenuItem(
+            onTap: () {
+              ref
+                  .read(deviceDataDownloadProvider(deviceId).notifier)
+                  .downloadDeviceData(share: false);
+            },
+            child: Row(
+              children: [
+                FaIcon(FontAwesomeIcons.fileCsv, color: Colors.green),
+                const SizedBox(width: 8),
+                const Text('Save as CSV'),
+              ],
+            ),
+          ),
+          PopupMenuItem(
+            onTap: () {
+              ref
+                  .read(deviceDataDownloadProvider(deviceId).notifier)
+                  .downloadDeviceData(share: true);
+            },
+            child: Row(
+              children: [
+                FaIcon(FontAwesomeIcons.share, color: Colors.blue),
+                const SizedBox(width: 8),
+                const Text('Share'),
+              ],
+            ),
+          ),
+        ];
+      },
     );
   }
 }
