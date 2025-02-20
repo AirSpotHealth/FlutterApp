@@ -5,7 +5,6 @@ import 'package:airspothealth/core/models/device_data.dart';
 import 'package:airspothealth/core/models/device_settings.dart';
 import 'package:airspothealth/core/providers/ble_connected_devices_provider.dart';
 import 'package:airspothealth/core/providers/device_settings_provider.dart';
-import 'package:airspothealth/core/providers/isar_service_provider.dart';
 import 'package:airspothealth/core/services/ble_data_service.dart';
 import 'package:airspothealth/core/services/data_logger_service.dart';
 import 'package:airspothealth/core/services/isar_service.dart';
@@ -153,13 +152,13 @@ class _BleDeviceCommunicationNotifier extends FamilyNotifier<dynamic, String> {
     _checkIfLogData(data, DateTime.now());
 
     final BleDevice device = ref.read(bleDeviceProvider(deviceId));
-    final dynamic value =
+    final dynamic co2Data =
         BleDataService.parseResponseCommand(ref, device, data);
 
-    if (value == null) return;
-
     // _setHomeValue(value);
-    if (value is DeviceData) _saveData(value);
+    if (co2Data is DeviceData) {
+      state = co2Data.value == 0 ? null : co2Data.value;
+    }
 
     // void _checkAndShowNotification(DeviceSettings? deviceSettings, value) {
     //   if (deviceSettings == null) return;
@@ -194,14 +193,6 @@ class _BleDeviceCommunicationNotifier extends FamilyNotifier<dynamic, String> {
     //     androidName: Constants.androidWidgetName,
     //   );
     // }
-  }
-
-  void _saveData(DeviceData deviceData) {
-    ref.read(isarServiceProvider).write((isar) {
-      isar.deviceDatas.put(deviceData);
-    });
-
-    state = deviceData.value == 0 ? null : deviceData.value;
   }
 
   Future<void> _getInitialData() async {
