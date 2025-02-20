@@ -35,7 +35,7 @@ class BleDataService {
   static const int deviceDataLength = 8;
 
   /// timestamp from 2000
-  static const int timestampFrom2000 = 946645200;
+  static const int timestampFrom2000 = 946684800; // 2000-01-01 00:00:00 UTC
 
   /// Parses the response command based on device ID and data
   static dynamic parseResponseCommand(
@@ -165,6 +165,15 @@ class BleDataService {
 
     return null;
   }
+
+  /// When parsing the timestamp from device, convert to local time
+  static DateTime parseDeviceTimestamp(int timestamp) {
+    final localTimeStampFrom2000 =
+        DateTime(2000, 1, 1, 0, 0, 0).toLocal().millisecondsSinceEpoch;
+
+    return DateTime.fromMillisecondsSinceEpoch(
+        (timestamp * 1000) + localTimeStampFrom2000);
+  }
 }
 
 /// Response command parser class
@@ -196,9 +205,7 @@ class ResponseCommandParser {
 
     final value = (data[8] * 256 + (data[9] & 0xff));
 
-    datetimeMillis = datetimeMillis + BleDataService.timestampFrom2000;
-
-    final datetime = DateTime.fromMillisecondsSinceEpoch(datetimeMillis * 1000);
+    final datetime = BleDataService.parseDeviceTimestamp(datetimeMillis);
 
     debugPrint(
         'CO2 Value: $value, DateTime: ${datetime.toIso8601String()}, millis: $datetimeMillis');
@@ -336,9 +343,10 @@ class ResponseCommandParser {
         i < historyData.length;
         i += BleDataService.deviceDataLength) {
       // Extract the timestamp (4 bytes)
-      final timestamp = _byteArrayToInt(historyData, i, i + 3) +
-          BleDataService.timestampFrom2000;
-      final date = DateTime.fromMillisecondsSinceEpoch(timestamp * 1000);
+      final timestamp = _byteArrayToInt(historyData, i, i + 3);
+      final date = BleDataService.parseDeviceTimestamp(timestamp);
+
+      debugPrint('Timestamp: $timestamp, Date: ${date.toIso8601String()}');
 
       // Extract the value (2 bytes)
       final highByte = historyData[i + 4] & 0xFF;
@@ -390,7 +398,8 @@ class ResponseCommandParser {
     int timestamp = _byteArrayToInt(data, 4, 7);
 
     // Calculate the timestamp from 2000-01-01 00:00:00 UTC
-    int timestampFrom2000 = timestamp + BleDataService.timestampFrom2000;
+    int timestampFrom2000 =
+        BleDataService.parseDeviceTimestamp(timestamp).millisecondsSinceEpoch;
 
     // Extract the mode (9th byte)
     int mode = data[8];

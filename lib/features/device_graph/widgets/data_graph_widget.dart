@@ -273,6 +273,7 @@ class _DataGraphWidgetState extends ConsumerState<DataGraphWidget> {
 
   List<List<dynamic>> _generateSeriesData(
       List<DeviceData> currentDataList, GraphDataDuration duration) {
+    debugPrint('currentDataList: ${currentDataList.map((e) => e.dateTime)}');
     final dataList = currentDataList
         .map((data) => [
               data.dateTime.toLocal().toIso8601String(),
