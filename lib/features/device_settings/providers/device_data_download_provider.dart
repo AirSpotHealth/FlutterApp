@@ -8,7 +8,7 @@ import 'package:airspothealth/features/device_graph/providers/ble_device_provide
 import 'package:airspothealth/features/device_graph/providers/device_historical_data_provider.dart';
 import 'package:airspothealth/features/device_settings/models/progress_model.dart';
 import 'package:file_saver/file_saver.dart';
-import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import 'package:isar/isar.dart';
@@ -23,7 +23,7 @@ class _DeviceDataDownloadNotifier
     extends AutoDisposeFamilyNotifier<AsyncProgressValue, String> {
   String get deviceId => arg;
 
-  static final _dateFormat = DateFormat.yMMMMd().add_Hms();
+  static final _dateFormat = DateFormat('yyyy-MM-dd-HH-mm-ss');
 
   bool share = false;
 
@@ -62,7 +62,7 @@ class _DeviceDataDownloadNotifier
 
   String _generateFileName(List<DeviceData> deviceDatas) {
     final BleDevice device = ref.read(bleDeviceProvider(deviceId));
-    final deviceName = device.alias == null || device.alias == "AirSpot"
+    final deviceName = device.alias == null || device.alias == "Airspot"
         ? device.name
         : device.alias;
 
@@ -79,7 +79,7 @@ class _DeviceDataDownloadNotifier
         )
         .dateTime;
     final dateRange =
-        '${_dateFormat.format(firstDateTime).replaceAll("/", "-")} - ${_dateFormat.format(lastDateTime).replaceAll("/", "-")}';
+        '${_dateFormat.format(firstDateTime)} - ${_dateFormat.format(lastDateTime)}';
 
     return '$deviceName-$dateRange';
   }
@@ -107,7 +107,7 @@ class _DeviceDataDownloadNotifier
     final headerRow = 'DateTime,Value,Type\n';
 
     final csvRows = deviceDatas.map((data) {
-      return '"${_dateFormat.format(data.dateTime).replaceAll("/", "-")}","${data.parsedValue}","${data.type.humanizedName().toUpperCase()}"';
+      return '"${_dateFormat.format(data.dateTime)}","${data.parsedValue}","${data.type.humanizedName().toUpperCase()}"';
     }).join('\n');
 
     return headerRow + csvRows;

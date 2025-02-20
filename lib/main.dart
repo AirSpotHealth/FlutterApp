@@ -7,12 +7,25 @@ import 'package:airspothealth/core/utils/storage_keys.dart';
 import 'package:airspothealth/features/home/widgets/services_banner.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:intl/intl.dart';
 import 'package:package_info_plus/package_info_plus.dart';
+import 'package:system_date_time_format/system_date_time_format.dart';
+
+late final DateFormat systemDateFormat;
+late final DateFormat systemTimeFormat;
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  await [IsarService().initialize(), PrefsService().initialize()].wait;
+  await [
+    IsarService().initialize(),
+    PrefsService().initialize(),
+  ].wait;
+
+  systemDateFormat =
+      DateFormat(await SystemDateTimeFormat().getDatePattern() ?? 'yyyy-MM-dd');
+  systemTimeFormat =
+      DateFormat(await SystemDateTimeFormat().getTimePattern() ?? 'HH:mm:ss');
 
   await [_checkVersion(), NotificationService.initNotification()].wait;
 

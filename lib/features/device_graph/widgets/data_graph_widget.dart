@@ -9,6 +9,7 @@ import 'package:airspothealth/features/device_graph/models/graph_data_duration.d
 import 'package:airspothealth/features/device_graph/models/graph_settings.dart';
 import 'package:airspothealth/features/device_graph/providers/graph_range_provider.dart';
 import 'package:airspothealth/features/device_graph/providers/graph_settings_provider.dart';
+import 'package:airspothealth/main.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -120,10 +121,10 @@ class _DataGraphWidgetState extends ConsumerState<DataGraphWidget> {
         year: '{yyyy}',
         month: '{MMM}',
         day: '{dayStyle|{ee}}',
-        hour: '{hh} {A}',
-        minute: '{hh}:{mm} {A}',
-        second: '{HH}:{mm}:{ss}',
-        millisecond: '{hh}:{mm}:{ss} {SSS}',
+        hour: '${systemTimeFormat.pattern!.contains('a') ? '{hh} {A}' : '{HH}'}',
+        minute: '${systemTimeFormat.pattern!.contains('a') ? '{hh}:{mm} {A}' : '{HH}:{mm}'}',
+        second: '${systemTimeFormat.pattern!.contains('a') ? '{hh}:{mm}:{ss} {A}' : '{HH}:{mm}:{ss}'}',
+        millisecond: '${systemTimeFormat.pattern!.contains('a') ? '{hh}:{mm}:{ss} {SSS} {A}' : '{HH}:{mm}:{ss} {SSS}'}',
         none: '{yyyy}-{MM}-{dd} {hh}:{mm}:{ss} {SSS}'
       },
       rich: {

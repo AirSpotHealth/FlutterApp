@@ -1,7 +1,9 @@
 // Extension file for managing the extensions of the app
 
+import 'package:airspothealth/main.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:intl/intl.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 /// extension on [BuildContext]
@@ -104,9 +106,12 @@ extension StringExtension on String {
 extension DateTimeExtension on DateTime {
   /// Format time in 10/20 01:20 format
   String formatTime() {
-    final formattedHour = hour.toString().padLeft(2, '0');
-    final formattedMinute = minute.toString().padLeft(2, '0');
-    return '$day/$month $formattedHour:$formattedMinute';
+    final pattern =
+        systemDateFormat.pattern!.replaceAll(RegExp(r'^/?y+|/y+$'), '');
+
+    debugPrint("SYSTEM DATE FORMAT: ${systemDateFormat.pattern}");
+    debugPrint("SYSTEM TIME FORMAT: ${systemTimeFormat.pattern}");
+    return '${DateFormat(pattern).format(this)} ${systemTimeFormat.format(this)}';
   }
 
   /// format date in local format without milliseconds

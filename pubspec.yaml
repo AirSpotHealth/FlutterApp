@@ -38,6 +38,7 @@ dependencies:
   animated_icon: ^0.0.9
   geolocator: ^13.0.2
   share_plus: ^10.1.4
+  system_date_time_format: ^1.2.2
 
 dev_dependencies:
   flutter_test:

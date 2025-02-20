@@ -573,6 +573,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "0.6.7"
+  js_interop:
+    dependency: transitive
+    description:
+      name: js_interop
+      sha256: "7ec859c296958ccea34dc770504bd3ff4ae52fdd9e7eeb2bacc7081ad476a1f5"
+      url: "https://pub.dev"
+    source: hosted
+    version: "0.0.1"
   json_annotation:
     dependency: transitive
     description:
@@ -1066,6 +1074,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "28.2.5"
+  system_date_time_format:
+    dependency: "direct main"
+    description:
+      name: system_date_time_format
+      sha256: e13db0d4f92509a3f6fa88e38ac1e429f7bb0b48791be9d98521767a4124d05d
+      url: "https://pub.dev"
+    source: hosted
+    version: "1.2.2"
   term_glyph:
     dependency: transitive
     description:
