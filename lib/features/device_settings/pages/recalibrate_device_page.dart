@@ -152,7 +152,7 @@ class RecalibrateDevicePage extends ConsumerWidget {
             ),
             Text(
               (calibrationStatus as AsyncInProgress).progress < 0
-                  ? 'Initializing...'
+                  ? 'Initialising...'
                   : 'Remaining Time: ${calibrationStatus.progress.toInt()} seconds',
               style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
             ),
