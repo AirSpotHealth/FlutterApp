@@ -88,6 +88,8 @@ class _DataGraphWidgetState extends ConsumerState<DataGraphWidget> {
     // it should be the maximum value of the data and round it to nearest value of yAxesValues
     final yMax = _calculateYMax();
 
+    final is12Hour = systemTimeFormat.pattern!.contains('a');
+
     return '''
 {
   tooltip: {
@@ -100,13 +102,24 @@ class _DataGraphWidgetState extends ConsumerState<DataGraphWidget> {
         width: 1,
         type: 'solid'
       },
+      label: {
+        formatter: function(params) {
+            return new Date(params.value).toLocaleString('en-AU', {
+              year: 'numeric',
+              month: 'numeric',
+              day: 'numeric',
+              hour: 'numeric',
+              minute: 'numeric',
+              hour12: $is12Hour
+            });
+          }
+      }
     },
     position: function (point, params, dom, rect, size) {
       var x = (size.viewSize[0] - dom.clientWidth) / 2;
       var y = 50;
       return [x, y];
     },
-
   },
   xAxis: {
     type: 'time',
@@ -121,11 +134,11 @@ class _DataGraphWidgetState extends ConsumerState<DataGraphWidget> {
         year: '{yyyy}',
         month: '{MMM}',
         day: '{dayStyle|{ee}}',
-        hour: '${systemTimeFormat.pattern!.contains('a') ? '{hh} {A}' : '{HH}'}',
-        minute: '${systemTimeFormat.pattern!.contains('a') ? '{hh}:{mm} {A}' : '{HH}:{mm}'}',
-        second: '${systemTimeFormat.pattern!.contains('a') ? '{hh}:{mm}:{ss} {A}' : '{HH}:{mm}:{ss}'}',
-        millisecond: '${systemTimeFormat.pattern!.contains('a') ? '{hh}:{mm}:{ss} {SSS} {A}' : '{HH}:{mm}:{ss} {SSS}'}',
-        none: '{yyyy}-{MM}-{dd} {hh}:{mm}:{ss} {SSS}'
+        hour: '${is12Hour ? '{hh} {A}' : '{HH}'}',
+        minute: '${is12Hour ? '{hh}:{mm} {A}' : '{HH}:{mm}'}',
+        second: '${is12Hour ? '{hh}:{mm}:{ss} {A}' : '{HH}:{mm}:{ss}'}',
+        millisecond: '${is12Hour ? '{hh}:{mm}:{ss} {SSS} {A}' : '{HH}:{mm}:{ss} {SSS}'}',
+        none: '${is12Hour ? '{hh}:{mm}:{ss} {A}' : '{HH}:{mm}:{ss}'}'
       },
       rich: {
         dayStyle: {
