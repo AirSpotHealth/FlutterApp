@@ -1,5 +1,6 @@
 import 'package:airspothealth/core/models/device_settings.dart';
 import 'package:airspothealth/core/providers/device_settings_provider.dart';
+import 'package:airspothealth/core/theme/app_colors.dart';
 import 'package:airspothealth/core/utils/extensions.dart';
 import 'package:airspothealth/features/device_settings/widgets/device_settings_name_widget.dart';
 import 'package:airspothealth/main.dart';
@@ -124,7 +125,7 @@ class DndSettingsPage extends ConsumerWidget {
       dismissable: true,
       buttonWidth: MediaQuery.of(context).size.width * 0.8,
       buttonStyle: BoxDecoration(
-        color: Colors.black,
+        color: AppColors.brandColorGreen,
         borderRadius: BorderRadius.circular(10),
       ),
       use24hFormat: !is12Hour,
@@ -140,12 +141,12 @@ class DndSettingsPage extends ConsumerWidget {
   void _updateTime(
     WidgetRef ref,
     DeviceSettings deviceSettings, {
-    required Time time,
+    required DateTime time,
     required bool isStartTime,
   }) {
     final DateTime newTime = DateTime.now().copyWith(
-      hour: time.hours,
-      minute: time.minutes,
+      hour: time.hour,
+      minute: time.minute,
     );
 
     ref.read(deviceSettingsProvider(deviceId).notifier).updateSettings(
