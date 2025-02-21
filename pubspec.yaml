@@ -39,6 +39,7 @@ dependencies:
   geolocator: ^13.0.2
   share_plus: ^10.1.4
   system_date_time_format: ^1.2.2
+  bottom_picker: ^2.11.0
 
 dev_dependencies:
   flutter_test:

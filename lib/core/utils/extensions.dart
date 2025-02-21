@@ -192,3 +192,11 @@ extension ColorX on Color {
   String toHexTriplet() =>
       '#${(value & 0xFFFFFF).toRadixString(16).padLeft(6, '0').toUpperCase()}';
 }
+
+extension DateTimeFormat on DateTime {
+  String format12Hour() {
+    final hour12 = hour % 12 == 0 ? 12 : hour % 12;
+    final amPm = hour < 12 ? 'AM' : 'PM';
+    return '${hour12.toString().padLeft(2, '0')}:${minute.toString().padLeft(2, '0')} $amPm';
+  }
+}
