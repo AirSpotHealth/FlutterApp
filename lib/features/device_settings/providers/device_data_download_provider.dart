@@ -1,6 +1,5 @@
 import 'dart:io';
 
-import 'package:airspothealth/core/models/ble_device.dart';
 import 'package:airspothealth/core/models/device_data.dart';
 import 'package:airspothealth/core/providers/isar_service_provider.dart';
 import 'package:airspothealth/features/device_graph/models/graph_data_duration.dart';
@@ -47,10 +46,19 @@ class _DeviceDataDownloadNotifier
         return;
       }
 
+      final device = ref.read(bleDeviceProvider(deviceId));
       final csvContent = _generateCsvContent(deviceDatas);
-      final fileName = _generateFileName(deviceDatas);
+      final deviceName = device.alias == null || device.alias == 'Airspot'
+          ? device.name
+          : device.alias;
+      final fileName = _generateFileName(deviceDatas, deviceName!);
 
-      await _saveCsvFile(csvContent, fileName: fileName);
+      final deviceVersion = device.firmwareVersion;
+
+      final csvHeader =
+          "DEVICE NAME: $deviceName\nDEVICE VERSION: $deviceVersion\n\n";
+
+      await _saveCsvFile(csvHeader + csvContent, fileName: fileName);
 
       debugPrint('Device data downloaded successfully');
       state = AsyncSuccess(true);
@@ -60,12 +68,7 @@ class _DeviceDataDownloadNotifier
     }
   }
 
-  String _generateFileName(List<DeviceData> deviceDatas) {
-    final BleDevice device = ref.read(bleDeviceProvider(deviceId));
-    final deviceName = device.alias == null || device.alias == "Airspot"
-        ? device.name
-        : device.alias;
-
+  String _generateFileName(List<DeviceData> deviceDatas, String deviceName) {
     final DateTime firstDateTime = deviceDatas
         .firstWhere(
           (data) => data.dateTime.isAfter(DateTime(2020)),
@@ -90,7 +93,7 @@ class _DeviceDataDownloadNotifier
         return isar.deviceDatas
             .where()
             .deviceIdEqualTo(deviceId)
-            .typeLessThan(DeviceDataType.empty)
+            .typeLessThan(DeviceDataType.liveCo2)
             .sortByDateTime()
             .findAll();
       },

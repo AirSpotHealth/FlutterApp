@@ -47,7 +47,8 @@ const DeviceDataSchema = IsarGeneratedSchema(
           "integrityError": 8,
           "calibrationTarget": 9,
           "timeSync": 10,
-          "empty": 11
+          "liveCo2": 11,
+          "empty": 12
         },
       ),
       IsarPropertySchema(
@@ -299,7 +300,8 @@ const _deviceDataType = {
   8: DeviceDataType.integrityError,
   9: DeviceDataType.calibrationTarget,
   10: DeviceDataType.timeSync,
-  11: DeviceDataType.empty,
+  11: DeviceDataType.liveCo2,
+  12: DeviceDataType.empty,
 };
 
 extension DeviceDataQueryFilter

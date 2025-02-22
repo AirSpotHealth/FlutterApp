@@ -158,6 +158,12 @@ class _BleDeviceCommunicationNotifier extends FamilyNotifier<dynamic, String> {
     // _setHomeValue(value);
     if (co2Data is DeviceData) {
       state = co2Data.value == 0 ? null : co2Data.value;
+
+      if (co2Data.type == DeviceDataType.liveCo2) {
+        _isarService.write((isar) {
+          isar.deviceDatas.put(co2Data);
+        });
+      }
     }
 
     // void _checkAndShowNotification(DeviceSettings? deviceSettings, value) {

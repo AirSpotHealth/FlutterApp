@@ -103,6 +103,7 @@ enum DeviceDataType {
   integrityError,
   calibrationTarget,
   timeSync,
+  liveCo2,
   empty;
 
   static DeviceDataType fromByte(int byte) {

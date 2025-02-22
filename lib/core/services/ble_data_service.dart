@@ -196,7 +196,7 @@ class ResponseCommandParser {
         deviceId: deviceId,
         dateTime: datetime,
         value: value,
-        type: DeviceDataType.co2,
+        type: DeviceDataType.liveCo2,
       );
     }
 
@@ -214,7 +214,7 @@ class ResponseCommandParser {
       deviceId: deviceId,
       dateTime: datetime,
       value: value,
-      type: DeviceDataType.co2,
+      type: DeviceDataType.liveCo2,
     );
   }
 
