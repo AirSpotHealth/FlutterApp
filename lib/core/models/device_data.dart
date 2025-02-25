@@ -9,6 +9,7 @@ class DeviceData {
     required this.dateTime,
     required this.value,
     this.type = DeviceDataType.co2,
+    this.isLiveCo2 = false,
   });
 
   final String deviceId;
@@ -17,6 +18,8 @@ class DeviceData {
   final DateTime dateTime;
 
   final dynamic value;
+
+  final bool isLiveCo2;
 
   @enumValue
   final DeviceDataType type;
@@ -28,12 +31,14 @@ class DeviceData {
     DateTime? dateTime,
     dynamic value,
     DeviceDataType? type,
+    bool? isLiveCo2,
   }) {
     return DeviceData(
       deviceId: deviceId ?? this.deviceId,
       dateTime: dateTime ?? this.dateTime,
       value: value ?? this.value,
       type: type ?? this.type,
+      isLiveCo2: isLiveCo2 ?? this.isLiveCo2,
     );
   }
 
@@ -45,16 +50,21 @@ class DeviceData {
         other.deviceId == deviceId &&
         other.dateTime == dateTime &&
         other.value == value &&
-        other.type == type;
+        other.type == type &&
+        other.isLiveCo2 == isLiveCo2;
   }
 
   @override
   int get hashCode =>
-      deviceId.hashCode ^ dateTime.hashCode ^ value.hashCode ^ type.hashCode;
+      deviceId.hashCode ^
+      dateTime.hashCode ^
+      value.hashCode ^
+      type.hashCode ^
+      isLiveCo2.hashCode;
 
   @override
   String toString() =>
-      'DeviceData(deviceId: $deviceId, dateTime: $dateTime, value: $value), type: $type';
+      'DeviceData(deviceId: $deviceId, dateTime: $dateTime, value: $value), type: $type, isLiveCo2: $isLiveCo2';
 
   @ignore
   String get hexString {
@@ -103,7 +113,7 @@ enum DeviceDataType {
   integrityError,
   calibrationTarget,
   timeSync,
-  liveCo2,
+  calibrationAdjustment,
   empty;
 
   static DeviceDataType fromByte(int byte) {
@@ -130,6 +140,8 @@ enum DeviceDataType {
         return DeviceDataType.calibrationTarget;
       case 0x0A:
         return DeviceDataType.timeSync;
+      case 0x0B:
+        return DeviceDataType.calibrationAdjustment;
       default:
         return DeviceDataType.empty;
     }
@@ -159,6 +171,8 @@ enum DeviceDataType {
         return 'Calibration Target';
       case DeviceDataType.timeSync:
         return 'Time Sync';
+      case DeviceDataType.calibrationAdjustment:
+        return 'Calibration Adjustment';
       default:
         return '-';
     }

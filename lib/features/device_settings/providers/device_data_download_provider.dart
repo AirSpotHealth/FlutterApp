@@ -93,7 +93,8 @@ class _DeviceDataDownloadNotifier
         return isar.deviceDatas
             .where()
             .deviceIdEqualTo(deviceId)
-            .typeLessThan(DeviceDataType.liveCo2)
+            .typeLessThan(DeviceDataType.empty)
+            .isLiveCo2EqualTo(false)
             .sortByDateTime()
             .findAll();
       },
