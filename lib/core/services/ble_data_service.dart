@@ -1,5 +1,6 @@
 import 'package:airspothealth/core/models/ble_device.dart';
 import 'package:airspothealth/core/models/device_data.dart';
+import 'package:airspothealth/core/models/device_data_type.dart';
 import 'package:airspothealth/core/models/device_settings.dart';
 import 'package:airspothealth/core/providers/ble_saved_devices_provider.dart';
 import 'package:airspothealth/core/providers/device_settings_provider.dart';
@@ -196,7 +197,7 @@ class ResponseCommandParser {
         deviceId: deviceId,
         dateTime: datetime,
         value: value,
-        type: DeviceDataType.co2,
+        type: DeviceDataType.co2.index,
         isLiveCo2: true,
       );
     }
@@ -215,7 +216,7 @@ class ResponseCommandParser {
       deviceId: deviceId,
       dateTime: datetime,
       value: value,
-      type: DeviceDataType.co2,
+      type: DeviceDataType.co2.index,
       isLiveCo2: true,
     );
   }
@@ -361,7 +362,7 @@ class ResponseCommandParser {
         dateTime: date,
         value: // if value is > 63000 and less than 65535, then it is a negative value
             value > 33000 && value <= 65535 ? value - 65536 : value,
-        type: DeviceDataType.fromByte(type),
+        type: DeviceDataType.fromByte(type).index,
       );
 
       debugPrint('DeviceData: ${deviceData0.toString()}');

@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:airspothealth/core/models/device_data.dart';
+import 'package:airspothealth/core/models/device_data_type.dart';
 import 'package:airspothealth/core/providers/isar_service_provider.dart';
 import 'package:airspothealth/features/device_graph/models/graph_data_duration.dart';
 import 'package:airspothealth/features/device_graph/providers/ble_device_provider.dart';
@@ -44,6 +45,11 @@ class _DeviceDataDownloadNotifier
       if (deviceDatas.isEmpty) {
         state = AsyncFailure('No data found for the device');
         return;
+      }
+
+      for (var element in deviceDatas) {
+        debugPrint(
+            'DeviceType: ${DeviceDataType.values[element.type].humanizedName}');
       }
 
       final device = ref.read(bleDeviceProvider(deviceId));
@@ -93,7 +99,7 @@ class _DeviceDataDownloadNotifier
         return isar.deviceDatas
             .where()
             .deviceIdEqualTo(deviceId)
-            .typeLessThan(DeviceDataType.empty)
+            .typeLessThan(DeviceDataType.empty.index)
             .isLiveCo2EqualTo(false)
             .sortByDateTime()
             .findAll();
@@ -101,8 +107,8 @@ class _DeviceDataDownloadNotifier
     );
 
     // remove the data that has 0 value and is of type co2
-    dataList.removeWhere(
-        (element) => element.value == 0 && element.type == DeviceDataType.co2);
+    dataList.removeWhere((element) =>
+        element.value == 0 && element.type == DeviceDataType.co2.index);
 
     return dataList;
   }
@@ -111,7 +117,7 @@ class _DeviceDataDownloadNotifier
     final headerRow = 'DateTime,Value,Type\n';
 
     final csvRows = deviceDatas.map((data) {
-      return '"${_dateFormat.format(data.dateTime)}","${data.parsedValue}","${data.type.humanizedName().toUpperCase()}"';
+      return '"${_dateFormat.format(data.dateTime)}","${data.parsedValue}","${DeviceDataType.values[data.type].humanizedName.toUpperCase()}"';
     }).join('\n');
 
     return headerRow + csvRows;

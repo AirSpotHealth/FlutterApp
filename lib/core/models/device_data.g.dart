@@ -30,7 +30,7 @@ const DeviceDataSchema = IsarGeneratedSchema(
       ),
       IsarPropertySchema(
         name: 'value',
-        type: IsarType.json,
+        type: IsarType.int,
       ),
       IsarPropertySchema(
         name: 'isLiveCo2',
@@ -39,22 +39,6 @@ const DeviceDataSchema = IsarGeneratedSchema(
       IsarPropertySchema(
         name: 'type',
         type: IsarType.byte,
-        enumMap: {
-          "co2": 0,
-          "batteryLow": 1,
-          "calibration": 2,
-          "sensorError": 3,
-          "reset": 4,
-          "sensorFactoryReset": 5,
-          "calibrationCorrection": 6,
-          "sensorAutoCalibration": 7,
-          "integrityError": 8,
-          "calibrationTarget": 9,
-          "timeSync": 10,
-          "calibrationAdjustment": 11,
-          "ascLowest": 12,
-          "empty": 13
-        },
       ),
       IsarPropertySchema(
         name: 'id',
@@ -63,9 +47,25 @@ const DeviceDataSchema = IsarGeneratedSchema(
     ],
     indexes: [
       IsarIndexSchema(
+        name: 'deviceId',
+        properties: [
+          "deviceId",
+        ],
+        unique: false,
+        hash: false,
+      ),
+      IsarIndexSchema(
         name: 'dateTime',
         properties: [
           "dateTime",
+        ],
+        unique: false,
+        hash: false,
+      ),
+      IsarIndexSchema(
+        name: 'type',
+        properties: [
+          "type",
         ],
         unique: false,
         hash: false,
@@ -84,9 +84,9 @@ const DeviceDataSchema = IsarGeneratedSchema(
 int serializeDeviceData(IsarWriter writer, DeviceData object) {
   IsarCore.writeString(writer, 1, object.deviceId);
   IsarCore.writeLong(writer, 2, object.dateTime.toUtc().microsecondsSinceEpoch);
-  IsarCore.writeString(writer, 3, isarJsonEncode(object.value));
+  IsarCore.writeInt(writer, 3, object.value);
   IsarCore.writeBool(writer, 4, object.isLiveCo2);
-  IsarCore.writeByte(writer, 5, object.type.index);
+  IsarCore.writeByte(writer, 5, object.type);
   IsarCore.writeString(writer, 6, object.id);
   return Isar.fastHash(object.id);
 }
@@ -105,19 +105,12 @@ DeviceData deserializeDeviceData(IsarReader reader) {
           DateTime.fromMicrosecondsSinceEpoch(value, isUtc: true).toLocal();
     }
   }
-  final dynamic _value;
-  _value = isarJsonDecode(IsarCore.readString(reader, 3) ?? 'null') ?? null;
+  final int _value;
+  _value = IsarCore.readInt(reader, 3);
   final bool _isLiveCo2;
   _isLiveCo2 = IsarCore.readBool(reader, 4);
-  final DeviceDataType _type;
-  {
-    if (IsarCore.readNull(reader, 5)) {
-      _type = DeviceDataType.co2;
-    } else {
-      _type =
-          _deviceDataType[IsarCore.readByte(reader, 5)] ?? DeviceDataType.co2;
-    }
-  }
+  final int _type;
+  _type = IsarCore.readByte(reader, 5);
   final object = DeviceData(
     deviceId: _deviceId,
     dateTime: _dateTime,
@@ -144,18 +137,11 @@ dynamic deserializeDeviceDataProp(IsarReader reader, int property) {
         }
       }
     case 3:
-      return isarJsonDecode(IsarCore.readString(reader, 3) ?? 'null') ?? null;
+      return IsarCore.readInt(reader, 3);
     case 4:
       return IsarCore.readBool(reader, 4);
     case 5:
-      {
-        if (IsarCore.readNull(reader, 5)) {
-          return DeviceDataType.co2;
-        } else {
-          return _deviceDataType[IsarCore.readByte(reader, 5)] ??
-              DeviceDataType.co2;
-        }
-      }
+      return IsarCore.readByte(reader, 5);
     case 6:
       return IsarCore.readString(reader, 6) ?? '';
     default:
@@ -168,8 +154,9 @@ sealed class _DeviceDataUpdate {
     required String id,
     String? deviceId,
     DateTime? dateTime,
+    int? value,
     bool? isLiveCo2,
-    DeviceDataType? type,
+    int? type,
   });
 }
 
@@ -183,6 +170,7 @@ class _DeviceDataUpdateImpl implements _DeviceDataUpdate {
     required String id,
     Object? deviceId = ignore,
     Object? dateTime = ignore,
+    Object? value = ignore,
     Object? isLiveCo2 = ignore,
     Object? type = ignore,
   }) {
@@ -191,8 +179,9 @@ class _DeviceDataUpdateImpl implements _DeviceDataUpdate {
         ], {
           if (deviceId != ignore) 1: deviceId as String?,
           if (dateTime != ignore) 2: dateTime as DateTime?,
+          if (value != ignore) 3: value as int?,
           if (isLiveCo2 != ignore) 4: isLiveCo2 as bool?,
-          if (type != ignore) 5: type as DeviceDataType?,
+          if (type != ignore) 5: type as int?,
         }) >
         0;
   }
@@ -203,8 +192,9 @@ sealed class _DeviceDataUpdateAll {
     required List<String> id,
     String? deviceId,
     DateTime? dateTime,
+    int? value,
     bool? isLiveCo2,
-    DeviceDataType? type,
+    int? type,
   });
 }
 
@@ -218,14 +208,16 @@ class _DeviceDataUpdateAllImpl implements _DeviceDataUpdateAll {
     required List<String> id,
     Object? deviceId = ignore,
     Object? dateTime = ignore,
+    Object? value = ignore,
     Object? isLiveCo2 = ignore,
     Object? type = ignore,
   }) {
     return collection.updateProperties(id, {
       if (deviceId != ignore) 1: deviceId as String?,
       if (dateTime != ignore) 2: dateTime as DateTime?,
+      if (value != ignore) 3: value as int?,
       if (isLiveCo2 != ignore) 4: isLiveCo2 as bool?,
-      if (type != ignore) 5: type as DeviceDataType?,
+      if (type != ignore) 5: type as int?,
     });
   }
 }
@@ -240,8 +232,9 @@ sealed class _DeviceDataQueryUpdate {
   int call({
     String? deviceId,
     DateTime? dateTime,
+    int? value,
     bool? isLiveCo2,
-    DeviceDataType? type,
+    int? type,
   });
 }
 
@@ -255,14 +248,16 @@ class _DeviceDataQueryUpdateImpl implements _DeviceDataQueryUpdate {
   int call({
     Object? deviceId = ignore,
     Object? dateTime = ignore,
+    Object? value = ignore,
     Object? isLiveCo2 = ignore,
     Object? type = ignore,
   }) {
     return query.updateProperties(limit: limit, {
       if (deviceId != ignore) 1: deviceId as String?,
       if (dateTime != ignore) 2: dateTime as DateTime?,
+      if (value != ignore) 3: value as int?,
       if (isLiveCo2 != ignore) 4: isLiveCo2 as bool?,
-      if (type != ignore) 5: type as DeviceDataType?,
+      if (type != ignore) 5: type as int?,
     });
   }
 }
@@ -284,6 +279,7 @@ class _DeviceDataQueryBuilderUpdateImpl implements _DeviceDataQueryUpdate {
   int call({
     Object? deviceId = ignore,
     Object? dateTime = ignore,
+    Object? value = ignore,
     Object? isLiveCo2 = ignore,
     Object? type = ignore,
   }) {
@@ -292,8 +288,9 @@ class _DeviceDataQueryBuilderUpdateImpl implements _DeviceDataQueryUpdate {
       return q.updateProperties(limit: limit, {
         if (deviceId != ignore) 1: deviceId as String?,
         if (dateTime != ignore) 2: dateTime as DateTime?,
+        if (value != ignore) 3: value as int?,
         if (isLiveCo2 != ignore) 4: isLiveCo2 as bool?,
-        if (type != ignore) 5: type as DeviceDataType?,
+        if (type != ignore) 5: type as int?,
       });
     } finally {
       q.close();
@@ -309,23 +306,6 @@ extension DeviceDataQueryBuilderUpdate
   _DeviceDataQueryUpdate get updateAll =>
       _DeviceDataQueryBuilderUpdateImpl(this);
 }
-
-const _deviceDataType = {
-  0: DeviceDataType.co2,
-  1: DeviceDataType.batteryLow,
-  2: DeviceDataType.calibration,
-  3: DeviceDataType.sensorError,
-  4: DeviceDataType.reset,
-  5: DeviceDataType.sensorFactoryReset,
-  6: DeviceDataType.calibrationCorrection,
-  7: DeviceDataType.sensorAutoCalibration,
-  8: DeviceDataType.integrityError,
-  9: DeviceDataType.calibrationTarget,
-  10: DeviceDataType.timeSync,
-  11: DeviceDataType.calibrationAdjustment,
-  12: DeviceDataType.ascLowest,
-  13: DeviceDataType.empty,
-};
 
 extension DeviceDataQueryFilter
     on QueryBuilder<DeviceData, DeviceData, QFilterCondition> {
@@ -590,6 +570,88 @@ extension DeviceDataQueryFilter
     });
   }
 
+  QueryBuilder<DeviceData, DeviceData, QAfterFilterCondition> valueEqualTo(
+    int value,
+  ) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        EqualCondition(
+          property: 3,
+          value: value,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<DeviceData, DeviceData, QAfterFilterCondition> valueGreaterThan(
+    int value,
+  ) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        GreaterCondition(
+          property: 3,
+          value: value,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<DeviceData, DeviceData, QAfterFilterCondition>
+      valueGreaterThanOrEqualTo(
+    int value,
+  ) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        GreaterOrEqualCondition(
+          property: 3,
+          value: value,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<DeviceData, DeviceData, QAfterFilterCondition> valueLessThan(
+    int value,
+  ) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        LessCondition(
+          property: 3,
+          value: value,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<DeviceData, DeviceData, QAfterFilterCondition>
+      valueLessThanOrEqualTo(
+    int value,
+  ) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        LessOrEqualCondition(
+          property: 3,
+          value: value,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<DeviceData, DeviceData, QAfterFilterCondition> valueBetween(
+    int lower,
+    int upper,
+  ) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        BetweenCondition(
+          property: 3,
+          lower: lower,
+          upper: upper,
+        ),
+      );
+    });
+  }
+
   QueryBuilder<DeviceData, DeviceData, QAfterFilterCondition> isLiveCo2EqualTo(
     bool value,
   ) {
@@ -604,26 +666,26 @@ extension DeviceDataQueryFilter
   }
 
   QueryBuilder<DeviceData, DeviceData, QAfterFilterCondition> typeEqualTo(
-    DeviceDataType value,
+    int value,
   ) {
     return QueryBuilder.apply(this, (query) {
       return query.addFilterCondition(
         EqualCondition(
           property: 5,
-          value: value.index,
+          value: value,
         ),
       );
     });
   }
 
   QueryBuilder<DeviceData, DeviceData, QAfterFilterCondition> typeGreaterThan(
-    DeviceDataType value,
+    int value,
   ) {
     return QueryBuilder.apply(this, (query) {
       return query.addFilterCondition(
         GreaterCondition(
           property: 5,
-          value: value.index,
+          value: value,
         ),
       );
     });
@@ -631,26 +693,26 @@ extension DeviceDataQueryFilter
 
   QueryBuilder<DeviceData, DeviceData, QAfterFilterCondition>
       typeGreaterThanOrEqualTo(
-    DeviceDataType value,
+    int value,
   ) {
     return QueryBuilder.apply(this, (query) {
       return query.addFilterCondition(
         GreaterOrEqualCondition(
           property: 5,
-          value: value.index,
+          value: value,
         ),
       );
     });
   }
 
   QueryBuilder<DeviceData, DeviceData, QAfterFilterCondition> typeLessThan(
-    DeviceDataType value,
+    int value,
   ) {
     return QueryBuilder.apply(this, (query) {
       return query.addFilterCondition(
         LessCondition(
           property: 5,
-          value: value.index,
+          value: value,
         ),
       );
     });
@@ -658,28 +720,28 @@ extension DeviceDataQueryFilter
 
   QueryBuilder<DeviceData, DeviceData, QAfterFilterCondition>
       typeLessThanOrEqualTo(
-    DeviceDataType value,
+    int value,
   ) {
     return QueryBuilder.apply(this, (query) {
       return query.addFilterCondition(
         LessOrEqualCondition(
           property: 5,
-          value: value.index,
+          value: value,
         ),
       );
     });
   }
 
   QueryBuilder<DeviceData, DeviceData, QAfterFilterCondition> typeBetween(
-    DeviceDataType lower,
-    DeviceDataType upper,
+    int lower,
+    int upper,
   ) {
     return QueryBuilder.apply(this, (query) {
       return query.addFilterCondition(
         BetweenCondition(
           property: 5,
-          lower: lower.index,
-          upper: upper.index,
+          lower: lower,
+          upper: upper,
         ),
       );
     });
@@ -1083,7 +1145,7 @@ extension DeviceDataQueryProperty1
     });
   }
 
-  QueryBuilder<DeviceData, dynamic, QAfterProperty> valueProperty() {
+  QueryBuilder<DeviceData, int, QAfterProperty> valueProperty() {
     return QueryBuilder.apply(this, (query) {
       return query.addProperty(3);
     });
@@ -1095,7 +1157,7 @@ extension DeviceDataQueryProperty1
     });
   }
 
-  QueryBuilder<DeviceData, DeviceDataType, QAfterProperty> typeProperty() {
+  QueryBuilder<DeviceData, int, QAfterProperty> typeProperty() {
     return QueryBuilder.apply(this, (query) {
       return query.addProperty(5);
     });
@@ -1122,7 +1184,7 @@ extension DeviceDataQueryProperty2<R>
     });
   }
 
-  QueryBuilder<DeviceData, (R, dynamic), QAfterProperty> valueProperty() {
+  QueryBuilder<DeviceData, (R, int), QAfterProperty> valueProperty() {
     return QueryBuilder.apply(this, (query) {
       return query.addProperty(3);
     });
@@ -1134,7 +1196,7 @@ extension DeviceDataQueryProperty2<R>
     });
   }
 
-  QueryBuilder<DeviceData, (R, DeviceDataType), QAfterProperty> typeProperty() {
+  QueryBuilder<DeviceData, (R, int), QAfterProperty> typeProperty() {
     return QueryBuilder.apply(this, (query) {
       return query.addProperty(5);
     });
@@ -1161,7 +1223,7 @@ extension DeviceDataQueryProperty3<R1, R2>
     });
   }
 
-  QueryBuilder<DeviceData, (R1, R2, dynamic), QOperations> valueProperty() {
+  QueryBuilder<DeviceData, (R1, R2, int), QOperations> valueProperty() {
     return QueryBuilder.apply(this, (query) {
       return query.addProperty(3);
     });
@@ -1173,8 +1235,7 @@ extension DeviceDataQueryProperty3<R1, R2>
     });
   }
 
-  QueryBuilder<DeviceData, (R1, R2, DeviceDataType), QOperations>
-      typeProperty() {
+  QueryBuilder<DeviceData, (R1, R2, int), QOperations> typeProperty() {
     return QueryBuilder.apply(this, (query) {
       return query.addProperty(5);
     });

@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:airspothealth/core/models/ble_device.dart';
 import 'package:airspothealth/core/models/device_data.dart';
+import 'package:airspothealth/core/models/device_data_type.dart';
 import 'package:airspothealth/core/providers/ble_device_communication_provider.dart';
 import 'package:airspothealth/core/services/isar_service.dart';
 import 'package:airspothealth/core/utils/app_utils.dart';
@@ -69,7 +70,7 @@ class _DeviceHistoricalDataNotifier extends AutoDisposeFamilyAsyncNotifier<
         .where()
         .deviceIdEqualTo(deviceId)
         .dateTimeBetween(dateTimeRange.start, dateTimeRange.end)
-        .typeEqualTo(DeviceDataType.co2)
+        .typeEqualTo(DeviceDataType.co2.index)
         .sortByDateTime()
         .watch(fireImmediately: true)
         .listen((event) {

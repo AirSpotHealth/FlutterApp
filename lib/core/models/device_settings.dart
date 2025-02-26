@@ -18,7 +18,7 @@ class DeviceSettings {
   final bool vibrationEnabled;
 
   /// The power mode of the device
-  @enumValue
+  @EnumValue()
   final PowerMode powerMode;
 
   /// Whether the continuous screen is enabled or not

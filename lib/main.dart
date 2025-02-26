@@ -42,10 +42,11 @@ Future<void> _checkVersion() async {
   final appVersion = await PackageInfo.fromPlatform();
 
   if (currentVersion != appVersion.version) {
-    await [
-      prefs.setString(StorageKeys.appVerion, appVersion.version),
-      IsarService().clearAllData()
-    ].wait;
+    await prefs.setString(StorageKeys.appVerion, appVersion.version);
+
+    if (currentVersion == '') return;
+
+    await IsarService().clearAllData();
   }
 }
 

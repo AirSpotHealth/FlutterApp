@@ -3,8 +3,10 @@ import 'dart:typed_data';
 
 import 'package:airspothealth/core/models/ble_device.dart';
 import 'package:airspothealth/core/models/device_data.dart';
+import 'package:airspothealth/core/models/device_data_type.dart';
 import 'package:airspothealth/core/providers/ble_device_communication_provider.dart';
 import 'package:airspothealth/core/providers/isar_service_provider.dart';
+import 'package:airspothealth/core/services/isar_service.dart';
 import 'package:airspothealth/core/utils/constants.dart';
 import 'package:airspothealth/core/utils/device_cmd_utils.dart';
 import 'package:airspothealth/core/utils/extensions.dart';
@@ -14,6 +16,7 @@ import 'package:airspothealth/features/device_settings/models/progress_model.dar
 import 'package:airspothealth/features/device_settings/providers/device_data_download_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:isar/isar.dart';
 
 final deviceHistoryDataRequestProvider = NotifierProvider.family<
     _DeviceHistoryDataRequestNotifier,
@@ -134,7 +137,8 @@ class _DeviceHistoryDataRequestNotifier
       return;
     }
 
-    _dataBuffer.addAll(deviceDataList);
+    _dataBuffer.addAll(deviceDataList
+        .where((data) => data.type != DeviceDataType.empty.index));
 
     debugPrint('Buffer size: ${_dataBuffer.length}');
 
@@ -145,25 +149,39 @@ class _DeviceHistoryDataRequestNotifier
     }
   }
 
-  void _commitData() {
+  void _commitData() async {
     debugPrint('Committing data: ${_dataBuffer.length}');
     if (_dataBuffer.isEmpty) return;
 
-    // Write to Isar database in one operation
-    ref.read(isarServiceProvider).write((isar) {
-      isar.deviceDatas.putAll(_dataBuffer);
-    });
+    // Log before save
+    for (var element in _dataBuffer) {
+      debugPrint(
+          'Before save - DeviceType: ${DeviceDataType.values[element.type].humanizedName} Value: ${element.value}');
+    }
 
-    debugPrint('Saved ${_dataBuffer.length} records to database');
+    try {
+      // Write to Isar database one by one to catch any failures
+      await IsarService().writeAsync((isar) async {
+        isar.deviceDatas.putAll(_dataBuffer);
+      });
 
-    // Clear buffer
+      debugPrint("Successfully saved ${_dataBuffer.length} data");
+    } catch (e) {
+      debugPrint('Database save operation failed: error: $e');
+    }
+
+    debugPrint(
+        'ReadTypeGreaterThanZero: ${ref.read(isarServiceProvider).read((isar) {
+      return isar.deviceDatas.where().typeGreaterThan(0).findAll();
+    }).map((e) => e.toString())}');
+
     _dataBuffer.clear();
   }
 
   bool _shouldFetchMoreData(List<DeviceData> deviceDataList) {
     final DateTime firstDateTime = deviceDataList
         .firstWhere(
-          (element) => element.type == DeviceDataType.co2,
+          (element) => element.type == DeviceDataType.co2.index,
           orElse: () => deviceDataList.first,
         )
         .dateTime;

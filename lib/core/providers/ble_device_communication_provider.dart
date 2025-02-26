@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:airspothealth/core/models/ble_device.dart';
 import 'package:airspothealth/core/models/device_data.dart';
+import 'package:airspothealth/core/models/device_data_type.dart';
 import 'package:airspothealth/core/models/device_settings.dart';
 import 'package:airspothealth/core/providers/ble_connected_devices_provider.dart';
 import 'package:airspothealth/core/providers/device_settings_provider.dart';
@@ -54,7 +55,7 @@ class _BleDeviceCommunicationNotifier extends FamilyNotifier<dynamic, String> {
       final deviceData = isar.deviceDatas
           .where()
           .deviceIdEqualTo(deviceId)
-          .typeEqualTo(DeviceDataType.co2)
+          .typeEqualTo(DeviceDataType.co2.index)
           .sortByDateTimeDesc()
           .findFirst();
 
