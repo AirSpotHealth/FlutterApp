@@ -23,21 +23,21 @@ dependencies:
   dio: ^5.8.0+1
   home_widget: ^0.7.0+1
   nordic_dfu: ^6.2.0
-  file_picker: ^9.0.0
+  file_picker: ^9.0.1
   intl: ^0.20.2
   shimmer: ^3.0.0
-  package_info_plus: ^8.2.1
+  package_info_plus: ^8.3.0
   file_saver: ^0.2.14
   new_version_plus: ^0.1.0
   awesome_notifications_core: ^0.10.1
   awesome_notifications: ^0.10.1
-  syncfusion_flutter_sliders: ^28.2.6
+  syncfusion_flutter_sliders: ^28.2.7
   font_awesome_flutter: ^10.8.0
   animated_icon: ^0.0.9
   geolocator: ^13.0.2
   share_plus: ^10.1.4
   system_date_time_format: ^1.2.2
-  bottom_picker: ^2.11.0
+  bottom_picker: ^2.11.1
   isar:
     version: ^4.0.3
     hosted: https://pub.isar-community.dev
