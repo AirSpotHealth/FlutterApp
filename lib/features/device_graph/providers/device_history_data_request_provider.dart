@@ -161,7 +161,7 @@ class _DeviceHistoryDataRequestNotifier
 
     try {
       // Write to Isar database one by one to catch any failures
-      await IsarService().writeAsync((isar) async {
+      IsarService().write((isar) async {
         isar.deviceDatas.putAll(_dataBuffer);
       });
 

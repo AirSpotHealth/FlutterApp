@@ -14,11 +14,11 @@ class _RecalibrationTimeNotifier
     return AsyncNone();
   }
 
-  void startRecalibration(int calibTarget) {
+  void startRecalibration() {
     state = AsyncInProgress(-1, message: 'Starting recalibration...');
     ref
         .read(bleDeviceCommunicationProvider(arg).notifier)
-        .sendCommand(DeviceCmdUtils.startRecalibration(calibTarget));
+        .sendCommand(DeviceCmdUtils.startRecalibration());
   }
 
   void setRecalibrationTime(int? time) {

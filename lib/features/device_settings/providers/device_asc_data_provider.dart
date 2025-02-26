@@ -12,6 +12,7 @@ class _DeviceASCDataNotifierNotifier
     extends AutoDisposeFamilyNotifier<AsyncProgressValue, String> {
   @override
   AsyncProgressValue build(String arg) {
+    request();
     return AsyncNone();
   }
 

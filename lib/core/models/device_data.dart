@@ -29,7 +29,8 @@ class DeviceData {
   String get id =>
       deviceId +
       dateTime.millisecondsSinceEpoch.toString() +
-      DeviceDataType.values[type].name;
+      DeviceDataType.values[type].name +
+      value.toString();
 
   DeviceData copyWith({
     String? deviceId,

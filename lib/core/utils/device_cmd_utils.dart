@@ -207,14 +207,8 @@ class DeviceCmdUtils {
     return _buildCommand([prefixHigh, prefixLow, 0x11, 1, 0]);
   }
 
-  static Uint8List startRecalibration(int calibTarget) {
-    return _buildCommand([
-      prefixHigh,
-      prefixLow,
-      0x0D,
-      0x02,
-      ..._getHex2Bytes(calibTarget),
-    ]);
+  static Uint8List startRecalibration() {
+    return _buildCommand([prefixHigh, prefixLow, 0x0D, 0x02]);
   }
 
   // ======= DND Commands =======
@@ -279,6 +273,11 @@ class DeviceCmdUtils {
     byteArray[0] = (value >> 8) & 0xFF;
     byteArray[1] = value & 0xFF;
     return byteArray;
+  }
+
+  static Uint8List setRecalibrationTarget(int target) {
+    return _buildCommand(
+        [prefixHigh, prefixLow, 0x0D, 0x02, ..._getHex2Bytes(target)]);
   }
 
   static Uint8List eraseData() {

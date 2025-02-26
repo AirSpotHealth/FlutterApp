@@ -83,6 +83,10 @@ const DeviceSettingsSchema = IsarGeneratedSchema(
         name: 'dndEndTime',
         type: IsarType.dateTime,
       ),
+      IsarPropertySchema(
+        name: 'recalibrationTarget',
+        type: IsarType.long,
+      ),
     ],
     indexes: [],
   ),
@@ -124,6 +128,7 @@ int serializeDeviceSettings(IsarWriter writer, DeviceSettings object) {
       15,
       object.dndEndTime?.toUtc().microsecondsSinceEpoch ??
           -9223372036854775808);
+  IsarCore.writeLong(writer, 16, object.recalibrationTarget);
   return Isar.fastHash(object.deviceId);
 }
 
@@ -206,6 +211,15 @@ DeviceSettings deserializeDeviceSettings(IsarReader reader) {
           DateTime.fromMicrosecondsSinceEpoch(value, isUtc: true).toLocal();
     }
   }
+  final int _recalibrationTarget;
+  {
+    final value = IsarCore.readLong(reader, 16);
+    if (value == -9223372036854775808) {
+      _recalibrationTarget = 426;
+    } else {
+      _recalibrationTarget = value;
+    }
+  }
   final object = DeviceSettings(
     alarmEnabled: _alarmEnabled,
     vibrationEnabled: _vibrationEnabled,
@@ -222,6 +236,7 @@ DeviceSettings deserializeDeviceSettings(IsarReader reader) {
     dndEnabled: _dndEnabled,
     dndStartTime: _dndStartTime,
     dndEndTime: _dndEndTime,
+    recalibrationTarget: _recalibrationTarget,
   );
   return object;
 }
@@ -306,6 +321,15 @@ dynamic deserializeDeviceSettingsProp(IsarReader reader, int property) {
               .toLocal();
         }
       }
+    case 16:
+      {
+        final value = IsarCore.readLong(reader, 16);
+        if (value == -9223372036854775808) {
+          return 426;
+        } else {
+          return value;
+        }
+      }
     default:
       throw ArgumentError('Unknown property: $property');
   }
@@ -327,6 +351,7 @@ sealed class _DeviceSettingsUpdate {
     bool? dndEnabled,
     DateTime? dndStartTime,
     DateTime? dndEndTime,
+    int? recalibrationTarget,
   });
 }
 
@@ -351,6 +376,7 @@ class _DeviceSettingsUpdateImpl implements _DeviceSettingsUpdate {
     Object? dndEnabled = ignore,
     Object? dndStartTime = ignore,
     Object? dndEndTime = ignore,
+    Object? recalibrationTarget = ignore,
   }) {
     return collection.updateProperties([
           deviceId
@@ -369,6 +395,7 @@ class _DeviceSettingsUpdateImpl implements _DeviceSettingsUpdate {
           if (dndEnabled != ignore) 13: dndEnabled as bool?,
           if (dndStartTime != ignore) 14: dndStartTime as DateTime?,
           if (dndEndTime != ignore) 15: dndEndTime as DateTime?,
+          if (recalibrationTarget != ignore) 16: recalibrationTarget as int?,
         }) >
         0;
   }
@@ -390,6 +417,7 @@ sealed class _DeviceSettingsUpdateAll {
     bool? dndEnabled,
     DateTime? dndStartTime,
     DateTime? dndEndTime,
+    int? recalibrationTarget,
   });
 }
 
@@ -414,6 +442,7 @@ class _DeviceSettingsUpdateAllImpl implements _DeviceSettingsUpdateAll {
     Object? dndEnabled = ignore,
     Object? dndStartTime = ignore,
     Object? dndEndTime = ignore,
+    Object? recalibrationTarget = ignore,
   }) {
     return collection.updateProperties(deviceId, {
       if (alarmEnabled != ignore) 1: alarmEnabled as bool?,
@@ -429,6 +458,7 @@ class _DeviceSettingsUpdateAllImpl implements _DeviceSettingsUpdateAll {
       if (dndEnabled != ignore) 13: dndEnabled as bool?,
       if (dndStartTime != ignore) 14: dndStartTime as DateTime?,
       if (dndEndTime != ignore) 15: dndEndTime as DateTime?,
+      if (recalibrationTarget != ignore) 16: recalibrationTarget as int?,
     });
   }
 }
@@ -454,6 +484,7 @@ sealed class _DeviceSettingsQueryUpdate {
     bool? dndEnabled,
     DateTime? dndStartTime,
     DateTime? dndEndTime,
+    int? recalibrationTarget,
   });
 }
 
@@ -478,6 +509,7 @@ class _DeviceSettingsQueryUpdateImpl implements _DeviceSettingsQueryUpdate {
     Object? dndEnabled = ignore,
     Object? dndStartTime = ignore,
     Object? dndEndTime = ignore,
+    Object? recalibrationTarget = ignore,
   }) {
     return query.updateProperties(limit: limit, {
       if (alarmEnabled != ignore) 1: alarmEnabled as bool?,
@@ -493,6 +525,7 @@ class _DeviceSettingsQueryUpdateImpl implements _DeviceSettingsQueryUpdate {
       if (dndEnabled != ignore) 13: dndEnabled as bool?,
       if (dndStartTime != ignore) 14: dndStartTime as DateTime?,
       if (dndEndTime != ignore) 15: dndEndTime as DateTime?,
+      if (recalibrationTarget != ignore) 16: recalibrationTarget as int?,
     });
   }
 }
@@ -527,6 +560,7 @@ class _DeviceSettingsQueryBuilderUpdateImpl
     Object? dndEnabled = ignore,
     Object? dndStartTime = ignore,
     Object? dndEndTime = ignore,
+    Object? recalibrationTarget = ignore,
   }) {
     final q = query.build();
     try {
@@ -545,6 +579,7 @@ class _DeviceSettingsQueryBuilderUpdateImpl
         if (dndEnabled != ignore) 13: dndEnabled as bool?,
         if (dndStartTime != ignore) 14: dndStartTime as DateTime?,
         if (dndEndTime != ignore) 15: dndEndTime as DateTime?,
+        if (recalibrationTarget != ignore) 16: recalibrationTarget as int?,
       });
     } finally {
       q.close();
@@ -1175,6 +1210,92 @@ extension DeviceSettingsQueryFilter
       );
     });
   }
+
+  QueryBuilder<DeviceSettings, DeviceSettings, QAfterFilterCondition>
+      recalibrationTargetEqualTo(
+    int value,
+  ) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        EqualCondition(
+          property: 16,
+          value: value,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<DeviceSettings, DeviceSettings, QAfterFilterCondition>
+      recalibrationTargetGreaterThan(
+    int value,
+  ) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        GreaterCondition(
+          property: 16,
+          value: value,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<DeviceSettings, DeviceSettings, QAfterFilterCondition>
+      recalibrationTargetGreaterThanOrEqualTo(
+    int value,
+  ) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        GreaterOrEqualCondition(
+          property: 16,
+          value: value,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<DeviceSettings, DeviceSettings, QAfterFilterCondition>
+      recalibrationTargetLessThan(
+    int value,
+  ) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        LessCondition(
+          property: 16,
+          value: value,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<DeviceSettings, DeviceSettings, QAfterFilterCondition>
+      recalibrationTargetLessThanOrEqualTo(
+    int value,
+  ) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        LessOrEqualCondition(
+          property: 16,
+          value: value,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<DeviceSettings, DeviceSettings, QAfterFilterCondition>
+      recalibrationTargetBetween(
+    int lower,
+    int upper,
+  ) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        BetweenCondition(
+          property: 16,
+          lower: lower,
+          upper: upper,
+        ),
+      );
+    });
+  }
 }
 
 extension DeviceSettingsQueryObject
@@ -1389,6 +1510,20 @@ extension DeviceSettingsQuerySortBy
       return query.addSortBy(15, sort: Sort.desc);
     });
   }
+
+  QueryBuilder<DeviceSettings, DeviceSettings, QAfterSortBy>
+      sortByRecalibrationTarget() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(16);
+    });
+  }
+
+  QueryBuilder<DeviceSettings, DeviceSettings, QAfterSortBy>
+      sortByRecalibrationTargetDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(16, sort: Sort.desc);
+    });
+  }
 }
 
 extension DeviceSettingsQuerySortThenBy
@@ -1586,6 +1721,20 @@ extension DeviceSettingsQuerySortThenBy
       return query.addSortBy(15, sort: Sort.desc);
     });
   }
+
+  QueryBuilder<DeviceSettings, DeviceSettings, QAfterSortBy>
+      thenByRecalibrationTarget() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(16);
+    });
+  }
+
+  QueryBuilder<DeviceSettings, DeviceSettings, QAfterSortBy>
+      thenByRecalibrationTargetDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(16, sort: Sort.desc);
+    });
+  }
 }
 
 extension DeviceSettingsQueryWhereDistinct
@@ -1678,6 +1827,13 @@ extension DeviceSettingsQueryWhereDistinct
       distinctByDndEndTime() {
     return QueryBuilder.apply(this, (query) {
       return query.addDistinctBy(15);
+    });
+  }
+
+  QueryBuilder<DeviceSettings, DeviceSettings, QAfterDistinct>
+      distinctByRecalibrationTarget() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addDistinctBy(16);
     });
   }
 }
@@ -1777,6 +1933,13 @@ extension DeviceSettingsQueryProperty1
   QueryBuilder<DeviceSettings, DateTime?, QAfterProperty> dndEndTimeProperty() {
     return QueryBuilder.apply(this, (query) {
       return query.addProperty(15);
+    });
+  }
+
+  QueryBuilder<DeviceSettings, int, QAfterProperty>
+      recalibrationTargetProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addProperty(16);
     });
   }
 }
@@ -1884,6 +2047,13 @@ extension DeviceSettingsQueryProperty2<R>
       return query.addProperty(15);
     });
   }
+
+  QueryBuilder<DeviceSettings, (R, int), QAfterProperty>
+      recalibrationTargetProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addProperty(16);
+    });
+  }
 }
 
 extension DeviceSettingsQueryProperty3<R1, R2>
@@ -1989,6 +2159,13 @@ extension DeviceSettingsQueryProperty3<R1, R2>
       dndEndTimeProperty() {
     return QueryBuilder.apply(this, (query) {
       return query.addProperty(15);
+    });
+  }
+
+  QueryBuilder<DeviceSettings, (R1, R2, int), QOperations>
+      recalibrationTargetProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addProperty(16);
     });
   }
 }

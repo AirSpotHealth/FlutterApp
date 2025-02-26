@@ -261,6 +261,9 @@ class ResponseCommandParser {
         final dndStartMinute = data.length > 15 ? data[15] : 0;
         final dndEndHour = data.length > 16 ? data[16] : 0;
         final dndEndMinute = data.length > 17 ? data[17] : 0;
+        final recalibrationTarget = _parseTwoBytesToInt(data, 18);
+
+        debugPrint('RECALIBRATION TARGET: $recalibrationTarget');
 
         return settings.copyWith(
           deviceId: deviceId,
@@ -276,6 +279,7 @@ class ResponseCommandParser {
           dndEnabled: dndEnabled,
           dndStartTime: DateTime(0, 0, 0, dndStartHour, dndStartMinute),
           dndEndTime: DateTime(0, 0, 0, dndEndHour, dndEndMinute),
+          recalibrationTarget: recalibrationTarget,
         );
       },
     );
@@ -543,13 +547,20 @@ class ResponseCommandParser {
   }
 
   void _updateDeviceSettings(DeviceSettings Function(DeviceSettings) update) {
-    isarService.write((isar) {
-      final settings =
-          isar.deviceSettings.where().deviceIdEqualTo(deviceId).findFirst();
+    try {
+      isarService.write((isar) {
+        final settings =
+            isar.deviceSettings.where().deviceIdEqualTo(deviceId).findFirst();
 
-      isar.deviceSettings
-          .put(update(settings ?? DeviceSettings.empty(deviceId: deviceId)));
-    });
+        isar.deviceSettings
+            .put(update(settings ?? DeviceSettings.empty(deviceId: deviceId)));
+      });
+    } catch (e) {
+      debugPrint('Error updating device settings: $e');
+    } finally {
+      debugPrint(
+          'Device settings: ${isarService.read((isar) => isar.deviceSettings.where().findAll())}');
+    }
   }
 }
 

@@ -58,6 +58,9 @@ class DeviceSettings {
   /// Dnd end time
   final DateTime? dndEndTime;
 
+  /// Recalibration target
+  final int recalibrationTarget;
+
   DeviceSettings({
     required this.alarmEnabled,
     required this.vibrationEnabled,
@@ -74,6 +77,7 @@ class DeviceSettings {
     this.dndEnabled = false,
     this.dndStartTime,
     this.dndEndTime,
+    this.recalibrationTarget = 426,
   });
 
   DeviceSettings.empty({required this.deviceId})
@@ -90,7 +94,8 @@ class DeviceSettings {
         logData = false,
         dndEnabled = false,
         dndStartTime = null,
-        dndEndTime = null;
+        dndEndTime = null,
+        recalibrationTarget = 426;
 
   DeviceSettings copyWith({
     bool? alarmEnabled,
@@ -109,6 +114,7 @@ class DeviceSettings {
     bool? dndEnabled,
     DateTime? dndStartTime,
     DateTime? dndEndTime,
+    int? recalibrationTarget,
   }) {
     return DeviceSettings(
       alarmEnabled: alarmEnabled ?? this.alarmEnabled,
@@ -127,6 +133,7 @@ class DeviceSettings {
       dndEnabled: dndEnabled ?? this.dndEnabled,
       dndStartTime: dndStartTime ?? this.dndStartTime,
       dndEndTime: dndEndTime ?? this.dndEndTime,
+      recalibrationTarget: recalibrationTarget ?? this.recalibrationTarget,
     );
   }
 
@@ -231,6 +238,7 @@ class DeviceSettings {
       'dndEnabled': dndEnabled,
       'dndStartTime': dndStartTime,
       'dndEndTime': dndEndTime,
+      'recalibrationTarget': recalibrationTarget,
     };
   }
 
@@ -253,7 +261,8 @@ class DeviceSettings {
         other.logData == logData &&
         other.dndEnabled == dndEnabled &&
         other.dndStartTime == dndStartTime &&
-        other.dndEndTime == dndEndTime;
+        other.dndEndTime == dndEndTime &&
+        other.recalibrationTarget == recalibrationTarget;
   }
 
   @override
@@ -272,11 +281,12 @@ class DeviceSettings {
       logData.hashCode ^
       dndEnabled.hashCode ^
       dndStartTime.hashCode ^
-      dndEndTime.hashCode;
+      dndEndTime.hashCode ^
+      recalibrationTarget.hashCode;
 
   @override
   String toString() {
-    return 'DeviceSettings(alarmEnabled: $alarmEnabled, vibrationEnabled: $vibrationEnabled, powerMode: $powerMode, continuosScreenEnabled: $continuosScreenEnabled, thresholds: $thresholds, deviceId: $deviceId, co2MedAlertEnabled: $co2MedAlertEnabled, co2HighAlertEnabled: $co2HighAlertEnabled, autoSyncTime: $autoSyncTime, autoCalibration: $autoCalibration, autoConnect: $autoConnect, logData: $logData, dndEnabled: $dndEnabled, dndStartTime: $dndStartTime, dndEndTime: $dndEndTime)';
+    return 'DeviceSettings(alarmEnabled: $alarmEnabled, vibrationEnabled: $vibrationEnabled, powerMode: $powerMode, continuosScreenEnabled: $continuosScreenEnabled, thresholds: $thresholds, deviceId: $deviceId, co2MedAlertEnabled: $co2MedAlertEnabled, co2HighAlertEnabled: $co2HighAlertEnabled, autoSyncTime: $autoSyncTime, autoCalibration: $autoCalibration, autoConnect: $autoConnect, logData: $logData, dndEnabled: $dndEnabled, dndStartTime: $dndStartTime, dndEndTime: $dndEndTime, recalibrationTarget: $recalibrationTarget)';
   }
 }
 

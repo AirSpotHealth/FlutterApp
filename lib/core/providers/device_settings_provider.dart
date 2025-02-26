@@ -2,6 +2,7 @@ import 'package:airspothealth/core/models/ble_device.dart';
 import 'package:airspothealth/core/models/device_settings.dart';
 import 'package:airspothealth/core/providers/ble_device_communication_provider.dart';
 import 'package:airspothealth/core/services/isar_service.dart';
+import 'package:airspothealth/core/utils/device_cmd_utils.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:isar/isar.dart';
 
@@ -25,15 +26,18 @@ class _DeviceSettingsNotifier extends FamilyNotifier<DeviceSettings, String> {
     return setting;
   }
 
-  void updateSetting(DeviceSettings Function(DeviceSettings settings) update) {
+  void updateSetting(
+    DeviceSettings Function(DeviceSettings settings) update, {
+    bool sendCommands = false,
+  }) {
     final settings = update(state);
-    updateSettings(settings, sendCommands: false);
+    updateSettings(settings, sendCommands: sendCommands);
   }
 
   void updateSettings(DeviceSettings settings, {bool sendCommands = true}) {
     if (sendCommands) {
       // check which settings are changed and send the command to the device
-      if (settings.alarmEnabled != state.alarmEnabled && sendCommands) {
+      if (settings.alarmEnabled != state.alarmEnabled) {
         ref
             .read(bleDeviceCommunicationProvider(settings.deviceId).notifier)
             .sendCommand(settings.alarmCmd);
@@ -75,6 +79,13 @@ class _DeviceSettingsNotifier extends FamilyNotifier<DeviceSettings, String> {
         ref
             .read(bleDeviceCommunicationProvider(settings.deviceId).notifier)
             .sendCommand(settings.dndCmd);
+      }
+
+      if (settings.recalibrationTarget != state.recalibrationTarget) {
+        ref
+            .read(bleDeviceCommunicationProvider(settings.deviceId).notifier)
+            .sendCommand(DeviceCmdUtils.setRecalibrationTarget(
+                settings.recalibrationTarget));
       }
     }
 
