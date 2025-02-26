@@ -52,7 +52,8 @@ const DeviceDataSchema = IsarGeneratedSchema(
           "calibrationTarget": 9,
           "timeSync": 10,
           "calibrationAdjustment": 11,
-          "empty": 12
+          "ascLowest": 12,
+          "empty": 13
         },
       ),
       IsarPropertySchema(
@@ -322,7 +323,8 @@ const _deviceDataType = {
   9: DeviceDataType.calibrationTarget,
   10: DeviceDataType.timeSync,
   11: DeviceDataType.calibrationAdjustment,
-  12: DeviceDataType.empty,
+  12: DeviceDataType.ascLowest,
+  13: DeviceDataType.empty,
 };
 
 extension DeviceDataQueryFilter

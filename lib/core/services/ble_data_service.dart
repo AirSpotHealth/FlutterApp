@@ -348,8 +348,6 @@ class ResponseCommandParser {
       final timestamp = _byteArrayToInt(historyData, i, i + 3);
       final date = BleDataService.parseDeviceTimestamp(timestamp);
 
-      debugPrint('Timestamp: $timestamp, Date: ${date.toIso8601String()}');
-
       // Extract the value (2 bytes)
       final highByte = historyData[i + 4] & 0xFF;
       final lowByte = historyData[i + 5] & 0xFF;
@@ -358,13 +356,17 @@ class ResponseCommandParser {
       /// Extract the type (1 byte)
       final type = historyData[i + 6];
 
-      deviceData.add(DeviceData(
+      final deviceData0 = DeviceData(
         deviceId: deviceId,
         dateTime: date,
         value: // if value is > 63000 and less than 65535, then it is a negative value
             value > 33000 && value <= 65535 ? value - 65536 : value,
         type: DeviceDataType.fromByte(type),
-      ));
+      );
+
+      debugPrint('DeviceData: ${deviceData0.toString()}');
+
+      deviceData.add(deviceData0);
     }
 
     debugPrint('CO2 Data: ${deviceData.map((e) => e.toString())}');

@@ -64,7 +64,7 @@ class DeviceData {
 
   @override
   String toString() =>
-      'DeviceData(deviceId: $deviceId, dateTime: $dateTime, value: $value), type: $type, isLiveCo2: $isLiveCo2';
+      'DeviceData(deviceId: $deviceId, dateTime: $dateTime, value: $value, type: $type, isLiveCo2: $isLiveCo2)';
 
   @ignore
   String get hexString {
@@ -114,74 +114,16 @@ enum DeviceDataType {
   calibrationTarget,
   timeSync,
   calibrationAdjustment,
+  ascLowest,
   empty;
 
-  static DeviceDataType fromByte(int byte) {
-    switch (byte) {
-      case 0x00:
-        return DeviceDataType.co2;
-      case 0x01:
-        return DeviceDataType.batteryLow;
-      case 0x02:
-        return DeviceDataType.calibration;
-      case 0x03:
-        return DeviceDataType.sensorError;
-      case 0x04:
-        return DeviceDataType.reset;
-      case 0x05:
-        return DeviceDataType.sensorFactoryReset;
-      case 0x06:
-        return DeviceDataType.calibrationCorrection;
-      case 0x07:
-        return DeviceDataType.sensorAutoCalibration;
-      case 0x08:
-        return DeviceDataType.integrityError;
-      case 0x09:
-        return DeviceDataType.calibrationTarget;
-      case 0x0A:
-        return DeviceDataType.timeSync;
-      case 0x0B:
-        return DeviceDataType.calibrationAdjustment;
-      default:
-        return DeviceDataType.empty;
-    }
-  }
-
-  String humanizedName() {
-    switch (this) {
-      case DeviceDataType.co2:
-        return 'CO2';
-      case DeviceDataType.batteryLow:
-        return 'Battery Low';
-      case DeviceDataType.calibration:
-        return 'Calibration Start';
-      case DeviceDataType.sensorError:
-        return 'Sensor Error';
-      case DeviceDataType.reset:
-        return 'Device Reset';
-      case DeviceDataType.sensorFactoryReset:
-        return 'Sensor Factory Reset';
-      case DeviceDataType.calibrationCorrection:
-        return 'Calibration Correction';
-      case DeviceDataType.sensorAutoCalibration:
-        return 'Sensor Auto Calibration';
-      case DeviceDataType.integrityError:
-        return 'Integrity Error';
-      case DeviceDataType.calibrationTarget:
-        return 'Calibration Target';
-      case DeviceDataType.timeSync:
-        return 'Time Sync';
-      case DeviceDataType.calibrationAdjustment:
-        return 'Calibration Adjustment';
-      default:
-        return '-';
-    }
-  }
+  static DeviceDataType fromByte(int byte) =>
+      deviceDataByteMap[byte] ?? DeviceDataType.empty;
 
   @override
-  String toString() {
-    return humanizedName();
-  }
+  String toString() => humanizedName();
+
+  String humanizedName() => deviceDataTypeMap[this] ?? '-';
 }
 
 const resetReasonMap = {
@@ -194,4 +136,38 @@ const resetReasonMap = {
   6: 'Wake up from System OFF mode (LPCOMP)',
   7: 'Wake up from System OFF mode (Debug Interface)',
   8: 'Wake up from System OFF mode (NFC)',
+};
+
+const deviceDataByteMap = {
+  0x00: DeviceDataType.co2,
+  0x01: DeviceDataType.batteryLow,
+  0x02: DeviceDataType.calibration,
+  0x03: DeviceDataType.sensorError,
+  0x04: DeviceDataType.reset,
+  0x05: DeviceDataType.sensorFactoryReset,
+  0x06: DeviceDataType.calibrationCorrection,
+  0x07: DeviceDataType.sensorAutoCalibration,
+  0x08: DeviceDataType.integrityError,
+  0x09: DeviceDataType.calibrationTarget,
+  0x0A: DeviceDataType.timeSync,
+  0x0B: DeviceDataType.calibrationAdjustment,
+  0x0C: DeviceDataType.ascLowest,
+  // 0x0D: DeviceDataType.empty,
+};
+
+const deviceDataTypeMap = {
+  DeviceDataType.co2: 'CO2',
+  DeviceDataType.batteryLow: 'Battery Low',
+  DeviceDataType.calibration: 'Calibration Start',
+  DeviceDataType.sensorError: 'Sensor Error',
+  DeviceDataType.reset: 'Device Reset',
+  DeviceDataType.sensorFactoryReset: 'Sensor Factory Reset',
+  DeviceDataType.calibrationCorrection: 'Calibration Correction',
+  DeviceDataType.sensorAutoCalibration: 'Sensor Auto Calibration',
+  DeviceDataType.integrityError: 'Integrity Error',
+  DeviceDataType.calibrationTarget: 'Calibration Target',
+  DeviceDataType.timeSync: 'Time Sync',
+  DeviceDataType.calibrationAdjustment: 'Calibration Adjustment',
+  DeviceDataType.ascLowest: 'ASC Lowest',
+  DeviceDataType.empty: '-',
 };
