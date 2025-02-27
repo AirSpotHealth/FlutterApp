@@ -162,7 +162,7 @@ SPEC CHECKSUMS:
   home_widget: f169fc41fd807b4d46ab6615dc44d62adbf9f64f
   IosAwnCore: 653786a911089012092ce831f2945cd339855a89
   iOSDFULibrary: 198c36ebe5a31bf2ca04ee8fb40837176a423e85
-  isar_flutter_libs: bc909e72c3d756c2759f14c8776c13b5b0556e26
+  isar_flutter_libs: 9fc2cfb928c539e1b76c481ba5d143d556d94920
   nordic_dfu: e4fb6f461f4a290b28ea4b1dfb69071665cdfa3e
   package_info_plus: af8e2ca6888548050f16fa2f1938db7b5a5df499
   path_provider_foundation: 080d55be775b7414fd5a5ef3ac137b97b097e564
