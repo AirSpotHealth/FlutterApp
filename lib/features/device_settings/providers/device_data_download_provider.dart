@@ -102,6 +102,7 @@ class _DeviceDataDownloadNotifier
             .typeLessThan(DeviceDataType.empty.index)
             .isLiveCo2EqualTo(false)
             .sortByDateTime()
+            .thenByTypeDesc()
             .findAll();
       },
     );

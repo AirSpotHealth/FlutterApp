@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:airspothealth/core/providers/device_settings_provider.dart';
 import 'package:airspothealth/core/utils/extensions.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 class CalibrationTargetWidget extends ConsumerStatefulWidget {
@@ -100,7 +101,7 @@ class _CalibrationCorrectionWidgetState
         helperMaxLines: 3,
         helperStyle: context.textTheme.bodySmall,
         helperText:
-            "You can set the CO2 level of the air where calibration takes place. If unknown, 420-450 is typical for outdoors.",
+            "You can set the CO2 level of the air where calibration takes place. If unknown, 420-450 is typical for outdoors. This value is used for manual or automatic calibration.",
       ),
       onTapOutside: (_) => FocusScope.of(context).unfocus(),
       validator: _validateInput,
@@ -108,6 +109,7 @@ class _CalibrationCorrectionWidgetState
       keyboardType: TextInputType.number,
       style: context.textTheme.bodyMedium?.weight700,
       onChanged: _handleValueChange,
+      inputFormatters: [FilteringTextInputFormatter.digitsOnly],
     );
   }
 }

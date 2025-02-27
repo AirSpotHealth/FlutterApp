@@ -12,6 +12,7 @@ enum DeviceDataType {
   timeSync,
   calibrationAdjustment,
   ascLowest,
+  calibrationCorrectionOld,
   empty;
 
   static DeviceDataType fromByte(int byte) =>
@@ -49,6 +50,7 @@ const deviceDataByteMap = {
   0x0A: DeviceDataType.timeSync,
   0x0B: DeviceDataType.calibrationAdjustment,
   0x0C: DeviceDataType.ascLowest,
+  0x0D: DeviceDataType.calibrationCorrectionOld
   // 0x0D: DeviceDataType.empty,
 };
 
@@ -66,5 +68,6 @@ const deviceDataTypeMap = {
   DeviceDataType.timeSync: 'Time Sync',
   DeviceDataType.calibrationAdjustment: 'Calibration Adjustment',
   DeviceDataType.ascLowest: 'ASC Lowest',
+  DeviceDataType.calibrationCorrectionOld: 'Calibration Correction Old',
   DeviceDataType.empty: '-',
 };
