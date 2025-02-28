@@ -52,8 +52,8 @@ class IsarService {
   }
 
   /// clear all data
-  Future<void> clearAllData() async {
-    await _isar.writeAsync((isar) async {
+  void clearAllData() {
+    _isar.write((isar) {
       isar.clear();
     });
   }

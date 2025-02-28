@@ -27,7 +27,9 @@ void main() async {
   systemTimeFormat =
       DateFormat(await SystemDateTimeFormat().getTimePattern() ?? 'HH:mm:ss');
 
-  await [_checkVersion(), NotificationService.initNotification()].wait;
+  await NotificationService.initNotification();
+
+  await _checkVersion();
 
   runApp(
     const ProviderScope(
@@ -37,16 +39,33 @@ void main() async {
 }
 
 Future<void> _checkVersion() async {
-  final prefs = PrefsService();
-  final currentVersion = prefs.getString(StorageKeys.appVerion);
-  final appVersion = await PackageInfo.fromPlatform();
+  try {
+    // Get prefs and version info first
+    final prefs = PrefsService();
+    final currentVersion = prefs.getString(StorageKeys.appVerion);
+    final appVersion = await PackageInfo.fromPlatform();
 
-  if (currentVersion != appVersion.version) {
-    await prefs.setString(StorageKeys.appVerion, appVersion.version);
+    // If versions match, no need to proceed
+    if (currentVersion == appVersion.version) {
+      return;
+    }
 
-    if (currentVersion == '') return;
+    debugPrint('currentVersion: $currentVersion');
+    debugPrint('appVersion: ${appVersion.version}');
 
-    await IsarService().clearAllData();
+    // For first install, just save version and return
+    if (currentVersion == '') {
+      await prefs.setString(
+          StorageKeys.appVerion, appVersion.version.toString());
+      return;
+    }
+
+    // For version change, clear data first, then save new version
+    IsarService().clearAllData(); // Wait for clear to complete
+    await prefs.setString(StorageKeys.appVerion, appVersion.version.toString());
+  } catch (e) {
+    debugPrint(
+        'Error during version check: $e, StackTrace: ${StackTrace.current}');
   }
 }
 

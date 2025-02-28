@@ -15,8 +15,6 @@ dependencies:
   go_router: ^14.8.0
   flutter_riverpod: ^2.6.1
   permission_handler: ^11.4.0
-  isar: ^4.0.0-dev.14
-  isar_flutter_libs: ^4.0.0-dev.14
   flutter_blue_plus: ^1.35.3
   path_provider: ^2.1.5
   webview_flutter: ^4.10.0
@@ -40,6 +38,13 @@ dependencies:
   share_plus: ^10.1.4
   system_date_time_format: ^1.2.2
   bottom_picker: ^2.11.1
+  isar:
+    version: ^4.0.3
+    hosted: https://pub.isar-community.dev
+
+  isar_flutter_libs:
+    version: ^4.0.3
+    hosted: https://pub.isar-community.dev
 
 dev_dependencies:
   flutter_test:

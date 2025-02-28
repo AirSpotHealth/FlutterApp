@@ -13,6 +13,7 @@ enum DeviceDataType {
   calibrationAdjustment,
   ascLowest,
   calibrationCorrectionOld,
+  manualCalibStart,
   empty;
 
   static DeviceDataType fromByte(int byte) =>
@@ -50,7 +51,8 @@ const deviceDataByteMap = {
   0x0A: DeviceDataType.timeSync,
   0x0B: DeviceDataType.calibrationAdjustment,
   0x0C: DeviceDataType.ascLowest,
-  0x0D: DeviceDataType.calibrationCorrectionOld
+  0x0D: DeviceDataType.calibrationCorrectionOld,
+  0x0E: DeviceDataType.manualCalibStart,
   // 0x0D: DeviceDataType.empty,
 };
 
@@ -61,13 +63,14 @@ const deviceDataTypeMap = {
   DeviceDataType.sensorError: 'Sensor Error',
   DeviceDataType.reset: 'Device Reset',
   DeviceDataType.sensorFactoryReset: 'Sensor Factory Reset',
-  DeviceDataType.calibrationCorrection: 'Calibration Correction',
+  DeviceDataType.calibrationCorrection: 'New Calibration Correction',
   DeviceDataType.sensorAutoCalibration: 'Sensor Auto Calibration',
   DeviceDataType.integrityError: 'Integrity Error',
   DeviceDataType.calibrationTarget: 'Calibration Target',
   DeviceDataType.timeSync: 'Time Sync',
   DeviceDataType.calibrationAdjustment: 'Calibration Adjustment',
   DeviceDataType.ascLowest: 'ASC Lowest',
-  DeviceDataType.calibrationCorrectionOld: 'Calibration Correction Old',
+  DeviceDataType.calibrationCorrectionOld: 'Old Calibration Correction',
+  DeviceDataType.manualCalibStart: 'Manual Calibration Start',
   DeviceDataType.empty: '-',
 };

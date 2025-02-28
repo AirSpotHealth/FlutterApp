@@ -267,6 +267,10 @@ class DeviceCmdUtils {
     return _buildCommand([prefixHigh, prefixLow, 0x27, 1, 1]);
   }
 
+  static Uint8List setGraphMode(bool graphMode) {
+    return _buildCommand([prefixHigh, prefixLow, 0x28, 1, graphMode ? 0 : 1]);
+  }
+
   // ======= Helper Functions =======
   static Uint8List _getHex2Bytes(int value) {
     var byteArray = Uint8List(2);

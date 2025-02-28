@@ -1,3 +1,4 @@
+import 'package:airspothealth/core/providers/bluetooth_state_provider.dart';
 import 'package:airspothealth/core/theme/app_colors.dart';
 import 'package:airspothealth/core/utils/constants.dart';
 import 'package:airspothealth/core/widgets/app_logo.dart';
@@ -5,6 +6,7 @@ import 'package:airspothealth/features/add_device/providers/ble_search_results_p
 import 'package:airspothealth/features/device_settings/providers/firmware_remote_version_provider.dart';
 import 'package:airspothealth/features/home/widgets/menu_item_widget.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_blue_plus/flutter_blue_plus.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:home_widget/home_widget.dart';
 
@@ -30,7 +32,10 @@ class _HomePageState extends ConsumerState<HomePage> {
   }
 
   void _scanForDevices() {
-    ref.read(bluetoothSearchResultsProvider.notifier).startScan();
+    // if bluetooth is on, start scanning for devices
+    if (ref.read(bluetoothStateProvider) == BluetoothAdapterState.on) {
+      ref.read(bluetoothSearchResultsProvider.notifier).startScan();
+    }
   }
 
   void _setAppGroupId() => HomeWidget.setAppGroupId(Constants.appGroupId);

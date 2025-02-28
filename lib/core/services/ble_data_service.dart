@@ -255,15 +255,16 @@ class ResponseCommandParser {
   dynamic parseInitialData(List<int> data) {
     _updateDeviceSettings(
       (settings) {
-        debugPrint('LogData: ${settings.logData}');
         final dndEnabled = data.length > 13 ? _parseBoolean(data, 13) : false;
         final dndStartHour = data.length > 14 ? data[14] : 0;
         final dndStartMinute = data.length > 15 ? data[15] : 0;
         final dndEndHour = data.length > 16 ? data[16] : 0;
         final dndEndMinute = data.length > 17 ? data[17] : 0;
-        final recalibrationTarget = _parseTwoBytesToInt(data, 18);
-
+        final recalibrationTarget =
+            data.length > 18 ? _parseTwoBytesToInt(data, 18) : 426;
+        final graphMode = data.length > 19 ? _parseBoolean(data, 20) : true;
         debugPrint('RECALIBRATION TARGET: $recalibrationTarget');
+        debugPrint('GRAPH MODE: $graphMode');
 
         return settings.copyWith(
           deviceId: deviceId,
@@ -280,6 +281,7 @@ class ResponseCommandParser {
           dndStartTime: DateTime(0, 0, 0, dndStartHour, dndStartMinute),
           dndEndTime: DateTime(0, 0, 0, dndEndHour, dndEndMinute),
           recalibrationTarget: recalibrationTarget,
+          graphMode: graphMode,
         );
       },
     );

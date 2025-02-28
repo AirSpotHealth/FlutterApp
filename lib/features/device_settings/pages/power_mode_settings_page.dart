@@ -6,6 +6,7 @@ import 'package:airspothealth/core/utils/assets.dart';
 import 'package:airspothealth/core/utils/constants.dart';
 import 'package:airspothealth/core/utils/extensions.dart';
 import 'package:airspothealth/features/device_graph/providers/ble_device_provider.dart';
+import 'package:airspothealth/features/device_settings/widgets/device_graph_mode_widget.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -93,8 +94,13 @@ class PowerModeSettingsPage extends ConsumerWidget {
           ),
           const SizedBox(height: 12),
           Text(
-              'To maintain battery power the screen is on for 10 seconds in low and medium power modes and 1 minute in high power mode. We recommend continuous screen display is only turned on when the device is being charged.',
-              style: context.textTheme.bodySmall?.weight500),
+            'To maintain battery power the screen is on for 10 seconds in low and medium power modes and 1 minute in high power mode. We recommend continuous screen display is only turned on when the device is being charged.',
+            style: context.textTheme.bodySmall?.weight500?.copyWith(
+              color: context.textTheme.bodySmall?.color?.withValues(alpha: .7),
+            ),
+          ),
+          const SizedBox(height: 12),
+          DeviceGraphModeWidget(deviceId: deviceId),
         ],
       ),
     );

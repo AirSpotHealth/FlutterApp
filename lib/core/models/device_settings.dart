@@ -61,6 +61,9 @@ class DeviceSettings {
   /// Recalibration target
   final int recalibrationTarget;
 
+  /// Graph mode
+  final bool graphMode;
+
   DeviceSettings({
     required this.alarmEnabled,
     required this.vibrationEnabled,
@@ -78,6 +81,7 @@ class DeviceSettings {
     this.dndStartTime,
     this.dndEndTime,
     this.recalibrationTarget = 426,
+    this.graphMode = true,
   });
 
   DeviceSettings.empty({required this.deviceId})
@@ -95,7 +99,8 @@ class DeviceSettings {
         dndEnabled = false,
         dndStartTime = null,
         dndEndTime = null,
-        recalibrationTarget = 426;
+        recalibrationTarget = 426,
+        graphMode = true;
 
   DeviceSettings copyWith({
     bool? alarmEnabled,
@@ -115,6 +120,7 @@ class DeviceSettings {
     DateTime? dndStartTime,
     DateTime? dndEndTime,
     int? recalibrationTarget,
+    bool? graphMode,
   }) {
     return DeviceSettings(
       alarmEnabled: alarmEnabled ?? this.alarmEnabled,
@@ -134,6 +140,7 @@ class DeviceSettings {
       dndStartTime: dndStartTime ?? this.dndStartTime,
       dndEndTime: dndEndTime ?? this.dndEndTime,
       recalibrationTarget: recalibrationTarget ?? this.recalibrationTarget,
+      graphMode: graphMode ?? this.graphMode,
     );
   }
 
@@ -239,6 +246,7 @@ class DeviceSettings {
       'dndStartTime': dndStartTime,
       'dndEndTime': dndEndTime,
       'recalibrationTarget': recalibrationTarget,
+      'graphMode': graphMode,
     };
   }
 
@@ -262,7 +270,8 @@ class DeviceSettings {
         other.dndEnabled == dndEnabled &&
         other.dndStartTime == dndStartTime &&
         other.dndEndTime == dndEndTime &&
-        other.recalibrationTarget == recalibrationTarget;
+        other.recalibrationTarget == recalibrationTarget &&
+        other.graphMode == graphMode;
   }
 
   @override
@@ -282,11 +291,12 @@ class DeviceSettings {
       dndEnabled.hashCode ^
       dndStartTime.hashCode ^
       dndEndTime.hashCode ^
-      recalibrationTarget.hashCode;
+      recalibrationTarget.hashCode ^
+      graphMode.hashCode;
 
   @override
   String toString() {
-    return 'DeviceSettings(alarmEnabled: $alarmEnabled, vibrationEnabled: $vibrationEnabled, powerMode: $powerMode, continuosScreenEnabled: $continuosScreenEnabled, thresholds: $thresholds, deviceId: $deviceId, co2MedAlertEnabled: $co2MedAlertEnabled, co2HighAlertEnabled: $co2HighAlertEnabled, autoSyncTime: $autoSyncTime, autoCalibration: $autoCalibration, autoConnect: $autoConnect, logData: $logData, dndEnabled: $dndEnabled, dndStartTime: $dndStartTime, dndEndTime: $dndEndTime, recalibrationTarget: $recalibrationTarget)';
+    return 'DeviceSettings(alarmEnabled: $alarmEnabled, vibrationEnabled: $vibrationEnabled, powerMode: $powerMode, continuosScreenEnabled: $continuosScreenEnabled, thresholds: $thresholds, deviceId: $deviceId, co2MedAlertEnabled: $co2MedAlertEnabled, co2HighAlertEnabled: $co2HighAlertEnabled, autoSyncTime: $autoSyncTime, autoCalibration: $autoCalibration, autoConnect: $autoConnect, logData: $logData, dndEnabled: $dndEnabled, dndStartTime: $dndStartTime, dndEndTime: $dndEndTime, recalibrationTarget: $recalibrationTarget, graphMode: $graphMode)';
   }
 }
 

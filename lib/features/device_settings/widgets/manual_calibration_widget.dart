@@ -33,11 +33,6 @@ class ManualCalibrationWidget extends ConsumerWidget {
             contentPadding: EdgeInsets.zero,
           ),
           const SizedBox(height: 16),
-          CalibrationTargetWidget(
-            deviceId: deviceId,
-            calibrationTarget: calibrationTarget,
-          ),
-          const SizedBox(height: 16),
           GestureDetector(
             onTap: () {
               ref
@@ -58,6 +53,11 @@ class ManualCalibrationWidget extends ConsumerWidget {
                 ),
               ),
             ),
+          ),
+          const SizedBox(height: 16),
+          CalibrationTargetWidget(
+            deviceId: deviceId,
+            calibrationTarget: calibrationTarget,
           ),
         ],
       ),

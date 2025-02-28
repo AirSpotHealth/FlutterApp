@@ -87,6 +87,12 @@ class _DeviceSettingsNotifier extends FamilyNotifier<DeviceSettings, String> {
             .sendCommand(DeviceCmdUtils.setRecalibrationTarget(
                 settings.recalibrationTarget));
       }
+
+      if (settings.graphMode != state.graphMode) {
+        ref
+            .read(bleDeviceCommunicationProvider(settings.deviceId).notifier)
+            .sendCommand(DeviceCmdUtils.setGraphMode(settings.graphMode));
+      }
     }
 
     _isarService.write((isar) {
