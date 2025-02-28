@@ -207,7 +207,7 @@ class DeviceSettings {
       return AppColors.brandColorGreen;
     }
 
-    if (value > 0 && value < greenUpperLimit) {
+    if (value >= 0 && value < greenUpperLimit) {
       return AppColors.brandColorGreen;
     } else if (value >= greenUpperLimit && value < yellowUpperLimit) {
       return AppColors.brandColorAmber;

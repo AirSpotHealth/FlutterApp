@@ -13,7 +13,7 @@ import 'package:airspothealth/main.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-// fake data length
+// fake data lengths
 const fakeDataLength = 5;
 
 const yAxesValues = [
@@ -34,6 +34,35 @@ const yAxesValues = [
   5000,
 ];
 
+class RebreatheTable {
+  final int co2;
+  final double rebreathed;
+  final int? oneInXBreaths;
+
+  RebreatheTable({
+    required this.co2,
+    required this.rebreathed,
+    this.oneInXBreaths,
+  });
+}
+
+final rebreatheTable = [
+  // [CO2 ppm, rebreathed %, 1 in X breaths]
+  RebreatheTable(co2: 400, rebreathed: 0, oneInXBreaths: null),
+  RebreatheTable(co2: 800, rebreathed: 1, oneInXBreaths: 100),
+  RebreatheTable(co2: 1200, rebreathed: 2, oneInXBreaths: 50),
+  RebreatheTable(co2: 1600, rebreathed: 3, oneInXBreaths: 33),
+  RebreatheTable(co2: 2000, rebreathed: 4, oneInXBreaths: 25),
+  RebreatheTable(co2: 2400, rebreathed: 5, oneInXBreaths: 20),
+  RebreatheTable(co2: 2800, rebreathed: 6, oneInXBreaths: 17),
+  RebreatheTable(co2: 3200, rebreathed: 7, oneInXBreaths: 14),
+  RebreatheTable(co2: 3600, rebreathed: 8, oneInXBreaths: 13),
+  RebreatheTable(co2: 4000, rebreathed: 9, oneInXBreaths: 11),
+  RebreatheTable(co2: 4400, rebreathed: 10, oneInXBreaths: 10),
+  RebreatheTable(co2: 4800, rebreathed: 11, oneInXBreaths: 9),
+  RebreatheTable(co2: 5200, rebreathed: 12, oneInXBreaths: 8),
+];
+
 class DataGraphWidget extends ConsumerStatefulWidget {
   final List<DeviceData> deviceDataList;
 
@@ -51,6 +80,35 @@ class DataGraphWidget extends ConsumerStatefulWidget {
   @override
   ConsumerState<ConsumerStatefulWidget> createState() =>
       _DataGraphWidgetState();
+
+  // Make this a static method since it's a pure calculation
+  static double calculateRebreathePercentage(num co2Value) {
+    // For values below first entry
+    if (co2Value <= rebreatheTable[0].co2) return 0;
+    // For values above last entry
+    if (co2Value >= rebreatheTable.last.co2) {
+      return rebreatheTable.last.rebreathed.toDouble();
+    }
+
+    // Find the appropriate interval in the table
+    for (int i = 0; i < rebreatheTable.length - 1; i++) {
+      if (co2Value >= rebreatheTable[i].co2 &&
+          co2Value < rebreatheTable[i + 1].co2) {
+        final co2Lower = rebreatheTable[i].co2;
+        final co2Upper = rebreatheTable[i + 1].co2;
+        final percentLower = rebreatheTable[i].rebreathed;
+        final percentUpper = rebreatheTable[i + 1].rebreathed;
+
+        // Linear interpolation between points
+        return percentLower +
+            (co2Value - co2Lower) *
+                (percentUpper - percentLower) /
+                (co2Upper - co2Lower);
+      }
+    }
+
+    return 0; // Fallback
+  }
 }
 
 class _DataGraphWidgetState extends ConsumerState<DataGraphWidget> {
@@ -83,6 +141,23 @@ class _DataGraphWidgetState extends ConsumerState<DataGraphWidget> {
     }
 
     final seriesData = _generateSeriesData(currentDataList, duration);
+
+    // Calculate rebreathed data and max percentage
+    double maxRebreathePercentage = 4; // Default minimum range
+    final rebreatheData = settings.showRebreathePercentage
+        ? seriesData.map((data) {
+            final co2Value = data[1] as num;
+            final percentage =
+                DataGraphWidget.calculateRebreathePercentage(co2Value);
+            maxRebreathePercentage =
+                math.max(maxRebreathePercentage, percentage);
+            return [data[0], percentage];
+          }).toList()
+        : [];
+
+    // Round up to the next multiple of 2 for clean intervals
+    maxRebreathePercentage = (maxRebreathePercentage / 2).ceil() * 2;
+
     final fakeData = _generatePreviousAndAfterFakeData(duration);
     // Get the maximum value of the y-axis
     // it should be the maximum value of the data and round it to nearest value of yAxesValues
@@ -93,27 +168,33 @@ class _DataGraphWidgetState extends ConsumerState<DataGraphWidget> {
     return '''
 {
   tooltip: {
-    trigger: "axis",
-    axisPointer: {
-      type: "line",
-      axis: "x",
-      lineStyle: {
-        color: '#777',
-        width: 1,
-        type: 'solid'
-      },
-      label: {
-        formatter: function(params) {
-            return new Date(params.value).toLocaleString('en-AU', {
-              year: 'numeric',
-              month: 'numeric',
-              day: 'numeric',
-              hour: 'numeric',
-              minute: 'numeric',
-              hour12: $is12Hour
-            });
-          }
+    trigger: 'axis',
+    formatter: function(params) {
+      if (!params || params.length === 0) return '';
+      
+      var date = new Date(params[0].value[0]);
+      var hours = date.getHours();
+      var minutes = date.getMinutes();
+      var timeStr = $is12Hour 
+        ? ((hours % 12 || 12) + ':' + (minutes < 10 ? '0' : '') + minutes + ' ' + (hours >= 12 ? 'PM' : 'AM'))
+        : ((hours < 10 ? '0' : '') + hours + ':' + (minutes < 10 ? '0' : '') + minutes);
+      
+      var result = date.toLocaleDateString() + ' ' + timeStr + '<br/>';
+      
+      for (var i = 0; i < params.length; i++) {
+        var param = params[i];
+        if (param.seriesName === 'CO₂') {
+          result += 'CO₂: ' + param.value[1] + ' ppm<br/>';
+        } else if (param.seriesName === 'Rebreathed Air' && param.value[1] != null) {
+          result += 'Rebreathed: ' + param.value[1].toFixed(1) + '%';
+        }
       }
+      
+      return result;
+    },
+    axisPointer: {
+      type: 'line',
+      axis: 'x'
     },
     position: function (point, params, dom, rect, size) {
       var x = (size.viewSize[0] - dom.clientWidth) / 2;
@@ -163,37 +244,50 @@ class _DataGraphWidgetState extends ConsumerState<DataGraphWidget> {
       show: false,
     }
   },
-  yAxis: {
-    type: 'value',
-    axisLine: {
-      lineStyle: {
-        color: '#333',
-        type: 'solid',
-        width: 1
-      }
-    },
-    gridIndex: 0,
-    scale: true,
-    splitLine: {
-      show: true,
-      lineStyle: {
-        color: '#eee',
-        width: 1.5,
-        type: 'dashed'
-      }
-    },
-    z: 1,
-    min: 350,
-    max: $yMax,
-    axisLabel: {
-      fontSize: 11,
-      customValues: ${jsonEncode(yAxesValues)},
-      formatter: function (value, index) {
-        return value;
+  yAxis: [
+    {
+      type: 'value',
+      axisLine: {
+        lineStyle: {
+          color: '#333',
+          type: 'solid',
+          width: 1
+        }
       },
-      showMinLabel: false,
-    }
-  },
+      gridIndex: 0,
+      scale: true,
+      splitLine: {
+        show: true,
+        lineStyle: {
+          color: '#eee',
+          width: 1.5,
+          type: 'dashed'
+        }
+      },
+      z: 1,
+      min: 350,
+      max: $yMax,
+      axisLabel: {
+        fontSize: 11,
+        customValues: ${jsonEncode(yAxesValues)},
+        formatter: function (value, index) {
+          return value;
+        },
+        showMinLabel: false,
+      }
+    }${settings.showRebreathePercentage ? ''',
+    {
+      type: 'value',
+      name: '',
+      position: 'right',
+      min: 0,
+      max: $maxRebreathePercentage,
+      interval: ${maxRebreathePercentage <= 6 ? 1 : 2},
+      axisLabel: {
+        formatter: '{value}%'
+      }
+    }''' : ''}
+  ],
   dataZoom: [
     {
       type: 'inside',
@@ -205,13 +299,13 @@ class _DataGraphWidgetState extends ConsumerState<DataGraphWidget> {
   ],
   grid: {
     left: 40,
-    right: 20,
+    right: ${settings.showRebreathePercentage ? '40' : '20'},
     top: 50,
     bottom: ${settings.showZoomSlider ? 80 : 50}
   },
   series: [
     {
-      name: '${Constants.co2Text} Value',
+      name: 'CO₂',
       type: 'line',
       data: ${jsonEncode(seriesData)},
       ${settings.showAreaFill ? 'areaStyle: { opacity: 0.2 },' : ''}
@@ -232,8 +326,20 @@ class _DataGraphWidgetState extends ConsumerState<DataGraphWidget> {
             { yAxis: $amberThreshold, lineStyle: { color: '#D9001B', type: 'dashed' } }
           ]
         }
-      ''' : 'null'}
-    },
+      ''' : 'null'},
+    }${settings.showRebreathePercentage ? ''',
+    {
+      name: 'Rebreathed Air',
+      type: 'line',
+      yAxisIndex: 1,
+      data: ${jsonEncode(rebreatheData)},
+      showSymbol: false,
+      lineStyle: {
+        type: 'dashed',
+        color: '#666',
+        width: 0
+      }
+    }''' : ''},
     {
       name: '< $greenThreshold',
       type: 'line',

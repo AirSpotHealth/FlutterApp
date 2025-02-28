@@ -4,11 +4,11 @@ class GraphSettings {
   final bool showMarkLines;
   final bool showRebreathePercentage;
 
-  GraphSettings({
-    required this.showZoomSlider,
-    required this.showAreaFill,
-    required this.showMarkLines,
-    required this.showRebreathePercentage,
+  const GraphSettings({
+    this.showZoomSlider = false,
+    this.showAreaFill = true,
+    this.showMarkLines = true,
+    this.showRebreathePercentage = false,
   });
 
   factory GraphSettings.defaults() {

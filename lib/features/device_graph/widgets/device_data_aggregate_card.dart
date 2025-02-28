@@ -30,6 +30,8 @@ class DeviceDataAggregateCard extends ConsumerWidget {
             deviceHistoricalDataProvider((deviceId, selectedDuration)).notifier)
         .maxValue;
 
+    debugPrint("Min and max values: $minValue, $maxValue");
+
     final DeviceSettings deviceSettings =
         ref.watch(deviceSettingsProvider(deviceId));
 

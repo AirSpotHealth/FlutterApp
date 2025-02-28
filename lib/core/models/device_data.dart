@@ -99,6 +99,10 @@ class DeviceData {
       return value == 0 ? 'Disabled' : 'Enabled';
     }
 
+    if (type == DeviceDataType.sensorError.index) {
+      return sensorErrorMap[value] ?? value.toString();
+    }
+
     return value.toString();
   }
 
