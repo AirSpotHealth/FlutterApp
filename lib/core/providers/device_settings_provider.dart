@@ -3,6 +3,7 @@ import 'package:airspothealth/core/models/device_settings.dart';
 import 'package:airspothealth/core/providers/ble_device_communication_provider.dart';
 import 'package:airspothealth/core/services/isar_service.dart';
 import 'package:airspothealth/core/utils/device_cmd_utils.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:isar/isar.dart';
 
@@ -22,6 +23,8 @@ class _DeviceSettingsNotifier extends FamilyNotifier<DeviceSettings, String> {
     if (setting == null) {
       return DeviceSettings.empty(deviceId: arg);
     }
+
+    debugPrint('SETTING: ${setting.toJson()}');
 
     return setting;
   }
@@ -88,10 +91,12 @@ class _DeviceSettingsNotifier extends FamilyNotifier<DeviceSettings, String> {
                 settings.recalibrationTarget));
       }
 
-      if (settings.graphMode != state.graphMode) {
+      if (settings.graphMode != state.graphMode ||
+          settings.graphMaxValue != state.graphMaxValue) {
         ref
             .read(bleDeviceCommunicationProvider(settings.deviceId).notifier)
-            .sendCommand(DeviceCmdUtils.setGraphMode(settings.graphMode));
+            .sendCommand(DeviceCmdUtils.setGraphMode(
+                settings.graphMode, settings.graphMaxValue));
       }
     }
 

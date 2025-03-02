@@ -125,12 +125,12 @@ class _DataGraphWidgetState extends ConsumerState<DataGraphWidget> {
     final GraphSettings settings = ref.watch(graphSettingsProvider);
     final GraphDataDuration duration = ref.watch(graphDurationProvider);
 
-    final String currentOption = _buildOption(settings, duration);
+    final String currentOption = _buildOption(settings, duration.dateTimeRange);
 
     return EChart(option: currentOption);
   }
 
-  String _buildOption(GraphSettings settings, GraphDataDuration duration) {
+  String _buildOption(GraphSettings settings, DateTimeRange range) {
     // Check if there is no data
     if (loading) {
       return Constants.loadingEchartString;
@@ -140,7 +140,7 @@ class _DataGraphWidgetState extends ConsumerState<DataGraphWidget> {
       return Constants.noChartDataString;
     }
 
-    final seriesData = _generateSeriesData(currentDataList, duration);
+    final seriesData = _generateSeriesData(currentDataList);
 
     // Calculate rebreathed data and max percentage
     double maxRebreathePercentage = 4; // Default minimum range
@@ -158,7 +158,7 @@ class _DataGraphWidgetState extends ConsumerState<DataGraphWidget> {
     // Round up to the next multiple of 2 for clean intervals
     maxRebreathePercentage = (maxRebreathePercentage / 2).ceil() * 2;
 
-    final fakeData = _generatePreviousAndAfterFakeData(duration);
+    final fakeData = _generatePreviousAndAfterFakeData(range);
     // Get the maximum value of the y-axis
     // it should be the maximum value of the data and round it to nearest value of yAxesValues
     final yMax = _calculateYMax();
@@ -390,8 +390,7 @@ class _DataGraphWidgetState extends ConsumerState<DataGraphWidget> {
 ''';
   }
 
-  List<List<dynamic>> _generateSeriesData(
-      List<DeviceData> currentDataList, GraphDataDuration duration) {
+  List<List<dynamic>> _generateSeriesData(List<DeviceData> currentDataList) {
     debugPrint('currentDataList: ${currentDataList.map((e) => e.dateTime)}');
     final dataList = currentDataList
         .map((data) => [
@@ -407,10 +406,7 @@ class _DataGraphWidgetState extends ConsumerState<DataGraphWidget> {
   // to make the real data in the middle of the chart
   // the data will be used to make the chart look better
 
-  List<List<dynamic>> _generatePreviousAndAfterFakeData(
-      GraphDataDuration duration) {
-    final range = duration.getDateTimeRange();
-
+  List<List<dynamic>> _generatePreviousAndAfterFakeData(DateTimeRange range) {
     final fakeData = <List<dynamic>>[];
 
     for (int i = 0; i < fakeDataLength; i++) {

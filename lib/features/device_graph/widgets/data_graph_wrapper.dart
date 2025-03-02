@@ -38,7 +38,11 @@ class DataGraphWrapper extends ConsumerWidget {
             loading: deviceDataList.isLoading,
           ),
         ),
-        const GraphRangeSelector(),
+        Positioned(
+          top: 16,
+          left: 16,
+          child: const GraphRangeSelector(),
+        ),
         Positioned(
           right: 12,
           child: GraphLegends(

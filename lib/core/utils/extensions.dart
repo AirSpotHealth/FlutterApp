@@ -143,6 +143,11 @@ extension DateTimeExtension on DateTime {
     final now = DateTime.now();
     return year == now.year && month == now.month && day == now.day;
   }
+
+  /// is same day
+  bool isSameDay(DateTime other) {
+    return year == other.year && month == other.month && day == other.day;
+  }
 }
 
 extension IntExtension on int {

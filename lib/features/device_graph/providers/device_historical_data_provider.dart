@@ -61,7 +61,7 @@ class _DeviceHistoricalDataNotifier extends AutoDisposeFamilyAsyncNotifier<
         (value, element) => value.value < element.value ? value : element);
   }
 
-  DateTimeRange get dateTimeRange => duration.getDateTimeRange();
+  DateTimeRange get dateTimeRange => duration.dateTimeRange;
 
   @override
   FutureOr<List<DeviceData>> build(arg) {
@@ -92,8 +92,8 @@ class _DeviceHistoricalDataNotifier extends AutoDisposeFamilyAsyncNotifier<
   }
 
   void requestHistoricalDataOld({bool force = false}) {
-    DateTime startDate = duration.getDateTimeRange(isTonightEnd: false).start;
-    DateTime endDate = duration.getDateTimeRange(isTonightEnd: false).end;
+    DateTime startDate = dateTimeRange.start;
+    DateTime endDate = dateTimeRange.end;
 
     // if start date is today then end date should be now because dateTimeRange returns the end of the day for today
     if (startDate.isToday) {

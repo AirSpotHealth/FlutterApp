@@ -152,8 +152,7 @@ class _DeviceDataDownloadNotifier
 
     state = AsyncInProgress(0.0, message: 'Downloading device data....');
 
-    ref.read(
-        deviceHistoricalDataProvider((deviceId, GraphDataDuration.last7Days)));
+    ref.read(deviceHistoricalDataProvider((deviceId, GraphDataDuration.today)));
 
     state = AsyncInProgress(0.1, message: 'Fetching device data....');
 

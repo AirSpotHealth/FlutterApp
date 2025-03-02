@@ -13,7 +13,6 @@ import 'package:airspothealth/core/utils/extensions.dart';
 import 'package:airspothealth/features/device_graph/models/graph_data_duration.dart';
 import 'package:airspothealth/features/device_graph/providers/ble_device_provider.dart';
 import 'package:airspothealth/features/device_settings/models/progress_model.dart';
-import 'package:airspothealth/features/device_settings/providers/device_data_download_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:isar/isar.dart';
@@ -62,7 +61,7 @@ class _DeviceHistoryDataRequestNotifier
 
   void request(GraphDataDuration duration) {
     this.duration = duration;
-    requestedDateTimeRange = duration.getDateTimeRange(isTonightEnd: false);
+    requestedDateTimeRange = duration.dateTimeRange;
 
     debugPrint('Requesting historical data for $requestedDateTimeRange');
     numberOfPagesFetched = 0;
@@ -227,11 +226,11 @@ class _DeviceHistoryDataRequestNotifier
     // Save any remaining buffered data
     _commitData();
 
-    if (duration == GraphDataDuration.last7Days) {
-      ref
-          .read(deviceDataDownloadProvider(deviceId).notifier)
-          .setDataDownloadedFromDevice();
-    }
+    // if (duration == GraphDataDuration.last7Days) {
+    //   ref
+    //       .read(deviceDataDownloadProvider(deviceId).notifier)
+    //       .setDataDownloadedFromDevice();
+    // }
 
     _saveLastFetchedDateTimeRange();
 

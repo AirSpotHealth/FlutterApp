@@ -64,6 +64,9 @@ class DeviceSettings {
   /// Graph mode
   final bool graphMode;
 
+  /// Graph max value
+  final int graphMaxValue;
+
   DeviceSettings({
     required this.alarmEnabled,
     required this.vibrationEnabled,
@@ -82,6 +85,7 @@ class DeviceSettings {
     this.dndEndTime,
     this.recalibrationTarget = 426,
     this.graphMode = true,
+    this.graphMaxValue = 1600,
   });
 
   DeviceSettings.empty({required this.deviceId})
@@ -100,7 +104,8 @@ class DeviceSettings {
         dndStartTime = null,
         dndEndTime = null,
         recalibrationTarget = 426,
-        graphMode = true;
+        graphMode = true,
+        graphMaxValue = 1600;
 
   DeviceSettings copyWith({
     bool? alarmEnabled,
@@ -121,6 +126,7 @@ class DeviceSettings {
     DateTime? dndEndTime,
     int? recalibrationTarget,
     bool? graphMode,
+    int? graphMaxValue,
   }) {
     return DeviceSettings(
       alarmEnabled: alarmEnabled ?? this.alarmEnabled,
@@ -141,6 +147,7 @@ class DeviceSettings {
       dndEndTime: dndEndTime ?? this.dndEndTime,
       recalibrationTarget: recalibrationTarget ?? this.recalibrationTarget,
       graphMode: graphMode ?? this.graphMode,
+      graphMaxValue: graphMaxValue ?? this.graphMaxValue,
     );
   }
 
@@ -247,6 +254,7 @@ class DeviceSettings {
       'dndEndTime': dndEndTime,
       'recalibrationTarget': recalibrationTarget,
       'graphMode': graphMode,
+      'graphMaxValue': graphMaxValue,
     };
   }
 
@@ -271,7 +279,8 @@ class DeviceSettings {
         other.dndStartTime == dndStartTime &&
         other.dndEndTime == dndEndTime &&
         other.recalibrationTarget == recalibrationTarget &&
-        other.graphMode == graphMode;
+        other.graphMode == graphMode &&
+        other.graphMaxValue == graphMaxValue;
   }
 
   @override
@@ -292,11 +301,12 @@ class DeviceSettings {
       dndStartTime.hashCode ^
       dndEndTime.hashCode ^
       recalibrationTarget.hashCode ^
-      graphMode.hashCode;
+      graphMode.hashCode ^
+      graphMaxValue.hashCode;
 
   @override
   String toString() {
-    return 'DeviceSettings(alarmEnabled: $alarmEnabled, vibrationEnabled: $vibrationEnabled, powerMode: $powerMode, continuosScreenEnabled: $continuosScreenEnabled, thresholds: $thresholds, deviceId: $deviceId, co2MedAlertEnabled: $co2MedAlertEnabled, co2HighAlertEnabled: $co2HighAlertEnabled, autoSyncTime: $autoSyncTime, autoCalibration: $autoCalibration, autoConnect: $autoConnect, logData: $logData, dndEnabled: $dndEnabled, dndStartTime: $dndStartTime, dndEndTime: $dndEndTime, recalibrationTarget: $recalibrationTarget, graphMode: $graphMode)';
+    return 'DeviceSettings(alarmEnabled: $alarmEnabled, vibrationEnabled: $vibrationEnabled, powerMode: $powerMode, continuosScreenEnabled: $continuosScreenEnabled, thresholds: $thresholds, deviceId: $deviceId, co2MedAlertEnabled: $co2MedAlertEnabled, co2HighAlertEnabled: $co2HighAlertEnabled, autoSyncTime: $autoSyncTime, autoCalibration: $autoCalibration, autoConnect: $autoConnect, logData: $logData, dndEnabled: $dndEnabled, dndStartTime: $dndStartTime, dndEndTime: $dndEndTime, recalibrationTarget: $recalibrationTarget, graphMode: $graphMode, graphMaxValue: $graphMaxValue)';
   }
 }
 

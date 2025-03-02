@@ -43,7 +43,7 @@ class DeviceDataAggregateCard extends ConsumerWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              selectedDuration.name.capitalize(),
+              selectedDuration.durationString,
               style: context.textTheme.labelLarge?.weight600,
             ),
             const SizedBox(height: 4),
