@@ -2,10 +2,10 @@ import 'package:airspothealth/features/device_graph/models/graph_data_duration.d
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 final graphDurationProvider =
-    NotifierProvider.autoDispose<_GraphRangeNotifier, GraphDataDuration>(
+    NotifierProvider<_GraphRangeNotifier, GraphDataDuration>(
         _GraphRangeNotifier.new);
 
-class _GraphRangeNotifier extends AutoDisposeNotifier<GraphDataDuration> {
+class _GraphRangeNotifier extends Notifier<GraphDataDuration> {
   @override
   GraphDataDuration build() {
     return GraphDataDuration.today;
