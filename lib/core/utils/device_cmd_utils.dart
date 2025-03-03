@@ -280,6 +280,16 @@ class DeviceCmdUtils {
     ]);
   }
 
+  static Uint8List setAscDuration(int duration) {
+    return _buildCommand([
+      prefixHigh,
+      prefixLow,
+      0x29,
+      0x02,
+      ..._getHex2Bytes(duration),
+    ]);
+  }
+
   // ======= Helper Functions =======
   static Uint8List _getHex2Bytes(int value) {
     var byteArray = Uint8List(2);

@@ -128,6 +128,7 @@ class DeviceSettingsPage extends ConsumerWidget {
             TurnOffBluetoothWidget(deviceId: deviceId),
             DeleteLocalCacheWidget(deviceId: deviceId),
             DeviceDataDumpWidget(deviceId: deviceId),
+            SetAscDurationWidget(deviceId: deviceId),
             //RestartDeviceWidget(deviceId: deviceId),
           ],
         ],
@@ -301,5 +302,59 @@ class RestartDeviceWidget extends ConsumerWidget {
             .sendCommand(DeviceCmdUtils.restartDevice());
       },
     );
+  }
+}
+
+class SetAscDurationWidget extends ConsumerWidget {
+  const SetAscDurationWidget({required this.deviceId, super.key});
+
+  final String deviceId;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    return Row(children: [
+      IconBgWidget(
+        backgroundColor: Colors.deepPurpleAccent,
+        child: Icon(Icons.timer_outlined, color: Colors.black),
+      ),
+      const SizedBox(width: 16),
+      Expanded(
+        child: TextFormField(
+          onTapOutside: (value) {
+            FocusScope.of(context).unfocus();
+          },
+          decoration: InputDecoration(
+            isDense: true,
+            labelText: 'ASC Duration (seconds)',
+          ),
+          validator: (value) {
+            if (value == null || value.isEmpty) return 'Duration is required';
+
+            final int? duration = int.tryParse(value);
+
+            if (duration == null) return 'Invalid duration';
+
+            if (duration < 30) return 'Duration must be at least 30 seconds';
+
+            return null;
+          },
+          onFieldSubmitted: (value) => _onDurationSubmitted(value, ref),
+        ),
+      ),
+    ]);
+  }
+
+  void _onDurationSubmitted(String value, WidgetRef ref) {
+    if (value.isEmpty) return;
+
+    final int? duration = int.tryParse(value);
+
+    if (duration == null) return;
+
+    if (duration < 30) return;
+
+    ref
+        .read(bleDeviceCommunicationProvider(deviceId).notifier)
+        .sendCommand(DeviceCmdUtils.setAscDuration(duration));
   }
 }
