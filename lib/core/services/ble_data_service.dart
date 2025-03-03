@@ -263,12 +263,13 @@ class ResponseCommandParser {
         final dndEndMinute = data.length > 17 ? data[17] : 0;
         final recalibrationTarget =
             data.length > 18 ? _parseTwoBytesToInt(data, 18) : 426;
-        final graphMode = data.length > 19 ? _parseBoolean(data, 20) : true;
+        final graphMode = UIMode.fromValue(data[20]);
         final graphMaxValue =
             data.length > 21 ? _parseTwoBytesToInt(data, 21) : 1600;
         debugPrint('RECALIBRATION TARGET: $recalibrationTarget');
-        debugPrint('GRAPH MODE: $graphMode');
         debugPrint('GRAPH MAX VALUE: $graphMaxValue');
+        debugPrint('UI MODE: $graphMode');
+        debugPrint('POWER MODE: ${PowerMode.fromValue(data[6])}');
 
         return settings.copyWith(
           deviceId: deviceId,
@@ -285,7 +286,7 @@ class ResponseCommandParser {
           dndStartTime: DateTime(0, 0, 0, dndStartHour, dndStartMinute),
           dndEndTime: DateTime(0, 0, 0, dndEndHour, dndEndMinute),
           recalibrationTarget: recalibrationTarget,
-          uiMode: UIMode.fromValue(data[19]),
+          uiMode: graphMode,
           graphMaxValue: graphMaxValue,
         );
       },

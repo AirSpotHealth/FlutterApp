@@ -6,7 +6,6 @@ import 'package:airspothealth/core/providers/ble_saved_devices_provider.dart';
 import 'package:airspothealth/core/providers/device_settings_provider.dart';
 import 'package:airspothealth/core/providers/isar_service_provider.dart';
 import 'package:airspothealth/core/router/route_names.dart';
-import 'package:airspothealth/core/theme/app_colors.dart';
 import 'package:airspothealth/core/utils/app_utils.dart';
 import 'package:airspothealth/core/utils/assets.dart';
 import 'package:airspothealth/core/utils/constants.dart';
@@ -17,16 +16,13 @@ import 'package:airspothealth/features/add_device/providers/ble_device_connectio
 import 'package:airspothealth/features/app_setup/providers/dev_mode_provider.dart';
 import 'package:airspothealth/features/device_graph/providers/ble_device_provider.dart';
 import 'package:airspothealth/features/device_graph/providers/device_history_data_request_provider.dart';
-import 'package:airspothealth/features/device_settings/models/progress_model.dart';
 import 'package:airspothealth/features/device_settings/models/setting_item.dart';
 import 'package:airspothealth/features/device_settings/providers/ble_device_version_provider.dart';
-import 'package:airspothealth/features/device_settings/providers/device_data_download_provider.dart';
 import 'package:airspothealth/features/device_settings/widgets/alarm_setting_widget.dart';
 import 'package:airspothealth/features/device_settings/widgets/auto_connect_setting_widget.dart';
 import 'package:airspothealth/features/device_settings/widgets/device_data_dump_widget.dart';
 import 'package:airspothealth/features/device_settings/widgets/device_settings_name_widget.dart';
 import 'package:airspothealth/features/device_settings/widgets/disconnect_device_widget.dart';
-import 'package:airspothealth/features/device_settings/widgets/download_device_data_button.dart';
 import 'package:airspothealth/features/device_settings/widgets/erase_device_record_widget.dart';
 import 'package:airspothealth/features/device_settings/widgets/forget_device_widget.dart';
 import 'package:airspothealth/features/device_settings/widgets/populate_fake_data_widget.dart';
@@ -34,7 +30,6 @@ import 'package:airspothealth/features/device_settings/widgets/power_off_device_
 import 'package:airspothealth/features/device_settings/widgets/sensor_error_widget.dart';
 import 'package:airspothealth/features/device_settings/widgets/setting_item_widget.dart';
 import 'package:airspothealth/features/device_settings/widgets/vibrate_setting_widget.dart';
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -110,7 +105,7 @@ class DeviceSettingsPage extends ConsumerWidget {
           _buildTimeSettingWidget(ref),
           PowerModeSettingWidget(deviceId: deviceId),
           ..._buildSettingsList(ref),
-          DeviceDataDownloadSettingWidget(deviceId: deviceId),
+          // DeviceDataDownloadSettingWidget(deviceId: deviceId),
           DisconnectDeviceWidget(device: device),
           ForgetDeviceWidget(deviceId: deviceId),
           PowerOffDeviceWidget(deviceId: deviceId),
@@ -185,44 +180,6 @@ class DeviceSettingsPage extends ConsumerWidget {
           }
         },
       ),
-    );
-  }
-}
-
-class DeviceDataDownloadSettingWidget extends StatelessWidget {
-  const DeviceDataDownloadSettingWidget({
-    super.key,
-    required this.deviceId,
-  });
-
-  final String deviceId;
-
-  @override
-  Widget build(BuildContext context) {
-    return DownloadDeviceDataButton(
-      deviceId: deviceId,
-      builder: (ref, progress) {
-        return SettingItemWidget(
-          item: SettingItem(
-            title: 'Export CSV Data',
-            suffixWidget: progress is AsyncInProgress
-                ? CupertinoActivityIndicator()
-                : progress is AsyncSuccess
-                    ? const Icon(Icons.download_done_rounded,
-                        size: 20, color: AppColors.primaryColor)
-                    : const SizedBox(),
-            leadingWidget: Image.asset(
-              Assets.csvIcon,
-              width: 32,
-            ),
-          ),
-          onTap: () {
-            ref
-                .read(deviceDataDownloadProvider(deviceId).notifier)
-                .downloadDeviceData();
-          },
-        );
-      },
     );
   }
 }

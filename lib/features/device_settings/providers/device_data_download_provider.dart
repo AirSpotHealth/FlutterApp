@@ -3,12 +3,14 @@ import 'dart:io';
 import 'package:airspothealth/core/models/device_data.dart';
 import 'package:airspothealth/core/models/device_data_type.dart';
 import 'package:airspothealth/core/providers/isar_service_provider.dart';
+import 'package:airspothealth/core/utils/extensions.dart';
 import 'package:airspothealth/features/device_graph/models/graph_data_duration.dart';
 import 'package:airspothealth/features/device_graph/providers/ble_device_provider.dart';
 import 'package:airspothealth/features/device_graph/providers/device_historical_data_provider.dart';
+import 'package:airspothealth/features/device_graph/providers/graph_range_provider.dart';
 import 'package:airspothealth/features/device_settings/models/progress_model.dart';
 import 'package:file_saver/file_saver.dart';
-import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import 'package:isar/isar.dart';
@@ -33,7 +35,7 @@ class _DeviceDataDownloadNotifier
   }
 
   Future<void> setDataDownloadedFromDevice() async {
-    debugPrint('setDataDownloadedFromDevice');
+    debugPrint('setDataDownloadedFromDevice: $state');
     if (state is AsyncNone || state is AsyncSuccess) {
       return;
     }
@@ -94,6 +96,10 @@ class _DeviceDataDownloadNotifier
   }
 
   Future<List<DeviceData>> _fetchDeviceData() async {
+    final duration = ref.read(graphDurationProvider);
+    final lower = duration.dateTimeRange.start;
+    final upper = duration.dateTimeRange.end;
+
     final List<DeviceData> dataList = ref.read(isarServiceProvider).read(
       (isar) {
         return isar.deviceDatas
@@ -101,6 +107,8 @@ class _DeviceDataDownloadNotifier
             .deviceIdEqualTo(deviceId)
             .typeLessThan(DeviceDataType.empty.index)
             .isLiveCo2EqualTo(false)
+            .dateTimeGreaterThanOrEqualTo(lower)
+            .dateTimeLessThanOrEqualTo(upper)
             .sortByDateTime()
             .thenByTypeDesc()
             .findAll();
@@ -147,21 +155,28 @@ class _DeviceDataDownloadNotifier
     }
   }
 
-  Future<void> downloadDeviceData({bool share = false}) async {
+  Future<void> downloadDeviceData(
+      {bool share = false, bool last7Days = false}) async {
     this.share = share;
+    GraphDataDuration duration = ref.read(graphDurationProvider);
 
-    state = AsyncInProgress(0.0, message: 'Downloading device data....');
+    debugPrint('DOWNLOAD:Device data download provider: $duration');
 
-    ref.read(deviceHistoricalDataProvider((deviceId, GraphDataDuration.today)));
+    if (last7Days) {
+      duration = GraphDataDuration.custom(
+        DateTimeRange(
+          start: DateTime.now().subtract(const Duration(days: 7)).startOfDay,
+          end: DateTime.now(),
+        ),
+      );
 
-    state = AsyncInProgress(0.1, message: 'Fetching device data....');
-
-    // set a timeout if incase there was an issue with fetching the data
-    Future.delayed(const Duration(minutes: 4), () {
-      if (state is AsyncInProgress) {
-        state = AsyncFailure('Failed to fetch device data: Timeout');
-      }
-    });
+      ref.read(graphDurationProvider.notifier).setDuration(duration);
+      ref.read(deviceHistoricalDataProvider((deviceId, duration)));
+    } else {
+      state = AsyncInProgress(0.5, message: 'Downloading device data....');
+      await Future.delayed(const Duration(seconds: 1));
+      setDataDownloadedFromDevice();
+    }
   }
 
   void setProgress(double progress) {

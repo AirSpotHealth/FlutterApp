@@ -2,6 +2,7 @@ import 'package:airspothealth/core/models/ble_device.dart';
 import 'package:airspothealth/core/utils/extensions.dart';
 import 'package:airspothealth/core/widgets/app_logo.dart';
 import 'package:airspothealth/features/device_graph/providers/ble_device_provider.dart';
+import 'package:airspothealth/features/device_graph/providers/device_history_data_request_provider.dart';
 import 'package:airspothealth/features/device_graph/widgets/data_graph_wrapper.dart';
 import 'package:airspothealth/features/device_graph/widgets/device_current_value_widget.dart';
 import 'package:airspothealth/features/device_graph/widgets/device_data_aggregate_card.dart';
@@ -64,6 +65,12 @@ class ExportDataButton extends ConsumerWidget {
     final AsyncProgressValue progress =
         ref.watch(deviceDataDownloadProvider(deviceId));
 
+    final deviceDataRequest =
+        ref.watch(deviceHistoryDataRequestProvider(deviceId));
+
+    final isDownloading =
+        deviceDataRequest is AsyncInProgress || progress is AsyncInProgress;
+
     return PopupMenuButton(
       icon: switch (progress) {
         AsyncSuccess() => FaIcon(
@@ -74,7 +81,7 @@ class ExportDataButton extends ConsumerWidget {
         AsyncFailure() => FaIcon(FontAwesomeIcons.fileCsv),
         _ => FaIcon(FontAwesomeIcons.fileCsv),
       },
-      enabled: progress is! AsyncInProgress,
+      enabled: !isDownloading,
       offset: const Offset(0, 48),
       itemBuilder: (context) {
         return [
