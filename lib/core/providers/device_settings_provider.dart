@@ -91,12 +91,12 @@ class _DeviceSettingsNotifier extends FamilyNotifier<DeviceSettings, String> {
                 settings.recalibrationTarget));
       }
 
-      if (settings.graphMode != state.graphMode ||
+      if (settings.uiMode != state.uiMode ||
           settings.graphMaxValue != state.graphMaxValue) {
         ref
             .read(bleDeviceCommunicationProvider(settings.deviceId).notifier)
             .sendCommand(DeviceCmdUtils.setGraphMode(
-                settings.graphMode, settings.graphMaxValue));
+                settings.uiMode.index, settings.graphMaxValue));
       }
     }
 

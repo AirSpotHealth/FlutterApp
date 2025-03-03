@@ -88,12 +88,17 @@ const DeviceSettingsSchema = IsarGeneratedSchema(
         type: IsarType.long,
       ),
       IsarPropertySchema(
-        name: 'graphMode',
-        type: IsarType.bool,
-      ),
-      IsarPropertySchema(
         name: 'graphMaxValue',
         type: IsarType.long,
+      ),
+      IsarPropertySchema(
+        name: 'uiMode',
+        type: IsarType.byte,
+        enumMap: {"graph": 0, "bar": 1, "plain": 2},
+      ),
+      IsarPropertySchema(
+        name: 'showRebreathePercentage',
+        type: IsarType.bool,
       ),
     ],
     indexes: [],
@@ -137,8 +142,9 @@ int serializeDeviceSettings(IsarWriter writer, DeviceSettings object) {
       object.dndEndTime?.toUtc().microsecondsSinceEpoch ??
           -9223372036854775808);
   IsarCore.writeLong(writer, 16, object.recalibrationTarget);
-  IsarCore.writeBool(writer, 17, object.graphMode);
-  IsarCore.writeLong(writer, 18, object.graphMaxValue);
+  IsarCore.writeLong(writer, 17, object.graphMaxValue);
+  IsarCore.writeByte(writer, 18, object.uiMode.index);
+  IsarCore.writeBool(writer, 19, object.showRebreathePercentage);
   return Isar.fastHash(object.deviceId);
 }
 
@@ -230,23 +236,26 @@ DeviceSettings deserializeDeviceSettings(IsarReader reader) {
       _recalibrationTarget = value;
     }
   }
-  final bool _graphMode;
-  {
-    if (IsarCore.readNull(reader, 17)) {
-      _graphMode = true;
-    } else {
-      _graphMode = IsarCore.readBool(reader, 17);
-    }
-  }
   final int _graphMaxValue;
   {
-    final value = IsarCore.readLong(reader, 18);
+    final value = IsarCore.readLong(reader, 17);
     if (value == -9223372036854775808) {
       _graphMaxValue = 1600;
     } else {
       _graphMaxValue = value;
     }
   }
+  final UIMode _uiMode;
+  {
+    if (IsarCore.readNull(reader, 18)) {
+      _uiMode = UIMode.graph;
+    } else {
+      _uiMode =
+          _deviceSettingsUiMode[IsarCore.readByte(reader, 18)] ?? UIMode.graph;
+    }
+  }
+  final bool _showRebreathePercentage;
+  _showRebreathePercentage = IsarCore.readBool(reader, 19);
   final object = DeviceSettings(
     alarmEnabled: _alarmEnabled,
     vibrationEnabled: _vibrationEnabled,
@@ -264,8 +273,9 @@ DeviceSettings deserializeDeviceSettings(IsarReader reader) {
     dndStartTime: _dndStartTime,
     dndEndTime: _dndEndTime,
     recalibrationTarget: _recalibrationTarget,
-    graphMode: _graphMode,
     graphMaxValue: _graphMaxValue,
+    uiMode: _uiMode,
+    showRebreathePercentage: _showRebreathePercentage,
   );
   return object;
 }
@@ -361,21 +371,24 @@ dynamic deserializeDeviceSettingsProp(IsarReader reader, int property) {
       }
     case 17:
       {
-        if (IsarCore.readNull(reader, 17)) {
-          return true;
-        } else {
-          return IsarCore.readBool(reader, 17);
-        }
-      }
-    case 18:
-      {
-        final value = IsarCore.readLong(reader, 18);
+        final value = IsarCore.readLong(reader, 17);
         if (value == -9223372036854775808) {
           return 1600;
         } else {
           return value;
         }
       }
+    case 18:
+      {
+        if (IsarCore.readNull(reader, 18)) {
+          return UIMode.graph;
+        } else {
+          return _deviceSettingsUiMode[IsarCore.readByte(reader, 18)] ??
+              UIMode.graph;
+        }
+      }
+    case 19:
+      return IsarCore.readBool(reader, 19);
     default:
       throw ArgumentError('Unknown property: $property');
   }
@@ -398,8 +411,9 @@ sealed class _DeviceSettingsUpdate {
     DateTime? dndStartTime,
     DateTime? dndEndTime,
     int? recalibrationTarget,
-    bool? graphMode,
     int? graphMaxValue,
+    UIMode? uiMode,
+    bool? showRebreathePercentage,
   });
 }
 
@@ -425,8 +439,9 @@ class _DeviceSettingsUpdateImpl implements _DeviceSettingsUpdate {
     Object? dndStartTime = ignore,
     Object? dndEndTime = ignore,
     Object? recalibrationTarget = ignore,
-    Object? graphMode = ignore,
     Object? graphMaxValue = ignore,
+    Object? uiMode = ignore,
+    Object? showRebreathePercentage = ignore,
   }) {
     return collection.updateProperties([
           deviceId
@@ -446,8 +461,10 @@ class _DeviceSettingsUpdateImpl implements _DeviceSettingsUpdate {
           if (dndStartTime != ignore) 14: dndStartTime as DateTime?,
           if (dndEndTime != ignore) 15: dndEndTime as DateTime?,
           if (recalibrationTarget != ignore) 16: recalibrationTarget as int?,
-          if (graphMode != ignore) 17: graphMode as bool?,
-          if (graphMaxValue != ignore) 18: graphMaxValue as int?,
+          if (graphMaxValue != ignore) 17: graphMaxValue as int?,
+          if (uiMode != ignore) 18: uiMode as UIMode?,
+          if (showRebreathePercentage != ignore)
+            19: showRebreathePercentage as bool?,
         }) >
         0;
   }
@@ -470,8 +487,9 @@ sealed class _DeviceSettingsUpdateAll {
     DateTime? dndStartTime,
     DateTime? dndEndTime,
     int? recalibrationTarget,
-    bool? graphMode,
     int? graphMaxValue,
+    UIMode? uiMode,
+    bool? showRebreathePercentage,
   });
 }
 
@@ -497,8 +515,9 @@ class _DeviceSettingsUpdateAllImpl implements _DeviceSettingsUpdateAll {
     Object? dndStartTime = ignore,
     Object? dndEndTime = ignore,
     Object? recalibrationTarget = ignore,
-    Object? graphMode = ignore,
     Object? graphMaxValue = ignore,
+    Object? uiMode = ignore,
+    Object? showRebreathePercentage = ignore,
   }) {
     return collection.updateProperties(deviceId, {
       if (alarmEnabled != ignore) 1: alarmEnabled as bool?,
@@ -515,8 +534,10 @@ class _DeviceSettingsUpdateAllImpl implements _DeviceSettingsUpdateAll {
       if (dndStartTime != ignore) 14: dndStartTime as DateTime?,
       if (dndEndTime != ignore) 15: dndEndTime as DateTime?,
       if (recalibrationTarget != ignore) 16: recalibrationTarget as int?,
-      if (graphMode != ignore) 17: graphMode as bool?,
-      if (graphMaxValue != ignore) 18: graphMaxValue as int?,
+      if (graphMaxValue != ignore) 17: graphMaxValue as int?,
+      if (uiMode != ignore) 18: uiMode as UIMode?,
+      if (showRebreathePercentage != ignore)
+        19: showRebreathePercentage as bool?,
     });
   }
 }
@@ -543,8 +564,9 @@ sealed class _DeviceSettingsQueryUpdate {
     DateTime? dndStartTime,
     DateTime? dndEndTime,
     int? recalibrationTarget,
-    bool? graphMode,
     int? graphMaxValue,
+    UIMode? uiMode,
+    bool? showRebreathePercentage,
   });
 }
 
@@ -570,8 +592,9 @@ class _DeviceSettingsQueryUpdateImpl implements _DeviceSettingsQueryUpdate {
     Object? dndStartTime = ignore,
     Object? dndEndTime = ignore,
     Object? recalibrationTarget = ignore,
-    Object? graphMode = ignore,
     Object? graphMaxValue = ignore,
+    Object? uiMode = ignore,
+    Object? showRebreathePercentage = ignore,
   }) {
     return query.updateProperties(limit: limit, {
       if (alarmEnabled != ignore) 1: alarmEnabled as bool?,
@@ -588,8 +611,10 @@ class _DeviceSettingsQueryUpdateImpl implements _DeviceSettingsQueryUpdate {
       if (dndStartTime != ignore) 14: dndStartTime as DateTime?,
       if (dndEndTime != ignore) 15: dndEndTime as DateTime?,
       if (recalibrationTarget != ignore) 16: recalibrationTarget as int?,
-      if (graphMode != ignore) 17: graphMode as bool?,
-      if (graphMaxValue != ignore) 18: graphMaxValue as int?,
+      if (graphMaxValue != ignore) 17: graphMaxValue as int?,
+      if (uiMode != ignore) 18: uiMode as UIMode?,
+      if (showRebreathePercentage != ignore)
+        19: showRebreathePercentage as bool?,
     });
   }
 }
@@ -625,8 +650,9 @@ class _DeviceSettingsQueryBuilderUpdateImpl
     Object? dndStartTime = ignore,
     Object? dndEndTime = ignore,
     Object? recalibrationTarget = ignore,
-    Object? graphMode = ignore,
     Object? graphMaxValue = ignore,
+    Object? uiMode = ignore,
+    Object? showRebreathePercentage = ignore,
   }) {
     final q = query.build();
     try {
@@ -646,8 +672,10 @@ class _DeviceSettingsQueryBuilderUpdateImpl
         if (dndStartTime != ignore) 14: dndStartTime as DateTime?,
         if (dndEndTime != ignore) 15: dndEndTime as DateTime?,
         if (recalibrationTarget != ignore) 16: recalibrationTarget as int?,
-        if (graphMode != ignore) 17: graphMode as bool?,
-        if (graphMaxValue != ignore) 18: graphMaxValue as int?,
+        if (graphMaxValue != ignore) 17: graphMaxValue as int?,
+        if (uiMode != ignore) 18: uiMode as UIMode?,
+        if (showRebreathePercentage != ignore)
+          19: showRebreathePercentage as bool?,
       });
     } finally {
       q.close();
@@ -669,6 +697,11 @@ const _deviceSettingsPowerMode = {
   1: PowerMode.low,
   2: PowerMode.medium,
   3: PowerMode.high,
+};
+const _deviceSettingsUiMode = {
+  0: UIMode.graph,
+  1: UIMode.bar,
+  2: UIMode.plain,
 };
 
 extension DeviceSettingsQueryFilter
@@ -1366,27 +1399,13 @@ extension DeviceSettingsQueryFilter
   }
 
   QueryBuilder<DeviceSettings, DeviceSettings, QAfterFilterCondition>
-      graphModeEqualTo(
-    bool value,
-  ) {
-    return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(
-        EqualCondition(
-          property: 17,
-          value: value,
-        ),
-      );
-    });
-  }
-
-  QueryBuilder<DeviceSettings, DeviceSettings, QAfterFilterCondition>
       graphMaxValueEqualTo(
     int value,
   ) {
     return QueryBuilder.apply(this, (query) {
       return query.addFilterCondition(
         EqualCondition(
-          property: 18,
+          property: 17,
           value: value,
         ),
       );
@@ -1400,7 +1419,7 @@ extension DeviceSettingsQueryFilter
     return QueryBuilder.apply(this, (query) {
       return query.addFilterCondition(
         GreaterCondition(
-          property: 18,
+          property: 17,
           value: value,
         ),
       );
@@ -1414,7 +1433,7 @@ extension DeviceSettingsQueryFilter
     return QueryBuilder.apply(this, (query) {
       return query.addFilterCondition(
         GreaterOrEqualCondition(
-          property: 18,
+          property: 17,
           value: value,
         ),
       );
@@ -1428,7 +1447,7 @@ extension DeviceSettingsQueryFilter
     return QueryBuilder.apply(this, (query) {
       return query.addFilterCondition(
         LessCondition(
-          property: 18,
+          property: 17,
           value: value,
         ),
       );
@@ -1442,7 +1461,7 @@ extension DeviceSettingsQueryFilter
     return QueryBuilder.apply(this, (query) {
       return query.addFilterCondition(
         LessOrEqualCondition(
-          property: 18,
+          property: 17,
           value: value,
         ),
       );
@@ -1457,9 +1476,109 @@ extension DeviceSettingsQueryFilter
     return QueryBuilder.apply(this, (query) {
       return query.addFilterCondition(
         BetweenCondition(
-          property: 18,
+          property: 17,
           lower: lower,
           upper: upper,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<DeviceSettings, DeviceSettings, QAfterFilterCondition>
+      uiModeEqualTo(
+    UIMode value,
+  ) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        EqualCondition(
+          property: 18,
+          value: value.index,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<DeviceSettings, DeviceSettings, QAfterFilterCondition>
+      uiModeGreaterThan(
+    UIMode value,
+  ) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        GreaterCondition(
+          property: 18,
+          value: value.index,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<DeviceSettings, DeviceSettings, QAfterFilterCondition>
+      uiModeGreaterThanOrEqualTo(
+    UIMode value,
+  ) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        GreaterOrEqualCondition(
+          property: 18,
+          value: value.index,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<DeviceSettings, DeviceSettings, QAfterFilterCondition>
+      uiModeLessThan(
+    UIMode value,
+  ) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        LessCondition(
+          property: 18,
+          value: value.index,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<DeviceSettings, DeviceSettings, QAfterFilterCondition>
+      uiModeLessThanOrEqualTo(
+    UIMode value,
+  ) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        LessOrEqualCondition(
+          property: 18,
+          value: value.index,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<DeviceSettings, DeviceSettings, QAfterFilterCondition>
+      uiModeBetween(
+    UIMode lower,
+    UIMode upper,
+  ) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        BetweenCondition(
+          property: 18,
+          lower: lower.index,
+          upper: upper.index,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<DeviceSettings, DeviceSettings, QAfterFilterCondition>
+      showRebreathePercentageEqualTo(
+    bool value,
+  ) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        EqualCondition(
+          property: 19,
+          value: value,
         ),
       );
     });
@@ -1693,30 +1812,44 @@ extension DeviceSettingsQuerySortBy
     });
   }
 
-  QueryBuilder<DeviceSettings, DeviceSettings, QAfterSortBy> sortByGraphMode() {
+  QueryBuilder<DeviceSettings, DeviceSettings, QAfterSortBy>
+      sortByGraphMaxValue() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(17);
     });
   }
 
   QueryBuilder<DeviceSettings, DeviceSettings, QAfterSortBy>
-      sortByGraphModeDesc() {
+      sortByGraphMaxValueDesc() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(17, sort: Sort.desc);
     });
   }
 
-  QueryBuilder<DeviceSettings, DeviceSettings, QAfterSortBy>
-      sortByGraphMaxValue() {
+  QueryBuilder<DeviceSettings, DeviceSettings, QAfterSortBy> sortByUiMode() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(18);
     });
   }
 
   QueryBuilder<DeviceSettings, DeviceSettings, QAfterSortBy>
-      sortByGraphMaxValueDesc() {
+      sortByUiModeDesc() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(18, sort: Sort.desc);
+    });
+  }
+
+  QueryBuilder<DeviceSettings, DeviceSettings, QAfterSortBy>
+      sortByShowRebreathePercentage() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(19);
+    });
+  }
+
+  QueryBuilder<DeviceSettings, DeviceSettings, QAfterSortBy>
+      sortByShowRebreathePercentageDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(19, sort: Sort.desc);
     });
   }
 }
@@ -1931,30 +2064,44 @@ extension DeviceSettingsQuerySortThenBy
     });
   }
 
-  QueryBuilder<DeviceSettings, DeviceSettings, QAfterSortBy> thenByGraphMode() {
+  QueryBuilder<DeviceSettings, DeviceSettings, QAfterSortBy>
+      thenByGraphMaxValue() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(17);
     });
   }
 
   QueryBuilder<DeviceSettings, DeviceSettings, QAfterSortBy>
-      thenByGraphModeDesc() {
+      thenByGraphMaxValueDesc() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(17, sort: Sort.desc);
     });
   }
 
-  QueryBuilder<DeviceSettings, DeviceSettings, QAfterSortBy>
-      thenByGraphMaxValue() {
+  QueryBuilder<DeviceSettings, DeviceSettings, QAfterSortBy> thenByUiMode() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(18);
     });
   }
 
   QueryBuilder<DeviceSettings, DeviceSettings, QAfterSortBy>
-      thenByGraphMaxValueDesc() {
+      thenByUiModeDesc() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(18, sort: Sort.desc);
+    });
+  }
+
+  QueryBuilder<DeviceSettings, DeviceSettings, QAfterSortBy>
+      thenByShowRebreathePercentage() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(19);
+    });
+  }
+
+  QueryBuilder<DeviceSettings, DeviceSettings, QAfterSortBy>
+      thenByShowRebreathePercentageDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(19, sort: Sort.desc);
     });
   }
 }
@@ -2060,16 +2207,23 @@ extension DeviceSettingsQueryWhereDistinct
   }
 
   QueryBuilder<DeviceSettings, DeviceSettings, QAfterDistinct>
-      distinctByGraphMode() {
+      distinctByGraphMaxValue() {
     return QueryBuilder.apply(this, (query) {
       return query.addDistinctBy(17);
     });
   }
 
   QueryBuilder<DeviceSettings, DeviceSettings, QAfterDistinct>
-      distinctByGraphMaxValue() {
+      distinctByUiMode() {
     return QueryBuilder.apply(this, (query) {
       return query.addDistinctBy(18);
+    });
+  }
+
+  QueryBuilder<DeviceSettings, DeviceSettings, QAfterDistinct>
+      distinctByShowRebreathePercentage() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addDistinctBy(19);
     });
   }
 }
@@ -2179,15 +2333,22 @@ extension DeviceSettingsQueryProperty1
     });
   }
 
-  QueryBuilder<DeviceSettings, bool, QAfterProperty> graphModeProperty() {
+  QueryBuilder<DeviceSettings, int, QAfterProperty> graphMaxValueProperty() {
     return QueryBuilder.apply(this, (query) {
       return query.addProperty(17);
     });
   }
 
-  QueryBuilder<DeviceSettings, int, QAfterProperty> graphMaxValueProperty() {
+  QueryBuilder<DeviceSettings, UIMode, QAfterProperty> uiModeProperty() {
     return QueryBuilder.apply(this, (query) {
       return query.addProperty(18);
+    });
+  }
+
+  QueryBuilder<DeviceSettings, bool, QAfterProperty>
+      showRebreathePercentageProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addProperty(19);
     });
   }
 }
@@ -2303,16 +2464,23 @@ extension DeviceSettingsQueryProperty2<R>
     });
   }
 
-  QueryBuilder<DeviceSettings, (R, bool), QAfterProperty> graphModeProperty() {
+  QueryBuilder<DeviceSettings, (R, int), QAfterProperty>
+      graphMaxValueProperty() {
     return QueryBuilder.apply(this, (query) {
       return query.addProperty(17);
     });
   }
 
-  QueryBuilder<DeviceSettings, (R, int), QAfterProperty>
-      graphMaxValueProperty() {
+  QueryBuilder<DeviceSettings, (R, UIMode), QAfterProperty> uiModeProperty() {
     return QueryBuilder.apply(this, (query) {
       return query.addProperty(18);
+    });
+  }
+
+  QueryBuilder<DeviceSettings, (R, bool), QAfterProperty>
+      showRebreathePercentageProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addProperty(19);
     });
   }
 }
@@ -2430,17 +2598,23 @@ extension DeviceSettingsQueryProperty3<R1, R2>
     });
   }
 
-  QueryBuilder<DeviceSettings, (R1, R2, bool), QOperations>
-      graphModeProperty() {
+  QueryBuilder<DeviceSettings, (R1, R2, int), QOperations>
+      graphMaxValueProperty() {
     return QueryBuilder.apply(this, (query) {
       return query.addProperty(17);
     });
   }
 
-  QueryBuilder<DeviceSettings, (R1, R2, int), QOperations>
-      graphMaxValueProperty() {
+  QueryBuilder<DeviceSettings, (R1, R2, UIMode), QOperations> uiModeProperty() {
     return QueryBuilder.apply(this, (query) {
       return query.addProperty(18);
+    });
+  }
+
+  QueryBuilder<DeviceSettings, (R1, R2, bool), QOperations>
+      showRebreathePercentageProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addProperty(19);
     });
   }
 }

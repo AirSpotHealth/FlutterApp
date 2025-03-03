@@ -6,43 +6,101 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-class DeviceGraphModeWidget extends ConsumerWidget {
-  const DeviceGraphModeWidget({super.key, required this.deviceId});
+enum UIMode {
+  graph,
+  bar,
+  plain;
+
+  String get displayName {
+    switch (this) {
+      case UIMode.plain:
+        return 'Plain';
+      case UIMode.graph:
+        return 'Graph';
+      case UIMode.bar:
+        return 'Bar';
+    }
+  }
+
+  static UIMode fromValue(int value) {
+    return UIMode.values[value];
+  }
+}
+
+class DeviceUIModeWidget extends ConsumerWidget {
+  const DeviceUIModeWidget({super.key, required this.deviceId});
 
   final String deviceId;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final deviceSettings = ref.watch(deviceSettingsProvider(deviceId));
-
-    debugPrint('GRAPH MAX VALUE: ${deviceSettings.graphMaxValue}');
+    final currentMode = deviceSettings.uiMode;
 
     return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Row(
-          children: [
-            Expanded(
-              child: Text(
-                'Graph Mode',
-                style: context.textTheme.bodyMedium?.weight600,
-              ),
-            ),
-            Switch(
-              value: deviceSettings.graphMode,
-              onChanged: (value) => ref
-                  .read(deviceSettingsProvider(deviceId).notifier)
-                  .updateSettings(deviceSettings.copyWith(graphMode: value)),
-            ),
-          ],
+        Text(
+          'UI Mode',
+          style: context.textTheme.bodyMedium?.weight600,
+        ),
+        const SizedBox(height: 12),
+        Container(
+          decoration: BoxDecoration(
+            color: AppColors.backgroundSecondary,
+            borderRadius: BorderRadius.circular(8),
+          ),
+          padding: const EdgeInsets.all(4),
+          child: Row(
+            children: UIMode.values.map((mode) {
+              final isSelected = currentMode == mode;
+              return Expanded(
+                child: GestureDetector(
+                  onTap: () => ref
+                      .read(deviceSettingsProvider(deviceId).notifier)
+                      .updateSettings(
+                        deviceSettings.copyWith(uiMode: mode),
+                      ),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(vertical: 8),
+                    decoration: BoxDecoration(
+                      color: isSelected ? Colors.white : Colors.transparent,
+                      borderRadius: BorderRadius.circular(6),
+                      boxShadow: isSelected
+                          ? [
+                              BoxShadow(
+                                color: Colors.black.withValues(alpha: .1),
+                                blurRadius: 4,
+                                offset: const Offset(0, 2),
+                              ),
+                            ]
+                          : null,
+                    ),
+                    child: Text(
+                      mode.displayName,
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        color: isSelected
+                            ? AppColors.primaryColorDark
+                            : Colors.grey.shade600,
+                        fontWeight:
+                            isSelected ? FontWeight.w600 : FontWeight.w500,
+                      ),
+                    ),
+                  ),
+                ),
+              );
+            }).toList(),
+          ),
         ),
         const SizedBox(height: 12),
         Text(
-          'Graph mode will display a bar graph of the last 28 ${Constants.co2Text} readings on the device. The top of the graph represents the max value set below.',
+          _getModeDescription(currentMode),
           style: context.textTheme.bodySmall?.weight500?.copyWith(
             color: context.textTheme.bodySmall?.color?.withValues(alpha: .7),
           ),
         ),
-        if (deviceSettings.graphMode) ...[
+        if (currentMode == UIMode.graph) ...[
           const SizedBox(height: 20),
           _GraphMaxValueDropdown(
             deviceId: deviceId,
@@ -52,7 +110,20 @@ class DeviceGraphModeWidget extends ConsumerWidget {
       ],
     );
   }
+
+  String _getModeDescription(UIMode mode) {
+    switch (mode) {
+      case UIMode.plain:
+        return 'Shows ${Constants.co2Text} value in plain text format.';
+      case UIMode.graph:
+        return 'Displays ${Constants.co2Text} readings as a line graph with customizable maximum value.';
+      case UIMode.bar:
+        return 'Shows ${Constants.co2Text} value as a vertical bar indicator.';
+    }
+  }
 }
+
+// Keep the existing _GraphMaxValueDropdown widget as is
 
 class _GraphMaxValueDropdown extends ConsumerWidget {
   final String deviceId;

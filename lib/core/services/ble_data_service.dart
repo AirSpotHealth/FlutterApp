@@ -19,6 +19,7 @@ import 'package:airspothealth/features/device_settings/providers/device_data_era
 import 'package:airspothealth/features/device_settings/providers/device_reset_sensor_provider.dart';
 import 'package:airspothealth/features/device_settings/providers/populate_fake_data_provider.dart';
 import 'package:airspothealth/features/device_settings/providers/recalibration_time_provider.dart';
+import 'package:airspothealth/features/device_settings/widgets/device_ui_mode_widget.dart';
 import 'package:airspothealth/features/devices/providers/device_battery_level_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -284,7 +285,7 @@ class ResponseCommandParser {
           dndStartTime: DateTime(0, 0, 0, dndStartHour, dndStartMinute),
           dndEndTime: DateTime(0, 0, 0, dndEndHour, dndEndMinute),
           recalibrationTarget: recalibrationTarget,
-          graphMode: graphMode,
+          uiMode: UIMode.fromValue(data[19]),
           graphMaxValue: graphMaxValue,
         );
       },

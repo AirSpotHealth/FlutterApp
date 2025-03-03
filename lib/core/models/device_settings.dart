@@ -4,6 +4,7 @@ import 'package:airspothealth/core/theme/app_colors.dart';
 import 'package:airspothealth/core/utils/assets.dart';
 import 'package:airspothealth/core/utils/constants.dart';
 import 'package:airspothealth/core/utils/device_cmd_utils.dart';
+import 'package:airspothealth/features/device_settings/widgets/device_ui_mode_widget.dart';
 import 'package:flutter/material.dart';
 import 'package:isar/isar.dart';
 
@@ -61,11 +62,15 @@ class DeviceSettings {
   /// Recalibration target
   final int recalibrationTarget;
 
-  /// Graph mode
-  final bool graphMode;
-
   /// Graph max value
   final int graphMaxValue;
+
+  /// UI Mode
+  @EnumValue()
+  final UIMode uiMode;
+
+  /// Show rebreathe percentage
+  final bool showRebreathePercentage;
 
   DeviceSettings({
     required this.alarmEnabled,
@@ -84,8 +89,9 @@ class DeviceSettings {
     this.dndStartTime,
     this.dndEndTime,
     this.recalibrationTarget = 426,
-    this.graphMode = true,
     this.graphMaxValue = 1600,
+    this.uiMode = UIMode.graph,
+    this.showRebreathePercentage = false,
   });
 
   DeviceSettings.empty({required this.deviceId})
@@ -104,8 +110,9 @@ class DeviceSettings {
         dndStartTime = null,
         dndEndTime = null,
         recalibrationTarget = 426,
-        graphMode = true,
-        graphMaxValue = 1600;
+        graphMaxValue = 1600,
+        uiMode = UIMode.graph,
+        showRebreathePercentage = false;
 
   DeviceSettings copyWith({
     bool? alarmEnabled,
@@ -125,8 +132,9 @@ class DeviceSettings {
     DateTime? dndStartTime,
     DateTime? dndEndTime,
     int? recalibrationTarget,
-    bool? graphMode,
     int? graphMaxValue,
+    UIMode? uiMode,
+    bool? showRebreathePercentage,
   }) {
     return DeviceSettings(
       alarmEnabled: alarmEnabled ?? this.alarmEnabled,
@@ -146,8 +154,10 @@ class DeviceSettings {
       dndStartTime: dndStartTime ?? this.dndStartTime,
       dndEndTime: dndEndTime ?? this.dndEndTime,
       recalibrationTarget: recalibrationTarget ?? this.recalibrationTarget,
-      graphMode: graphMode ?? this.graphMode,
       graphMaxValue: graphMaxValue ?? this.graphMaxValue,
+      uiMode: uiMode ?? this.uiMode,
+      showRebreathePercentage:
+          showRebreathePercentage ?? this.showRebreathePercentage,
     );
   }
 
@@ -253,8 +263,9 @@ class DeviceSettings {
       'dndStartTime': dndStartTime,
       'dndEndTime': dndEndTime,
       'recalibrationTarget': recalibrationTarget,
-      'graphMode': graphMode,
       'graphMaxValue': graphMaxValue,
+      'uiMode': uiMode.index,
+      'showRebreathePercentage': showRebreathePercentage,
     };
   }
 
@@ -279,8 +290,9 @@ class DeviceSettings {
         other.dndStartTime == dndStartTime &&
         other.dndEndTime == dndEndTime &&
         other.recalibrationTarget == recalibrationTarget &&
-        other.graphMode == graphMode &&
-        other.graphMaxValue == graphMaxValue;
+        other.graphMaxValue == graphMaxValue &&
+        other.uiMode == uiMode &&
+        other.showRebreathePercentage == showRebreathePercentage;
   }
 
   @override
@@ -301,12 +313,13 @@ class DeviceSettings {
       dndStartTime.hashCode ^
       dndEndTime.hashCode ^
       recalibrationTarget.hashCode ^
-      graphMode.hashCode ^
-      graphMaxValue.hashCode;
+      graphMaxValue.hashCode ^
+      uiMode.hashCode ^
+      showRebreathePercentage.hashCode;
 
   @override
   String toString() {
-    return 'DeviceSettings(alarmEnabled: $alarmEnabled, vibrationEnabled: $vibrationEnabled, powerMode: $powerMode, continuosScreenEnabled: $continuosScreenEnabled, thresholds: $thresholds, deviceId: $deviceId, co2MedAlertEnabled: $co2MedAlertEnabled, co2HighAlertEnabled: $co2HighAlertEnabled, autoSyncTime: $autoSyncTime, autoCalibration: $autoCalibration, autoConnect: $autoConnect, logData: $logData, dndEnabled: $dndEnabled, dndStartTime: $dndStartTime, dndEndTime: $dndEndTime, recalibrationTarget: $recalibrationTarget, graphMode: $graphMode, graphMaxValue: $graphMaxValue)';
+    return 'DeviceSettings(alarmEnabled: $alarmEnabled, vibrationEnabled: $vibrationEnabled, powerMode: $powerMode, continuosScreenEnabled: $continuosScreenEnabled, thresholds: $thresholds, deviceId: $deviceId, co2MedAlertEnabled: $co2MedAlertEnabled, co2HighAlertEnabled: $co2HighAlertEnabled, autoSyncTime: $autoSyncTime, autoCalibration: $autoCalibration, autoConnect: $autoConnect, logData: $logData, dndEnabled: $dndEnabled, dndStartTime: $dndStartTime, dndEndTime: $dndEndTime, recalibrationTarget: $recalibrationTarget, graphMaxValue: $graphMaxValue, uiMode: $uiMode, showRebreathePercentage: $showRebreathePercentage)';
   }
 }
 

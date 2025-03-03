@@ -6,7 +6,7 @@ import 'package:airspothealth/core/utils/assets.dart';
 import 'package:airspothealth/core/utils/constants.dart';
 import 'package:airspothealth/core/utils/extensions.dart';
 import 'package:airspothealth/features/device_graph/providers/ble_device_provider.dart';
-import 'package:airspothealth/features/device_settings/widgets/device_graph_mode_widget.dart';
+import 'package:airspothealth/features/device_settings/widgets/device_ui_mode_widget.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -99,8 +99,8 @@ class PowerModeSettingsPage extends ConsumerWidget {
               color: context.textTheme.bodySmall?.color?.withValues(alpha: .7),
             ),
           ),
-          const SizedBox(height: 12),
-          DeviceGraphModeWidget(deviceId: deviceId),
+          const SizedBox(height: 16),
+          DeviceUIModeWidget(deviceId: deviceId),
         ],
       ),
     );

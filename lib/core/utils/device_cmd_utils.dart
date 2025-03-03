@@ -267,13 +267,13 @@ class DeviceCmdUtils {
     return _buildCommand([prefixHigh, prefixLow, 0x27, 1, 1]);
   }
 
-  static Uint8List setGraphMode(bool graphMode, int graphMaxValue) {
+  static Uint8List setGraphMode(int uiMode, int graphMaxValue) {
     return _buildCommand([
       prefixHigh,
       prefixLow,
       0x28,
       3,
-      graphMode ? 1 : 0,
+      uiMode,
       ..._getHex2Bytes(graphMaxValue),
     ]);
   }
