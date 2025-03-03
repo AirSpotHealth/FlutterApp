@@ -92,11 +92,12 @@ class _DeviceSettingsNotifier extends FamilyNotifier<DeviceSettings, String> {
       }
 
       if (settings.uiMode != state.uiMode ||
-          settings.graphMaxValue != state.graphMaxValue) {
+          settings.graphMaxValue != state.graphMaxValue ||
+          settings.graphMinValue != state.graphMinValue) {
         ref
             .read(bleDeviceCommunicationProvider(settings.deviceId).notifier)
-            .sendCommand(DeviceCmdUtils.setGraphMode(
-                settings.uiMode.index, settings.graphMaxValue));
+            .sendCommand(DeviceCmdUtils.setGraphMode(settings.uiMode.index,
+                settings.graphMaxValue, settings.graphMinValue));
       }
     }
 

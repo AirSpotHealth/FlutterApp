@@ -266,8 +266,11 @@ class ResponseCommandParser {
         final graphMode = UIMode.fromValue(data[20]);
         final graphMaxValue =
             data.length > 21 ? _parseTwoBytesToInt(data, 21) : 1600;
+        final graphMinValue =
+            data.length > 23 ? _parseTwoBytesToInt(data, 23) : 0;
         debugPrint('RECALIBRATION TARGET: $recalibrationTarget');
         debugPrint('GRAPH MAX VALUE: $graphMaxValue');
+        debugPrint('GRAPH MIN VALUE: $graphMinValue');
         debugPrint('UI MODE: $graphMode');
         debugPrint('POWER MODE: ${PowerMode.fromValue(data[6])}');
 
@@ -288,6 +291,7 @@ class ResponseCommandParser {
           recalibrationTarget: recalibrationTarget,
           uiMode: graphMode,
           graphMaxValue: graphMaxValue,
+          graphMinValue: graphMinValue,
         );
       },
     );

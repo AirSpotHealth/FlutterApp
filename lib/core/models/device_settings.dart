@@ -65,6 +65,9 @@ class DeviceSettings {
   /// Graph max value
   final int graphMaxValue;
 
+  /// Graph min value
+  final int graphMinValue;
+
   /// UI Mode
   @EnumValue()
   final UIMode uiMode;
@@ -92,6 +95,7 @@ class DeviceSettings {
     this.graphMaxValue = 1600,
     this.uiMode = UIMode.graph,
     this.showRebreathePercentage = false,
+    this.graphMinValue = 0,
   });
 
   DeviceSettings.empty({required this.deviceId})
@@ -112,7 +116,8 @@ class DeviceSettings {
         recalibrationTarget = 426,
         graphMaxValue = 1600,
         uiMode = UIMode.graph,
-        showRebreathePercentage = false;
+        showRebreathePercentage = false,
+        graphMinValue = 0;
 
   DeviceSettings copyWith({
     bool? alarmEnabled,
@@ -133,6 +138,7 @@ class DeviceSettings {
     DateTime? dndEndTime,
     int? recalibrationTarget,
     int? graphMaxValue,
+    int? graphMinValue,
     UIMode? uiMode,
     bool? showRebreathePercentage,
   }) {
@@ -158,6 +164,7 @@ class DeviceSettings {
       uiMode: uiMode ?? this.uiMode,
       showRebreathePercentage:
           showRebreathePercentage ?? this.showRebreathePercentage,
+      graphMinValue: graphMinValue ?? this.graphMinValue,
     );
   }
 
@@ -266,6 +273,7 @@ class DeviceSettings {
       'graphMaxValue': graphMaxValue,
       'uiMode': uiMode.index,
       'showRebreathePercentage': showRebreathePercentage,
+      'graphMinValue': graphMinValue,
     };
   }
 
@@ -292,7 +300,8 @@ class DeviceSettings {
         other.recalibrationTarget == recalibrationTarget &&
         other.graphMaxValue == graphMaxValue &&
         other.uiMode == uiMode &&
-        other.showRebreathePercentage == showRebreathePercentage;
+        other.showRebreathePercentage == showRebreathePercentage &&
+        other.graphMinValue == graphMinValue;
   }
 
   @override
@@ -315,11 +324,12 @@ class DeviceSettings {
       recalibrationTarget.hashCode ^
       graphMaxValue.hashCode ^
       uiMode.hashCode ^
-      showRebreathePercentage.hashCode;
+      showRebreathePercentage.hashCode ^
+      graphMinValue.hashCode;
 
   @override
   String toString() {
-    return 'DeviceSettings(alarmEnabled: $alarmEnabled, vibrationEnabled: $vibrationEnabled, powerMode: $powerMode, continuosScreenEnabled: $continuosScreenEnabled, thresholds: $thresholds, deviceId: $deviceId, co2MedAlertEnabled: $co2MedAlertEnabled, co2HighAlertEnabled: $co2HighAlertEnabled, autoSyncTime: $autoSyncTime, autoCalibration: $autoCalibration, autoConnect: $autoConnect, logData: $logData, dndEnabled: $dndEnabled, dndStartTime: $dndStartTime, dndEndTime: $dndEndTime, recalibrationTarget: $recalibrationTarget, graphMaxValue: $graphMaxValue, uiMode: $uiMode, showRebreathePercentage: $showRebreathePercentage)';
+    return 'DeviceSettings(alarmEnabled: $alarmEnabled, vibrationEnabled: $vibrationEnabled, powerMode: $powerMode, continuosScreenEnabled: $continuosScreenEnabled, thresholds: $thresholds, deviceId: $deviceId, co2MedAlertEnabled: $co2MedAlertEnabled, co2HighAlertEnabled: $co2HighAlertEnabled, autoSyncTime: $autoSyncTime, autoCalibration: $autoCalibration, autoConnect: $autoConnect, logData: $logData, dndEnabled: $dndEnabled, dndStartTime: $dndStartTime, dndEndTime: $dndEndTime, recalibrationTarget: $recalibrationTarget, graphMaxValue: $graphMaxValue, uiMode: $uiMode, showRebreathePercentage: $showRebreathePercentage, graphMinValue: $graphMinValue)';
   }
 }
 
