@@ -108,7 +108,7 @@ class _CalibrationCorrectionWidgetState
       autovalidateMode: AutovalidateMode.onUserInteraction,
       keyboardType: TextInputType.number,
       style: context.textTheme.bodyMedium?.weight700,
-      onChanged: _handleValueChange,
+      onFieldSubmitted: _handleValueChange,
       inputFormatters: [FilteringTextInputFormatter.digitsOnly],
     );
   }
