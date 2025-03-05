@@ -17,18 +17,16 @@ class DeviceDataAggregateCard extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final GraphDataDuration selectedDuration = ref.watch(graphDurationProvider);
+    final DeviceHistoryDataRequest request =
+        DeviceHistoryDataRequest(deviceId, selectedDuration);
 
-    ref.watch(deviceHistoricalDataProvider((deviceId, selectedDuration)));
+    ref.watch(deviceHistoricalDataProvider(request));
 
-    final DeviceData? minValue = ref
-        .read(
-            deviceHistoricalDataProvider((deviceId, selectedDuration)).notifier)
-        .minValue;
+    final DeviceData? minValue =
+        ref.read(deviceHistoricalDataProvider(request).notifier).minValue;
 
-    final DeviceData? maxValue = ref
-        .read(
-            deviceHistoricalDataProvider((deviceId, selectedDuration)).notifier)
-        .maxValue;
+    final DeviceData? maxValue =
+        ref.read(deviceHistoricalDataProvider(request).notifier).maxValue;
 
     debugPrint("Min and max values: $minValue, $maxValue");
 

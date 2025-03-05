@@ -22,8 +22,9 @@ class DataGraphWrapper extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final GraphDataDuration duration = ref.watch(graphDurationProvider);
-    final AsyncValue<List<DeviceData>> deviceDataList =
-        ref.watch(deviceHistoricalDataProvider((deviceId, duration)));
+    final AsyncValue<List<DeviceData>> deviceDataList = ref.watch(
+        deviceHistoricalDataProvider(
+            DeviceHistoryDataRequest(deviceId, duration)));
     final DeviceSettings deviceSettings =
         ref.watch(deviceSettingsProvider(deviceId));
 

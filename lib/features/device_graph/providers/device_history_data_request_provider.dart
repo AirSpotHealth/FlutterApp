@@ -137,11 +137,6 @@ class _DeviceHistoryDataRequestNotifier
       return;
     }
 
-    debugPrint(
-        'REQUEST:Saving data: ${deviceDataList.map((e) => DeviceDataType.values[e.type].name)}');
-
-    debugPrint('REQUEST:Device data list: $deviceDataList');
-
     _dataBuffer.addAll(deviceDataList
         .where((data) => data.type != DeviceDataType.empty.index));
 

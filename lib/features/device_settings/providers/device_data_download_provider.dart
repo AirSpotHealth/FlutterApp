@@ -180,7 +180,8 @@ class _DeviceDataDownloadNotifier
     state = AsyncInProgress(0.5, message: 'Downloading device data....');
 
     ref.read(graphDurationProvider.notifier).setDuration(duration);
-    ref.invalidate(deviceHistoricalDataProvider((deviceId, duration)));
+    ref.invalidate(deviceHistoricalDataProvider(
+        DeviceHistoryDataRequest(deviceId, duration)));
   }
 
   void setProgress(double progress) {
