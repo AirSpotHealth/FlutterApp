@@ -17,7 +17,7 @@ enum UIMode {
       case UIMode.graph:
         return 'Graph';
       case UIMode.bar:
-        return 'Bar';
+        return 'Colour Bars';
     }
   }
 
@@ -40,7 +40,7 @@ class DeviceUIModeWidget extends ConsumerWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          'UI Mode',
+          'Screen Mode',
           style: context.textTheme.bodyMedium?.weight600,
         ),
         const SizedBox(height: 12),
@@ -134,9 +134,9 @@ class DeviceUIModeWidget extends ConsumerWidget {
       case UIMode.plain:
         return 'Shows ${Constants.co2Text} value in plain text format.';
       case UIMode.graph:
-        return 'Displays ${Constants.co2Text} readings as a line graph with customizable maximum value and minimum value.';
+        return 'Displays ${Constants.co2Text} readings as a bar graph with customizable maximum value and minimum value.';
       case UIMode.bar:
-        return 'Shows ${Constants.co2Text} value as a vertical bar indicator.';
+        return 'Shows Green, Yellow, Red ranges';
     }
   }
 }
