@@ -106,10 +106,12 @@ class _CalibrationCorrectionWidgetState
       onTapOutside: (_) => FocusScope.of(context).unfocus(),
       validator: _validateInput,
       autovalidateMode: AutovalidateMode.onUserInteraction,
-      keyboardType: TextInputType.number,
       style: context.textTheme.bodyMedium?.weight700,
       onFieldSubmitted: _handleValueChange,
       inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+      keyboardType:
+          TextInputType.numberWithOptions(signed: true, decimal: true),
+      textInputAction: TextInputAction.done,
     );
   }
 }
