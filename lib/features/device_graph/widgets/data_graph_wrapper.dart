@@ -40,7 +40,7 @@ class DataGraphWrapper extends ConsumerWidget {
           ),
         ),
         Positioned(
-          top: 16,
+          top: 8,
           left: 16,
           child: const GraphRangeSelector(),
         ),

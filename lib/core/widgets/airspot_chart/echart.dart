@@ -152,7 +152,7 @@ class _EChartState extends State<EChart> {
       (function() {
         try {
           const data = chart.getOption().series[0].data;
-
+          
           if (!data || data.length === 0) {
             console.error("No data available");
             return;
@@ -165,62 +165,44 @@ class _EChartState extends State<EChart> {
             return;
           }
 
-          const start = zoom.start;
-          const end = zoom.end;
-          const diff = end - start;
-
-          const maxZoom = end > 85 ? end.toFixed(2) : 85;
-          const minZoom = start < 15 ? start.toFixed(2) : 15;
-
-          console.log('Zoom start: ', start);
-          console.log('Zoom end: ', end);
-          console.log('Zoom diff: ', diff);
-
           const lastIndex = data.length - 1;
           const lastData = data[lastIndex];
           const lastTimestamp = new Date(lastData[0]);
-          const firstTimestamp = new Date(data[0][0]);
-
-          const totalHours = (lastTimestamp - firstTimestamp) / (1000 * 60 * 60);
-
-          // it should be multiple of 24
-          const numberOfHours = Math.ceil(totalHours / 24) * 24;
-
-          console.log('Number of hours: ', numberOfHours);
-
-
-          // Extract the hour & minute
-          const lastHour = lastTimestamp.getHours();
-          const lastMinute = lastTimestamp.getMinutes();
-
-          // Convert hour + fraction of hour (e.g., 10:30 AM -> 10.5)
-          const lastTimeValue = lastHour + (lastMinute / 60) + numberOfHours;
-
-          // Normalize between 0 (midnight) and 23 (end of day)
-          const normalized = lastTimeValue / numberOfHours;
-
-          console.log('Normalized: ', normalized);
-
-          // Calculate zoom center
-          const zoomCenter = minZoom + (normalized * (maxZoom - minZoom));
-
-          console.log('Zoom center: ', zoomCenter);
-
-          // Define zoom range ensuring the last point is centered
-          const zoomOffset = 0.5;
-          const zoomEnd = Math.min(maxZoom, zoomCenter + zoomOffset) + diff / 2;
-          const zoomStart = Math.max(minZoom, zoomEnd - diff) - diff / 2;
-
-
-          console.log('Zoom start: ', zoomStart);
-          console.log('Zoom end: ', zoomEnd);
-
           
-          // Apply zoom
+          // Get the current visible data range
+          const currentStartValue = zoom.startValue;
+          const currentEndValue = zoom.endValue;
+          
+          // If we don't have startValue/endValue, calculate them from percentages
+          let zoomSizeMs;
+          if (currentStartValue && currentEndValue) {
+            // We already have time-based zoom, just calculate the window size
+            zoomSizeMs = new Date(currentEndValue) - new Date(currentStartValue);
+          } else {
+            // We have percentage-based zoom, convert to time
+            const firstTimestamp = new Date(data[0][0]);
+            const totalTimeRange = lastTimestamp - firstTimestamp;
+            const zoomSizePercent = zoom.end - zoom.start;
+            zoomSizeMs = totalTimeRange * (zoomSizePercent / 100);
+          }
+          
+          console.log('Current zoom window size (ms):', zoomSizeMs);
+          
+          // Calculate the end time (latest data point)
+          const endValue = lastData[0]; // ISO string of the last timestamp
+          
+          // Calculate the start time based on the current zoom window size
+          const startDate = new Date(lastTimestamp - zoomSizeMs);
+          const startValue = startDate.toISOString();
+          
+          console.log('New zoom start value:', startValue);
+          console.log('New zoom end value:', endValue);
+          
+          // Apply zoom using startValue and endValue
           chart.dispatchAction({
             type: 'dataZoom',
-            start: zoomStart,
-            end: zoomEnd
+            startValue: startValue,
+            endValue: endValue
           });
 
           // Wait for zoom animation to finish before showing tooltip
@@ -232,7 +214,6 @@ class _EChartState extends State<EChart> {
             });
             console.log('Tooltip triggered for index:', lastIndex);
           }, 500); // Adjust delay if needed
-
           
         } catch (e) {
           console.error("Error moving to latest data:", e);
@@ -244,6 +225,7 @@ class _EChartState extends State<EChart> {
   void _toggleZoom() {
     final zoomScript = _zoomed
         ? '''
+        (function() {
         // hide tooltip
         chart.dispatchAction({
           type: 'hideTip'
@@ -254,6 +236,8 @@ class _EChartState extends State<EChart> {
           start: 0,
           end: 100
         });
+        
+      })();
       '''
         : '''
         (function() {
@@ -268,30 +252,40 @@ class _EChartState extends State<EChart> {
             const lastIndex = data.length - 1;
             const lastData = data[lastIndex];
             const lastTimestamp = new Date(lastData[0]);
+            const firstTimestamp = new Date(data[0][0]);
 
-            // Extract the hour & minute
-            const lastHour = lastTimestamp.getHours();
-            const lastMinute = lastTimestamp.getMinutes();
+            // Calculate total hours between first and last data point
+            const totalHours = (lastTimestamp - firstTimestamp) / (1000 * 60 * 60);
+            
+            // Calculate number of days
+            const numberOfDays = Math.ceil(totalHours / 24);
+            
+            console.log('Total hours:', totalHours);
+            console.log('Number of days:', numberOfDays);
 
-            // Convert hour + fraction of hour (e.g., 10:30 AM -> 10.5)
-            const lastTimeValue = lastHour + (lastMinute / 60);
+            // Define zoom window size based on data span
+            // For single day, use 6 hours window
+            // For multi-day, use 12 hours window to focus more on recent data
+            const zoomWindowMs = numberOfDays > 1 
+              ? 12 * 60 * 60 * 1000  // 12 hours in milliseconds
+              : 6 * 60 * 60 * 1000;  // 6 hours in milliseconds
+            
+            // Calculate the end time (latest data point)
+            const endValue = lastData[0]; // ISO string of the last timestamp
+            
+            // Calculate the start time based on the zoom window size
+            const startDate = new Date(lastTimestamp - zoomWindowMs);
+            const startValue = startDate.toISOString();
+            
+            console.log('Zoom window size (ms):', zoomWindowMs);
+            console.log('Zoom start value:', startValue);
+            console.log('Zoom end value:', endValue);
 
-            // Normalize between 0 (midnight) and 23 (end of day)
-            const normalized = lastTimeValue / 24;
-
-            // Calculate zoom center
-            const zoomCenter = 15 + (normalized * (85 - 15));
-
-            // Define zoom range ensuring the last point is centered
-            const zoomOffset = 0.5;
-            const zoomStart = Math.max(15, zoomCenter - zoomOffset);
-            const zoomEnd = Math.min(85, zoomCenter + zoomOffset);
-
-            // Apply zoom
+            // Apply zoom using startValue and endValue
             chart.dispatchAction({
               type: 'dataZoom',
-              start: zoomStart,
-              end: zoomEnd
+              startValue: startValue,
+              endValue: endValue
             });
 
             // Wait for zoom animation to finish before showing tooltip
