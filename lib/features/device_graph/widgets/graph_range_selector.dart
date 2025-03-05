@@ -1,4 +1,5 @@
 import 'package:airspothealth/core/theme/app_colors.dart';
+import 'package:airspothealth/core/utils/extensions.dart';
 import 'package:airspothealth/features/device_graph/models/graph_data_duration.dart';
 import 'package:airspothealth/features/device_graph/providers/graph_range_provider.dart';
 import 'package:flutter/material.dart';
@@ -153,7 +154,7 @@ class _QuickDateOptions extends StatelessWidget {
               DateTimeRange(
                 start: DateTime(
                     sevenDaysAgo.year, sevenDaysAgo.month, sevenDaysAgo.day),
-                end: DateTime(now.year, now.month, now.day, 23, 59, 59),
+                end: now,
               ),
             ));
           },
@@ -183,14 +184,24 @@ class _QuickDateOptions extends StatelessWidget {
               },
             );
             if (picked != null) {
-              onRangeSelected(GraphDataDuration.custom(
-                DateTimeRange(
-                  start: DateTime(
-                      picked.start.year, picked.start.month, picked.start.day),
-                  end: DateTime(picked.end.year, picked.end.month,
-                      picked.end.day, 23, 59, 59),
-                ),
-              ));
+              if (picked.end.isToday) {
+                onRangeSelected(GraphDataDuration.custom(
+                  DateTimeRange(
+                    start: DateTime(picked.start.year, picked.start.month,
+                        picked.start.day),
+                    end: DateTime.now(),
+                  ),
+                ));
+              } else {
+                onRangeSelected(GraphDataDuration.custom(
+                  DateTimeRange(
+                    start: DateTime(picked.start.year, picked.start.month,
+                        picked.start.day),
+                    end: DateTime(picked.end.year, picked.end.month,
+                        picked.end.day, 23, 59, 59),
+                  ),
+                ));
+              }
             }
           },
         ),

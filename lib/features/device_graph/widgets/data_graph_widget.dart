@@ -175,9 +175,10 @@ class _DataGraphWidgetState extends ConsumerState<DataGraphWidget> {
       var date = new Date(params[0].value[0]);
       var hours = date.getHours();
       var minutes = date.getMinutes();
+      var seconds = date.getSeconds();
       var timeStr = $is12Hour 
-        ? ((hours % 12 || 12) + ':' + (minutes < 10 ? '0' : '') + minutes + ' ' + (hours >= 12 ? 'PM' : 'AM'))
-        : ((hours < 10 ? '0' : '') + hours + ':' + (minutes < 10 ? '0' : '') + minutes);
+        ? ((hours % 12 || 12) + ':' + (minutes < 10 ? '0' : '') + minutes + ':' + (seconds < 10 ? '0' : '') + seconds + ' ' + (hours >= 12 ? 'PM' : 'AM'))
+        : ((hours < 10 ? '0' : '') + hours + ':' + (minutes < 10 ? '0' : '') + minutes + ':' + (seconds < 10 ? '0' : '') + seconds);
       
       var result = date.toLocaleDateString() + ' ' + timeStr + '<br/>';
       

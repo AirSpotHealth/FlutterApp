@@ -15,8 +15,7 @@ class GraphDataDuration {
   static GraphDataDuration get today {
     final now = DateTime.now();
     final start = DateTime(now.year, now.month, now.day);
-    final end = DateTime(now.year, now.month, now.day, 23, 59, 59);
-    return GraphDataDuration._(DateTimeRange(start: start, end: end), 'today');
+    return GraphDataDuration._(DateTimeRange(start: start, end: now), 'today');
   }
 
   // copy with new date time range

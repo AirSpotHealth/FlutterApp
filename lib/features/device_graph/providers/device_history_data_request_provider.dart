@@ -137,6 +137,11 @@ class _DeviceHistoryDataRequestNotifier
       return;
     }
 
+    debugPrint(
+        'REQUEST:Saving data: ${deviceDataList.map((e) => DeviceDataType.values[e.type].name)}');
+
+    debugPrint('REQUEST:Device data list: $deviceDataList');
+
     _dataBuffer.addAll(deviceDataList
         .where((data) => data.type != DeviceDataType.empty.index));
 
@@ -174,6 +179,9 @@ class _DeviceHistoryDataRequestNotifier
           orElse: () => deviceDataList.first,
         )
         .dateTime;
+
+    debugPrint(
+        'REQUEST:First date time: $firstDateTime, Pending date time range: $pendingDateTimeRange');
 
     if (pendingDateTimeRange == null) {
       return false;
@@ -252,7 +260,7 @@ class _DeviceHistoryDataRequestNotifier
     });
 
     debugPrint(
-        'REQUEST:Last fetched date time range: ${bleDevice!.lastFetchedDateTimeRange}');
+        'REQUEST:Set last fetched date time range: ${bleDevice!.lastFetchedDateTimeRange}');
   }
 
   DateTimeRange _calculateFetchedDateTimeRange() {

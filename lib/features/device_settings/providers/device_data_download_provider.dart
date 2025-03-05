@@ -98,7 +98,13 @@ class _DeviceDataDownloadNotifier
   Future<List<DeviceData>> _fetchDeviceData() async {
     final duration = ref.read(graphDurationProvider);
     final lower = duration.dateTimeRange.start;
-    final upper = duration.dateTimeRange.end;
+    DateTime upper = duration.dateTimeRange.end;
+
+    if (upper.isToday) {
+      upper = DateTime.now();
+    }
+
+    debugPrint('Fetching device data for: $lower - $upper');
 
     final List<DeviceData> dataList = ref.read(isarServiceProvider).read(
       (isar) {
@@ -169,14 +175,12 @@ class _DeviceDataDownloadNotifier
           end: DateTime.now(),
         ),
       );
-
-      ref.read(graphDurationProvider.notifier).setDuration(duration);
-      ref.read(deviceHistoricalDataProvider((deviceId, duration)));
-    } else {
-      state = AsyncInProgress(0.5, message: 'Downloading device data....');
-      await Future.delayed(const Duration(seconds: 1));
-      setDataDownloadedFromDevice();
     }
+
+    state = AsyncInProgress(0.5, message: 'Downloading device data....');
+
+    ref.read(graphDurationProvider.notifier).setDuration(duration);
+    ref.invalidate(deviceHistoricalDataProvider((deviceId, duration)));
   }
 
   void setProgress(double progress) {

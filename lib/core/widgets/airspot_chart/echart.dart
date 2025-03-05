@@ -169,27 +169,51 @@ class _EChartState extends State<EChart> {
           const end = zoom.end;
           const diff = end - start;
 
+          const maxZoom = end > 85 ? end.toFixed(2) : 85;
+          const minZoom = start < 15 ? start.toFixed(2) : 15;
+
+          console.log('Zoom start: ', start);
+          console.log('Zoom end: ', end);
+          console.log('Zoom diff: ', diff);
+
           const lastIndex = data.length - 1;
           const lastData = data[lastIndex];
           const lastTimestamp = new Date(lastData[0]);
+          const firstTimestamp = new Date(data[0][0]);
+
+          const totalHours = (lastTimestamp - firstTimestamp) / (1000 * 60 * 60);
+
+          // it should be multiple of 24
+          const numberOfHours = Math.ceil(totalHours / 24) * 24;
+
+          console.log('Number of hours: ', numberOfHours);
+
 
           // Extract the hour & minute
           const lastHour = lastTimestamp.getHours();
           const lastMinute = lastTimestamp.getMinutes();
 
           // Convert hour + fraction of hour (e.g., 10:30 AM -> 10.5)
-          const lastTimeValue = lastHour + (lastMinute / 60);
+          const lastTimeValue = lastHour + (lastMinute / 60) + numberOfHours;
 
           // Normalize between 0 (midnight) and 23 (end of day)
-          const normalized = lastTimeValue / 24;
+          const normalized = lastTimeValue / numberOfHours;
+
+          console.log('Normalized: ', normalized);
 
           // Calculate zoom center
-          const zoomCenter = 15 + (normalized * (85 - 15));
+          const zoomCenter = minZoom + (normalized * (maxZoom - minZoom));
+
+          console.log('Zoom center: ', zoomCenter);
 
           // Define zoom range ensuring the last point is centered
           const zoomOffset = 0.5;
-          const zoomEnd = Math.min(85, zoomCenter + zoomOffset) + diff / 2;
-          const zoomStart = Math.max(15, zoomEnd - diff) - diff / 2;
+          const zoomEnd = Math.min(maxZoom, zoomCenter + zoomOffset) + diff / 2;
+          const zoomStart = Math.max(minZoom, zoomEnd - diff) - diff / 2;
+
+
+          console.log('Zoom start: ', zoomStart);
+          console.log('Zoom end: ', zoomEnd);
 
           
           // Apply zoom
