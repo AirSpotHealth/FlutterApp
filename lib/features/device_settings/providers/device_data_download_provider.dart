@@ -115,8 +115,6 @@ class _DeviceDataDownloadNotifier
             .isLiveCo2EqualTo(false)
             .dateTimeGreaterThanOrEqualTo(lower)
             .dateTimeLessThanOrEqualTo(upper)
-            .sortByDateTime()
-            .thenByTypeDesc()
             .findAll();
       },
     );
@@ -124,6 +122,16 @@ class _DeviceDataDownloadNotifier
     // remove the data that has 0 value and is of type co2
     dataList.removeWhere((element) =>
         element.value == 0 && element.type == DeviceDataType.co2.index);
+
+    // sort by first date time and then by the custom sort order deviceDataOrder
+    dataList.sort((a, b) {
+      if (a.dateTime == b.dateTime) {
+        return deviceDataOrder
+            .indexOf(DeviceDataType.values[a.type])
+            .compareTo(deviceDataOrder.indexOf(DeviceDataType.values[b.type]));
+      }
+      return a.dateTime.compareTo(b.dateTime);
+    });
 
     return dataList;
   }

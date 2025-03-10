@@ -328,6 +328,9 @@ class _DeviceHistoryDataRequestNotifier
       }
     }
 
+    debugPrint(
+        'REQUEST:Fetch start: $fetchStart, Fetch end: $fetchEnd, Last fetched start: $lastFetchedStartDate, Last fetched end: $lastFetchedEndDate');
+
     if (fetchStart != null && fetchEnd != null) {
       pendingDateTimeRange = DateTimeRange(start: fetchStart, end: fetchEnd);
     }

@@ -70,7 +70,7 @@ const deviceDataTypeMap = {
   DeviceDataType.reset: 'Device Reset',
   DeviceDataType.sensorFactoryReset: 'Sensor Factory Reset',
   DeviceDataType.calibrationCorrection: 'New Calibration Correction',
-  DeviceDataType.sensorAutoCalibration: 'Sensor Auto Calibration',
+  DeviceDataType.sensorAutoCalibration: 'Automatic Calibration',
   DeviceDataType.integrityError: 'Integrity Error',
   DeviceDataType.calibrationTarget: 'Calibration Target',
   DeviceDataType.timeSync: 'Time Sync',
@@ -91,3 +91,24 @@ const sensorErrorMap = {
   0x04: 'Sensor Measurement Start Error',
   0x05: 'Sensor Data Status Error',
 };
+
+const deviceDataOrder = [
+  DeviceDataType.co2,
+  DeviceDataType.batteryLow,
+  DeviceDataType.calibration,
+  DeviceDataType.sensorError,
+  DeviceDataType.reset,
+  DeviceDataType.sensorFactoryReset,
+  DeviceDataType.sensorAutoCalibration,
+  DeviceDataType.integrityError,
+  DeviceDataType.calibrationTargetUpdate,
+  DeviceDataType.timeSync,
+  DeviceDataType.calibrationAdjustment,
+  DeviceDataType.manualCalibStart,
+  DeviceDataType.calibrationCorrectionOld,
+  DeviceDataType.ascLowest,
+  DeviceDataType.calibrationTarget,
+  DeviceDataType.calibrationCorrection,
+  DeviceDataType.dfuUpdate,
+  DeviceDataType.dfuUpdateFail,
+];
