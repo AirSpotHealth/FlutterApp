@@ -290,6 +290,10 @@ class DeviceCmdUtils {
     ]);
   }
 
+  static Uint8List getAscDayCount() {
+    return _buildCommand([prefixHigh, prefixLow, 0x2A, 1, 1]);
+  }
+
   // ======= Helper Functions =======
   static Uint8List _getHex2Bytes(int value) {
     var byteArray = Uint8List(2);
