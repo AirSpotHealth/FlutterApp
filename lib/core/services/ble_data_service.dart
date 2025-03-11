@@ -381,12 +381,8 @@ class ResponseCommandParser {
         type: DeviceDataType.fromByte(type).index,
       );
 
-      debugPrint('DeviceData: ${deviceData0.toString()}');
-
       deviceData.add(deviceData0);
     }
-
-    debugPrint('CO2 Data: ${deviceData.map((e) => e.toString())}');
 
     // isarService.write((isar) {
     //   isar.deviceDatas.putAll(deviceData);
