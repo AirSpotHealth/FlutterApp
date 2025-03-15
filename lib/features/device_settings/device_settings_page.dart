@@ -48,6 +48,11 @@ class DeviceSettingsPage extends ConsumerWidget {
     //   enabled: true,
     // ),
     SettingItem(
+      title: 'Graph Zones Settings',
+      assetIcon: Assets.airGraph,
+      route: RouteNames.co2Settings,
+    ),
+    SettingItem(
       title: 'Do Not Disturb',
       assetIcon: Assets.doNotDisturbSettings,
       route: RouteNames.doNotDisturbSettings,
