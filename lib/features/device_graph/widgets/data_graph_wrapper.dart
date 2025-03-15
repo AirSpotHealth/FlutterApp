@@ -1,7 +1,6 @@
 import 'package:airspothealth/core/models/device_data.dart';
 import 'package:airspothealth/core/models/device_settings.dart';
 import 'package:airspothealth/core/providers/device_settings_provider.dart';
-import 'package:airspothealth/core/utils/extensions.dart';
 import 'package:airspothealth/features/device_graph/models/graph_data_duration.dart';
 import 'package:airspothealth/features/device_graph/providers/device_historical_data_provider.dart';
 import 'package:airspothealth/features/device_graph/providers/graph_range_provider.dart';
@@ -30,15 +29,7 @@ class _DataGraphWrapperState extends ConsumerState<DataGraphWrapper> {
     super.initState();
     // check if the duration is today and timerange is not today
     WidgetsBinding.instance.addPostFrameCallback((timeStamp) {
-      final duration = ref.read(graphDurationProvider);
-      if (duration.name == 'today' &&
-          !duration.dateTimeRange.start.isSameDay(DateTime.now())) {
-        debugPrint(
-            'setting duration to today as it is not today ${duration.dateTimeRange.start} ${DateTime.now()}');
-        ref
-            .read(graphDurationProvider.notifier)
-            .setDuration(GraphDataDuration.today);
-      }
+      ref.read(graphDurationProvider.notifier).validateDateTimeRange();
     });
   }
 

@@ -186,15 +186,7 @@ class _QuickDateOptions extends StatelessWidget {
           title: 'Yesterday',
           subtitle: _formatDate(yesterday),
           isSelected: _isYesterday(selectedRange.dateTimeRange),
-          onTap: () {
-            onRangeSelected(GraphDataDuration.custom(
-              DateTimeRange(
-                start: DateTime(yesterday.year, yesterday.month, yesterday.day),
-                end: DateTime(
-                    yesterday.year, yesterday.month, yesterday.day, 23, 59, 59),
-              ),
-            ));
-          },
+          onTap: () => onRangeSelected(GraphDataDuration.yesterday),
         ),
         _buildDateOption(
           context,
