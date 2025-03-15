@@ -7,7 +7,6 @@ import 'package:airspothealth/core/utils/constants.dart';
 import 'package:airspothealth/core/widgets/airspot_chart/echart.dart';
 import 'package:airspothealth/features/device_graph/models/graph_data_duration.dart';
 import 'package:airspothealth/features/device_graph/models/graph_settings.dart';
-import 'package:airspothealth/features/device_graph/providers/graph_range_provider.dart';
 import 'package:airspothealth/features/device_graph/providers/graph_settings_provider.dart';
 import 'package:airspothealth/main.dart';
 import 'package:flutter/material.dart';
@@ -70,10 +69,13 @@ class DataGraphWidget extends ConsumerStatefulWidget {
 
   final DeviceSettings deviceSettings;
 
+  final GraphDataDuration duration;
+
   const DataGraphWidget({
     super.key,
     required this.deviceDataList,
     required this.deviceSettings,
+    required this.duration,
     this.loading = false,
   });
 
@@ -120,10 +122,19 @@ class _DataGraphWidgetState extends ConsumerState<DataGraphWidget> {
 
   dynamic get amberThreshold => widget.deviceSettings.yellowUpperLimit;
 
+  late GraphDataDuration duration = widget.duration;
+
+  @override
+  void didUpdateWidget(DataGraphWidget oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.duration != widget.duration) {
+      duration = widget.duration;
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final GraphSettings settings = ref.watch(graphSettingsProvider);
-    final GraphDataDuration duration = ref.watch(graphDurationProvider);
 
     final String currentOption = _buildOption(settings, duration.dateTimeRange);
 
