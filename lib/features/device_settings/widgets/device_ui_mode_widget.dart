@@ -1,7 +1,6 @@
 import 'package:airspothealth/core/providers/device_settings_provider.dart';
 import 'package:airspothealth/core/theme/app_colors.dart';
 import 'package:airspothealth/core/utils/assets.dart';
-import 'package:airspothealth/core/utils/constants.dart';
 import 'package:airspothealth/core/utils/extensions.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -178,17 +177,6 @@ class DeviceUIModeWidget extends ConsumerWidget {
         ],
       ],
     );
-  }
-
-  String _getModeDescription(UIMode mode) {
-    switch (mode) {
-      case UIMode.plain:
-        return 'Shows ${Constants.co2Text} value in plain text format.';
-      case UIMode.graph:
-        return 'Displays ${Constants.co2Text} readings as a bar graph with customizable maximum value and minimum value.';
-      case UIMode.bar:
-        return 'Shows Green, Yellow, Red ranges';
-    }
   }
 }
 
