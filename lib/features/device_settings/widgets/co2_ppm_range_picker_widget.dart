@@ -161,7 +161,7 @@ class _Co2PpmRangePickerWidgetState
             _isChanging = true;
             onChanged(index);
             _isChanging = false;
-          }, delay: 500);
+          }, delay: 800);
         },
         children: _ppmValues.map((value) {
           return Center(
