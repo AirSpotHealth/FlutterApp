@@ -52,6 +52,9 @@ class DeviceUIModeWidget extends ConsumerWidget {
     final deviceSettings = ref.watch(deviceSettingsProvider(deviceId));
     final currentMode = deviceSettings.uiMode;
 
+    final screenWidth = MediaQuery.of(context).size.width;
+    final screenHeight = MediaQuery.of(context).size.height;
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -59,43 +62,76 @@ class DeviceUIModeWidget extends ConsumerWidget {
           'Screen Mode',
           style: context.textTheme.bodyMedium?.weight600,
         ),
-        const SizedBox(height: 12),
+        const SizedBox(height: 16),
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceEvenly,
           children: UIMode.values.map((mode) {
             final isSelected = currentMode == mode;
-            return Expanded(
-              child: GestureDetector(
-                onTap: () {
-                  ref
-                      .read(deviceSettingsProvider(deviceId).notifier)
-                      .updateSettings(
-                        deviceSettings.copyWith(uiMode: mode),
-                      );
+            return GestureDetector(
+              onTap: () {
+                ref
+                    .read(deviceSettingsProvider(deviceId).notifier)
+                    .updateSettings(
+                      deviceSettings.copyWith(uiMode: mode),
+                    );
 
-                  if (mode == UIMode.graph) {
-                    WidgetsBinding.instance.addPostFrameCallback((timeStamp) {
-                      // scroll to the bottom of the page
-                      scrollController?.animateTo(
-                        scrollController?.position.maxScrollExtent ?? 0,
-                        duration: const Duration(milliseconds: 300),
-                        curve: Curves.easeInOut,
-                      );
-                    });
-                  }
-                },
-                child: Column(
-                  children: [
-                    SizedBox(
-                      height: 100,
-                      width: 100,
-                      child: Image.asset(
-                        mode.imagePath,
-                        fit: BoxFit.cover,
-                        alignment: Alignment.center,
+                if (mode == UIMode.graph) {
+                  WidgetsBinding.instance.addPostFrameCallback((timeStamp) {
+                    scrollController?.animateTo(
+                      scrollController?.position.maxScrollExtent ?? 0,
+                      duration: const Duration(milliseconds: 300),
+                      curve: Curves.easeInOut,
+                    );
+                  });
+                }
+              },
+              child: Column(
+                children: [
+                  Container(
+                    height: screenHeight * 0.2,
+                    width: screenWidth / 3 - 16,
+                    decoration: BoxDecoration(
+                      border: Border.all(
+                        color: isSelected
+                            ? AppColors.primaryColorDark
+                            : Colors.grey.shade300,
+                        width: isSelected ? 2.5 : 1.0,
                       ),
+                      borderRadius: BorderRadius.circular(16),
+                      color: isSelected
+                          ? AppColors.primaryColorDark.withValues(alpha: 0.05)
+                          : Colors.white,
+                      boxShadow: isSelected
+                          ? [
+                              BoxShadow(
+                                color: AppColors.primaryColorDark
+                                    .withValues(alpha: 0.1),
+                                blurRadius: 8,
+                                spreadRadius: 2,
+                              )
+                            ]
+                          : null,
                     ),
-                    Text(
+                    padding: const EdgeInsets.all(8),
+                    child: Image.asset(
+                      mode.imagePath,
+                      fit: BoxFit.contain,
+                      alignment: Alignment.center,
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  Container(
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+                    decoration: isSelected
+                        ? BoxDecoration(
+                            color: AppColors.primaryColorDark.withValues(
+                              alpha: 0.1,
+                            ),
+                            borderRadius: BorderRadius.circular(20),
+                          )
+                        : null,
+                    child: Text(
                       mode.displayName,
                       textAlign: TextAlign.center,
                       style: TextStyle(
@@ -104,21 +140,16 @@ class DeviceUIModeWidget extends ConsumerWidget {
                             : Colors.grey.shade600,
                         fontWeight:
                             isSelected ? FontWeight.w600 : FontWeight.w500,
+                        fontSize: isSelected ? 15 : 14,
                       ),
                     ),
-                  ],
-                ),
+                  ),
+                ],
               ),
             );
           }).toList(),
         ),
-        const SizedBox(height: 12),
-        Text(
-          _getModeDescription(currentMode),
-          style: context.textTheme.bodySmall?.weight500?.copyWith(
-            color: context.textTheme.bodySmall?.color?.withValues(alpha: .7),
-          ),
-        ),
+        const SizedBox(height: 16),
         if (currentMode == UIMode.graph) ...[
           const SizedBox(height: 20),
           _GraphValueDropdown(
