@@ -109,7 +109,7 @@ class _PowerModeSettingsPageState extends ConsumerState<PowerModeSettingsPage> {
           ),
           const SizedBox(height: 12),
           Text(
-            'To maintain battery power the screen is on for 10 seconds in low and medium power modes and 1 minute in high power mode. We recommend continuous screen display is only turned on when the device is being charged.',
+            'To maintain battery power the screen is on for 10 seconds in low and medium power modes and 1 minute in high power mode.',
             style: context.textTheme.bodySmall?.weight500?.copyWith(
               color: context.textTheme.bodySmall?.color?.withValues(alpha: .7),
             ),
