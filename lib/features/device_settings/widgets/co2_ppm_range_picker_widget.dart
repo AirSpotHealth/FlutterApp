@@ -156,8 +156,12 @@ class _Co2PpmRangePickerWidgetState
         itemExtent: 40,
         backgroundColor: Colors.transparent,
         onSelectedItemChanged: (index) {
-          _isChanging = true;
-          onChanged(index);
+          // Only trigger the update when scrolling settles
+          _debouncer.call(() {
+            _isChanging = true;
+            onChanged(index);
+            _isChanging = false;
+          }, delay: 500);
         },
         children: _ppmValues.map((value) {
           return Center(
@@ -276,13 +280,11 @@ class _Co2PpmRangePickerWidgetState
           ),
         );
 
-    // Debounce sending the command to the device
+    // Send command immediately since debouncing is handled at picker level
     if (_isChanging) {
-      _debouncer.call(() {
-        ref
-            .read(bleDeviceCommunicationProvider(widget.deviceId).notifier)
-            .sendCommand(deviceSettings.thresholdsCmd);
-      }, delay: 500);
+      ref
+          .read(bleDeviceCommunicationProvider(widget.deviceId).notifier)
+          .sendCommand(deviceSettings.thresholdsCmd);
     }
   }
 }
