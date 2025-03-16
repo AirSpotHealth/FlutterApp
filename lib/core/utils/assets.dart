@@ -61,4 +61,8 @@ class Assets {
   static const String disconnectIcon = 'assets/images/icon_disconnect.png';
 
   static const String powerOff = 'assets/images/power_off.png';
+
+  static const String barGraph = 'assets/images/bar_graph.png';
+  static const String colorBlocks = 'assets/images/color_blocks.png';
+  static const String plain = 'assets/images/plain.png';
 }

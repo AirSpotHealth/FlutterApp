@@ -1,5 +1,6 @@
 import 'package:airspothealth/core/providers/device_settings_provider.dart';
 import 'package:airspothealth/core/theme/app_colors.dart';
+import 'package:airspothealth/core/utils/assets.dart';
 import 'package:airspothealth/core/utils/constants.dart';
 import 'package:airspothealth/core/utils/extensions.dart';
 import 'package:flutter/material.dart';
@@ -24,13 +25,28 @@ enum UIMode {
   static UIMode fromValue(int value) {
     return UIMode.values[value];
   }
+
+  String get imagePath {
+    switch (this) {
+      case UIMode.plain:
+        return Assets.plain;
+      case UIMode.graph:
+        return Assets.barGraph;
+      case UIMode.bar:
+        return Assets.colorBlocks;
+    }
+  }
 }
 
 class DeviceUIModeWidget extends ConsumerWidget {
-  const DeviceUIModeWidget({super.key, required this.deviceId});
+  const DeviceUIModeWidget({
+    super.key,
+    required this.deviceId,
+    this.scrollController,
+  });
 
   final String deviceId;
-
+  final ScrollController? scrollController;
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final deviceSettings = ref.watch(deviceSettingsProvider(deviceId));
@@ -44,38 +60,42 @@ class DeviceUIModeWidget extends ConsumerWidget {
           style: context.textTheme.bodyMedium?.weight600,
         ),
         const SizedBox(height: 12),
-        Container(
-          decoration: BoxDecoration(
-            color: AppColors.backgroundSecondary,
-            borderRadius: BorderRadius.circular(8),
-          ),
-          padding: const EdgeInsets.all(4),
-          child: Row(
-            children: UIMode.values.map((mode) {
-              final isSelected = currentMode == mode;
-              return Expanded(
-                child: GestureDetector(
-                  onTap: () => ref
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+          children: UIMode.values.map((mode) {
+            final isSelected = currentMode == mode;
+            return Expanded(
+              child: GestureDetector(
+                onTap: () {
+                  ref
                       .read(deviceSettingsProvider(deviceId).notifier)
                       .updateSettings(
                         deviceSettings.copyWith(uiMode: mode),
+                      );
+
+                  if (mode == UIMode.graph) {
+                    WidgetsBinding.instance.addPostFrameCallback((timeStamp) {
+                      // scroll to the bottom of the page
+                      scrollController?.animateTo(
+                        scrollController?.position.maxScrollExtent ?? 0,
+                        duration: const Duration(milliseconds: 300),
+                        curve: Curves.easeInOut,
+                      );
+                    });
+                  }
+                },
+                child: Column(
+                  children: [
+                    SizedBox(
+                      height: 100,
+                      width: 100,
+                      child: Image.asset(
+                        mode.imagePath,
+                        fit: BoxFit.cover,
+                        alignment: Alignment.center,
                       ),
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(vertical: 8),
-                    decoration: BoxDecoration(
-                      color: isSelected ? Colors.white : Colors.transparent,
-                      borderRadius: BorderRadius.circular(6),
-                      boxShadow: isSelected
-                          ? [
-                              BoxShadow(
-                                color: Colors.black.withValues(alpha: .1),
-                                blurRadius: 4,
-                                offset: const Offset(0, 2),
-                              ),
-                            ]
-                          : null,
                     ),
-                    child: Text(
+                    Text(
                       mode.displayName,
                       textAlign: TextAlign.center,
                       style: TextStyle(
@@ -86,11 +106,11 @@ class DeviceUIModeWidget extends ConsumerWidget {
                             isSelected ? FontWeight.w600 : FontWeight.w500,
                       ),
                     ),
-                  ),
+                  ],
                 ),
-              );
-            }).toList(),
-          ),
+              ),
+            );
+          }).toList(),
         ),
         const SizedBox(height: 12),
         Text(

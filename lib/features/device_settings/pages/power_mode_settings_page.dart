@@ -10,17 +10,31 @@ import 'package:airspothealth/features/device_settings/widgets/device_ui_mode_wi
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-class PowerModeSettingsPage extends ConsumerWidget {
+class PowerModeSettingsPage extends ConsumerStatefulWidget {
   const PowerModeSettingsPage({required this.deviceId, super.key});
 
   final String deviceId;
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final DeviceSettings deviceSettings =
-        ref.watch(deviceSettingsProvider(deviceId));
+  ConsumerState<PowerModeSettingsPage> createState() =>
+      _PowerModeSettingsPageState();
+}
 
-    final BleDevice bleDevice = ref.watch(bleDeviceProvider(deviceId));
+class _PowerModeSettingsPageState extends ConsumerState<PowerModeSettingsPage> {
+  final ScrollController _scrollController = ScrollController();
+
+  @override
+  void dispose() {
+    _scrollController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final DeviceSettings deviceSettings =
+        ref.watch(deviceSettingsProvider(widget.deviceId));
+
+    final BleDevice bleDevice = ref.watch(bleDeviceProvider(widget.deviceId));
 
     return Scaffold(
       backgroundColor: Colors.white,
@@ -29,6 +43,7 @@ class PowerModeSettingsPage extends ConsumerWidget {
             '${bleDevice.alias ?? bleDevice.name} ${Constants.co2Text} reading rate'),
       ),
       body: ListView(
+        controller: _scrollController,
         padding: const EdgeInsets.all(16),
         children: [
           Row(
@@ -100,7 +115,10 @@ class PowerModeSettingsPage extends ConsumerWidget {
             ),
           ),
           const SizedBox(height: 16),
-          DeviceUIModeWidget(deviceId: deviceId),
+          DeviceUIModeWidget(
+            deviceId: widget.deviceId,
+            scrollController: _scrollController,
+          ),
         ],
       ),
     );
@@ -108,7 +126,7 @@ class PowerModeSettingsPage extends ConsumerWidget {
 
   void _updatePowerMode(WidgetRef ref, DeviceSettings deviceSettings) {
     return ref
-        .read(deviceSettingsProvider(deviceId).notifier)
+        .read(deviceSettingsProvider(widget.deviceId).notifier)
         .updateSettings(deviceSettings);
   }
 
