@@ -3,6 +3,7 @@ import 'package:airspothealth/core/providers/ble_device_communication_provider.d
 import 'package:airspothealth/core/providers/device_settings_provider.dart';
 import 'package:airspothealth/core/theme/app_colors.dart';
 import 'package:airspothealth/core/utils/delayed_function_call.dart';
+import 'package:airspothealth/core/utils/extensions.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -50,16 +51,27 @@ class _Co2PpmRangePickerWidgetState
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Padding(
-          padding: EdgeInsets.only(bottom: 16),
+        Padding(
+          padding: const EdgeInsets.only(bottom: 16),
           child: Text(
             'CO₂ PPM Zones',
-            style: TextStyle(
-              fontWeight: FontWeight.bold,
-              fontSize: 16,
+            style: context.textTheme.bodyMedium?.weight600,
+          ),
+        ),
+
+        // A three colored rectangle with the green, yellow and red zones
+        // and a indicator line for the yellow and red start zones
+        SizedBox(
+          width: MediaQuery.of(context).size.width - 32 - 16,
+          height: 30,
+          child: CustomPaint(
+            painter: _CO2PPMRangePainter(
+              redValue: deviceSettings.yellowUpperLimit,
+              yellowValue: deviceSettings.greenUpperLimit,
             ),
           ),
         ),
+
         Row(
           children: [
             Expanded(
@@ -286,5 +298,99 @@ class _Co2PpmRangePickerWidgetState
           .read(bleDeviceCommunicationProvider(widget.deviceId).notifier)
           .sendCommand(deviceSettings.thresholdsCmd);
     }
+  }
+}
+
+class _CO2PPMRangePainter extends CustomPainter {
+  _CO2PPMRangePainter({required this.yellowValue, required this.redValue});
+
+  final int yellowValue;
+  final int redValue;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    // Three rectangles for the green, yellow and red zones in a row
+    final greenRect = Rect.fromLTWH(0, 0, size.width / 3, size.height - 24);
+    final yellowRect =
+        Rect.fromLTWH(size.width / 3, 0, size.width / 3, size.height - 24);
+    final redRect =
+        Rect.fromLTWH(size.width * 2 / 3, 0, size.width / 3, size.height - 24);
+
+    final greenPaint = Paint()
+      ..color = AppColors.brandColorGreen
+      ..style = PaintingStyle.fill;
+    final yellowPaint = Paint()
+      ..color = AppColors.brandColorAmber
+      ..style = PaintingStyle.fill;
+    final redPaint = Paint()
+      ..color = AppColors.brandColorRed
+      ..style = PaintingStyle.fill;
+
+    // Draw the rectangles
+    canvas.drawRect(greenRect, greenPaint);
+    canvas.drawRect(yellowRect, yellowPaint);
+    canvas.drawRect(redRect, redPaint);
+
+    // Draw divider lines
+    final linePaint = Paint()
+      ..color = Colors.white
+      ..strokeWidth = 2
+      ..style = PaintingStyle.stroke;
+
+    canvas.drawLine(
+      Offset(yellowRect.left, 0),
+      Offset(yellowRect.left, size.height - 24),
+      linePaint,
+    );
+    canvas.drawLine(
+      Offset(redRect.left, 0),
+      Offset(redRect.left, size.height - 24),
+      linePaint,
+    );
+
+    // Create text painters
+    final yellowTextPainter = TextPainter(
+      text: TextSpan(
+        text: '$yellowValue ppm',
+        style: const TextStyle(
+          color: Colors.black87,
+          fontSize: 12,
+          fontWeight: FontWeight.w600,
+        ),
+      ),
+      textDirection: TextDirection.ltr,
+      textAlign: TextAlign.center,
+    );
+
+    final redTextPainter = TextPainter(
+      text: TextSpan(
+        text: '$redValue ppm',
+        style: const TextStyle(
+          color: Colors.black87,
+          fontSize: 12,
+          fontWeight: FontWeight.w600,
+        ),
+      ),
+      textDirection: TextDirection.ltr,
+      textAlign: TextAlign.center,
+    );
+
+    // Layout the text painters
+    yellowTextPainter.layout();
+    redTextPainter.layout();
+
+    // Calculate text positions
+    final yellowTextX = yellowRect.left - (yellowTextPainter.width / 2);
+    final redTextX = redRect.left - (redTextPainter.width / 2);
+    final textY = size.height - 20;
+
+    // Draw the text
+    yellowTextPainter.paint(canvas, Offset(yellowTextX, textY));
+    redTextPainter.paint(canvas, Offset(redTextX, textY));
+  }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) {
+    return oldDelegate != this;
   }
 }

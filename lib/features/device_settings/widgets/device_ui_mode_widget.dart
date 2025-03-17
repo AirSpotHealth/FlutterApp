@@ -148,7 +148,6 @@ class DeviceUIModeWidget extends ConsumerWidget {
             );
           }).toList(),
         ),
-        const SizedBox(height: 16),
         if (currentMode == UIMode.graph) ...[
           const SizedBox(height: 20),
           _GraphValueDropdown(

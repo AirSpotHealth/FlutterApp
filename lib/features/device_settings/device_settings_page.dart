@@ -48,9 +48,9 @@ class DeviceSettingsPage extends ConsumerWidget {
     //   enabled: true,
     // ),
     SettingItem(
-      title: 'Graph Zones Settings',
-      assetIcon: Assets.airGraph,
-      route: RouteNames.co2Settings,
+      title: 'Device Screen Settings',
+      assetIcon: Assets.screenSettings,
+      route: RouteNames.screenSettings,
     ),
     SettingItem(
       title: 'Do Not Disturb',
