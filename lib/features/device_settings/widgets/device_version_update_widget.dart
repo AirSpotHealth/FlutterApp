@@ -6,6 +6,7 @@ import 'package:airspothealth/features/device_settings/models/remote_version.dar
 import 'package:airspothealth/features/device_settings/providers/ble_device_version_provider.dart';
 import 'package:airspothealth/features/device_settings/providers/firmware_remote_version_provider.dart';
 import 'package:airspothealth/features/device_settings/widgets/device_firmware_update_dialog.dart';
+import 'package:airspothealth/features/devices/providers/device_battery_level_provider.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -63,6 +64,14 @@ class DeviceVersionUpdateWidget extends ConsumerWidget {
               Button(
                 wrapWidth: true,
                 onPressed: () {
+                  final batteryLevel =
+                      ref.read(deviceBatteryLevelProvider(deviceId)).level;
+                  if (batteryLevel != null && batteryLevel < 20) {
+                    context.showSnackBar(
+                        'Battery too low for updating. Please connect charger.');
+                    return;
+                  }
+
                   _showUpdateDialog(
                       context, remoteVersion.value!, currentVersion);
                 },

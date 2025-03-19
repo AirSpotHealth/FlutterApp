@@ -8,6 +8,7 @@ import 'package:airspothealth/features/device_settings/providers/firmware_remote
 import 'package:airspothealth/features/device_settings/widgets/device_firmware_update_dialog.dart';
 import 'package:airspothealth/features/device_settings/widgets/device_settings_name_widget.dart';
 import 'package:airspothealth/features/device_settings/widgets/device_version_update_widget.dart';
+import 'package:airspothealth/features/devices/providers/device_battery_level_provider.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -52,7 +53,16 @@ class _DeviceUpdatePageState extends ConsumerState<DeviceUpdatePage> {
             _fetchRemoteVersion, // refresh the remote version on pull down
         child: ListView(padding: const EdgeInsets.all(16), children: [
           TappableWidget(
-            onTap: () => _showLocalFilePicker(ref, deviceId),
+            onTap: () {
+              final batteryLevel =
+                  ref.read(deviceBatteryLevelProvider(deviceId)).level;
+              if (batteryLevel != null && batteryLevel < 20) {
+                context.showSnackBar(
+                    'Battery too low for updating. Please connect charger.');
+                return;
+              }
+              _showLocalFilePicker(ref, deviceId);
+            },
             tapCount: 8,
             child: const SizedBox(
               height: 64,
