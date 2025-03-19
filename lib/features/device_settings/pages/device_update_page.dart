@@ -54,9 +54,11 @@ class _DeviceUpdatePageState extends ConsumerState<DeviceUpdatePage> {
         child: ListView(padding: const EdgeInsets.all(16), children: [
           TappableWidget(
             onTap: () {
-              final batteryLevel =
-                  ref.read(deviceBatteryLevelProvider(deviceId)).level;
-              if (batteryLevel != null && batteryLevel < 20) {
+              final batteryState =
+                  ref.read(deviceBatteryLevelProvider(deviceId));
+              if (!batteryState.isCharging &&
+                  batteryState.level != null &&
+                  batteryState.level! < 20) {
                 context.showSnackBar(
                     'Battery too low for updating. Please connect charger.');
                 return;

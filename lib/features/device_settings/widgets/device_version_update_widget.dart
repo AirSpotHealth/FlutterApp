@@ -64,9 +64,11 @@ class DeviceVersionUpdateWidget extends ConsumerWidget {
               Button(
                 wrapWidth: true,
                 onPressed: () {
-                  final batteryLevel =
-                      ref.read(deviceBatteryLevelProvider(deviceId)).level;
-                  if (batteryLevel != null && batteryLevel < 20) {
+                  final batteryState =
+                      ref.read(deviceBatteryLevelProvider(deviceId));
+                  if (!batteryState.isCharging &&
+                      batteryState.level != null &&
+                      batteryState.level! < 20) {
                     context.showSnackBar(
                         'Battery too low for updating. Please connect charger.');
                     return;
