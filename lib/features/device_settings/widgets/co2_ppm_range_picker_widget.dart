@@ -2,7 +2,7 @@ import 'package:airspothealth/core/models/device_settings.dart';
 import 'package:airspothealth/core/providers/ble_device_communication_provider.dart';
 import 'package:airspothealth/core/providers/device_settings_provider.dart';
 import 'package:airspothealth/core/theme/app_colors.dart';
-import 'package:airspothealth/core/utils/delayed_function_call.dart';
+import 'package:airspothealth/core/utils/constants.dart';
 import 'package:airspothealth/core/utils/extensions.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
@@ -31,22 +31,30 @@ class _Co2PpmRangePickerWidgetState
     (index) => minValue + (index * stepSize),
   );
 
-  // Debouncer for sending commands
-  final DelayedFunctionCaller _debouncer = DelayedFunctionCaller();
+  // Selected values
+  late int _selectedGreenValue =
+      ref.read(deviceSettingsProvider(widget.deviceId)).greenUpperLimit;
+  late int _selectedYellowValue =
+      ref.read(deviceSettingsProvider(widget.deviceId)).yellowUpperLimit;
 
-  // Track if values are being changed to prevent sending commands during initialization
-  bool _isChanging = false;
+  @override
+  void initState() {
+    super.initState();
+  }
 
   @override
   Widget build(BuildContext context) {
     final DeviceSettings deviceSettings =
         ref.watch(deviceSettingsProvider(widget.deviceId));
 
-    // Find the closest indices for the current values
-    final int greenIndex =
-        _findClosestValueIndex(deviceSettings.greenUpperLimit);
-    final int yellowIndex =
-        _findClosestValueIndex(deviceSettings.yellowUpperLimit);
+    // Check if values have changed
+    final bool hasChanged =
+        _selectedGreenValue != deviceSettings.greenUpperLimit ||
+            _selectedYellowValue != deviceSettings.yellowUpperLimit;
+
+    // Get indices for selected values
+    final int greenIndex = _ppmValues.indexOf(_selectedGreenValue);
+    final int yellowIndex = _ppmValues.indexOf(_selectedYellowValue);
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -59,15 +67,14 @@ class _Co2PpmRangePickerWidgetState
           ),
         ),
 
-        // A three colored rectangle with the green, yellow and red zones
-        // and a indicator line for the yellow and red start zones
+        // Visual indicator
         SizedBox(
           width: MediaQuery.of(context).size.width - 32 - 16,
           height: 30,
           child: CustomPaint(
             painter: _CO2PPMRangePainter(
-              redValue: deviceSettings.yellowUpperLimit,
-              yellowValue: deviceSettings.greenUpperLimit,
+              redValue: _selectedYellowValue,
+              yellowValue: _selectedGreenValue,
             ),
           ),
         ),
@@ -80,7 +87,15 @@ class _Co2PpmRangePickerWidgetState
                 'Up to:',
                 AppColors.brandColorGreen,
                 greenIndex,
-                (index) => _updateGreenThreshold(index),
+                (index) {
+                  if (index > yellowIndex) {
+                    return;
+                  }
+
+                  setState(() {
+                    _selectedGreenValue = _ppmValues[index];
+                  });
+                },
               ),
             ),
             const SizedBox(width: 16),
@@ -90,15 +105,79 @@ class _Co2PpmRangePickerWidgetState
                 'Up to:',
                 AppColors.brandColorAmber,
                 yellowIndex,
-                (index) => _updateYellowThreshold(index),
+                (index) {
+                  if (index < greenIndex) {
+                    return;
+                  }
+
+                  setState(() {
+                    _selectedYellowValue = _ppmValues[index];
+                  });
+                },
               ),
             ),
           ],
         ),
         const SizedBox(height: 16),
         _buildLegend(),
+        const SizedBox(height: 16),
+
+        // Update button
+        SizedBox(
+          width: double.infinity,
+          child: ElevatedButton(
+            onPressed: hasChanged ? () => _updateValues() : null,
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.primaryColor,
+              foregroundColor: Colors.white,
+              disabledBackgroundColor: Colors.grey[300],
+              padding: const EdgeInsets.symmetric(vertical: 12),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(8),
+              ),
+            ),
+            child: const Text(
+              'Update PPM Zones',
+              style: TextStyle(
+                fontWeight: FontWeight.bold,
+                fontSize: 16,
+              ),
+            ),
+          ),
+        ),
       ],
     );
+  }
+
+  void _updateValues() {
+    // Simple validation: ensure green is less than yellow
+    if (_selectedGreenValue >= _selectedYellowValue) {
+      context.showSnackBar(
+          'Green ${Constants.co2Text} must be less than yellow ${Constants.co2Text}');
+      return;
+    }
+
+    // Get the current settings
+    final DeviceSettings deviceSettings =
+        ref.read(deviceSettingsProvider(widget.deviceId));
+
+    // Create updated settings
+    final updatedSettings = deviceSettings.copyWith(
+      thresholds: DeviceThresholds(
+        greenUpperLimit: _selectedGreenValue,
+        yellowUpperLimit: _selectedYellowValue,
+      ),
+    );
+
+    // Update the settings
+    ref
+        .read(deviceSettingsProvider(widget.deviceId).notifier)
+        .updateSettings(updatedSettings);
+
+    // Send the command
+    ref
+        .read(bleDeviceCommunicationProvider(widget.deviceId).notifier)
+        .sendCommand(updatedSettings.thresholdsCmd);
   }
 
   Widget _buildThresholdCard(
@@ -167,14 +246,7 @@ class _Co2PpmRangePickerWidgetState
             FixedExtentScrollController(initialItem: initialIndex),
         itemExtent: 40,
         backgroundColor: Colors.transparent,
-        onSelectedItemChanged: (index) {
-          // Only trigger the update when scrolling settles
-          _debouncer.call(() {
-            _isChanging = true;
-            onChanged(index);
-            _isChanging = false;
-          }, delay: 800);
-        },
+        onSelectedItemChanged: onChanged,
         children: _ppmValues.map((value) {
           return Center(
             child: Text(
@@ -224,80 +296,6 @@ class _Co2PpmRangePickerWidgetState
         ),
       ],
     );
-  }
-
-  int _findClosestValueIndex(int value) {
-    // Find the closest value in the list
-    int closestIndex = 0;
-    int minDifference = (value - _ppmValues[0]).abs();
-
-    for (int i = 1; i < _ppmValues.length; i++) {
-      final int difference = (value - _ppmValues[i]).abs();
-      if (difference < minDifference) {
-        minDifference = difference;
-        closestIndex = i;
-      }
-    }
-
-    return closestIndex;
-  }
-
-  void _updateGreenThreshold(int index) {
-    final DeviceSettings deviceSettings =
-        ref.read(deviceSettingsProvider(widget.deviceId));
-    final int greenValue = _ppmValues[index];
-
-    // Ensure green threshold is less than yellow threshold
-    if (greenValue >= deviceSettings.yellowUpperLimit) {
-      // Find the next available yellow value that's greater than the selected green value
-      final int nextYellowIndex =
-          _ppmValues.indexWhere((value) => value > greenValue);
-      if (nextYellowIndex != -1) {
-        _updateThresholds(greenValue, _ppmValues[nextYellowIndex]);
-      }
-    } else {
-      _updateThresholds(greenValue, deviceSettings.yellowUpperLimit);
-    }
-  }
-
-  void _updateYellowThreshold(int index) {
-    final DeviceSettings deviceSettings =
-        ref.read(deviceSettingsProvider(widget.deviceId));
-    final int yellowValue = _ppmValues[index];
-
-    // Ensure yellow threshold is greater than green threshold
-    if (yellowValue <= deviceSettings.greenUpperLimit) {
-      // Find the previous available green value that's less than the selected yellow value
-      final int prevGreenIndex =
-          _ppmValues.lastIndexWhere((value) => value < yellowValue);
-      if (prevGreenIndex != -1) {
-        _updateThresholds(_ppmValues[prevGreenIndex], yellowValue);
-      }
-    } else {
-      _updateThresholds(deviceSettings.greenUpperLimit, yellowValue);
-    }
-  }
-
-  void _updateThresholds(int greenValue, int yellowValue) {
-    final DeviceSettings deviceSettings =
-        ref.read(deviceSettingsProvider(widget.deviceId));
-
-    // Update the device settings
-    ref.read(deviceSettingsProvider(widget.deviceId).notifier).updateSettings(
-          deviceSettings.copyWith(
-            thresholds: DeviceThresholds(
-              greenUpperLimit: greenValue,
-              yellowUpperLimit: yellowValue,
-            ),
-          ),
-        );
-
-    // Send command immediately since debouncing is handled at picker level
-    if (_isChanging) {
-      ref
-          .read(bleDeviceCommunicationProvider(widget.deviceId).notifier)
-          .sendCommand(deviceSettings.thresholdsCmd);
-    }
   }
 }
 
