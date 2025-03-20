@@ -176,6 +176,20 @@ class _DataGraphWidgetState extends ConsumerState<DataGraphWidget> {
 
     final is12Hour = systemTimeFormat.pattern!.contains('a');
 
+    // Check if we're viewing today's data only by checking duration name
+    final isToday = duration.name == 'today';
+
+    // For today's view, set explicit min and max for x-axis
+    String xAxisMinMax = '';
+    if (isToday) {
+      final now = DateTime.now();
+      final startOfDay = DateTime(now.year, now.month, now.day, 0, 0, 0);
+      final endOfDay = DateTime(now.year, now.month, now.day, 23, 59, 59);
+      xAxisMinMax = ''',
+      min: "${startOfDay.toIso8601String()}",
+      max: "${endOfDay.toIso8601String()}"''';
+    }
+
     return '''
 {
   tooltip: {
@@ -219,7 +233,7 @@ class _DataGraphWidgetState extends ConsumerState<DataGraphWidget> {
     boundaryGap: true,
     maxInterval: 1000 * 60 * 60 * 3,
     showSymbol: false,
-    symbol: 'circle',
+    symbol: 'circle'$xAxisMinMax,
     axisLabel: {
       hideOverlap: true,
       fontSize: 11,
@@ -307,7 +321,9 @@ class _DataGraphWidgetState extends ConsumerState<DataGraphWidget> {
       xAxisIndex: [0],
       orient: 'horizontal',
       throttle: 50,
-    }${settings.showZoomSlider ? ', { type: "slider", start: 0, end: 100 }' : ''}
+      start: 0,
+      end: 100
+    }
   ],
   grid: {
     left: 40,
@@ -421,15 +437,40 @@ class _DataGraphWidgetState extends ConsumerState<DataGraphWidget> {
   List<List<dynamic>> _generatePreviousAndAfterFakeData(DateTimeRange range) {
     final fakeData = <List<dynamic>>[];
 
-    for (int i = 0; i < fakeDataLength; i++) {
-      final fakeDate =
-          range.start.subtract(Duration(hours: fakeDataLength - i));
-      fakeData.add([fakeDate.toIso8601String(), null]);
-    }
+    // Check if we're viewing today's data only by checking duration name
+    final isToday = duration.name == 'today';
 
-    for (int i = 0; i < fakeDataLength; i++) {
-      final fakeDate = range.end.add(Duration(hours: i + 1));
-      fakeData.add([fakeDate.toIso8601String(), null]);
+    if (isToday) {
+      // For today, add padding from start of day to first data point
+      final now = DateTime.now();
+      final startOfDay = DateTime(now.year, now.month, now.day, 0, 0, 0);
+
+      // Only add if the range doesn't start at the beginning of the day
+      if (range.start.isAfter(startOfDay)) {
+        // Add data point at 12 AM (midnight)
+        fakeData.add([startOfDay.toIso8601String(), null]);
+
+        // Add a few more points between midnight and first data point if there's a big gap
+        final hourDifference = range.start.difference(startOfDay).inHours;
+        if (hourDifference > 2) {
+          for (int i = 1; i < hourDifference; i++) {
+            final fakeDate = startOfDay.add(Duration(hours: i));
+            fakeData.add([fakeDate.toIso8601String(), null]);
+          }
+        }
+      }
+    } else {
+      // For non-today views, use the original padding
+      for (int i = 0; i < fakeDataLength; i++) {
+        final fakeDate =
+            range.start.subtract(Duration(hours: fakeDataLength - i));
+        fakeData.add([fakeDate.toIso8601String(), null]);
+      }
+
+      for (int i = 0; i < fakeDataLength; i++) {
+        final fakeDate = range.end.add(Duration(hours: i + 1));
+        fakeData.add([fakeDate.toIso8601String(), null]);
+      }
     }
 
     return fakeData;
