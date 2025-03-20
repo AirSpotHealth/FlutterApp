@@ -41,10 +41,7 @@ class _DeviceScreenSettingsPageState
         controller: _scrollController,
         padding: const EdgeInsets.all(16),
         children: [
-          DeviceUIModeWidget(
-            deviceId: widget.deviceId,
-            scrollController: _scrollController,
-          ),
+          DeviceUIModeWidget(deviceId: widget.deviceId),
           const SizedBox(height: 8),
           const Divider(),
           const SizedBox(height: 8),

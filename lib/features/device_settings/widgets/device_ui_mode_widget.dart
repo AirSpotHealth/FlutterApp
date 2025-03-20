@@ -41,11 +41,9 @@ class DeviceUIModeWidget extends ConsumerWidget {
   const DeviceUIModeWidget({
     super.key,
     required this.deviceId,
-    this.scrollController,
   });
 
   final String deviceId;
-  final ScrollController? scrollController;
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final deviceSettings = ref.watch(deviceSettingsProvider(deviceId));
@@ -73,16 +71,6 @@ class DeviceUIModeWidget extends ConsumerWidget {
                     .updateSettings(
                       deviceSettings.copyWith(uiMode: mode),
                     );
-
-                if (mode == UIMode.graph) {
-                  WidgetsBinding.instance.addPostFrameCallback((timeStamp) {
-                    scrollController?.animateTo(
-                      scrollController?.position.maxScrollExtent ?? 0,
-                      duration: const Duration(milliseconds: 300),
-                      curve: Curves.easeInOut,
-                    );
-                  });
-                }
               },
               child: Column(
                 children: [
