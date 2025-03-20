@@ -2,7 +2,7 @@ name: airspothealth
 description: App for Airspot Health
 publish_to: none # Remove this line if you wish to publish to pub.dev
 
-version: 3.2.28+88
+version: 3.2.29+89
 
 environment:
   sdk: ^3.5.3
