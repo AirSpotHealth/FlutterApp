@@ -179,7 +179,7 @@ class DeviceCmdUtils {
         [prefixHigh, prefixLow, 0x0C, 0x02, ...byteArray.buffer.asUint8List()]);
   }
 
-  static Uint8List setCo2PPM(int low, int med) {
+  static Uint8List setGraphThreshold(int low, int med) {
     var lowBytes = _getHex2Bytes(low);
     var medBytes = _getHex2Bytes(med);
     return _buildCommand(
@@ -288,6 +288,10 @@ class DeviceCmdUtils {
       0x02,
       ..._getHex2Bytes(duration),
     ]);
+  }
+
+  static Uint8List getAscDayCount() {
+    return _buildCommand([prefixHigh, prefixLow, 0x2A, 1, 1]);
   }
 
   // ======= Helper Functions =======

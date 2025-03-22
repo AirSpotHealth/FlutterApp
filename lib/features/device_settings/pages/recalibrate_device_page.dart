@@ -7,6 +7,7 @@ import 'package:airspothealth/features/device_settings/providers/device_reset_se
 import 'package:airspothealth/features/device_settings/providers/recalibration_time_provider.dart';
 import 'package:airspothealth/features/device_settings/widgets/device_settings_name_widget.dart';
 import 'package:airspothealth/features/device_settings/widgets/manual_calibration_widget.dart';
+import 'package:airspothealth/features/device_settings/widgets/next_calibration_date_widget.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -89,6 +90,8 @@ class RecalibrateDevicePage extends ConsumerWidget {
           'If Auto Calibration is enabled, AirSpot will calibrate itself on the assumption that it has made measurements in fresh air at least once a week. It is usually best to leave this OFF unless you are sure AirSpot will be measuring fresh air at least every few days. See full manual for details.',
           style: TextStyle(fontSize: 12, color: Colors.grey),
         ),
+        if (deviceSettings.autoCalibration)
+          NextCalibrationDateWidget(deviceId: deviceId),
         const SizedBox(height: 8),
         const Divider(),
         ManualCalibrationWidget(

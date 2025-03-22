@@ -18,6 +18,15 @@ class GraphDataDuration {
     return GraphDataDuration._(DateTimeRange(start: start, end: now), 'today');
   }
 
+  static GraphDataDuration get yesterday {
+    final yesterday = DateTime.now().subtract(Duration(days: 1));
+    final start = DateTime(yesterday.year, yesterday.month, yesterday.day);
+    final end =
+        DateTime(yesterday.year, yesterday.month, yesterday.day, 23, 59, 59);
+    return GraphDataDuration._(
+        DateTimeRange(start: start, end: end), 'yesterday');
+  }
+
   // copy with new date time range
   GraphDataDuration copyWith({DateTimeRange? dateTimeRange, String? name}) {
     return GraphDataDuration._(
@@ -43,16 +52,12 @@ class GraphDataDuration {
     switch (name) {
       case 'today':
         return 'Today';
+      case 'yesterday':
+        return 'Yesterday';
       case 'custom':
         {
           if (dateTimeRange.start.isSameDay(dateTimeRange.end)) {
             return DateFormat.yMMMd().format(dateTimeRange.start);
-          }
-
-          // check if yesterday
-          if (dateTimeRange.start
-              .isSameDay(dateTimeRange.start.subtract(Duration(days: 1)))) {
-            return 'Yesterday';
           }
 
           return '${DateFormat.yMMMd().format(dateTimeRange.start)} - ${DateFormat.yMMMd().format(dateTimeRange.end)}';

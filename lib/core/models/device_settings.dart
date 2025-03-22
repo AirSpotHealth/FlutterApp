@@ -219,7 +219,7 @@ class DeviceSettings {
 
   @ignore
   Uint8List get thresholdsCmd =>
-      DeviceCmdUtils.setCo2PPM(greenUpperLimit, yellowUpperLimit);
+      DeviceCmdUtils.setGraphThreshold(greenUpperLimit, yellowUpperLimit);
 
   @ignore
   Uint8List get autoCalibrationCmd => autoCalibration

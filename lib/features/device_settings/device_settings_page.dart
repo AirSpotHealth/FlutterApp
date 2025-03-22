@@ -48,6 +48,11 @@ class DeviceSettingsPage extends ConsumerWidget {
     //   enabled: true,
     // ),
     SettingItem(
+      title: 'Device Screen Settings',
+      assetIcon: Assets.screenSettings,
+      route: RouteNames.screenSettings,
+    ),
+    SettingItem(
       title: 'Do Not Disturb',
       assetIcon: Assets.doNotDisturbSettings,
       route: RouteNames.doNotDisturbSettings,

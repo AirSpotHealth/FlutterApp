@@ -13,6 +13,7 @@ import 'package:airspothealth/features/device_settings/models/asc_data.dart';
 import 'package:airspothealth/features/device_settings/models/progress_model.dart';
 import 'package:airspothealth/features/device_settings/providers/ble_device_version_provider.dart';
 import 'package:airspothealth/features/device_settings/providers/device_asc_data_provider.dart';
+import 'package:airspothealth/features/device_settings/providers/device_asc_day_count_provider.dart';
 import 'package:airspothealth/features/device_settings/providers/device_data_download_provider.dart';
 import 'package:airspothealth/features/device_settings/providers/device_data_dump_provider.dart';
 import 'package:airspothealth/features/device_settings/providers/device_data_erase_provider.dart';
@@ -77,6 +78,7 @@ class BleDataService {
       ResponseCommand.resetSensorResult: (_) => parser.parseOneByte(data, 4),
       ResponseCommand.ascData: parser.parseAscData,
       ResponseCommand.getMemoryDump: parser.parseMemoryDump,
+      ResponseCommand.ascDayCount: (_) => parser.parseOneByte(data, 4),
     };
 
     final dynamic value = responseParsers[responseCommand]?.call(data);
@@ -160,6 +162,9 @@ class BleDataService {
         ref
             .read(deviceASCDataProvider(deviceId).notifier)
             .setAscData(value as AscData);
+        break;
+      case ResponseCommand.ascDayCount:
+        ref.read(deviceAscDayProvider(deviceId).notifier).setNextAscDate(value);
         break;
       default:
         break;
@@ -381,12 +386,8 @@ class ResponseCommandParser {
         type: DeviceDataType.fromByte(type).index,
       );
 
-      debugPrint('DeviceData: ${deviceData0.toString()}');
-
       deviceData.add(deviceData0);
     }
-
-    debugPrint('CO2 Data: ${deviceData.map((e) => e.toString())}');
 
     // isarService.write((isar) {
     //   isar.deviceDatas.putAll(deviceData);
@@ -628,7 +629,8 @@ enum ResponseCommand {
   populateFakeData(0x23),
   resetSensorResult(0x24),
   ascData(0x25),
-  getMemoryDump(0x26);
+  getMemoryDump(0x26),
+  ascDayCount(0x2A);
 
   const ResponseCommand(this.value);
   final int value;

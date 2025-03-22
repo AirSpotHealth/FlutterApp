@@ -11,7 +11,7 @@ import 'package:airspothealth/features/device_graph/widgets/graph_range_selector
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-class DataGraphWrapper extends ConsumerWidget {
+class DataGraphWrapper extends ConsumerStatefulWidget {
   const DataGraphWrapper({
     super.key,
     required this.deviceId,
@@ -20,13 +20,27 @@ class DataGraphWrapper extends ConsumerWidget {
   final String deviceId;
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<DataGraphWrapper> createState() => _DataGraphWrapperState();
+}
+
+class _DataGraphWrapperState extends ConsumerState<DataGraphWrapper> {
+  @override
+  void initState() {
+    super.initState();
+    // check if the duration is today and timerange is not today
+    WidgetsBinding.instance.addPostFrameCallback((timeStamp) {
+      ref.read(graphDurationProvider.notifier).validateDateTimeRange();
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final GraphDataDuration duration = ref.watch(graphDurationProvider);
     final AsyncValue<List<DeviceData>> deviceDataList = ref.watch(
         deviceHistoricalDataProvider(
-            DeviceHistoryDataRequest(deviceId, duration)));
+            DeviceHistoryDataRequest(widget.deviceId, duration)));
     final DeviceSettings deviceSettings =
-        ref.watch(deviceSettingsProvider(deviceId));
+        ref.watch(deviceSettingsProvider(widget.deviceId));
 
     return Stack(
       fit: StackFit.expand,
@@ -37,6 +51,7 @@ class DataGraphWrapper extends ConsumerWidget {
             deviceSettings: deviceSettings,
             deviceDataList: deviceDataList.valueOrNull ?? const [],
             loading: deviceDataList.isLoading,
+            duration: duration,
           ),
         ),
         Positioned(
@@ -52,7 +67,7 @@ class DataGraphWrapper extends ConsumerWidget {
         ),
         Align(
           alignment: Alignment.bottomCenter,
-          child: DeviceDataTransmissionIndicator(deviceId: deviceId),
+          child: DeviceDataTransmissionIndicator(deviceId: widget.deviceId),
         ),
       ],
     );

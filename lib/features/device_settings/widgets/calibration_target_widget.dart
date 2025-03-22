@@ -1,7 +1,6 @@
-import 'dart:async';
-
 import 'package:airspothealth/core/providers/device_settings_provider.dart';
 import 'package:airspothealth/core/utils/extensions.dart';
+import 'package:airspothealth/core/widgets/button.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -27,36 +26,27 @@ class _CalibrationCorrectionWidgetState
   late final TextEditingController calibrationValueController =
       TextEditingController()..text = widget.calibrationTarget.toString();
 
-  Timer? _debounceTimer;
-  static const _debounceDuration = Duration(milliseconds: 500);
-
   @override
   void dispose() {
-    _debounceTimer?.cancel();
     calibrationValueController.dispose();
     super.dispose();
   }
 
-  void _handleValueChange(String value) {
+  void _submitTarget() {
+    final value = calibrationValueController.text;
+
     if (value.isEmpty) return;
 
-    if (_debounceTimer?.isActive ?? false) {
-      _debounceTimer!.cancel();
-    }
+    final validationError = _validateInput(value);
+    if (validationError != null) return;
 
-    _debounceTimer = Timer(_debounceDuration, () {
-      if (!mounted) return;
-
-      final validationError = _validateInput(value);
-      if (validationError != null) return;
-
-      final int calibrationValue = int.parse(value);
-      ref.read(deviceSettingsProvider(widget.deviceId).notifier).updateSetting(
-            (settings) =>
-                settings.copyWith(recalibrationTarget: calibrationValue),
-            sendCommands: true,
-          );
-    });
+    final int calibrationValue = int.parse(value);
+    ref.read(deviceSettingsProvider(widget.deviceId).notifier).updateSetting(
+          (settings) =>
+              settings.copyWith(recalibrationTarget: calibrationValue),
+          sendCommands: true,
+        );
+    context.showSnackBar('Calibration target updated to $calibrationValue');
   }
 
   String? _validateInput(String? value) {
@@ -85,33 +75,53 @@ class _CalibrationCorrectionWidgetState
 
   @override
   Widget build(BuildContext context) {
-    return TextFormField(
-      controller: calibrationValueController,
-      decoration: InputDecoration(
-        labelText: 'Calibration Target',
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(8),
-          borderSide: BorderSide(color: Colors.grey.shade300),
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Row(
+          children: [
+            Expanded(
+              child: TextFormField(
+                controller: calibrationValueController,
+                decoration: InputDecoration(
+                  labelText: 'Calibration Target',
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(8),
+                    borderSide: BorderSide(color: Colors.grey.shade300),
+                  ),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(8),
+                    borderSide: BorderSide(color: Colors.grey.shade300),
+                  ),
+                  contentPadding:
+                      const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                  helperMaxLines: 3,
+                  helperStyle: context.textTheme.bodySmall,
+                ),
+                onTapOutside: (_) => FocusScope.of(context).unfocus(),
+                validator: _validateInput,
+                autovalidateMode: AutovalidateMode.onUserInteraction,
+                style: context.textTheme.bodyMedium?.weight700,
+                inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                keyboardType: TextInputType.numberWithOptions(
+                    signed: true, decimal: true),
+                textInputAction: TextInputAction.done,
+              ),
+            ),
+            const SizedBox(width: 12),
+            Button(
+              wrapWidth: true,
+              onPressed: _submitTarget,
+              label: 'SET',
+            ),
+          ],
         ),
-        enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(8),
-          borderSide: BorderSide(color: Colors.grey.shade300),
+        const SizedBox(height: 12),
+        Text(
+          "You can set the CO2 level of the air where calibration takes place. If unknown, 420-450 is typical for outdoors. This value is used for manual or automatic calibration.",
+          style: context.textTheme.bodySmall,
         ),
-        contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-        helperMaxLines: 3,
-        helperStyle: context.textTheme.bodySmall,
-        helperText:
-            "You can set the CO2 level of the air where calibration takes place. If unknown, 420-450 is typical for outdoors. This value is used for manual or automatic calibration.",
-      ),
-      onTapOutside: (_) => FocusScope.of(context).unfocus(),
-      validator: _validateInput,
-      autovalidateMode: AutovalidateMode.onUserInteraction,
-      style: context.textTheme.bodyMedium?.weight700,
-      onFieldSubmitted: _handleValueChange,
-      inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-      keyboardType:
-          TextInputType.numberWithOptions(signed: true, decimal: true),
-      textInputAction: TextInputAction.done,
+      ],
     );
   }
 }

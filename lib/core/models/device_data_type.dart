@@ -17,6 +17,7 @@ enum DeviceDataType {
   calibrationTargetUpdate,
   dfuUpdate,
   dfuUpdateFail,
+  co2Retry,
   empty;
 
   static DeviceDataType fromByte(int byte) =>
@@ -59,6 +60,7 @@ const deviceDataByteMap = {
   0x0F: DeviceDataType.calibrationTargetUpdate,
   0x10: DeviceDataType.dfuUpdate,
   0x11: DeviceDataType.dfuUpdateFail,
+  0x12: DeviceDataType.co2Retry
   // 0x12: DeviceDataType.empty,
 };
 
@@ -81,6 +83,7 @@ const deviceDataTypeMap = {
   DeviceDataType.calibrationTargetUpdate: 'Calibration Target Update',
   DeviceDataType.dfuUpdate: 'DFU Update',
   DeviceDataType.dfuUpdateFail: 'DFU Update Fail',
+  DeviceDataType.co2Retry: 'CO2 Retry',
   DeviceDataType.empty: '-',
 };
 
@@ -94,6 +97,7 @@ const sensorErrorMap = {
 
 const deviceDataOrder = [
   DeviceDataType.co2,
+  DeviceDataType.co2Retry,
   DeviceDataType.batteryLow,
   DeviceDataType.calibration,
   DeviceDataType.sensorError,
