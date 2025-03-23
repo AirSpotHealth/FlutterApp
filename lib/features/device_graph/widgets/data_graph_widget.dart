@@ -423,7 +423,7 @@ class _DataGraphWidgetState extends ConsumerState<DataGraphWidget> {
     final dataList = currentDataList
         .map((data) => [
               data.dateTime.toLocal().toIso8601String(),
-              data.value.toInt().clamp(350, 5000)
+              data.value.toInt().clamp(0, 5000)
             ])
         .toList();
 
