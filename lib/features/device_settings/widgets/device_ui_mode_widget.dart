@@ -2,6 +2,7 @@ import 'package:airspothealth/core/providers/device_settings_provider.dart';
 import 'package:airspothealth/core/theme/app_colors.dart';
 import 'package:airspothealth/core/utils/assets.dart';
 import 'package:airspothealth/core/utils/extensions.dart';
+import 'package:airspothealth/core/widgets/button.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -37,7 +38,7 @@ enum UIMode {
   }
 }
 
-class DeviceUIModeWidget extends ConsumerWidget {
+class DeviceUIModeWidget extends ConsumerStatefulWidget {
   const DeviceUIModeWidget({
     super.key,
     required this.deviceId,
@@ -45,9 +46,25 @@ class DeviceUIModeWidget extends ConsumerWidget {
 
   final String deviceId;
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final deviceSettings = ref.watch(deviceSettingsProvider(deviceId));
-    final currentMode = deviceSettings.uiMode;
+  ConsumerState<DeviceUIModeWidget> createState() => _DeviceUIModeWidgetState();
+}
+
+class _DeviceUIModeWidgetState extends ConsumerState<DeviceUIModeWidget> {
+  late int _graphMaxValue;
+  late int _graphMinValue;
+
+  @override
+  void initState() {
+    super.initState();
+    _graphMaxValue =
+        ref.read(deviceSettingsProvider(widget.deviceId)).graphMaxValue;
+    _graphMinValue =
+        ref.read(deviceSettingsProvider(widget.deviceId)).graphMinValue;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final deviceSettings = ref.watch(deviceSettingsProvider(widget.deviceId));
 
     final screenWidth = MediaQuery.of(context).size.width;
     final screenHeight = MediaQuery.of(context).size.height;
@@ -63,11 +80,11 @@ class DeviceUIModeWidget extends ConsumerWidget {
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceEvenly,
           children: UIMode.values.map((mode) {
-            final isSelected = currentMode == mode;
+            final isSelected = deviceSettings.uiMode == mode;
             return GestureDetector(
               onTap: () {
                 ref
-                    .read(deviceSettingsProvider(deviceId).notifier)
+                    .read(deviceSettingsProvider(widget.deviceId).notifier)
                     .updateSettings(
                       deviceSettings.copyWith(uiMode: mode),
                     );
@@ -136,30 +153,72 @@ class DeviceUIModeWidget extends ConsumerWidget {
             );
           }).toList(),
         ),
-        if (currentMode == UIMode.graph) ...[
+        if (deviceSettings.uiMode == UIMode.graph) ...[
           const SizedBox(height: 20),
-          _GraphValueDropdown(
-            deviceId: deviceId,
-            currentValue: deviceSettings.graphMaxValue,
-            label: 'Graph Max Value',
-            isMinValue: false,
-            onValueChanged: (newValue) => ref
-                .read(deviceSettingsProvider(deviceId).notifier)
-                .updateSettings(
-                  deviceSettings.copyWith(graphMaxValue: newValue),
+          Row(
+            children: [
+              Expanded(
+                child: _GraphValueDropdown(
+                  deviceId: widget.deviceId,
+                  currentValue: _graphMaxValue,
+                  label: 'Graph Max Value',
+                  isMinValue: false,
+                  onValueChanged: (newValue) {
+                    setState(() {
+                      _graphMaxValue = newValue;
+                    });
+                  },
                 ),
+              ),
+              const SizedBox(width: 12),
+              Button(
+                wrapWidth: true,
+                onPressed: () {
+                  ref
+                      .read(deviceSettingsProvider(widget.deviceId).notifier)
+                      .updateSettings(
+                        deviceSettings.copyWith(graphMaxValue: _graphMaxValue),
+                      );
+                  context.showSnackBar(
+                    'Graph Max Value set to $_graphMaxValue',
+                  );
+                },
+                child: const Text('Set'),
+              ),
+            ],
           ),
           const SizedBox(height: 12),
-          _GraphValueDropdown(
-            deviceId: deviceId,
-            currentValue: deviceSettings.graphMinValue,
-            label: 'Graph Min Value',
-            isMinValue: true,
-            onValueChanged: (newValue) => ref
-                .read(deviceSettingsProvider(deviceId).notifier)
-                .updateSettings(
-                  deviceSettings.copyWith(graphMinValue: newValue),
+          Row(
+            children: [
+              Expanded(
+                child: _GraphValueDropdown(
+                  deviceId: widget.deviceId,
+                  currentValue: _graphMinValue,
+                  label: 'Graph Min Value',
+                  isMinValue: true,
+                  onValueChanged: (newValue) {
+                    setState(() {
+                      _graphMinValue = newValue;
+                    });
+                  },
                 ),
+              ),
+              const SizedBox(width: 12),
+              Button(
+                wrapWidth: true,
+                onPressed: () {
+                  ref
+                      .read(deviceSettingsProvider(widget.deviceId).notifier)
+                      .updateSettings(
+                        deviceSettings.copyWith(graphMinValue: _graphMinValue),
+                      );
+                  context.showSnackBar(
+                    'Graph Min Value set to $_graphMinValue',
+                  );
+                },
+                child: const Text('Set'),
+              ),
+            ],
           ),
         ],
       ],
