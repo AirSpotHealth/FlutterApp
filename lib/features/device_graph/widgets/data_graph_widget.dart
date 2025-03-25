@@ -291,7 +291,7 @@ class _DataGraphWidgetState extends ConsumerState<DataGraphWidget> {
         }
       },
       z: 1,
-      min: 350,
+      min: 300,
       max: $yMax,
       axisLabel: {
         fontSize: 11,

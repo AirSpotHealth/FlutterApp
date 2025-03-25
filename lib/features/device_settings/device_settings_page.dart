@@ -133,6 +133,7 @@ class DeviceSettingsPage extends ConsumerWidget {
             TurnOffBluetoothWidget(deviceId: deviceId),
             DeleteLocalCacheWidget(deviceId: deviceId),
             DeviceDataDumpWidget(deviceId: deviceId),
+            // ImportCsvDataWidget(deviceId: deviceId),
             SetAscDurationWidget(deviceId: deviceId),
             //RestartDeviceWidget(deviceId: deviceId),
           ],
