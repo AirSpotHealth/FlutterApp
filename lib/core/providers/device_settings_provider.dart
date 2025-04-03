@@ -44,54 +44,39 @@ class _DeviceSettingsNotifier extends FamilyNotifier<DeviceSettings, String> {
         ref
             .read(bleDeviceCommunicationProvider(settings.deviceId).notifier)
             .sendCommand(settings.alarmCmd);
-      }
-
-      if (settings.vibrationEnabled != state.vibrationEnabled) {
+      } else if (settings.vibrationEnabled != state.vibrationEnabled) {
         ref
             .read(bleDeviceCommunicationProvider(settings.deviceId).notifier)
             .sendCommand(settings.vibrationCmd);
-      }
-
-      if (settings.powerMode != state.powerMode) {
+      } else if (settings.powerMode != state.powerMode) {
         ref
             .read(bleDeviceCommunicationProvider(settings.deviceId).notifier)
             .sendCommand(settings.powerModeCmd);
-      }
-
-      if (settings.continuosScreenEnabled != state.continuosScreenEnabled) {
+      } else if (settings.continuosScreenEnabled !=
+          state.continuosScreenEnabled) {
         ref
             .read(bleDeviceCommunicationProvider(settings.deviceId).notifier)
             .sendCommand(settings.continuousScreenCmd);
-      }
-
-      if (settings.autoSyncTime != state.autoSyncTime) {
+      } else if (settings.autoSyncTime != state.autoSyncTime) {
         ref
             .read(bleDeviceCommunicationProvider(settings.deviceId).notifier)
             .sendCommand(settings.autoSyncTimeCmd);
-      }
-
-      if (settings.autoCalibration != state.autoCalibration) {
+      } else if (settings.autoCalibration != state.autoCalibration) {
         ref
             .read(bleDeviceCommunicationProvider(settings.deviceId).notifier)
             .sendCommand(settings.autoCalibrationCmd);
-      }
-
-      if (settings.dndEnabled != state.dndEnabled ||
+      } else if (settings.dndEnabled != state.dndEnabled ||
           settings.dndStartTime != state.dndStartTime ||
           settings.dndEndTime != state.dndEndTime) {
         ref
             .read(bleDeviceCommunicationProvider(settings.deviceId).notifier)
             .sendCommand(settings.dndCmd);
-      }
-
-      if (settings.recalibrationTarget != state.recalibrationTarget) {
+      } else if (settings.recalibrationTarget != state.recalibrationTarget) {
         ref
             .read(bleDeviceCommunicationProvider(settings.deviceId).notifier)
             .sendCommand(DeviceCmdUtils.setRecalibrationTarget(
                 settings.recalibrationTarget));
-      }
-
-      if (settings.uiMode != state.uiMode ||
+      } else if (settings.uiMode != state.uiMode ||
           settings.graphMaxValue != state.graphMaxValue ||
           settings.graphMinValue != state.graphMinValue) {
         ref
