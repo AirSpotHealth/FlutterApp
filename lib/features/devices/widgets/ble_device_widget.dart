@@ -7,13 +7,15 @@ import 'package:airspothealth/core/utils/assets.dart';
 import 'package:airspothealth/core/utils/extensions.dart';
 import 'package:airspothealth/core/widgets/app_bottomsheet.dart';
 import 'package:airspothealth/core/widgets/button.dart';
+import 'package:airspothealth/core/widgets/tappable_widget.dart';
 import 'package:airspothealth/features/add_device/providers/ble_device_connection_provider.dart';
+import 'package:airspothealth/features/add_device/providers/ble_search_results_provider.dart';
 import 'package:airspothealth/features/device_settings/models/remote_version.dart';
 import 'package:airspothealth/features/device_settings/providers/device_forget_status_provider.dart';
 import 'package:airspothealth/features/device_settings/providers/firmware_remote_version_provider.dart';
-import 'package:airspothealth/features/devices/widgets/device_connect_button.dart';
+import 'package:airspothealth/features/devices/widgets/device_battery_level_widget.dart';
+import 'package:airspothealth/features/devices/widgets/device_value_refresh_widget.dart';
 import 'package:airspothealth/features/devices/widgets/device_value_widget.dart';
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_blue_plus/flutter_blue_plus.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -63,58 +65,76 @@ class BleDeviceWidget extends ConsumerWidget {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Row(
-              children: [
-                if (deviceConnected)
-                  ..._getConnectedWidgets(ref)
-                else if (deviceConnectionState == BluetoothBondState.bonding)
-                  const CupertinoActivityIndicator()
-                else
-                  Expanded(child: _buildConnectButton(ref)),
-              ],
-            ),
-            Row(
-              children: [
-                Text(
-                  deviceConnected
-                      ? bleDevice.name
-                      : bleDevice.alias ?? bleDevice.name,
-                  style: context.textTheme.labelLarge,
-                ),
-                if (deviceConnected &&
-                    remoteVersion is AsyncData<RemoteVersion?> &&
-                    remoteVersion.value != null &&
-                    AppUtils.isVersionGreater(bleDevice.firmwareVersion,
-                        remoteVersion.value!.versionName))
-                  Expanded(
-                    child: GestureDetector(
-                      onTap: () {
-                        context.pushNamed(
-                          RouteNames.deviceUpdate,
-                          pathParameters: {'deviceId': bleDevice.deviceId},
-                        );
-                      },
-                      child: Text(
-                        'Tap to update firmware',
-                        style: context.textTheme.labelLarge?.copyWith(
-                          color: AppColors.brandColorRed,
-                        ),
-                        textAlign: TextAlign.end,
-                      ),
-                    ),
-                  ),
-              ],
-            ),
+            _buildConnectionRow(ref, deviceConnectionState, deviceConnected),
+            _buildDeviceInfoRow(context, ref, deviceConnected, remoteVersion),
             if (deviceConnected) ...[
               const SizedBox(height: 16),
-              Align(
-                alignment: Alignment.center,
-                child: DeviceValueWidget(deviceId: bleDevice.deviceId),
-              )
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: [
+                  const SizedBox(width: 8),
+                  DeviceBatteryLevelWidget(deviceId: bleDevice.deviceId),
+                  Expanded(
+                      child: Align(
+                          alignment: Alignment.center,
+                          child:
+                              DeviceValueWidget(deviceId: bleDevice.deviceId))),
+                  DeviceValueRefreshWidget(deviceId: bleDevice.deviceId),
+                  const SizedBox(width: 8),
+                ],
+              ),
             ],
           ],
         ),
       ),
+    );
+  }
+
+  Widget _buildConnectionRow(WidgetRef ref,
+      BluetoothBondState deviceConnectionState, bool deviceConnected) {
+    if (deviceConnected) {
+      return Row(children: _getConnectedWidgets(ref));
+    } else {
+      return ConnectButtonRow(
+          deviceId: bleDevice.deviceId, bondState: deviceConnectionState);
+    }
+  }
+
+  Widget _buildDeviceInfoRow(BuildContext context, WidgetRef ref,
+      bool deviceConnected, AsyncValue<RemoteVersion?> remoteVersion) {
+    return Row(
+      children: [
+        Text(
+          deviceConnected
+              ? bleDevice.name
+              : (bleDevice.alias == null || bleDevice.alias == "Airspot")
+                  ? bleDevice.name
+                  : bleDevice.alias!,
+          style: context.textTheme.labelLarge,
+        ),
+        if (deviceConnected &&
+            remoteVersion is AsyncData<RemoteVersion?> &&
+            remoteVersion.value != null &&
+            AppUtils.isVersionGreater(
+                bleDevice.firmwareVersion, remoteVersion.value!.versionName))
+          Expanded(
+            child: GestureDetector(
+              onTap: () {
+                context.pushNamed(
+                  RouteNames.deviceUpdate,
+                  pathParameters: {'deviceId': bleDevice.deviceId},
+                );
+              },
+              child: Text(
+                'Tap to update firmware',
+                style: context.textTheme.labelLarge?.copyWith(
+                  color: AppColors.brandColorRed,
+                ),
+                textAlign: TextAlign.end,
+              ),
+            ),
+          ),
+      ],
     );
   }
 
@@ -128,7 +148,6 @@ class BleDeviceWidget extends ConsumerWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               mainAxisSize: MainAxisSize.min,
-              spacing: 12,
               children: [
                 const Text(
                   'Forget Device',
@@ -137,6 +156,7 @@ class BleDeviceWidget extends ConsumerWidget {
                     fontWeight: FontWeight.w600,
                   ),
                 ),
+                const SizedBox(height: 12),
                 const Text(
                   'Are you sure you want to forget this device?',
                   style: TextStyle(
@@ -144,6 +164,7 @@ class BleDeviceWidget extends ConsumerWidget {
                     color: AppColors.neutralGrey,
                   ),
                 ),
+                const SizedBox(height: 12),
                 Button(
                   backgroundColor: Colors.red,
                   onPressed: () {
@@ -159,22 +180,6 @@ class BleDeviceWidget extends ConsumerWidget {
           ),
         );
       },
-    );
-  }
-
-  Widget _buildConnectButton(WidgetRef ref) {
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: [
-        const Flexible(
-          child: Text(
-            'Not Connected/Unavailable',
-            style: TextStyle(color: AppColors.neutralGrey),
-          ),
-        ),
-        DeviceConnectButton(deviceId: bleDevice.deviceId),
-      ],
     );
   }
 
@@ -214,6 +219,12 @@ class BleDeviceWidget extends ConsumerWidget {
         child: Image.asset(
           Assets.deviceGraph,
           width: 28,
+          errorBuilder: (context, error, stackTrace) {
+            return const Icon(
+              Icons.line_axis,
+              size: 28,
+            );
+          },
         ),
       ),
       const SizedBox(width: 12),
@@ -225,6 +236,12 @@ class BleDeviceWidget extends ConsumerWidget {
         child: Image.asset(
           Assets.deviceSettings,
           width: 28,
+          errorBuilder: (context, error, stackTrace) {
+            return const Icon(
+              Icons.settings,
+              size: 28,
+            );
+          },
         ),
       ),
       const SizedBox(width: 8),
@@ -233,58 +250,121 @@ class BleDeviceWidget extends ConsumerWidget {
 
   void _showDeviceAliasDialog(WidgetRef ref, String deviceId, String? alias) {
     showAdaptiveDialog(
-        context: ref.context,
-        barrierDismissible: true,
-        builder: (context) {
-          final TextEditingController controller =
-              TextEditingController(text: alias);
-          return AlertDialog(
-            backgroundColor: Colors.white,
-            surfaceTintColor: Colors.white,
-            content: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Text(
-                  'Change Device Nickname',
-                  style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.w600,
-                  ),
+      context: ref.context,
+      barrierDismissible: true,
+      builder: (context) {
+        final TextEditingController controller =
+            TextEditingController(text: alias);
+        return AlertDialog(
+          backgroundColor: Colors.white,
+          surfaceTintColor: Colors.white,
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text(
+                'Change Device Nickname',
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.w600,
                 ),
-                const SizedBox(height: 16),
-                TextFormField(
-                  controller: controller,
-                  decoration: const InputDecoration(
-                    hintText: 'Enter nickname',
-                    border: OutlineInputBorder(
-                        borderSide: BorderSide(color: AppColors.primaryColor)),
-                    enabledBorder: OutlineInputBorder(
-                        borderSide: BorderSide(color: AppColors.primaryColor)),
-                    focusedBorder: OutlineInputBorder(
-                        borderSide: BorderSide(color: AppColors.primaryColor)),
-                  ),
-                ),
-              ],
-            ),
-            actions: [
-              TextButton(
-                onPressed: () {
-                  Navigator.of(context).pop();
-                },
-                child: const Text('Cancel'),
               ),
-              ElevatedButton(
-                onPressed: () {
-                  ref
-                      .read(bleSavedDevicesProvider.notifier)
-                      .updateDeviceAlias(deviceId, controller.text);
-                  Navigator.of(context).pop();
-                },
-                child: const Text('Save'),
+              const SizedBox(height: 16),
+              TextFormField(
+                controller: controller,
+                decoration: const InputDecoration(
+                  hintText: 'Enter nickname',
+                  border: OutlineInputBorder(
+                      borderSide: BorderSide(color: AppColors.primaryColor)),
+                  enabledBorder: OutlineInputBorder(
+                      borderSide: BorderSide(color: AppColors.primaryColor)),
+                  focusedBorder: OutlineInputBorder(
+                      borderSide: BorderSide(color: AppColors.primaryColor)),
+                ),
               ),
             ],
-          );
-        });
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+              child: const Text('Cancel'),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                ref
+                    .read(bleSavedDevicesProvider.notifier)
+                    .updateDeviceAlias(deviceId, controller.text);
+                Navigator.of(context).pop();
+              },
+              child: const Text('Save'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+}
+
+class ConnectButtonRow extends ConsumerWidget {
+  const ConnectButtonRow(
+      {required this.deviceId, required this.bondState, super.key});
+
+  final String deviceId;
+
+  final BluetoothBondState bondState;
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    // watch for the bluetooth devices..
+    // if it is available tell not connected
+    // if it is not available tell unavailable
+
+    final (bool isScanning, List<BluetoothDevice> devices) =
+        ref.watch(bluetoothSearchResultsProvider);
+
+    final isDeviceAvailable =
+        devices.map((e) => e.remoteId.str).contains(deviceId);
+
+    debugPrint('bondState: $bondState');
+
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Expanded(
+          child: Text(
+            isDeviceAvailable ? 'Not Connected' : 'Unavailable',
+            style: TextStyle(color: AppColors.neutralGrey),
+          ),
+        ),
+        if (bondState == BluetoothBondState.bonded)
+          const Text('Connected',
+              style: TextStyle(color: AppColors.primaryColor))
+        else
+          TappableWidget(
+            onTap: () {
+              if (bondState == BluetoothBondState.bonding) return;
+
+              ref
+                  .read(bleDeviceConnectionProvider(deviceId).notifier)
+                  .connect();
+            },
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              decoration: BoxDecoration(
+                color: AppColors.primaryColor,
+                borderRadius: BorderRadius.circular(5),
+              ),
+              child: Text(
+                bondState == BluetoothBondState.bonding
+                    ? 'Connecting...'
+                    : 'Connect',
+                style: TextStyle(color: Colors.white),
+              ),
+            ),
+          ),
+      ],
+    );
   }
 }

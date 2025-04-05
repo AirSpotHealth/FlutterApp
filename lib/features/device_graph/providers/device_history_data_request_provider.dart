@@ -1,9 +1,12 @@
+import 'dart:async';
 import 'dart:typed_data';
 
 import 'package:airspothealth/core/models/ble_device.dart';
 import 'package:airspothealth/core/models/device_data.dart';
+import 'package:airspothealth/core/models/device_data_type.dart';
 import 'package:airspothealth/core/providers/ble_device_communication_provider.dart';
 import 'package:airspothealth/core/providers/isar_service_provider.dart';
+import 'package:airspothealth/core/services/isar_service.dart';
 import 'package:airspothealth/core/utils/constants.dart';
 import 'package:airspothealth/core/utils/device_cmd_utils.dart';
 import 'package:airspothealth/core/utils/extensions.dart';
@@ -26,6 +29,8 @@ class _DeviceHistoryDataRequestNotifier
   int? currentPageNumber;
   int numberOfPagesFetched = 0;
 
+  int numberOfBlankPagesFetched = 0;
+
   DateTimeRange? requestedDateTimeRange;
   DateTimeRange? pendingDateTimeRange;
 
@@ -33,8 +38,13 @@ class _DeviceHistoryDataRequestNotifier
 
   BleDevice? bleDevice;
 
+  final List<DeviceData> _dataBuffer = [];
+  static final int _batchSize = 400; // Save in batches of 400 records
+
   static final _unsyncedThresholdDate =
       DateTime.fromMillisecondsSinceEpoch(Constants.syncedTimeThreshold);
+
+  Timer? _flushTimer;
 
   @override
   build(String arg) {
@@ -42,19 +52,28 @@ class _DeviceHistoryDataRequestNotifier
     return AsyncNone();
   }
 
+  void _startFlushTimer() {
+    _flushTimer?.cancel();
+    _flushTimer = Timer(const Duration(seconds: 2), () {
+      _commitData();
+    });
+  }
+
   void request(GraphDataDuration duration) {
     this.duration = duration;
-    requestedDateTimeRange = duration.getDateTimeRange(isTonightEnd: false);
+    requestedDateTimeRange = duration.dateTimeRange;
 
-    debugPrint('Requesting historical data for $requestedDateTimeRange');
+    debugPrint(
+        'REQUEST:Requesting historical data for $requestedDateTimeRange');
     numberOfPagesFetched = 0;
+    numberOfBlankPagesFetched = 0;
     currentPageNumber = null;
 
     _requestData();
   }
 
   void _requestData() {
-    debugPrint('Current page number: $currentPageNumber');
+    debugPrint('REQUEST:Current page number: $currentPageNumber');
 
     if (currentPageNumber == null) {
       _sendCommand(DeviceCmdUtils.getCurrentFlashPage(),
@@ -81,7 +100,7 @@ class _DeviceHistoryDataRequestNotifier
     }
 
     if (data is List && data.isEmpty) {
-      debugPrint('No data received');
+      debugPrint('REQUEST:No data received');
       handleHistoricalDataFetchComplete();
       return;
     }
@@ -100,7 +119,7 @@ class _DeviceHistoryDataRequestNotifier
     }
 
     debugPrint(
-        'Current page number: $currentPageNumber, number of pages fetched: $numberOfPagesFetched');
+        'REQUEST:Current page number: $currentPageNumber, number of pages fetched: $numberOfPagesFetched');
 
     _saveData(deviceDataList);
 
@@ -112,20 +131,59 @@ class _DeviceHistoryDataRequestNotifier
   }
 
   void _saveData(List<DeviceData> deviceDataList) {
-    ref.read(isarServiceProvider).write((isar) {
-      isar.deviceDatas.putAll(deviceDataList);
-    });
+    // check if the whole data is empty i.e every value is 0
+    if (deviceDataList.every((data) => data.value == 0)) {
+      debugPrint('REQUEST:All data values are 0, skipping save.');
+      return;
+    }
+
+    _dataBuffer.addAll(deviceDataList
+        .where((data) => data.type != DeviceDataType.empty.index));
+
+    debugPrint('REQUEST:Buffer size: ${_dataBuffer.length}');
+
+    if (_dataBuffer.length >= _batchSize) {
+      _commitData();
+    } else {
+      _startFlushTimer(); // Ensure it gets saved if no more data arrives
+    }
+  }
+
+  void _commitData() async {
+    debugPrint('REQUEST:Committing data: ${_dataBuffer.length}');
+    if (_dataBuffer.isEmpty) return;
+
+    try {
+      // Write to Isar database one by one to catch any failures
+      IsarService().write((isar) async {
+        isar.deviceDatas.putAll(_dataBuffer);
+      });
+
+      debugPrint("REQUEST:Successfully saved ${_dataBuffer.length} data");
+    } catch (e) {
+      debugPrint('REQUEST:Database save operation failed: error: $e');
+    }
+
+    _dataBuffer.clear();
   }
 
   bool _shouldFetchMoreData(List<DeviceData> deviceDataList) {
-    final DateTime firstDateTime = deviceDataList.first.dateTime;
+    final DateTime firstDateTime = deviceDataList
+        .firstWhere(
+          (element) => element.type == DeviceDataType.co2.index,
+          orElse: () => deviceDataList.first,
+        )
+        .dateTime;
+
+    debugPrint(
+        'REQUEST:First date time: $firstDateTime, Pending date time range: $pendingDateTimeRange');
 
     if (pendingDateTimeRange == null) {
       return false;
     }
 
     debugPrint(
-        'First date time: $firstDateTime, Pending date time range: $pendingDateTimeRange');
+        '''REQUEST:First date time: $firstDateTime, Last date time: ${deviceDataList.last.dateTime}, Pending date time range: $pendingDateTimeRange''');
 
     // Check if the data is within the requested range
     if (firstDateTime.isAfter(_unsyncedThresholdDate) &&
@@ -133,23 +191,39 @@ class _DeviceHistoryDataRequestNotifier
       return false;
     }
 
-    // if the first date is ahead of the pending date range end then stop fetching
-    if (firstDateTime.isAfter(pendingDateTimeRange!.end)) {
-      return false;
+    // if the first date is the date of the empty data, then we don't need to fetch more data
+    if (firstDateTime.isAfter(DateTime(2100))) {
+      numberOfBlankPagesFetched += 1;
+      debugPrint(
+          'Blank page detected: Incrementing blank page count to $numberOfBlankPagesFetched');
+      if (numberOfBlankPagesFetched > 2) {
+        numberOfBlankPagesFetched = 0;
+        return false;
+      }
+
+      return true;
     }
 
     if (numberOfPagesFetched >= Constants.maxFlashPageCount) {
       return false;
     }
 
+    numberOfBlankPagesFetched = 0;
     return true;
   }
 
   void handleHistoricalDataFetchComplete() {
     debugPrint(
-        'That was last: Total number of pages fetched: $numberOfPagesFetched');
+        'REQUEST:That was last: Total number of pages fetched: $numberOfPagesFetched');
 
-    if (duration == GraphDataDuration.last7Days) {
+    // Save any remaining buffered data
+    _commitData();
+
+    debugPrint(
+        'REQUEST:Device data download provider: ${ref.read(deviceDataDownloadProvider(deviceId))}');
+
+    if (ref.read(deviceDataDownloadProvider(deviceId)) is AsyncInProgress) {
+      debugPrint('REQUEST:Setting data downloaded from device');
       ref
           .read(deviceDataDownloadProvider(deviceId).notifier)
           .setDataDownloadedFromDevice();
@@ -181,7 +255,7 @@ class _DeviceHistoryDataRequestNotifier
     });
 
     debugPrint(
-        'Last fetched date time range: ${bleDevice!.lastFetchedDateTimeRange}');
+        'REQUEST:Set last fetched date time range: ${bleDevice!.lastFetchedDateTimeRange}');
   }
 
   DateTimeRange _calculateFetchedDateTimeRange() {
@@ -203,10 +277,10 @@ class _DeviceHistoryDataRequestNotifier
 
   void _setPendingDateTimeRange() {
     debugPrint(
-        'Setting pending date time range, Last fetched: ${bleDevice?.lastFetchedDateTimeRange}');
+        'REQUEST:Setting pending date time range, Last fetched: ${bleDevice?.lastFetchedDateTimeRange}');
 
     if (bleDevice?.lastFetchedDateTimeRange == null) {
-      debugPrint('No last fetched date time range');
+      debugPrint('REQUEST:No last fetched date time range');
       pendingDateTimeRange = requestedDateTimeRange;
       return;
     }
@@ -222,7 +296,8 @@ class _DeviceHistoryDataRequestNotifier
         lastFetchedEndDate.isAfterOrEqual(endDate)) {
       // No need to fetch data; the required range is already covered
       debugPrint(
-          'No need to fetch data; the required range is already covered');
+          'REQUEST:No need to fetch data; the required range is already covered');
+      pendingDateTimeRange = null;
       return;
     }
 
@@ -231,8 +306,8 @@ class _DeviceHistoryDataRequestNotifier
     DateTime? fetchEnd;
 
     debugPrint(
-        'Last fetched start: $lastFetchedStartDate, Last fetched end: $lastFetchedEndDate');
-    debugPrint('Requested start: $startDate, Requested end: $endDate');
+        'REQUEST:Last fetched start: $lastFetchedStartDate, Last fetched end: $lastFetchedEndDate');
+    debugPrint('REQUEST:Requested start: $startDate, Requested end: $endDate');
 
     if (startDate.isAfterOrEqual(lastFetchedEndDate)) {
       // Condition 2: Requested range is after the last fetched range
@@ -253,11 +328,14 @@ class _DeviceHistoryDataRequestNotifier
       }
     }
 
+    debugPrint(
+        'REQUEST:Fetch start: $fetchStart, Fetch end: $fetchEnd, Last fetched start: $lastFetchedStartDate, Last fetched end: $lastFetchedEndDate');
+
     if (fetchStart != null && fetchEnd != null) {
       pendingDateTimeRange = DateTimeRange(start: fetchStart, end: fetchEnd);
     }
 
-    debugPrint('Pending date time range: $pendingDateTimeRange');
+    debugPrint('REQUEST:Pending date time range: $pendingDateTimeRange');
   }
 
   void clear() {

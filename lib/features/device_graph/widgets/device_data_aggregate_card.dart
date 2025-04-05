@@ -17,18 +17,18 @@ class DeviceDataAggregateCard extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final GraphDataDuration selectedDuration = ref.watch(graphDurationProvider);
+    final DeviceHistoryDataRequest request =
+        DeviceHistoryDataRequest(deviceId, selectedDuration);
 
-    ref.watch(deviceHistoricalDataProvider((deviceId, selectedDuration)));
+    ref.watch(deviceHistoricalDataProvider(request));
 
-    final DeviceData? minValue = ref
-        .read(
-            deviceHistoricalDataProvider((deviceId, selectedDuration)).notifier)
-        .minValue;
+    final DeviceData? minValue =
+        ref.read(deviceHistoricalDataProvider(request).notifier).minValue;
 
-    final DeviceData? maxValue = ref
-        .read(
-            deviceHistoricalDataProvider((deviceId, selectedDuration)).notifier)
-        .maxValue;
+    final DeviceData? maxValue =
+        ref.read(deviceHistoricalDataProvider(request).notifier).maxValue;
+
+    debugPrint("Min and max values: $minValue, $maxValue");
 
     final DeviceSettings deviceSettings =
         ref.watch(deviceSettingsProvider(deviceId));
@@ -41,7 +41,7 @@ class DeviceDataAggregateCard extends ConsumerWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              selectedDuration.name.capitalize(),
+              selectedDuration.durationString,
               style: context.textTheme.labelLarge?.weight600,
             ),
             const SizedBox(height: 4),
@@ -85,7 +85,7 @@ class DeviceDataAggregateCard extends ConsumerWidget {
             textAlign: TextAlign.end,
             text: TextSpan(
               text: data != null
-                  ? data.value.toInt().clamp(350, 5000).toString()
+                  ? data.value.toInt().clamp(0, 5000).toString()
                   : '0000',
               style: context.textTheme.bodyMedium?.copyWith(color: color),
               children: const [

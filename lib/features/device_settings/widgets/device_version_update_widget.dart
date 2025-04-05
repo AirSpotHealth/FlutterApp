@@ -6,6 +6,7 @@ import 'package:airspothealth/features/device_settings/models/remote_version.dar
 import 'package:airspothealth/features/device_settings/providers/ble_device_version_provider.dart';
 import 'package:airspothealth/features/device_settings/providers/firmware_remote_version_provider.dart';
 import 'package:airspothealth/features/device_settings/widgets/device_firmware_update_dialog.dart';
+import 'package:airspothealth/features/devices/providers/device_battery_level_provider.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -27,7 +28,7 @@ class DeviceVersionUpdateWidget extends ConsumerWidget {
     final AsyncValue<RemoteVersion?> remoteVersion =
         ref.watch(firmwareRemoteVersionProvider);
 
-    final String currentVersion = ref.read(bleDeviceVersionProvider(deviceId));
+    final String? currentVersion = ref.read(bleDeviceVersionProvider(deviceId));
 
     return Container(
         padding: const EdgeInsets.all(16),
@@ -63,7 +64,18 @@ class DeviceVersionUpdateWidget extends ConsumerWidget {
               Button(
                 wrapWidth: true,
                 onPressed: () {
-                  _showUpdateDialog(context, remoteVersion.value!);
+                  final batteryState =
+                      ref.read(deviceBatteryLevelProvider(deviceId));
+                  if (!batteryState.isCharging &&
+                      batteryState.level != null &&
+                      batteryState.level! < 20) {
+                    context.showSnackBar(
+                        'Battery too low for updating. Please connect charger.');
+                    return;
+                  }
+
+                  _showUpdateDialog(
+                      context, remoteVersion.value!, currentVersion);
                 },
                 label: 'Update',
               ),
@@ -72,12 +84,16 @@ class DeviceVersionUpdateWidget extends ConsumerWidget {
         ));
   }
 
-  void _showUpdateDialog(BuildContext context, RemoteVersion remoteVersion) {
+  void _showUpdateDialog(BuildContext context, RemoteVersion remoteVersion,
+      String? currentVersion) {
     showAdaptiveDialog(
       context: context,
       barrierDismissible: false,
       builder: (context) => DeviceFirmwareUpdateDialog(
-          deviceId: deviceId, remoteVersion: remoteVersion),
+        deviceId: deviceId,
+        remoteVersion: remoteVersion,
+        currentVersion: currentVersion,
+      ),
     );
   }
 }

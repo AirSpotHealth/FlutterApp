@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'dart:typed_data';
 
 import 'package:airspothealth/core/utils/constants.dart';
+import 'package:flutter/material.dart';
 
 class DeviceCmdUtils {
   static const int prefixHigh = 0xFF;
@@ -60,6 +61,14 @@ class DeviceCmdUtils {
   // ======= General Commands =======
   static Uint8List getCO2() {
     return _buildCommand([prefixHigh, prefixLow, 1, 1, 1]);
+  }
+
+  static Uint8List getBatteryLevel() {
+    return _buildCommand([prefixHigh, prefixLow, 0x20, 1, 1]);
+  }
+
+  static Uint8List refreshCO2() {
+    return _buildCommand([prefixHigh, prefixLow, 0x21, 1, 1]);
   }
 
   static Uint8List openAlarm() {
@@ -122,19 +131,15 @@ class DeviceCmdUtils {
   }
 
   // ======= Device Light Commands =======
-  static Uint8List keepDeviceLight() {
+  static Uint8List setScreenOnContinuously() {
     return _buildCommand([prefixHigh, prefixLow, 0x0e, 1, 1]);
   }
 
-  static Uint8List closeDeviceLight() {
+  static Uint8List resetScreenOnContinuously() {
     return _buildCommand([prefixHigh, prefixLow, 0x0e, 1, 2]);
   }
 
   // ======= CO2 History and Value Commands =======
-  static Uint8List setCo2Notify() {
-    return _buildCommand([prefixHigh, prefixLow, 6, 1, 1]);
-  }
-
   static int calculateSecondsSince2000(DateTime targetDate) {
     DateTime startDate2000 = DateTime(2000, 1, 1);
     return targetDate.difference(startDate2000).inSeconds;
@@ -174,7 +179,7 @@ class DeviceCmdUtils {
         [prefixHigh, prefixLow, 0x0C, 0x02, ...byteArray.buffer.asUint8List()]);
   }
 
-  static Uint8List setCo2PPM(int low, int med) {
+  static Uint8List setGraphThreshold(int low, int med) {
     var lowBytes = _getHex2Bytes(low);
     var medBytes = _getHex2Bytes(med);
     return _buildCommand(
@@ -203,7 +208,90 @@ class DeviceCmdUtils {
   }
 
   static Uint8List startRecalibration() {
-    return _buildCommand([prefixHigh, prefixLow, 0x0D, 1, 1]);
+    return _buildCommand([prefixHigh, prefixLow, 0x0D, 0]);
+  }
+
+  // ======= DND Commands =======
+  static Uint8List setDND(DateTime? startTime, DateTime? endTime) {
+    if (startTime == null || endTime == null) {
+      throw Exception('Start and end time must be provided');
+    }
+
+    debugPrint('Start Time: $startTime, End Time: $endTime');
+
+    // format should be h,m, h,m
+    return _buildCommand([
+      prefixHigh,
+      prefixLow,
+      0x22,
+      0x05,
+      1,
+      startTime.hour.toUnsigned(8),
+      startTime.minute.toUnsigned(8),
+      endTime.hour.toUnsigned(8),
+      endTime.minute.toUnsigned(8),
+    ]);
+  }
+
+  static Uint8List resetDND() {
+    return _buildCommand([prefixHigh, prefixLow, 0x22, 1, 0]);
+  }
+
+  // ======= Device Power Commands =======
+  static Uint8List powerOff() {
+    return _buildCommand([prefixHigh, prefixLow, 0xEE, 1, 1]);
+  }
+
+  // ======= Other Commands =======
+  static Uint8List populateFakeData() {
+    return _buildCommand([prefixHigh, prefixLow, 0x23, 1, 1]);
+  }
+
+  static Uint8List turnOffBluetooth() {
+    return _buildCommand([prefixHigh, prefixLow, 0x06, 1, 1]);
+  }
+
+  static Uint8List resetSensor() {
+    return _buildCommand([prefixHigh, prefixLow, 0x24, 1, 1]);
+  }
+
+  static Uint8List getAscData() {
+    return _buildCommand([prefixHigh, prefixLow, 0x25, 1, 1]);
+  }
+
+  static Uint8List getMemoryDump() {
+    return _buildCommand([prefixHigh, prefixLow, 0x26, 1, 1]);
+  }
+
+  static Uint8List restartDevice() {
+    return _buildCommand([prefixHigh, prefixLow, 0x27, 1, 1]);
+  }
+
+  static Uint8List setGraphMode(
+      int uiMode, int graphMaxValue, int graphMinValue) {
+    return _buildCommand([
+      prefixHigh,
+      prefixLow,
+      0x28,
+      5,
+      uiMode,
+      ..._getHex2Bytes(graphMaxValue),
+      ..._getHex2Bytes(graphMinValue),
+    ]);
+  }
+
+  static Uint8List setAscDuration(int duration) {
+    return _buildCommand([
+      prefixHigh,
+      prefixLow,
+      0x29,
+      0x02,
+      ..._getHex2Bytes(duration),
+    ]);
+  }
+
+  static Uint8List getAscDayCount() {
+    return _buildCommand([prefixHigh, prefixLow, 0x2A, 1, 1]);
   }
 
   // ======= Helper Functions =======
@@ -214,33 +302,16 @@ class DeviceCmdUtils {
     return byteArray;
   }
 
+  static Uint8List setRecalibrationTarget(int target) {
+    return _buildCommand(
+        [prefixHigh, prefixLow, 0x0D, 0x02, ..._getHex2Bytes(target)]);
+  }
+
   static Uint8List eraseData() {
     return _buildCommand([prefixHigh, prefixLow, 0xFD, 1, 1]);
   }
 
   static Uint8List setSensorError(bool high) {
     return _buildCommand([prefixHigh, prefixLow, 0xFF, 1, high ? 1 : 0]);
-  }
-
-  static Uint8List getSensorErrors() {
-    final DateTime now = DateTime.now();
-
-    int since2000ToStartDate =
-        calculateSecondsSince2000(now.subtract(Duration(days: 7)));
-    int since2000ToEndDate = calculateSecondsSince2000(now);
-
-    var byteArrayStart = ByteData(4)
-      ..setInt32(0, since2000ToStartDate, Endian.big);
-    var byteArrayNow = ByteData(4)..setInt32(0, since2000ToEndDate, Endian.big);
-
-    return _buildCommand([
-      prefixHigh,
-      prefixLow,
-      0x0C,
-      0x08,
-      ...byteArrayStart.buffer.asUint8List(),
-      ...byteArrayNow.buffer.asUint8List(),
-      3
-    ]);
   }
 }

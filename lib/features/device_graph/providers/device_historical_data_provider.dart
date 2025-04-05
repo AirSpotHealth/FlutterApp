@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:airspothealth/core/models/ble_device.dart';
 import 'package:airspothealth/core/models/device_data.dart';
+import 'package:airspothealth/core/models/device_data_type.dart';
 import 'package:airspothealth/core/providers/ble_device_communication_provider.dart';
 import 'package:airspothealth/core/services/isar_service.dart';
 import 'package:airspothealth/core/utils/app_utils.dart';
@@ -14,10 +15,28 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:isar/isar.dart';
 
-typedef DeviceHistoryDataRequest = (
-  String deviceId,
-  GraphDataDuration duration
-);
+class DeviceHistoryDataRequest {
+  final String deviceId;
+  final GraphDataDuration duration;
+
+  DeviceHistoryDataRequest(this.deviceId, this.duration);
+
+  @override
+  String toString() {
+    return 'DeviceHistoryDataRequest(deviceId: $deviceId, duration: $duration)';
+  }
+
+  @override
+  bool operator ==(Object other) {
+    if (other is! DeviceHistoryDataRequest) {
+      return false;
+    }
+    return deviceId == other.deviceId && duration == other.duration;
+  }
+
+  @override
+  int get hashCode => deviceId.hashCode ^ duration.hashCode;
+}
 
 final deviceHistoricalDataProvider = AsyncNotifierProvider.family.autoDispose<
     _DeviceHistoricalDataNotifier,
@@ -25,12 +44,12 @@ final deviceHistoricalDataProvider = AsyncNotifierProvider.family.autoDispose<
     DeviceHistoryDataRequest>(_DeviceHistoricalDataNotifier.new);
 
 class _DeviceHistoricalDataNotifier extends AutoDisposeFamilyAsyncNotifier<
-    List<DeviceData>, (String, GraphDataDuration)> {
+    List<DeviceData>, DeviceHistoryDataRequest> {
   final IsarService _isarService = IsarService();
 
-  String get deviceId => arg.$1;
+  String get deviceId => arg.deviceId;
 
-  GraphDataDuration get duration => arg.$2;
+  GraphDataDuration get duration => arg.duration;
 
   Iterable<dynamic> get values => state.value?.map((e) => e.value) ?? [];
 
@@ -60,15 +79,20 @@ class _DeviceHistoricalDataNotifier extends AutoDisposeFamilyAsyncNotifier<
         (value, element) => value.value < element.value ? value : element);
   }
 
-  DateTimeRange get dateTimeRange => duration.getDateTimeRange();
+  DateTimeRange get dateTimeRange => duration.dateTimeRange;
 
   @override
   FutureOr<List<DeviceData>> build(arg) {
+    final endDate =
+        dateTimeRange.end.isToday ? DateTime.now().endOfDay : dateTimeRange.end;
+
     // First, try to get data from the local database
     _isarService.deviceDatas
         .where()
         .deviceIdEqualTo(deviceId)
-        .dateTimeBetween(dateTimeRange.start, dateTimeRange.end)
+        .dateTimeBetween(dateTimeRange.start, endDate)
+        .typeEqualTo(DeviceDataType.co2.index)
+        .valueGreaterThan(0)
         .sortByDateTime()
         .watch(fireImmediately: true)
         .listen((event) {
@@ -81,17 +105,18 @@ class _DeviceHistoricalDataNotifier extends AutoDisposeFamilyAsyncNotifier<
     if (!AppUtils.isNewFirmwareVersion(deviceFirmwareVersion)) {
       requestHistoricalDataOld();
     } else {
-      ref
-          .read(deviceHistoryDataRequestProvider(deviceId).notifier)
-          .request(duration);
+      ref.read(deviceHistoryDataRequestProvider(deviceId).notifier).request(
+          duration.name == 'today'
+              ? GraphDataDuration.today
+              : GraphDataDuration.custom(dateTimeRange));
     }
 
     return future;
   }
 
   void requestHistoricalDataOld({bool force = false}) {
-    DateTime startDate = duration.getDateTimeRange(isTonightEnd: false).start;
-    DateTime endDate = duration.getDateTimeRange(isTonightEnd: false).end;
+    DateTime startDate = dateTimeRange.start;
+    DateTime endDate = dateTimeRange.end;
 
     // if start date is today then end date should be now because dateTimeRange returns the end of the day for today
     if (startDate.isToday) {

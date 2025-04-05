@@ -1,10 +1,11 @@
 import 'dart:typed_data';
-import 'dart:ui';
 
 import 'package:airspothealth/core/theme/app_colors.dart';
 import 'package:airspothealth/core/utils/assets.dart';
 import 'package:airspothealth/core/utils/constants.dart';
 import 'package:airspothealth/core/utils/device_cmd_utils.dart';
+import 'package:airspothealth/features/device_settings/widgets/device_ui_mode_widget.dart';
+import 'package:flutter/material.dart';
 import 'package:isar/isar.dart';
 
 part 'device_settings.g.dart';
@@ -18,7 +19,7 @@ class DeviceSettings {
   final bool vibrationEnabled;
 
   /// The power mode of the device
-  @enumValue
+  @EnumValue()
   final PowerMode powerMode;
 
   /// Whether the continuous screen is enabled or not
@@ -49,6 +50,31 @@ class DeviceSettings {
   /// log data bool
   final bool logData;
 
+  /// Dnd enabled bool
+  final bool dndEnabled;
+
+  /// Dnd start time
+  final DateTime? dndStartTime;
+
+  /// Dnd end time
+  final DateTime? dndEndTime;
+
+  /// Recalibration target
+  final int recalibrationTarget;
+
+  /// Graph max value
+  final int graphMaxValue;
+
+  /// Graph min value
+  final int graphMinValue;
+
+  /// UI Mode
+  @EnumValue()
+  final UIMode uiMode;
+
+  /// Show rebreathe percentage
+  final bool showRebreathePercentage;
+
   DeviceSettings({
     required this.alarmEnabled,
     required this.vibrationEnabled,
@@ -62,6 +88,14 @@ class DeviceSettings {
     this.autoCalibration = false,
     this.autoConnect = true,
     this.logData = false,
+    this.dndEnabled = false,
+    this.dndStartTime,
+    this.dndEndTime,
+    this.recalibrationTarget = 426,
+    this.graphMaxValue = 1600,
+    this.uiMode = UIMode.graph,
+    this.showRebreathePercentage = false,
+    this.graphMinValue = 0,
   });
 
   DeviceSettings.empty({required this.deviceId})
@@ -75,7 +109,15 @@ class DeviceSettings {
         autoSyncTime = true,
         autoCalibration = true,
         autoConnect = true,
-        logData = false;
+        logData = false,
+        dndEnabled = false,
+        dndStartTime = null,
+        dndEndTime = null,
+        recalibrationTarget = 426,
+        graphMaxValue = 1600,
+        uiMode = UIMode.graph,
+        showRebreathePercentage = false,
+        graphMinValue = 0;
 
   DeviceSettings copyWith({
     bool? alarmEnabled,
@@ -91,6 +133,14 @@ class DeviceSettings {
     bool? autoCalibration,
     bool? autoConnect,
     bool? logData,
+    bool? dndEnabled,
+    DateTime? dndStartTime,
+    DateTime? dndEndTime,
+    int? recalibrationTarget,
+    int? graphMaxValue,
+    int? graphMinValue,
+    UIMode? uiMode,
+    bool? showRebreathePercentage,
   }) {
     return DeviceSettings(
       alarmEnabled: alarmEnabled ?? this.alarmEnabled,
@@ -106,6 +156,15 @@ class DeviceSettings {
       autoCalibration: autoCalibration ?? this.autoCalibration,
       autoConnect: autoConnect ?? this.autoConnect,
       logData: logData ?? this.logData,
+      dndEnabled: dndEnabled ?? this.dndEnabled,
+      dndStartTime: dndStartTime ?? this.dndStartTime,
+      dndEndTime: dndEndTime ?? this.dndEndTime,
+      recalibrationTarget: recalibrationTarget ?? this.recalibrationTarget,
+      graphMaxValue: graphMaxValue ?? this.graphMaxValue,
+      uiMode: uiMode ?? this.uiMode,
+      showRebreathePercentage:
+          showRebreathePercentage ?? this.showRebreathePercentage,
+      graphMinValue: graphMinValue ?? this.graphMinValue,
     );
   }
 
@@ -152,15 +211,15 @@ class DeviceSettings {
 
   @ignore
   Uint8List get continuousScreenCmd => continuosScreenEnabled
-      ? DeviceCmdUtils.keepDeviceLight()
-      : DeviceCmdUtils.closeDeviceLight();
+      ? DeviceCmdUtils.setScreenOnContinuously()
+      : DeviceCmdUtils.resetScreenOnContinuously();
 
   @ignore
   Uint8List get autoSyncTimeCmd => DeviceCmdUtils.setTime();
 
   @ignore
   Uint8List get thresholdsCmd =>
-      DeviceCmdUtils.setCo2PPM(greenUpperLimit, yellowUpperLimit);
+      DeviceCmdUtils.setGraphThreshold(greenUpperLimit, yellowUpperLimit);
 
   @ignore
   Uint8List get autoCalibrationCmd => autoCalibration
@@ -172,7 +231,7 @@ class DeviceSettings {
       return AppColors.brandColorGreen;
     }
 
-    if (value > 0 && value < greenUpperLimit) {
+    if (value >= 0 && value < greenUpperLimit) {
       return AppColors.brandColorGreen;
     } else if (value >= greenUpperLimit && value < yellowUpperLimit) {
       return AppColors.brandColorAmber;
@@ -180,6 +239,18 @@ class DeviceSettings {
       return AppColors.brandColorRed;
     }
   }
+
+  @ignore
+  Uint8List get dndCmd => dndEnabled
+      ? DeviceCmdUtils.setDND(dndStartTime, dndEndTime)
+      : DeviceCmdUtils.resetDND();
+
+  @ignore
+  DateTime get defaultDndStartTime =>
+      DateTime.now().copyWith(hour: 22, minute: 0);
+
+  @ignore
+  DateTime get defaultDndEndTime => DateTime.now().copyWith(hour: 6, minute: 0);
 
   Map<String, dynamic> toJson() {
     return {
@@ -195,6 +266,14 @@ class DeviceSettings {
       'autoCalibration': autoCalibration,
       'autoConnect': autoConnect,
       'logData': logData,
+      'dndEnabled': dndEnabled,
+      'dndStartTime': dndStartTime,
+      'dndEndTime': dndEndTime,
+      'recalibrationTarget': recalibrationTarget,
+      'graphMaxValue': graphMaxValue,
+      'uiMode': uiMode.index,
+      'showRebreathePercentage': showRebreathePercentage,
+      'graphMinValue': graphMinValue,
     };
   }
 
@@ -214,7 +293,15 @@ class DeviceSettings {
         other.autoSyncTime == autoSyncTime &&
         other.autoCalibration == autoCalibration &&
         other.autoConnect == autoConnect &&
-        other.logData == logData;
+        other.logData == logData &&
+        other.dndEnabled == dndEnabled &&
+        other.dndStartTime == dndStartTime &&
+        other.dndEndTime == dndEndTime &&
+        other.recalibrationTarget == recalibrationTarget &&
+        other.graphMaxValue == graphMaxValue &&
+        other.uiMode == uiMode &&
+        other.showRebreathePercentage == showRebreathePercentage &&
+        other.graphMinValue == graphMinValue;
   }
 
   @override
@@ -230,11 +317,19 @@ class DeviceSettings {
       autoSyncTime.hashCode ^
       autoCalibration.hashCode ^
       autoConnect.hashCode ^
-      logData.hashCode;
+      logData.hashCode ^
+      dndEnabled.hashCode ^
+      dndStartTime.hashCode ^
+      dndEndTime.hashCode ^
+      recalibrationTarget.hashCode ^
+      graphMaxValue.hashCode ^
+      uiMode.hashCode ^
+      showRebreathePercentage.hashCode ^
+      graphMinValue.hashCode;
 
   @override
   String toString() {
-    return 'DeviceSettings(alarmEnabled: $alarmEnabled, vibrationEnabled: $vibrationEnabled, powerMode: $powerMode, continuosScreenEnabled: $continuosScreenEnabled, thresholds: $thresholds, deviceId: $deviceId, co2MedAlertEnabled: $co2MedAlertEnabled, co2HighAlertEnabled: $co2HighAlertEnabled, autoSyncTime: $autoSyncTime, autoCalibration: $autoCalibration, autoConnect: $autoConnect, logData: $logData)';
+    return 'DeviceSettings(alarmEnabled: $alarmEnabled, vibrationEnabled: $vibrationEnabled, powerMode: $powerMode, continuosScreenEnabled: $continuosScreenEnabled, thresholds: $thresholds, deviceId: $deviceId, co2MedAlertEnabled: $co2MedAlertEnabled, co2HighAlertEnabled: $co2HighAlertEnabled, autoSyncTime: $autoSyncTime, autoCalibration: $autoCalibration, autoConnect: $autoConnect, logData: $logData, dndEnabled: $dndEnabled, dndStartTime: $dndStartTime, dndEndTime: $dndEndTime, recalibrationTarget: $recalibrationTarget, graphMaxValue: $graphMaxValue, uiMode: $uiMode, showRebreathePercentage: $showRebreathePercentage, graphMinValue: $graphMinValue)';
   }
 }
 
@@ -304,6 +399,19 @@ enum PowerMode {
   low,
   medium,
   high;
+
+  String get name {
+    switch (this) {
+      case PowerMode.onDemand:
+        return 'Now';
+      case PowerMode.low:
+        return '3 Min';
+      case PowerMode.medium:
+        return '1 Min';
+      case PowerMode.high:
+        return '5 Sec';
+    }
+  }
 
   Uint8List get _deviceCmd {
     switch (this) {

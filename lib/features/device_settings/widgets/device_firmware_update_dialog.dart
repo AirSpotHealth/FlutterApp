@@ -1,6 +1,7 @@
 import 'package:airspothealth/core/theme/app_colors.dart';
 import 'package:airspothealth/core/utils/extensions.dart';
 import 'package:airspothealth/core/widgets/app_logo.dart';
+import 'package:airspothealth/core/widgets/warning_text.dart';
 import 'package:airspothealth/features/device_settings/models/progress_model.dart';
 import 'package:airspothealth/features/device_settings/models/remote_version.dart';
 import 'package:airspothealth/features/device_settings/providers/dfu_update_provider.dart';
@@ -12,18 +13,22 @@ class DeviceFirmwareUpdateDialog extends ConsumerStatefulWidget {
   const DeviceFirmwareUpdateDialog({
     required this.deviceId,
     required this.remoteVersion,
+    required this.currentVersion,
     super.key,
   }) : localFilePath = null;
 
   const DeviceFirmwareUpdateDialog.local({
     required this.deviceId,
     required this.localFilePath,
+    required this.currentVersion,
     super.key,
   }) : remoteVersion = null;
 
   final String deviceId;
 
   final RemoteVersion? remoteVersion;
+
+  final String? currentVersion;
 
   final String? localFilePath;
 
@@ -123,6 +128,10 @@ class _DeviceFirmwareUpdateDialogState
             const SizedBox(height: 16),
             DownloadDeviceDataButton(deviceId: deviceId)
           ],
+          if (widget.currentVersion == null) ...[
+            const SizedBox(height: 12),
+            WarningText(text: 'Failed to read installed firmware version.'),
+          ],
           const SizedBox(height: 16),
           if (updateState is AsyncInProgress) ...[
             LinearProgressIndicator(
@@ -142,7 +151,7 @@ class _DeviceFirmwareUpdateDialogState
                   .updateFirmware(
                       url: remoteVersion!.downloadUrl, deviceId: deviceId),
               child: Text(
-                'Update Now',
+                widget.currentVersion == null ? 'Update Anyway!' : 'Update Now',
                 style: TextStyle(
                   color: Colors.white,
                   fontWeight: FontWeight.bold,

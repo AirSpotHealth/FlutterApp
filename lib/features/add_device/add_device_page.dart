@@ -111,6 +111,7 @@ class _AddDevicePageState extends ConsumerState<AddDevicePage>
           return Future.value();
         },
         child: ListView(
+          physics: AlwaysScrollableScrollPhysics(),
           children: [
             if (isScanning)
               const Padding(
@@ -134,6 +135,8 @@ class _AddDevicePageState extends ConsumerState<AddDevicePage>
                 shrinkWrap: true,
                 padding: const EdgeInsets.all(16),
                 itemCount: devices.length,
+                primary: true,
+                physics: const ClampingScrollPhysics(),
                 separatorBuilder: (context, index) =>
                     const SizedBox(height: 12),
                 itemBuilder: (context, index) =>

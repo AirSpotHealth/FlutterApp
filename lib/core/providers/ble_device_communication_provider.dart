@@ -2,24 +2,18 @@ import 'dart:async';
 
 import 'package:airspothealth/core/models/ble_device.dart';
 import 'package:airspothealth/core/models/device_data.dart';
+import 'package:airspothealth/core/models/device_data_type.dart';
 import 'package:airspothealth/core/models/device_settings.dart';
 import 'package:airspothealth/core/providers/ble_connected_devices_provider.dart';
-import 'package:airspothealth/core/providers/ble_saved_devices_provider.dart';
 import 'package:airspothealth/core/providers/device_settings_provider.dart';
-import 'package:airspothealth/core/providers/isar_service_provider.dart';
+import 'package:airspothealth/core/services/ble_data_service.dart';
 import 'package:airspothealth/core/services/data_logger_service.dart';
 import 'package:airspothealth/core/services/isar_service.dart';
-import 'package:airspothealth/core/utils/ble_data_utils.dart';
 import 'package:airspothealth/core/utils/constants.dart';
 import 'package:airspothealth/core/utils/device_cmd_utils.dart';
 import 'package:airspothealth/core/utils/extensions.dart';
 import 'package:airspothealth/features/app_setup/providers/dev_mode_provider.dart';
 import 'package:airspothealth/features/device_graph/providers/ble_device_provider.dart';
-import 'package:airspothealth/features/device_graph/providers/device_history_data_request_provider.dart';
-import 'package:airspothealth/features/device_settings/providers/ble_device_version_provider.dart';
-import 'package:airspothealth/features/device_settings/providers/device_data_download_provider.dart';
-import 'package:airspothealth/features/device_settings/providers/device_data_erase_provider.dart';
-import 'package:airspothealth/features/device_settings/providers/recalibration_time_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_blue_plus/flutter_blue_plus.dart';
@@ -61,6 +55,7 @@ class _BleDeviceCommunicationNotifier extends FamilyNotifier<dynamic, String> {
       final deviceData = isar.deviceDatas
           .where()
           .deviceIdEqualTo(deviceId)
+          .typeEqualTo(DeviceDataType.co2.index)
           .sortByDateTimeDesc()
           .findFirst();
 
@@ -152,80 +147,25 @@ class _BleDeviceCommunicationNotifier extends FamilyNotifier<dynamic, String> {
   }
 
   void _handleNotificationData(List<int> data) {
-    debugPrint('Data received: $deviceId, ${BleDataUtils.bytesToHexStr(data)}');
+    debugPrint(
+        'Data received: $deviceId, ${BleDataService.bytesToHexStr(data)}');
 
     _checkIfLogData(data, DateTime.now());
 
     final BleDevice device = ref.read(bleDeviceProvider(deviceId));
-    final dynamic value = BleDataUtils.parseResponseCommand(device, data);
-
-    if (value == null) return;
-
-    if (data[2] == ResponseCommand.firmwareVersion.value) {
-      ref.read(bleSavedDevicesProvider.notifier).reloadDevices();
-      ref.invalidate(bleDeviceProvider(deviceId));
-      ref.invalidate(bleDeviceVersionProvider(deviceId));
-      return;
-    }
-
-    if (data[2] == ResponseCommand.initialData.value) {
-      ref.invalidate(deviceSettingsProvider(deviceId));
-      return;
-    }
-
-    if (data[2] == ResponseCommand.recalibrationTime.value) {
-      ref
-          .read(recalibrationTimeProvider(deviceId).notifier)
-          .setRecalibrationTime(value);
-      return;
-    }
-
-    // Recalibration done confirmation
-    // value is 0x02 for start confirmation and 0x03 for end confirmation
-    if (data[2] == ResponseCommand.recalibrationConfirm.value &&
-        value == 0x03) {
-      ref
-          .read(recalibrationTimeProvider(deviceId).notifier)
-          // set recalibration time to -1 to indicate that the recalibration is done
-          .setRecalibrationTime(-1);
-      return;
-    }
-
-    // set alias to device if received
-    if (data[2] == ResponseCommand.getAlias.value) {
-      ref.invalidate(bleSavedDevicesProvider);
-      return;
-    }
-
-    // erase all data from device if received
-    if (data[2] == ResponseCommand.dataEraseDone.value) {
-      ref.read(isarServiceProvider).write((isar) {
-        isar.deviceDatas.where().deviceIdEqualTo(deviceId).deleteAll();
-      });
-      ref.read(deviceDataEraseProvider(deviceId).notifier).setSuccess();
-      return;
-    }
-
-    // co2 history data
-    if (data[2] == ResponseCommand.getCo2History.value) {
-      // if value is true, then data is downloaded from device
-      if (value is bool && value == true) {
-        ref
-            .read(deviceDataDownloadProvider(deviceId).notifier)
-            .setDataDownloadedFromDevice();
-        return;
-      }
-
-      // else handle new data
-      ref
-          .read(deviceHistoryDataRequestProvider(deviceId).notifier)
-          .handleHistoricalDataResponse(value);
-
-      return;
-    }
+    final dynamic co2Data =
+        BleDataService.parseResponseCommand(ref, device, data);
 
     // _setHomeValue(value);
-    if (value is DeviceData) _saveData(value);
+    if (co2Data is DeviceData) {
+      state = co2Data.value == 0 ? null : co2Data.value;
+
+      if (co2Data.isLiveCo2) {
+        _isarService.write((isar) {
+          isar.deviceDatas.put(co2Data);
+        });
+      }
+    }
 
     // void _checkAndShowNotification(DeviceSettings? deviceSettings, value) {
     //   if (deviceSettings == null) return;
@@ -262,14 +202,6 @@ class _BleDeviceCommunicationNotifier extends FamilyNotifier<dynamic, String> {
     // }
   }
 
-  void _saveData(DeviceData deviceData) {
-    ref.read(isarServiceProvider).write((isar) {
-      isar.deviceDatas.put(deviceData);
-    });
-
-    state = deviceData.value == 0 ? null : deviceData.value;
-  }
-
   Future<void> _getInitialData() async {
     final DeviceSettings? deviceSettings =
         ref.read(deviceSettingsProvider(deviceId));
@@ -280,6 +212,7 @@ class _BleDeviceCommunicationNotifier extends FamilyNotifier<dynamic, String> {
       DeviceCmdUtils.getInitialData(),
       DeviceCmdUtils.getFirmVersion(),
       DeviceCmdUtils.getAlias(),
+      DeviceCmdUtils.getBatteryLevel(),
     ];
 
     for (final command in commands) {
@@ -301,24 +234,32 @@ class _BleDeviceCommunicationNotifier extends FamilyNotifier<dynamic, String> {
     try {
       await _writeCharacteristic!.write(data);
       final DateTime dateTime = DateTime.now();
-      _checkIfLogData(data, dateTime, sent: true);
-      debugPrint('Command sent: ${BleDataUtils.bytesToHexStr(data)}');
+      _checkIfLogData(data, dateTime, sent: true, st: true);
+      debugPrint('Command sent: ${BleDataService.bytesToHexStr(data)}');
       return true;
     } catch (e) {
       debugPrint('Error sending command: $e');
+      DataLoggerService().logData(
+        deviceId: device?.advName ?? deviceId,
+        value: BleDataService.bytesToHexStr(data),
+        dateTime: DateTime.now(),
+        sent: true,
+      );
       return false;
     }
   }
 
-  void _checkIfLogData(dynamic value, DateTime dateTime, {bool sent = false}) {
+  void _checkIfLogData(dynamic value, DateTime dateTime,
+      {bool sent = false, bool st = false}) {
     final bool? devMode = ref.read(devModeProvider);
 
     if (devMode == true) {
       DataLoggerService().logData(
         deviceId: deviceId,
-        value: BleDataUtils.bytesToHexStr(value),
+        value: BleDataService.bytesToHexStr(value),
         dateTime: dateTime,
         sent: sent,
+        st: st,
       );
     }
   }

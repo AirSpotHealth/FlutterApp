@@ -4,6 +4,7 @@ import 'package:airspothealth/core/providers/device_settings_provider.dart';
 import 'package:airspothealth/core/theme/app_colors.dart';
 import 'package:airspothealth/core/utils/constants.dart';
 import 'package:airspothealth/core/utils/extensions.dart';
+import 'package:airspothealth/features/devices/providers/device_battery_level_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -18,8 +19,14 @@ class DeviceCurrentValueWidget extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final deviceValue = ref.watch(bleDeviceCommunicationProvider(deviceId));
+    final powerState = ref.watch(deviceBatteryLevelProvider(deviceId));
     final DeviceSettings deviceSettings =
         ref.watch(deviceSettingsProvider(deviceId));
+    final value = !powerState.isCharging && powerState.level == 0
+        ? '----'
+        : deviceValue != null
+            ? "$deviceValue"
+            : '0000';
 
     return Card(
       margin: const EdgeInsets.symmetric(horizontal: 16),
@@ -34,7 +41,7 @@ class DeviceCurrentValueWidget extends ConsumerWidget {
             const Spacer(),
             RichText(
               text: TextSpan(
-                text: deviceValue != null ? "$deviceValue" : '0000',
+                text: value,
                 style: context.textTheme.titleLarge?.copyWith(
                   color: deviceSettings.getValueColor(deviceValue),
                   fontWeight: FontWeight.bold,

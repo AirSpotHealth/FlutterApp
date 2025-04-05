@@ -30,6 +30,7 @@ class Assets {
   static const String recalibrateSettings =
       'assets/images/recalibrate_icon.png';
   static const String autoConnectSettings = 'assets/images/bluetooth_icon.png';
+  static const String doNotDisturbSettings = 'assets/images/icon_dnd.png';
 
   static const String powerMode5sec = 'assets/images/5secblue.png';
   static const String powerMode3min = 'assets/images/3minblue.png';
@@ -37,7 +38,7 @@ class Assets {
   static const String powerModeOnDemand =
       'assets/images/power_mode_ondemand.png';
 
-  static const String recalibrateImage = 'assets/images/recalibrate_image.png';
+  static const String recalibrateImage = 'assets/images/recalibrate_icon.png';
 
   static const String airFiltersIcon = 'assets/images/air_filters_icon.png';
   static const String co2MonitorIcon = 'assets/images/co2_monitors_icon.png';
@@ -53,4 +54,18 @@ class Assets {
   static const String uvLightIcon = 'assets/images/uv_light_icon.png';
 
   static const String airSpotBg = 'assets/images/airspot_bg.png';
+
+  static const String csvIcon = 'assets/images/icon_csv.png';
+  static const String eraseIcon = 'assets/images/icon_erase.png';
+  static const String forgetIcon = 'assets/images/icon_forget.png';
+  static const String disconnectIcon = 'assets/images/icon_disconnect.png';
+
+  static const String powerOff = 'assets/images/power_off.png';
+
+  static const String barGraph = 'assets/images/bar_graph.png';
+  static const String colorBlocks = 'assets/images/color_blocks.png';
+  static const String plain = 'assets/images/plain.png';
+
+  static const String screenSettings =
+      'assets/images/device_screen_settings.png';
 }

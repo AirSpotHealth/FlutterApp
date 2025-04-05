@@ -53,6 +53,8 @@ class _BleDeviceConnectionNotifier
 
     state = BluetoothBondState.bonding;
 
+    debugPrint('Connecting to device: ${device.advName}, State: $state');
+
     deviceSubscription = device.connectionState.listen((bState) {
       debugPrint('Device connection state: $bState');
 
@@ -65,7 +67,14 @@ class _BleDeviceConnectionNotifier
 
         ref.read(bleDeviceCommunicationProvider(arg).notifier).setConnected();
       } else if (bState == BluetoothConnectionState.disconnected) {
-        if (state == BluetoothBondState.none) return;
+        if (state == BluetoothBondState.none) {
+          return;
+        }
+
+        if (state == BluetoothBondState.bonding) {
+          state = BluetoothBondState.none;
+          return;
+        }
 
         _checkRouteAndPop();
         // _checkIfHisoricalDataWasRequestedAndInProgess();
@@ -116,14 +125,19 @@ class _BleDeviceConnectionNotifier
 
     final router = GoRouter.of(context);
 
-    final path =
-        router.routerDelegate.currentConfiguration.last.matchedLocation;
+    final path = router.routerDelegate.currentConfiguration.last.matchedLocation
+        .replaceAll(
+      RegExp(r'%3A'),
+      ':',
+    );
+
+    debugPrint('Current path: ${path.replaceAll("%3A", ":")}');
 
     // if the path pattern matches this /devices/FF%3A51%3A34%3A9D%3A86%3A32/settings
     // then pop the route
     // and show a snackbar that the device is disconnected
     if (path.contains(device.remoteId.str) &&
-        RegExp(r'^\/devices\/[A-Za-z0-9%-]+(?:\/[A-Za-z0-9%_-]+)*$')
+        RegExp(r'^\/devices\/[A-Za-z0-9:%_-]+(?:\/[A-Za-z0-9:%_-]+)*$')
             .hasMatch(path)) {
       context.showSnackBar('Device disconnected.');
 

@@ -1,5 +1,3 @@
-import 'dart:io';
-
 import 'package:airspothealth/core/providers/services_status_provider.dart';
 import 'package:airspothealth/core/utils/extensions.dart';
 import 'package:flutter/material.dart';
@@ -13,21 +11,13 @@ class ServicesBanner extends ConsumerWidget {
     final servicesStatus = ref.watch(servicesStatusProvider);
 
     final bluetoothEnabled = servicesStatus[Service.bluetoothService];
-    final locationEnabled = servicesStatus[Service.locationService];
+    // servicesStatus[Service.locationService];
 
-    if (bluetoothEnabled! && locationEnabled!) {
+    if (bluetoothEnabled == true) {
       return const SizedBox.shrink();
     }
 
-    final String message = bluetoothEnabled == false && locationEnabled == false
-        ? 'Bluetooth and Location Services are Disabled'
-        : bluetoothEnabled == false
-            ? 'Bluetooth is Disabled'
-            : 'Location Services are Disabled';
-
-    final String locationEnableInfo = Platform.isIOS
-        ? 'Settings > Privacy & Security > Location Services > Turn On Location'
-        : 'Settings > Location > Turn On Location';
+    final String message = 'Bluetooth is Disabled';
 
     final String bluetoothEnableInfo =
         'Settings > Bluetooth > Turn On Bluetooth';
@@ -61,48 +51,27 @@ class ServicesBanner extends ConsumerWidget {
             ),
             const SizedBox(height: 12),
             Text(
-              'Please enable the following services to continue:',
+              'Please enable the bluetooth service to continue:',
               style: context.textTheme.bodySmall?.copyWith(
                 color: Colors.white,
               ),
             ),
             const SizedBox(height: 8),
-            if (bluetoothEnabled == false)
-              Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Icon(Icons.bluetooth, color: Colors.white, size: 20),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: Text(
-                      bluetoothEnableInfo,
-                      style: context.textTheme.bodySmall?.copyWith(
-                        color: Colors.white,
-                      ),
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Icon(Icons.bluetooth, color: Colors.white, size: 20),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    bluetoothEnableInfo,
+                    style: context.textTheme.bodySmall?.copyWith(
+                      color: Colors.white,
                     ),
                   ),
-                ],
-              ),
-            if (locationEnabled == false)
-              Padding(
-                padding: const EdgeInsets.only(top: 8.0),
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Icon(Icons.location_on,
-                        color: Colors.white, size: 20),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: Text(
-                        locationEnableInfo,
-                        style: context.textTheme.bodySmall?.copyWith(
-                          color: Colors.white,
-                        ),
-                      ),
-                    ),
-                  ],
                 ),
-              ),
+              ],
+            ),
           ],
         ),
       ),

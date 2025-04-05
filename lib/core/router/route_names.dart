@@ -49,8 +49,8 @@ class RouteNames {
   /// ppm settings route
   static const String ppmSettings = '/ppm-settings';
 
-  /// co2 settings route
-  static const String co2Settings = '/co2-settings';
+  /// screen settings route
+  static const String screenSettings = '/screen-settings';
 
   /// recalibrate settings route
   static const String recalibrateSettings = '/recalibrate-settings';
@@ -60,4 +60,7 @@ class RouteNames {
 
   /// data log route
   static const String dataLog = '/data-log';
+
+  /// do not disturb settings route
+  static const String doNotDisturbSettings = '/do-not-disturb-settings';
 }

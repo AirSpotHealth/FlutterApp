@@ -1,3 +1,4 @@
+import 'package:airspothealth/main.dart';
 import 'package:intl/intl.dart';
 
 class Constants {
@@ -118,4 +119,46 @@ class Constants {
   static const int emptyFlashDate = 0xFFFFFFFF;
 
   static final DateFormat csvDateFormat = DateFormat('yyyy-MM-dd HH:mm:ss');
+
+  static String echartTimeFormat() {
+    // Get system date and time format
+    String sDFormat = systemDateFormat.pattern ?? "d/M/y";
+    String sTFormat = systemTimeFormat.pattern ?? "h:mm a"; // Fallback if null
+
+    // Mapping Date Format
+    String formattedDate = sDFormat
+        .replaceAll('y', '{yyyy}')
+        .replaceAll('M', '{MM}')
+        .replaceAll('d', '{dd}');
+
+    // Mapping Time Format
+    String formattedTime = sTFormat
+        .replaceAllMapped(
+            RegExp(r'(?<!H)h+'), (match) => '{hh}') // 12-hour format
+        .replaceAll('HH', '{HH}') // 24-hour format
+        .replaceAll('mm', '{mm}')
+        .replaceAll('ss', '{ss}')
+        .replaceAll('SSS', '{SSS}')
+        .replaceAllMapped(RegExp(r'a'), (match) => '{A}'); // AM/PM
+
+    // Construct the formatter map
+    return '''
+{
+      'year': '{yyyy}',
+      'month': '{MM}',
+      'day': '{dd}',
+      'hour': formattedTime.contains('{A}')
+          ? '{hh} {A}'
+          : '{HH}', // 12-hour vs. 24-hour
+      'minute': formattedTime.contains('{A}') ? '{hh}:{mm} {A}' : '{HH}:{mm}',
+      'second': formattedTime.contains('{A}')
+          ? '{hh}:{mm}:{ss} {A}'
+          : '{HH}:{mm}:{ss}',
+      'millisecond': formattedTime.contains('{A}')
+          ? '{hh}:{mm}:{ss} {SSS} {A}'
+          : '{HH}:{mm}:{ss} {SSS}',
+      'none': '$formattedDate $formattedTime'
+    }
+  ''';
+  }
 }

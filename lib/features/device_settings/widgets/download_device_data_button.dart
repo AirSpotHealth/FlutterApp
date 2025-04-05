@@ -31,7 +31,7 @@ class DownloadDeviceDataButton extends ConsumerWidget {
           : () {
               ref
                   .read(deviceDataDownloadProvider(deviceId).notifier)
-                  .downloadDeviceData();
+                  .downloadDeviceData(last7Days: true);
             },
       prefixIcon: FaIcon(FontAwesomeIcons.fileExport,
           size: 18,

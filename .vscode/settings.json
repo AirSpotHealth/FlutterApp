@@ -3,5 +3,7 @@
   "editor.codeActionsOnSave": {
     "source.fixAll": "explicit",
     "source.organizeImports": "explicit"
-  }
+  },
+    "dart.flutterSdkPath": "/Users/nirajbhatt/.puro/envs/stable/flutter",
+    "dart.sdkPath": "/Users/nirajbhatt/.puro/envs/stable/flutter/bin/cache/dart-sdk"
 }

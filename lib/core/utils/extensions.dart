@@ -1,7 +1,9 @@
 // Extension file for managing the extensions of the app
 
+import 'package:airspothealth/main.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:intl/intl.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 /// extension on [BuildContext]
@@ -23,6 +25,8 @@ extension ContextExtension on BuildContext {
 
   /// show snack bar
   void showSnackBar(String message) {
+    // remove all existing snack bars
+    ScaffoldMessenger.of(this).clearSnackBars();
     ScaffoldMessenger.of(this).showSnackBar(SnackBar(
       content: Text(message),
     ));
@@ -104,9 +108,12 @@ extension StringExtension on String {
 extension DateTimeExtension on DateTime {
   /// Format time in 10/20 01:20 format
   String formatTime() {
-    final formattedHour = hour.toString().padLeft(2, '0');
-    final formattedMinute = minute.toString().padLeft(2, '0');
-    return '$day/$month $formattedHour:$formattedMinute';
+    final pattern =
+        systemDateFormat.pattern!.replaceAll(RegExp(r'^/?y+|/y+$'), '');
+
+    debugPrint("SYSTEM DATE FORMAT: ${systemDateFormat.pattern}");
+    debugPrint("SYSTEM TIME FORMAT: ${systemTimeFormat.pattern}");
+    return '${DateFormat(pattern).format(this)} ${systemTimeFormat.format(this)}';
   }
 
   /// format date in local format without milliseconds
@@ -119,6 +126,9 @@ extension DateTimeExtension on DateTime {
 
   /// end of the day
   DateTime get endOfDay => DateTime(year, month, day, 23, 59, 59, 999, 999);
+
+  /// time of day
+  TimeOfDay get timeOfDay => TimeOfDay(hour: hour, minute: minute);
 
   // is before or equal
   bool isBeforeOrEqual(DateTime other) {
@@ -134,6 +144,11 @@ extension DateTimeExtension on DateTime {
   bool get isToday {
     final now = DateTime.now();
     return year == now.year && month == now.month && day == now.day;
+  }
+
+  /// is same day
+  bool isSameDay(DateTime other) {
+    return year == other.year && month == other.month && day == other.day;
   }
 }
 
@@ -183,4 +198,12 @@ extension GoRouterExtension on GoRouter {
 extension ColorX on Color {
   String toHexTriplet() =>
       '#${(value & 0xFFFFFF).toRadixString(16).padLeft(6, '0').toUpperCase()}';
+}
+
+extension DateTimeFormat on DateTime {
+  String format12Hour() {
+    final hour12 = hour % 12 == 0 ? 12 : hour % 12;
+    final amPm = hour < 12 ? 'AM' : 'PM';
+    return '${hour12.toString().padLeft(2, '0')}:${minute.toString().padLeft(2, '0')} $amPm';
+  }
 }

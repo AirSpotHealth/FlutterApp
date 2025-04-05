@@ -1,4 +1,7 @@
 import 'package:airspothealth/core/theme/app_colors.dart';
+import 'package:airspothealth/core/widgets/button.dart';
+import 'package:flutter/cupertino.dart'
+    show CupertinoTimerPicker, CupertinoTimerPickerMode;
 import 'package:flutter/material.dart';
 
 class AppUtils {
@@ -20,8 +23,12 @@ class AppUtils {
   }
 
   /// check the version is greater than the current version
-  static bool isVersionGreater(String currentVersion, String newVersion) {
+  static bool isVersionGreater(String? currentVersion, String newVersion) {
     if (newVersion.contains('beta')) {
+      return true;
+    }
+
+    if (currentVersion == null) {
       return true;
     }
 
@@ -40,7 +47,11 @@ class AppUtils {
     return false;
   }
 
-  static bool isNewFirmwareVersion(String firmwareVersion) {
+  static bool isNewFirmwareVersion(String? firmwareVersion) {
+    if (firmwareVersion == null) {
+      return false;
+    }
+
     // it version is less than 3.0.0 then return false
     final List<String> versionList = firmwareVersion.split('.');
     if (versionList.length < 3) {
@@ -57,4 +68,54 @@ class AppUtils {
 
     return true;
   }
+}
+
+// Show cupertino time picker
+Future<TimeOfDay?> showCupertinoTimePicker(
+  BuildContext context, {
+  TimeOfDay? initialTime,
+}) async {
+  TimeOfDay? selectedTime;
+
+  return await showAdaptiveDialog<TimeOfDay?>(
+    context: context,
+    builder: (context) {
+      return AlertDialog.adaptive(
+        content: SizedBox(
+          height: 200,
+          child: CupertinoTimerPicker(
+            onTimerDurationChanged: (value) {
+              selectedTime = TimeOfDay(
+                  hour: value.inHours, minute: value.inMinutes.remainder(60));
+            },
+            mode: CupertinoTimerPickerMode.hm,
+            initialTimerDuration: Duration(
+              hours: initialTime?.hour ?? 0,
+              minutes: initialTime?.minute ?? 0,
+            ),
+          ),
+        ),
+        actionsPadding: const EdgeInsets.all(16),
+        actionsAlignment: MainAxisAlignment.spaceAround,
+        actions: [
+          Button(
+            type: ButtonType.text,
+            textColor: Colors.grey,
+            onPressed: () {
+              Navigator.of(context).pop();
+            },
+            child: const Text('Cancel'),
+          ),
+          Button(
+            type: ButtonType.text,
+            textColor: Colors.black,
+            onPressed: () {
+              Navigator.of(context).pop(selectedTime);
+            },
+            child: const Text('Ok'),
+          ),
+        ],
+      );
+    },
+  );
 }

@@ -1,8 +1,11 @@
 import 'package:airspothealth/core/providers/ble_device_communication_provider.dart';
 import 'package:airspothealth/core/providers/device_settings_provider.dart';
+import 'package:airspothealth/core/theme/app_colors.dart';
 import 'package:airspothealth/core/utils/device_cmd_utils.dart';
+import 'package:airspothealth/core/utils/extensions.dart';
 import 'package:airspothealth/features/device_settings/widgets/device_settings_name_widget.dart';
-import 'package:flutter/cupertino.dart';
+import 'package:airspothealth/main.dart';
+import 'package:bottom_picker/bottom_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -12,18 +15,31 @@ class TimeSettingsPage extends ConsumerStatefulWidget {
   final String deviceId;
 
   @override
-  ConsumerState<ConsumerStatefulWidget> createState() =>
-      _TimeSettingsPageState();
+  ConsumerState<TimeSettingsPage> createState() => _TimeSettingsPageState();
 }
 
 class _TimeSettingsPageState extends ConsumerState<TimeSettingsPage> {
-  int _selectedHour = DateTime.now().hour;
+  static const _styles = {
+    'title': TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
+    'subtitle': TextStyle(fontSize: 14, color: Colors.grey),
+  };
 
-  int _selectedMinute = DateTime.now().minute;
+  static const _padding = EdgeInsets.all(16.0);
+  static const _horizontalPadding = EdgeInsets.zero;
+
+  late int _selectedHour;
+  late int _selectedMinute;
 
   @override
   void initState() {
     super.initState();
+    _initializeTime();
+  }
+
+  void _initializeTime() {
+    final now = DateTime.now();
+    _selectedHour = now.hour;
+    _selectedMinute = now.minute;
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (ref.read(deviceSettingsProvider(widget.deviceId)).autoSyncTime) {
@@ -38,69 +54,107 @@ class _TimeSettingsPageState extends ConsumerState<TimeSettingsPage> {
         .sendCommand(DeviceCmdUtils.setTime());
   }
 
+  void _updateAutoSync(bool value) {
+    ref.read(deviceSettingsProvider(widget.deviceId).notifier).updateSettings(
+          ref.watch(deviceSettingsProvider(widget.deviceId)).copyWith(
+                autoSyncTime: value,
+              ),
+        );
+
+    if (!value) {
+      _selectedHour = DateTime.now().hour;
+      _selectedMinute = DateTime.now().minute;
+    }
+  }
+
+  void _updateManualTime() {
+    ref
+        .read(bleDeviceCommunicationProvider(widget.deviceId).notifier)
+        .sendCommand(DeviceCmdUtils.setTime(
+          hour: _selectedHour,
+          min: _selectedMinute,
+        ));
+  }
+
   @override
   Widget build(BuildContext context) {
-    final bool autoSyncTime =
+    final autoSyncTime =
         ref.watch(deviceSettingsProvider(widget.deviceId)).autoSyncTime;
+    final bool is12Hour = systemTimeFormat.pattern!.contains('a');
 
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: AppBar(
         title: DeviceSettingsNameWidget(
-            deviceId: widget.deviceId, suffixText: 'Time Settings'),
+          deviceId: widget.deviceId,
+          suffixText: 'Time Settings',
+        ),
       ),
       body: ListView(
-        padding: const EdgeInsets.all(16),
+        padding: _padding,
         children: [
-          SwitchListTile(
-            contentPadding: EdgeInsets.zero,
-            title: const Text('Sync with mobile device'),
-            value: autoSyncTime,
-            onChanged: (value) {
-              ref
-                  .read(deviceSettingsProvider(widget.deviceId).notifier)
-                  .updateSettings(
-                    ref
-                        .watch(deviceSettingsProvider(widget.deviceId))
-                        .copyWith(autoSyncTime: !autoSyncTime),
-                  );
-            },
-          ),
+          _buildAutoSyncTile(autoSyncTime),
           if (!autoSyncTime) ...[
             const Divider(),
-            Row(
-              children: [
-                const Text('Set Manually'),
-                const SizedBox(width: 16),
-                Expanded(
-                  child: CupertinoTimerPicker(
-                    onTimerDurationChanged: (value) {
-                      _selectedHour = value.inHours;
-                      _selectedMinute = value.inMinutes.remainder(60);
-                    },
-                    mode: CupertinoTimerPickerMode.hm,
-                    initialTimerDuration: Duration(
-                      hours: _selectedHour,
-                      minutes: _selectedMinute,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 16),
-            ElevatedButton(
-              onPressed: () {
-                ref
-                    .read(bleDeviceCommunicationProvider(widget.deviceId)
-                        .notifier)
-                    .sendCommand(DeviceCmdUtils.setTime(
-                        hour: _selectedHour, min: _selectedMinute));
-              },
-              child: const Text('Confirm'),
-            ),
+            _buildManualTimePicker(is12Hour),
           ]
         ],
       ),
     );
+  }
+
+  Widget _buildAutoSyncTile(bool autoSyncTime) {
+    return SwitchListTile(
+      contentPadding: _horizontalPadding,
+      title: Text('Sync with mobile device', style: _styles['title']),
+      value: autoSyncTime,
+      onChanged: _updateAutoSync,
+    );
+  }
+
+  Widget _buildManualTimePicker(bool is12Hour) {
+    return ListTile(
+      contentPadding: _horizontalPadding,
+      title: Text('Manual Time', style: _styles['title']),
+      leading: const Icon(Icons.access_time),
+      subtitle: Text(
+        is12Hour
+            ? DateTime.now()
+                .copyWith(
+                  hour: _selectedHour,
+                  minute: _selectedMinute,
+                )
+                .format12Hour()
+            : '${_selectedHour.toString().padLeft(2, '0')}:${_selectedMinute.toString().padLeft(2, '0')}',
+        style: _styles['subtitle'],
+      ),
+      onTap: () => _showTimePicker(context, is12Hour),
+    );
+  }
+
+  void _showTimePicker(BuildContext context, bool is12Hour) {
+    BottomPicker.time(
+      pickerTitle: Text('Select time', style: _styles['title']),
+      initialTime: Time(
+        hours: _selectedHour,
+        minutes: _selectedMinute,
+      ),
+      dismissable: true,
+      buttonWidth: MediaQuery.of(context).size.width * 0.8,
+      buttonStyle: BoxDecoration(
+        color: AppColors.brandColorGreen,
+        borderRadius: BorderRadius.circular(10),
+      ),
+      use24hFormat: !is12Hour,
+      onSubmit: (time) {
+        debugPrint('time: ${time.runtimeType}');
+        setState(() {
+          _selectedHour = time.hour;
+          _selectedMinute = time.minute;
+        });
+
+        _updateManualTime();
+      },
+    ).show(context);
   }
 }

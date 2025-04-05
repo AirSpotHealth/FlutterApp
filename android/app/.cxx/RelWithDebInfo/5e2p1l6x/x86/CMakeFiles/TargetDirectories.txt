@@ -1,0 +1,2 @@
+/Users/nirajbhatt/flutter/projects/airspothealth/android/app/.cxx/RelWithDebInfo/5e2p1l6x/x86/CMakeFiles/edit_cache.dir
+/Users/nirajbhatt/flutter/projects/airspothealth/android/app/.cxx/RelWithDebInfo/5e2p1l6x/x86/CMakeFiles/rebuild_cache.dir

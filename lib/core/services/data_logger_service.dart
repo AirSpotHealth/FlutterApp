@@ -11,6 +11,7 @@ class DataLoggerService {
     required dynamic value,
     required DateTime dateTime,
     required bool sent,
+    bool st = false,
   }) async {
     try {
       // Get the local directory for storing files
@@ -18,9 +19,9 @@ class DataLoggerService {
       final filePath = '${directory.path}/data_log_$deviceId.txt';
       final file = File(filePath);
 
-      // Prepare the data entry
+      // Prepare the data entry with an additional boolean flag 'st'
       String entry =
-          '${dateTime.toIso8601String()},$value,${sent ? 'sent' : 'received'}\n';
+          '${dateTime.toIso8601String()},$value,${sent ? 'sent' : 'received'}${sent ? (st ? 'Success' : 'Failed') : ""}\n';
 
       // Append the data entry to the file
       await file.writeAsString(entry, mode: FileMode.append, flush: true);

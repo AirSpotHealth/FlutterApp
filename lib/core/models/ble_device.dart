@@ -37,8 +37,8 @@ class BleDevice {
 
   final String firmwareVersion;
 
-  DateTime? lastFetchedStartDate; // New field
-  DateTime? lastFetchedEndDate; // New field
+  final DateTime? lastFetchedStartDate;
+  final DateTime? lastFetchedEndDate;
 
   BleDevice copyWith({
     String? deviceId,

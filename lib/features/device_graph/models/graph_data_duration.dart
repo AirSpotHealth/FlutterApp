@@ -1,102 +1,69 @@
+import 'package:airspothealth/core/utils/extensions.dart';
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 
-enum GraphDataDuration {
-  today,
-  yesterday,
-  last7Days;
+class GraphDataDuration {
+  final DateTimeRange dateTimeRange;
+  final String name;
 
-  // get the name of the duration
-  String get name {
-    switch (this) {
-      case GraphDataDuration.today:
+  const GraphDataDuration._(this.dateTimeRange, this.name);
+
+  factory GraphDataDuration.custom(DateTimeRange range) {
+    return GraphDataDuration._(range, 'custom');
+  }
+
+  static GraphDataDuration get today {
+    final now = DateTime.now();
+    final start = DateTime(now.year, now.month, now.day);
+    return GraphDataDuration._(DateTimeRange(start: start, end: now), 'today');
+  }
+
+  static GraphDataDuration get yesterday {
+    final yesterday = DateTime.now().subtract(Duration(days: 1));
+    final start = DateTime(yesterday.year, yesterday.month, yesterday.day);
+    final end =
+        DateTime(yesterday.year, yesterday.month, yesterday.day, 23, 59, 59);
+    return GraphDataDuration._(
+        DateTimeRange(start: start, end: end), 'yesterday');
+  }
+
+  // copy with new date time range
+  GraphDataDuration copyWith({DateTimeRange? dateTimeRange, String? name}) {
+    return GraphDataDuration._(
+        dateTimeRange ?? this.dateTimeRange, name ?? this.name);
+  }
+
+  @override
+  String toString() {
+    return 'GraphDataDuration(dateTimeRange: $dateTimeRange, name: $name)';
+  }
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is GraphDataDuration &&
+          runtimeType == other.runtimeType &&
+          dateTimeRange == other.dateTimeRange;
+
+  @override
+  int get hashCode => dateTimeRange.hashCode;
+
+  String get durationString {
+    switch (name) {
+      case 'today':
         return 'Today';
-      case GraphDataDuration.yesterday:
+      case 'yesterday':
         return 'Yesterday';
-      case GraphDataDuration.last7Days:
-        return '7 Days';
+      case 'custom':
+        {
+          if (dateTimeRange.start.isSameDay(dateTimeRange.end)) {
+            return DateFormat.yMMMd().format(dateTimeRange.start);
+          }
+
+          return '${DateFormat.yMMMd().format(dateTimeRange.start)} - ${DateFormat.yMMMd().format(dateTimeRange.end)}';
+        }
+      default:
+        return name;
     }
-  }
-
-  // get the length of the duration
-  int get length {
-    switch (this) {
-      case GraphDataDuration.today:
-        return 0;
-      case GraphDataDuration.yesterday:
-        return 1;
-      case GraphDataDuration.last7Days:
-        return 7;
-    }
-  }
-
-  factory GraphDataDuration.fromIndex(int index) => values[index];
-
-  // get start and end date time for the selected range
-  // the range should start from 00:00:00 to 23:59:59
-  DateTimeRange getDateTimeRange({bool isTonightEnd = true}) {
-    final DateTime now = DateTime.now();
-
-    DateTime end = isTonightEnd
-        ? DateTime(
-            now.year,
-            now.month,
-            now.day,
-            23,
-            59,
-            59,
-          )
-        : now;
-
-    DateTime(
-      now.year,
-      now.month,
-      now.day,
-      23,
-      59,
-      59,
-    );
-    DateTime start;
-    switch (this) {
-      case GraphDataDuration.today:
-        start = DateTime(
-          now.year,
-          now.month,
-          now.day,
-          0,
-          0,
-          0,
-        );
-        break;
-      case GraphDataDuration.yesterday:
-        start = DateTime(
-          now.year,
-          now.month,
-          now.day - 1,
-          0,
-          0,
-          0,
-        );
-        end = DateTime(
-          now.year,
-          now.month,
-          now.day - 1,
-          23,
-          59,
-          59,
-        );
-        break;
-      case GraphDataDuration.last7Days:
-        start = DateTime(
-          now.year,
-          now.month,
-          now.day - 6,
-          0,
-          0,
-          0,
-        );
-        break;
-    }
-
-    return DateTimeRange(start: start, end: end);
   }
 }

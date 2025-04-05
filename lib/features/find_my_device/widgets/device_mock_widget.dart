@@ -10,9 +10,11 @@ import 'package:airspothealth/core/utils/device_cmd_utils.dart';
 import 'package:airspothealth/core/utils/extensions.dart';
 import 'package:airspothealth/core/widgets/tappable_widget.dart';
 import 'package:airspothealth/features/add_device/providers/ble_device_connection_provider.dart';
+import 'package:airspothealth/features/devices/providers/device_battery_level_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_blue_plus/flutter_blue_plus.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 
 class DeviceMockWidget extends ConsumerWidget {
   const DeviceMockWidget({required this.device, super.key});
@@ -30,6 +32,9 @@ class DeviceMockWidget extends ConsumerWidget {
     final bool isConnected =
         ref.watch(bleDeviceConnectionProvider(device.deviceId)) ==
             BluetoothBondState.bonded;
+
+    final BatteryState batteryState =
+        ref.watch(deviceBatteryLevelProvider(device.deviceId));
 
     return TappableWidget(
       debounceTime: 5000,
@@ -63,10 +68,10 @@ class DeviceMockWidget extends ConsumerWidget {
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                _buildHeader(deviceSettings),
+                _buildHeader(deviceSettings, batteryState),
                 const SizedBox(height: 6),
                 _buildCo2Value(co2Value),
-                _buildBluetooth(isConnected),
+                _buildPowerModeBluetooth(deviceSettings.powerMode, isConnected),
                 _buildActiveIndicator(co2Value, deviceSettings),
                 _showBrandColors(),
               ],
@@ -81,48 +86,88 @@ class DeviceMockWidget extends ConsumerWidget {
     return Align(
       alignment: Alignment.center,
       child: Text(
-        co2Value?.toString() ?? "0000",
+        co2Value?.toString() ?? "----",
         style: TextStyle(
             color: co2Value == null
                 ? Colors.white
                 : AppUtils.getDataColorFromValue(co2Value),
-            fontSize: 24),
+            fontSize: 32),
         textAlign: TextAlign.center,
       ),
     );
   }
 
-  Row _buildHeader(DeviceSettings deviceSettings) {
+  Row _buildHeader(DeviceSettings deviceSettings, BatteryState batteryState) {
     return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      mainAxisAlignment: MainAxisAlignment.center,
       children: [
+        const SizedBox(width: 8),
         Icon(
           deviceSettings.alarmEnabled ? Icons.volume_up : Icons.volume_off,
           color: Colors.white,
-          size: 16,
+          size: 14,
         ),
+        Icon(
+          deviceSettings.vibrationEnabled ? Icons.power : Icons.power_off,
+          color: Colors.white,
+          size: 14,
+        ),
+        const Spacer(),
         Text(
-          "${DateTime.now().hour} : ${DateTime.now().minute}",
+          "${DateTime.now().hour.toString().padLeft(2)} : ${DateTime.now().minute.toString().padLeft(2, '0')}",
           style: const TextStyle(color: Colors.white, fontSize: 12),
         ),
-        Text(
-          deviceSettings.powerMode.name.capitalize(),
-          style: const TextStyle(color: Colors.white, fontSize: 12),
+        const Spacer(),
+        Stack(
+          children: [
+            const Icon(
+              FontAwesomeIcons.batteryEmpty,
+              color: Colors.white,
+              size: 16,
+            ),
+            !batteryState.isCharging
+                ? const Positioned(
+                    right: 2,
+                    bottom: 4,
+                    left: 2,
+                    child: Icon(
+                      Icons.bolt,
+                      color: Colors.amberAccent,
+                      size: 8,
+                    ),
+                  )
+                : Positioned(
+                    right: 1,
+                    bottom: 4,
+                    child: Text(
+                      '${batteryState.level}%',
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 5,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+          ],
         ),
+        const SizedBox(width: 8),
       ],
     );
   }
 
-  Padding _buildBluetooth(bool isConnected) {
+  Padding _buildPowerModeBluetooth(PowerMode mode, bool isConnected) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 4),
       child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          const Text(Constants.co2Text,
+          Text(mode.name, style: TextStyle(color: Colors.white, fontSize: 10)),
+          const Spacer(),
+          Text(Constants.co2Text,
               style: TextStyle(color: Colors.white, fontSize: 10)),
+          const SizedBox(width: 8),
           const Text('PPM',
               style: TextStyle(color: Colors.white, fontSize: 10)),
+          const Spacer(),
           Icon(
             Icons.bluetooth,
             color: isConnected ? AppColors.primaryColor : Colors.white,
@@ -136,13 +181,13 @@ class DeviceMockWidget extends ConsumerWidget {
   Align _buildActiveIndicator(co2Value, DeviceSettings deviceSettings) {
     return Align(
       alignment: (co2Value ?? 0) < deviceSettings.greenUpperLimit
-          ? Alignment.centerLeft
+          ? Alignment.topLeft
           : (co2Value ?? 0) < deviceSettings.yellowUpperLimit
-              ? Alignment.center
-              : Alignment.centerRight,
+              ? Alignment.topCenter
+              : Alignment.topRight,
       child: const Icon(
         Icons.arrow_drop_down_sharp,
-        size: 24,
+        size: 20,
         color: Colors.white,
       ),
     );

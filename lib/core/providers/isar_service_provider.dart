@@ -3,6 +3,5 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 final isarServiceProvider = Provider<IsarService>((ref) {
   final isarService = IsarService();
-  ref.onDispose(() => isarService.close());
   return isarService;
 });

@@ -6,9 +6,10 @@ import 'package:airspothealth/features/app_setup/latest_news_page.dart';
 import 'package:airspothealth/features/app_setup/privacy_policy_page.dart';
 import 'package:airspothealth/features/device_graph/device_graph_page.dart';
 import 'package:airspothealth/features/device_settings/device_settings_page.dart';
-import 'package:airspothealth/features/device_settings/pages/co2_alert_settings_page.dart';
 import 'package:airspothealth/features/device_settings/pages/device_log_page.dart';
+import 'package:airspothealth/features/device_settings/pages/device_screen_settings_page.dart';
 import 'package:airspothealth/features/device_settings/pages/device_update_page.dart';
+import 'package:airspothealth/features/device_settings/pages/dnd_settings_page.dart';
 import 'package:airspothealth/features/device_settings/pages/power_mode_settings_page.dart';
 import 'package:airspothealth/features/device_settings/pages/recalibrate_device_page.dart';
 import 'package:airspothealth/features/device_settings/pages/time_settings_page.dart';
@@ -109,14 +110,14 @@ class AppRouter {
                   ),
                   // Route for CO2 alert settings within device settings
                   GoRoute(
-                    path: 'co2-alert-settings',
-                    name: RouteNames.co2Settings,
+                    path: 'screen-settings',
+                    name: RouteNames.screenSettings,
                     builder: (context, state) {
                       final deviceId = state.pathParameters['deviceId'];
                       if (deviceId == null) {
                         throw ErrorDescription('Device ID is required');
                       }
-                      return Co2AlertSettingsPage(deviceId: deviceId);
+                      return DeviceScreenSettingsPage(deviceId: deviceId);
                     },
                   ),
                   // Route for recalibrate settings within device settings
@@ -129,6 +130,18 @@ class AppRouter {
                         throw ErrorDescription('Device ID is required');
                       }
                       return RecalibrateDevicePage(deviceId: deviceId);
+                    },
+                  ),
+                  // Route for do not disturb settings within device settings
+                  GoRoute(
+                    path: 'do-not-disturb-settings',
+                    name: RouteNames.doNotDisturbSettings,
+                    builder: (context, state) {
+                      final deviceId = state.pathParameters['deviceId'];
+                      if (deviceId == null) {
+                        throw ErrorDescription('Device ID is required');
+                      }
+                      return DndSettingsPage(deviceId: deviceId);
                     },
                   ),
                   // Route for device update settings within device settings

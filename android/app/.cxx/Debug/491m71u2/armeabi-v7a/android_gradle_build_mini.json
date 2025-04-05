@@ -1,0 +1,20 @@
+{
+  "buildFiles": [
+    "/Users/nirajbhatt/.puro/envs/stable/flutter/packages/flutter_tools/gradle/src/main/groovy/CMakeLists.txt"
+  ],
+  "cleanCommandsComponents": [
+    [
+      "/Users/nirajbhatt/Library/Android/sdk/cmake/3.22.1/bin/ninja",
+      "-C",
+      "/Users/nirajbhatt/flutter/projects/airspothealth/android/app/.cxx/Debug/491m71u2/armeabi-v7a",
+      "clean"
+    ]
+  ],
+  "buildTargetsCommandComponents": [
+    "/Users/nirajbhatt/Library/Android/sdk/cmake/3.22.1/bin/ninja",
+    "-C",
+    "/Users/nirajbhatt/flutter/projects/airspothealth/android/app/.cxx/Debug/491m71u2/armeabi-v7a",
+    "{LIST_OF_TARGETS_TO_BUILD}"
+  ],
+  "libraries": {}
+}
