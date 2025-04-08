@@ -174,12 +174,41 @@ class BleDataService {
   }
 
   /// When parsing the timestamp from device, convert to local time
+  /// Properly handles Daylight Saving Time transitions
   static DateTime parseDeviceTimestamp(int timestamp) {
-    final localTimeStampFrom2000 =
-        DateTime(2000, 1, 1, 0, 0, 0).toLocal().millisecondsSinceEpoch;
+    // Since we added the timezone offset when sending the time,
+    // we need to subtract it when parsing to get the correct local time
+    final nowLocal = DateTime.now();
+    final timezoneOffsetSeconds = nowLocal.timeZoneOffset.inSeconds;
 
-    return DateTime.fromMillisecondsSinceEpoch(
-        (timestamp * 1000) + localTimeStampFrom2000);
+    // Subtract the timezone offset to get local time
+    final adjustedTimestamp = timestamp - timezoneOffsetSeconds;
+
+    // Convert directly from seconds since Unix epoch to DateTime
+    final DateTime dateTime =
+        DateTime.fromMillisecondsSinceEpoch(adjustedTimestamp * 1000);
+    debugPrint('Raw device timestamp (seconds): $timestamp');
+    debugPrint('Timezone offset (seconds): $timezoneOffsetSeconds');
+    debugPrint('Adjusted timestamp (seconds): $adjustedTimestamp');
+    debugPrint('Parsed local time: ${dateTime.toIso8601String()}');
+    return dateTime;
+  }
+
+  /// Debug utility to verify DST handling
+  /// Returns a map with information about the timestamp conversion
+  static Map<String, dynamic> debugDstHandling(int timestamp) {
+    final utcBase2000 = DateTime.utc(2000, 1, 1, 0, 0, 0);
+    final deviceTimeUtc = utcBase2000.add(Duration(seconds: timestamp));
+    final localTime = deviceTimeUtc.toLocal();
+
+    return {
+      'timestamp_seconds': timestamp,
+      'utc_time': deviceTimeUtc.toIso8601String(),
+      'local_time': localTime.toIso8601String(),
+      'is_dst':
+          localTime.timeZoneOffset.inHours > utcBase2000.timeZoneOffset.inHours,
+      'timezone_offset': localTime.timeZoneOffset.inHours,
+    };
   }
 }
 
@@ -369,6 +398,8 @@ class ResponseCommandParser {
       // Extract the timestamp (4 bytes)
       final timestamp = _byteArrayToInt(historyData, i, i + 3);
       final date = BleDataService.parseDeviceTimestamp(timestamp);
+
+      debugPrint('DATE: ${date.toIso8601String()}');
 
       // Extract the value (2 bytes)
       final highByte = historyData[i + 4] & 0xFF;
@@ -617,7 +648,7 @@ enum ResponseCommand {
   getAlias(0x09),
   setAliasResult(0x0A),
   getCo2History(0x0C),
-  calibrateSensors(0x11),
+  calibrateSensors(0x0D),
   setContinuosDisplayResult(0x0E),
   firmwareVersion(0x13),
   recalibrationTime(0x0F),

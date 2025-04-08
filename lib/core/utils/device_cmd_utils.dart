@@ -24,22 +24,39 @@ class DeviceCmdUtils {
     return checksum;
   }
 
-  // ======= Time Commands =======
   static Uint8List setTime({int? hour, int? min}) {
-    int totalSeconds;
+    // Get current time or specified time in local time
+    final now = DateTime.now();
+    final DateTime localTime;
 
-    if (hour == null || min == null) {
-      DateTime calendar2000 = DateTime(2000, 1, 1, 0, 0, 0);
-      int startEpochMillis = calendar2000.millisecondsSinceEpoch;
-      int currentEpochMillis = DateTime.now().millisecondsSinceEpoch;
-      totalSeconds = (currentEpochMillis - startEpochMillis) ~/ 1000;
+    if (hour != null && min != null) {
+      // Set to specified hour and minute of current day in local time
+      localTime = DateTime(now.year, now.month, now.day, hour, min);
     } else {
-      totalSeconds = _convertToSeconds(hour, min);
+      localTime = now;
     }
 
-    var byteArray = ByteData(4)..setInt32(0, totalSeconds, Endian.big);
-    return _buildCommand(
-        [prefixHigh, prefixLow, 0x04, 0x04, ...byteArray.buffer.asUint8List()]);
+    // The device displays time as-is without timezone adjustment,
+    // so we need to adjust the timestamp we send to account for the
+    // local timezone offset
+    final timezoneOffsetSeconds = localTime.timeZoneOffset.inSeconds;
+
+    // Add the timezone offset to compensate (device will show local time)
+    final int adjustedSeconds =
+        (localTime.millisecondsSinceEpoch ~/ 1000) + timezoneOffsetSeconds;
+
+    debugPrint('Local time: ${localTime.toIso8601String()}');
+    debugPrint('Timezone offset (seconds): $timezoneOffsetSeconds');
+    debugPrint('Adjusted timestamp: $adjustedSeconds');
+
+    // Convert to bytes
+    final bytes = Uint8List(4);
+    bytes[0] = (adjustedSeconds >> 24) & 0xFF;
+    bytes[1] = (adjustedSeconds >> 16) & 0xFF;
+    bytes[2] = (adjustedSeconds >> 8) & 0xFF;
+    bytes[3] = adjustedSeconds & 0xFF;
+
+    return _buildCommand([prefixHigh, prefixLow, 0x04, 0x04, ...bytes]);
   }
 
   // ======= Alias Commands =======
@@ -51,11 +68,6 @@ class DeviceCmdUtils {
 
   static Uint8List getAlias() {
     return _buildCommand([prefixHigh, prefixLow, 0x09, 1, 1]);
-  }
-
-  // Helper method to convert hours and minutes to total seconds
-  static int _convertToSeconds(int hours, int minutes) {
-    return (hours * 3600) + (minutes * 60);
   }
 
   // ======= General Commands =======

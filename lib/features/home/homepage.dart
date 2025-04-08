@@ -23,12 +23,17 @@ class _HomePageState extends ConsumerState<HomePage> {
     _setAppGroupId();
     // NotificationService.checkNotificationPermission();
     _checkFirmwareVersion();
+    _checkAppVersion();
     _scanForDevices();
     super.initState();
   }
 
   void _checkFirmwareVersion() {
     ref.read(firmwareRemoteVersionProvider);
+  }
+
+  void _checkAppVersion() {
+    ref.read(firmwareRemoteVersionProvider.notifier).fetchRemoteVersion();
   }
 
   void _scanForDevices() {

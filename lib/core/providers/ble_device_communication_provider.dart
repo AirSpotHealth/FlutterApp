@@ -14,6 +14,7 @@ import 'package:airspothealth/core/utils/device_cmd_utils.dart';
 import 'package:airspothealth/core/utils/extensions.dart';
 import 'package:airspothealth/features/app_setup/providers/dev_mode_provider.dart';
 import 'package:airspothealth/features/device_graph/providers/ble_device_provider.dart';
+import 'package:airspothealth/main.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_blue_plus/flutter_blue_plus.dart';
@@ -234,6 +235,8 @@ class _BleDeviceCommunicationNotifier extends FamilyNotifier<dynamic, String> {
     try {
       await _writeCharacteristic!.write(data);
       final DateTime dateTime = DateTime.now();
+      debugPrint(
+          'Current date time: ${systemDateFormat.format(dateTime)} ${systemTimeFormat.format(dateTime)}');
       _checkIfLogData(data, dateTime, sent: true, st: true);
       debugPrint('Command sent: ${BleDataService.bytesToHexStr(data)}');
       return true;
