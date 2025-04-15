@@ -61,6 +61,11 @@ class _CalibrationCorrectionWidgetState
     if (int.parse(value) <= 0) {
       return 'Please enter a positive number greater than 0';
     }
+
+    if (int.parse(value) > 1000) {
+      return 'Please enter a number less than 1000';
+    }
+
     return null;
   }
 
