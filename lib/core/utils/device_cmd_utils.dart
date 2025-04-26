@@ -306,6 +306,10 @@ class DeviceCmdUtils {
     return _buildCommand([prefixHigh, prefixLow, 0x2A, 1, 1]);
   }
 
+  static Uint8List getDeviceVariant() {
+    return _buildCommand([prefixHigh, prefixLow, 0x2B, 1, 1]);
+  }
+
   // ======= Helper Functions =======
   static Uint8List _getHex2Bytes(int value) {
     var byteArray = Uint8List(2);

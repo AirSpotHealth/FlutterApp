@@ -18,6 +18,7 @@ import 'package:airspothealth/features/device_settings/providers/device_data_dow
 import 'package:airspothealth/features/device_settings/providers/device_data_dump_provider.dart';
 import 'package:airspothealth/features/device_settings/providers/device_data_erase_provider.dart';
 import 'package:airspothealth/features/device_settings/providers/device_reset_sensor_provider.dart';
+import 'package:airspothealth/features/device_settings/providers/device_variant_provider.dart';
 import 'package:airspothealth/features/device_settings/providers/populate_fake_data_provider.dart';
 import 'package:airspothealth/features/device_settings/providers/recalibration_time_provider.dart';
 import 'package:airspothealth/features/device_settings/widgets/device_ui_mode_widget.dart';
@@ -79,6 +80,7 @@ class BleDataService {
       ResponseCommand.ascData: parser.parseAscData,
       ResponseCommand.getMemoryDump: parser.parseMemoryDump,
       ResponseCommand.ascDayCount: (_) => parser.parseOneByte(data, 4),
+      ResponseCommand.getDeviceVariant: (_) => parser.parseOneByte(data, 4),
     };
 
     final dynamic value = responseParsers[responseCommand]?.call(data);
@@ -165,6 +167,11 @@ class BleDataService {
         break;
       case ResponseCommand.ascDayCount:
         ref.read(deviceAscDayProvider(deviceId).notifier).setNextAscDate(value);
+        break;
+      case ResponseCommand.getDeviceVariant:
+        ref
+            .read(deviceVariantProvider(deviceId).notifier)
+            .setDeviceVariant(DeviceVariant.fromValue(value));
         break;
       default:
         break;
@@ -661,7 +668,8 @@ enum ResponseCommand {
   resetSensorResult(0x24),
   ascData(0x25),
   getMemoryDump(0x26),
-  ascDayCount(0x2A);
+  ascDayCount(0x2A),
+  getDeviceVariant(0x2B);
 
   const ResponseCommand(this.value);
   final int value;
