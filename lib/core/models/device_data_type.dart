@@ -93,6 +93,9 @@ const sensorErrorMap = {
   0x03: 'Sensor Reset Error',
   0x04: 'Sensor Measurement Start Error',
   0x05: 'Sensor Data Status Error',
+  0x06: 'Sensor Variant Check Error',
+  0x07: 'Sensor Measurement Stop Error',
+  0x08: 'Invalid CO2 Reading',
 };
 
 const deviceDataOrder = [

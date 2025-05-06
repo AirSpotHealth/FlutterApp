@@ -1,5 +1,7 @@
 import 'package:airspothealth/core/utils/extensions.dart';
+import 'package:airspothealth/core/widgets/button.dart';
 import 'package:airspothealth/features/device_graph/providers/device_history_data_request_provider.dart';
+import 'package:airspothealth/features/device_graph/providers/graph_range_provider.dart';
 import 'package:airspothealth/features/device_settings/models/progress_model.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -39,6 +41,36 @@ class DeviceDataTransmissionIndicator extends ConsumerWidget {
         ),
       );
     }
+
+    if (progress is AsyncFailure) {
+      return Container(
+        padding: const EdgeInsets.all(8),
+        width: context.width,
+        decoration: BoxDecoration(color: Colors.red),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Icon(Icons.error, color: Colors.white),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Text(progress.error.toString(),
+                  style: const TextStyle(color: Colors.white)),
+            ),
+            const SizedBox(width: 8),
+            Button(
+              wrapWidth: true,
+              onPressed: () {
+                ref
+                    .read(deviceHistoryDataRequestProvider(deviceId).notifier)
+                    .request(ref.read(graphDurationProvider));
+              },
+              child: const Text('Retry now'),
+            ),
+          ],
+        ),
+      );
+    }
+
     return const SizedBox();
   }
 }

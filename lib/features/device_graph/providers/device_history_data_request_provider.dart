@@ -45,6 +45,8 @@ class _DeviceHistoryDataRequestNotifier
       DateTime.fromMillisecondsSinceEpoch(Constants.syncedTimeThreshold);
 
   Timer? _flushTimer;
+  Timer? _timeoutTimer;
+  static const _requestTimeout = Duration(seconds: 30);
 
   @override
   build(String arg) {
@@ -74,6 +76,7 @@ class _DeviceHistoryDataRequestNotifier
 
   void _requestData() {
     debugPrint('REQUEST:Current page number: $currentPageNumber');
+    _startTimeoutTimer();
 
     if (currentPageNumber == null) {
       _sendCommand(DeviceCmdUtils.getCurrentFlashPage(),
@@ -85,6 +88,20 @@ class _DeviceHistoryDataRequestNotifier
     }
   }
 
+  void _startTimeoutTimer() {
+    _timeoutTimer?.cancel();
+    _timeoutTimer = Timer(_requestTimeout, () {
+      debugPrint('REQUEST:Timeout occurred while waiting for device response');
+      _handleTimeout();
+    });
+  }
+
+  void _handleTimeout() {
+    state = AsyncFailure(
+      'Timeout occurred while waiting for device response',
+    );
+  }
+
   void _sendCommand(Uint8List command, String message) {
     ref
         .read(bleDeviceCommunicationProvider(deviceId).notifier)
@@ -93,6 +110,9 @@ class _DeviceHistoryDataRequestNotifier
   }
 
   void handleHistoricalDataResponse(dynamic data) {
+    // Cancel timeout timer when we get a response
+    _timeoutTimer?.cancel();
+
     if (data is int) {
       currentPageNumber = data;
       _requestData();
@@ -213,6 +233,10 @@ class _DeviceHistoryDataRequestNotifier
   }
 
   void handleHistoricalDataFetchComplete() {
+    // Cancel any pending timers
+    _timeoutTimer?.cancel();
+    _flushTimer?.cancel();
+
     debugPrint(
         'REQUEST:That was last: Total number of pages fetched: $numberOfPagesFetched');
 
@@ -339,6 +363,10 @@ class _DeviceHistoryDataRequestNotifier
   }
 
   void clear() {
+    // Cancel any pending timers
+    _timeoutTimer?.cancel();
+    _flushTimer?.cancel();
+
     state = AsyncNone();
 
     currentPageNumber = null;
