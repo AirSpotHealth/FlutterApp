@@ -83,6 +83,16 @@ class _DeviceSettingsNotifier extends FamilyNotifier<DeviceSettings, String> {
             .read(bleDeviceCommunicationProvider(settings.deviceId).notifier)
             .sendCommand(DeviceCmdUtils.setGraphMode(settings.uiMode.index,
                 settings.graphMaxValue, settings.graphMinValue));
+      } else if (settings.screenOnAlarm != state.screenOnAlarm) {
+        ref
+            .read(bleDeviceCommunicationProvider(settings.deviceId).notifier)
+            .sendCommand(
+                DeviceCmdUtils.setScreenOnAlarm(settings.screenOnAlarm));
+      } else if (settings.alarmOnCo2Fall != state.alarmOnCo2Fall) {
+        ref
+            .read(bleDeviceCommunicationProvider(settings.deviceId).notifier)
+            .sendCommand(
+                DeviceCmdUtils.setAlarmOnCo2Fall(settings.alarmOnCo2Fall));
       }
     }
 

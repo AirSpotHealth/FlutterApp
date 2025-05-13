@@ -104,6 +104,19 @@ const DeviceSettingsSchema = IsarGeneratedSchema(
         name: 'showRebreathePercentage',
         type: IsarType.bool,
       ),
+      IsarPropertySchema(
+        name: 'screenOnAlarm',
+        type: IsarType.bool,
+      ),
+      IsarPropertySchema(
+        name: 'alarmOnCo2Fall',
+        type: IsarType.bool,
+      ),
+      IsarPropertySchema(
+        name: 'alarmLevels',
+        type: IsarType.objectList,
+        target: 'AlarmLevel',
+      ),
     ],
     indexes: [],
   ),
@@ -112,7 +125,7 @@ const DeviceSettingsSchema = IsarGeneratedSchema(
     deserialize: deserializeDeviceSettings,
     deserializeProperty: deserializeDeviceSettingsProp,
   ),
-  embeddedSchemas: [DeviceThresholdsSchema],
+  embeddedSchemas: [DeviceThresholdsSchema, AlarmLevelSchema],
 );
 
 @isarProtected
@@ -150,6 +163,21 @@ int serializeDeviceSettings(IsarWriter writer, DeviceSettings object) {
   IsarCore.writeLong(writer, 18, object.graphMinValue);
   IsarCore.writeByte(writer, 19, object.uiMode.index);
   IsarCore.writeBool(writer, 20, object.showRebreathePercentage);
+  IsarCore.writeBool(writer, 21, object.screenOnAlarm);
+  IsarCore.writeBool(writer, 22, object.alarmOnCo2Fall);
+  {
+    final list = object.alarmLevels;
+    final listWriter = IsarCore.beginList(writer, 23, list.length);
+    for (var i = 0; i < list.length; i++) {
+      {
+        final value = list[i];
+        final objectWriter = IsarCore.beginObject(listWriter, i);
+        serializeAlarmLevel(objectWriter, value);
+        IsarCore.endObject(listWriter, objectWriter);
+      }
+    }
+    IsarCore.endList(writer, listWriter);
+  }
   return Isar.fastHash(object.deviceId);
 }
 
@@ -270,6 +298,61 @@ DeviceSettings deserializeDeviceSettings(IsarReader reader) {
   }
   final bool _showRebreathePercentage;
   _showRebreathePercentage = IsarCore.readBool(reader, 20);
+  final bool _screenOnAlarm;
+  {
+    if (IsarCore.readNull(reader, 21)) {
+      _screenOnAlarm = true;
+    } else {
+      _screenOnAlarm = IsarCore.readBool(reader, 21);
+    }
+  }
+  final bool _alarmOnCo2Fall;
+  {
+    if (IsarCore.readNull(reader, 22)) {
+      _alarmOnCo2Fall = true;
+    } else {
+      _alarmOnCo2Fall = IsarCore.readBool(reader, 22);
+    }
+  }
+  final List<AlarmLevel> _alarmLevels;
+  {
+    final length = IsarCore.readList(reader, 23, IsarCore.readerPtrPtr);
+    {
+      final reader = IsarCore.readerPtr;
+      if (reader.isNull) {
+        _alarmLevels = defaultAlarmLevels;
+      } else {
+        final list = List<AlarmLevel>.filled(
+            length,
+            AlarmLevel(
+              id: -9223372036854775808,
+              co2Threshold: -9223372036854775808,
+              repeatCount: -9223372036854775808,
+              enabled: false,
+            ),
+            growable: true);
+        for (var i = 0; i < length; i++) {
+          {
+            final objectReader = IsarCore.readObject(reader, i);
+            if (objectReader.isNull) {
+              list[i] = AlarmLevel(
+                id: -9223372036854775808,
+                co2Threshold: -9223372036854775808,
+                repeatCount: -9223372036854775808,
+                enabled: false,
+              );
+            } else {
+              final embedded = deserializeAlarmLevel(objectReader);
+              IsarCore.freeReader(objectReader);
+              list[i] = embedded;
+            }
+          }
+        }
+        IsarCore.freeReader(reader);
+        _alarmLevels = list;
+      }
+    }
+  }
   final object = DeviceSettings(
     alarmEnabled: _alarmEnabled,
     vibrationEnabled: _vibrationEnabled,
@@ -291,6 +374,9 @@ DeviceSettings deserializeDeviceSettings(IsarReader reader) {
     graphMinValue: _graphMinValue,
     uiMode: _uiMode,
     showRebreathePercentage: _showRebreathePercentage,
+    screenOnAlarm: _screenOnAlarm,
+    alarmOnCo2Fall: _alarmOnCo2Fall,
+    alarmLevels: _alarmLevels,
   );
   return object;
 }
@@ -413,6 +499,61 @@ dynamic deserializeDeviceSettingsProp(IsarReader reader, int property) {
       }
     case 20:
       return IsarCore.readBool(reader, 20);
+    case 21:
+      {
+        if (IsarCore.readNull(reader, 21)) {
+          return true;
+        } else {
+          return IsarCore.readBool(reader, 21);
+        }
+      }
+    case 22:
+      {
+        if (IsarCore.readNull(reader, 22)) {
+          return true;
+        } else {
+          return IsarCore.readBool(reader, 22);
+        }
+      }
+    case 23:
+      {
+        final length = IsarCore.readList(reader, 23, IsarCore.readerPtrPtr);
+        {
+          final reader = IsarCore.readerPtr;
+          if (reader.isNull) {
+            return defaultAlarmLevels;
+          } else {
+            final list = List<AlarmLevel>.filled(
+                length,
+                AlarmLevel(
+                  id: -9223372036854775808,
+                  co2Threshold: -9223372036854775808,
+                  repeatCount: -9223372036854775808,
+                  enabled: false,
+                ),
+                growable: true);
+            for (var i = 0; i < length; i++) {
+              {
+                final objectReader = IsarCore.readObject(reader, i);
+                if (objectReader.isNull) {
+                  list[i] = AlarmLevel(
+                    id: -9223372036854775808,
+                    co2Threshold: -9223372036854775808,
+                    repeatCount: -9223372036854775808,
+                    enabled: false,
+                  );
+                } else {
+                  final embedded = deserializeAlarmLevel(objectReader);
+                  IsarCore.freeReader(objectReader);
+                  list[i] = embedded;
+                }
+              }
+            }
+            IsarCore.freeReader(reader);
+            return list;
+          }
+        }
+      }
     default:
       throw ArgumentError('Unknown property: $property');
   }
@@ -439,6 +580,8 @@ sealed class _DeviceSettingsUpdate {
     int? graphMinValue,
     UIMode? uiMode,
     bool? showRebreathePercentage,
+    bool? screenOnAlarm,
+    bool? alarmOnCo2Fall,
   });
 }
 
@@ -468,6 +611,8 @@ class _DeviceSettingsUpdateImpl implements _DeviceSettingsUpdate {
     Object? graphMinValue = ignore,
     Object? uiMode = ignore,
     Object? showRebreathePercentage = ignore,
+    Object? screenOnAlarm = ignore,
+    Object? alarmOnCo2Fall = ignore,
   }) {
     return collection.updateProperties([
           deviceId
@@ -492,6 +637,8 @@ class _DeviceSettingsUpdateImpl implements _DeviceSettingsUpdate {
           if (uiMode != ignore) 19: uiMode as UIMode?,
           if (showRebreathePercentage != ignore)
             20: showRebreathePercentage as bool?,
+          if (screenOnAlarm != ignore) 21: screenOnAlarm as bool?,
+          if (alarmOnCo2Fall != ignore) 22: alarmOnCo2Fall as bool?,
         }) >
         0;
   }
@@ -518,6 +665,8 @@ sealed class _DeviceSettingsUpdateAll {
     int? graphMinValue,
     UIMode? uiMode,
     bool? showRebreathePercentage,
+    bool? screenOnAlarm,
+    bool? alarmOnCo2Fall,
   });
 }
 
@@ -547,6 +696,8 @@ class _DeviceSettingsUpdateAllImpl implements _DeviceSettingsUpdateAll {
     Object? graphMinValue = ignore,
     Object? uiMode = ignore,
     Object? showRebreathePercentage = ignore,
+    Object? screenOnAlarm = ignore,
+    Object? alarmOnCo2Fall = ignore,
   }) {
     return collection.updateProperties(deviceId, {
       if (alarmEnabled != ignore) 1: alarmEnabled as bool?,
@@ -568,6 +719,8 @@ class _DeviceSettingsUpdateAllImpl implements _DeviceSettingsUpdateAll {
       if (uiMode != ignore) 19: uiMode as UIMode?,
       if (showRebreathePercentage != ignore)
         20: showRebreathePercentage as bool?,
+      if (screenOnAlarm != ignore) 21: screenOnAlarm as bool?,
+      if (alarmOnCo2Fall != ignore) 22: alarmOnCo2Fall as bool?,
     });
   }
 }
@@ -598,6 +751,8 @@ sealed class _DeviceSettingsQueryUpdate {
     int? graphMinValue,
     UIMode? uiMode,
     bool? showRebreathePercentage,
+    bool? screenOnAlarm,
+    bool? alarmOnCo2Fall,
   });
 }
 
@@ -627,6 +782,8 @@ class _DeviceSettingsQueryUpdateImpl implements _DeviceSettingsQueryUpdate {
     Object? graphMinValue = ignore,
     Object? uiMode = ignore,
     Object? showRebreathePercentage = ignore,
+    Object? screenOnAlarm = ignore,
+    Object? alarmOnCo2Fall = ignore,
   }) {
     return query.updateProperties(limit: limit, {
       if (alarmEnabled != ignore) 1: alarmEnabled as bool?,
@@ -648,6 +805,8 @@ class _DeviceSettingsQueryUpdateImpl implements _DeviceSettingsQueryUpdate {
       if (uiMode != ignore) 19: uiMode as UIMode?,
       if (showRebreathePercentage != ignore)
         20: showRebreathePercentage as bool?,
+      if (screenOnAlarm != ignore) 21: screenOnAlarm as bool?,
+      if (alarmOnCo2Fall != ignore) 22: alarmOnCo2Fall as bool?,
     });
   }
 }
@@ -687,6 +846,8 @@ class _DeviceSettingsQueryBuilderUpdateImpl
     Object? graphMinValue = ignore,
     Object? uiMode = ignore,
     Object? showRebreathePercentage = ignore,
+    Object? screenOnAlarm = ignore,
+    Object? alarmOnCo2Fall = ignore,
   }) {
     final q = query.build();
     try {
@@ -711,6 +872,8 @@ class _DeviceSettingsQueryBuilderUpdateImpl
         if (uiMode != ignore) 19: uiMode as UIMode?,
         if (showRebreathePercentage != ignore)
           20: showRebreathePercentage as bool?,
+        if (screenOnAlarm != ignore) 21: screenOnAlarm as bool?,
+        if (alarmOnCo2Fall != ignore) 22: alarmOnCo2Fall as bool?,
       });
     } finally {
       q.close();
@@ -1704,6 +1867,48 @@ extension DeviceSettingsQueryFilter
       );
     });
   }
+
+  QueryBuilder<DeviceSettings, DeviceSettings, QAfterFilterCondition>
+      screenOnAlarmEqualTo(
+    bool value,
+  ) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        EqualCondition(
+          property: 21,
+          value: value,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<DeviceSettings, DeviceSettings, QAfterFilterCondition>
+      alarmOnCo2FallEqualTo(
+    bool value,
+  ) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        EqualCondition(
+          property: 22,
+          value: value,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<DeviceSettings, DeviceSettings, QAfterFilterCondition>
+      alarmLevelsIsEmpty() {
+    return not().alarmLevelsIsNotEmpty();
+  }
+
+  QueryBuilder<DeviceSettings, DeviceSettings, QAfterFilterCondition>
+      alarmLevelsIsNotEmpty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        const GreaterOrEqualCondition(property: 23, value: null),
+      );
+    });
+  }
 }
 
 extension DeviceSettingsQueryObject
@@ -1987,6 +2192,34 @@ extension DeviceSettingsQuerySortBy
       return query.addSortBy(20, sort: Sort.desc);
     });
   }
+
+  QueryBuilder<DeviceSettings, DeviceSettings, QAfterSortBy>
+      sortByScreenOnAlarm() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(21);
+    });
+  }
+
+  QueryBuilder<DeviceSettings, DeviceSettings, QAfterSortBy>
+      sortByScreenOnAlarmDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(21, sort: Sort.desc);
+    });
+  }
+
+  QueryBuilder<DeviceSettings, DeviceSettings, QAfterSortBy>
+      sortByAlarmOnCo2Fall() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(22);
+    });
+  }
+
+  QueryBuilder<DeviceSettings, DeviceSettings, QAfterSortBy>
+      sortByAlarmOnCo2FallDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(22, sort: Sort.desc);
+    });
+  }
 }
 
 extension DeviceSettingsQuerySortThenBy
@@ -2253,6 +2486,34 @@ extension DeviceSettingsQuerySortThenBy
       return query.addSortBy(20, sort: Sort.desc);
     });
   }
+
+  QueryBuilder<DeviceSettings, DeviceSettings, QAfterSortBy>
+      thenByScreenOnAlarm() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(21);
+    });
+  }
+
+  QueryBuilder<DeviceSettings, DeviceSettings, QAfterSortBy>
+      thenByScreenOnAlarmDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(21, sort: Sort.desc);
+    });
+  }
+
+  QueryBuilder<DeviceSettings, DeviceSettings, QAfterSortBy>
+      thenByAlarmOnCo2Fall() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(22);
+    });
+  }
+
+  QueryBuilder<DeviceSettings, DeviceSettings, QAfterSortBy>
+      thenByAlarmOnCo2FallDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(22, sort: Sort.desc);
+    });
+  }
 }
 
 extension DeviceSettingsQueryWhereDistinct
@@ -2380,6 +2641,20 @@ extension DeviceSettingsQueryWhereDistinct
       distinctByShowRebreathePercentage() {
     return QueryBuilder.apply(this, (query) {
       return query.addDistinctBy(20);
+    });
+  }
+
+  QueryBuilder<DeviceSettings, DeviceSettings, QAfterDistinct>
+      distinctByScreenOnAlarm() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addDistinctBy(21);
+    });
+  }
+
+  QueryBuilder<DeviceSettings, DeviceSettings, QAfterDistinct>
+      distinctByAlarmOnCo2Fall() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addDistinctBy(22);
     });
   }
 }
@@ -2511,6 +2786,25 @@ extension DeviceSettingsQueryProperty1
       showRebreathePercentageProperty() {
     return QueryBuilder.apply(this, (query) {
       return query.addProperty(20);
+    });
+  }
+
+  QueryBuilder<DeviceSettings, bool, QAfterProperty> screenOnAlarmProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addProperty(21);
+    });
+  }
+
+  QueryBuilder<DeviceSettings, bool, QAfterProperty> alarmOnCo2FallProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addProperty(22);
+    });
+  }
+
+  QueryBuilder<DeviceSettings, List<AlarmLevel>, QAfterProperty>
+      alarmLevelsProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addProperty(23);
     });
   }
 }
@@ -2652,6 +2946,27 @@ extension DeviceSettingsQueryProperty2<R>
       return query.addProperty(20);
     });
   }
+
+  QueryBuilder<DeviceSettings, (R, bool), QAfterProperty>
+      screenOnAlarmProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addProperty(21);
+    });
+  }
+
+  QueryBuilder<DeviceSettings, (R, bool), QAfterProperty>
+      alarmOnCo2FallProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addProperty(22);
+    });
+  }
+
+  QueryBuilder<DeviceSettings, (R, List<AlarmLevel>), QAfterProperty>
+      alarmLevelsProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addProperty(23);
+    });
+  }
 }
 
 extension DeviceSettingsQueryProperty3<R1, R2>
@@ -2791,6 +3106,27 @@ extension DeviceSettingsQueryProperty3<R1, R2>
       showRebreathePercentageProperty() {
     return QueryBuilder.apply(this, (query) {
       return query.addProperty(20);
+    });
+  }
+
+  QueryBuilder<DeviceSettings, (R1, R2, bool), QOperations>
+      screenOnAlarmProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addProperty(21);
+    });
+  }
+
+  QueryBuilder<DeviceSettings, (R1, R2, bool), QOperations>
+      alarmOnCo2FallProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addProperty(22);
+    });
+  }
+
+  QueryBuilder<DeviceSettings, (R1, R2, List<AlarmLevel>), QOperations>
+      alarmLevelsProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addProperty(23);
     });
   }
 }
@@ -3022,3 +3358,338 @@ extension DeviceThresholdsQueryFilter
 
 extension DeviceThresholdsQueryObject
     on QueryBuilder<DeviceThresholds, DeviceThresholds, QFilterCondition> {}
+
+// coverage:ignore-file
+// ignore_for_file: duplicate_ignore, invalid_use_of_protected_member, lines_longer_than_80_chars, constant_identifier_names, avoid_js_rounded_ints, no_leading_underscores_for_local_identifiers, require_trailing_commas, unnecessary_parenthesis, unnecessary_raw_strings, unnecessary_null_in_if_null_operators, library_private_types_in_public_api, prefer_const_constructors
+// ignore_for_file: type=lint
+
+const AlarmLevelSchema = IsarGeneratedSchema(
+  schema: IsarSchema(
+    name: 'AlarmLevel',
+    embedded: true,
+    properties: [
+      IsarPropertySchema(
+        name: 'id',
+        type: IsarType.long,
+      ),
+      IsarPropertySchema(
+        name: 'co2Threshold',
+        type: IsarType.long,
+      ),
+      IsarPropertySchema(
+        name: 'repeatCount',
+        type: IsarType.long,
+      ),
+      IsarPropertySchema(
+        name: 'enabled',
+        type: IsarType.bool,
+      ),
+    ],
+    indexes: [],
+  ),
+  converter: IsarObjectConverter<void, AlarmLevel>(
+    serialize: serializeAlarmLevel,
+    deserialize: deserializeAlarmLevel,
+  ),
+);
+
+@isarProtected
+int serializeAlarmLevel(IsarWriter writer, AlarmLevel object) {
+  IsarCore.writeLong(writer, 1, object.id);
+  IsarCore.writeLong(writer, 2, object.co2Threshold);
+  IsarCore.writeLong(writer, 3, object.repeatCount);
+  IsarCore.writeBool(writer, 4, object.enabled);
+  return 0;
+}
+
+@isarProtected
+AlarmLevel deserializeAlarmLevel(IsarReader reader) {
+  final int _id;
+  _id = IsarCore.readLong(reader, 1);
+  final int _co2Threshold;
+  _co2Threshold = IsarCore.readLong(reader, 2);
+  final int _repeatCount;
+  _repeatCount = IsarCore.readLong(reader, 3);
+  final bool _enabled;
+  _enabled = IsarCore.readBool(reader, 4);
+  final object = AlarmLevel(
+    id: _id,
+    co2Threshold: _co2Threshold,
+    repeatCount: _repeatCount,
+    enabled: _enabled,
+  );
+  return object;
+}
+
+extension AlarmLevelQueryFilter
+    on QueryBuilder<AlarmLevel, AlarmLevel, QFilterCondition> {
+  QueryBuilder<AlarmLevel, AlarmLevel, QAfterFilterCondition> idEqualTo(
+    int value,
+  ) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        EqualCondition(
+          property: 1,
+          value: value,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<AlarmLevel, AlarmLevel, QAfterFilterCondition> idGreaterThan(
+    int value,
+  ) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        GreaterCondition(
+          property: 1,
+          value: value,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<AlarmLevel, AlarmLevel, QAfterFilterCondition>
+      idGreaterThanOrEqualTo(
+    int value,
+  ) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        GreaterOrEqualCondition(
+          property: 1,
+          value: value,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<AlarmLevel, AlarmLevel, QAfterFilterCondition> idLessThan(
+    int value,
+  ) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        LessCondition(
+          property: 1,
+          value: value,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<AlarmLevel, AlarmLevel, QAfterFilterCondition>
+      idLessThanOrEqualTo(
+    int value,
+  ) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        LessOrEqualCondition(
+          property: 1,
+          value: value,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<AlarmLevel, AlarmLevel, QAfterFilterCondition> idBetween(
+    int lower,
+    int upper,
+  ) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        BetweenCondition(
+          property: 1,
+          lower: lower,
+          upper: upper,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<AlarmLevel, AlarmLevel, QAfterFilterCondition>
+      co2ThresholdEqualTo(
+    int value,
+  ) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        EqualCondition(
+          property: 2,
+          value: value,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<AlarmLevel, AlarmLevel, QAfterFilterCondition>
+      co2ThresholdGreaterThan(
+    int value,
+  ) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        GreaterCondition(
+          property: 2,
+          value: value,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<AlarmLevel, AlarmLevel, QAfterFilterCondition>
+      co2ThresholdGreaterThanOrEqualTo(
+    int value,
+  ) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        GreaterOrEqualCondition(
+          property: 2,
+          value: value,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<AlarmLevel, AlarmLevel, QAfterFilterCondition>
+      co2ThresholdLessThan(
+    int value,
+  ) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        LessCondition(
+          property: 2,
+          value: value,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<AlarmLevel, AlarmLevel, QAfterFilterCondition>
+      co2ThresholdLessThanOrEqualTo(
+    int value,
+  ) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        LessOrEqualCondition(
+          property: 2,
+          value: value,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<AlarmLevel, AlarmLevel, QAfterFilterCondition>
+      co2ThresholdBetween(
+    int lower,
+    int upper,
+  ) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        BetweenCondition(
+          property: 2,
+          lower: lower,
+          upper: upper,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<AlarmLevel, AlarmLevel, QAfterFilterCondition>
+      repeatCountEqualTo(
+    int value,
+  ) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        EqualCondition(
+          property: 3,
+          value: value,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<AlarmLevel, AlarmLevel, QAfterFilterCondition>
+      repeatCountGreaterThan(
+    int value,
+  ) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        GreaterCondition(
+          property: 3,
+          value: value,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<AlarmLevel, AlarmLevel, QAfterFilterCondition>
+      repeatCountGreaterThanOrEqualTo(
+    int value,
+  ) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        GreaterOrEqualCondition(
+          property: 3,
+          value: value,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<AlarmLevel, AlarmLevel, QAfterFilterCondition>
+      repeatCountLessThan(
+    int value,
+  ) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        LessCondition(
+          property: 3,
+          value: value,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<AlarmLevel, AlarmLevel, QAfterFilterCondition>
+      repeatCountLessThanOrEqualTo(
+    int value,
+  ) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        LessOrEqualCondition(
+          property: 3,
+          value: value,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<AlarmLevel, AlarmLevel, QAfterFilterCondition>
+      repeatCountBetween(
+    int lower,
+    int upper,
+  ) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        BetweenCondition(
+          property: 3,
+          lower: lower,
+          upper: upper,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<AlarmLevel, AlarmLevel, QAfterFilterCondition> enabledEqualTo(
+    bool value,
+  ) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        EqualCondition(
+          property: 4,
+          value: value,
+        ),
+      );
+    });
+  }
+}
+
+extension AlarmLevelQueryObject
+    on QueryBuilder<AlarmLevel, AlarmLevel, QFilterCondition> {}

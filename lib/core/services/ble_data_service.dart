@@ -297,47 +297,96 @@ class ResponseCommandParser {
   dynamic parseInitialData(List<int> data) {
     _updateDeviceSettings(
       (settings) {
-        final dndEnabled = data.length > 13 ? _parseBoolean(data, 13) : false;
-        final dndStartHour = data.length > 14 ? data[14] : 0;
-        final dndStartMinute = data.length > 15 ? data[15] : 0;
-        final dndEndHour = data.length > 16 ? data[16] : 0;
-        final dndEndMinute = data.length > 17 ? data[17] : 0;
-        final recalibrationTarget =
-            data.length > 18 ? _parseTwoBytesToInt(data, 18) : 426;
-        final graphMode = UIMode.fromValue(data[20]);
-        final graphMaxValue =
-            data.length > 21 ? _parseTwoBytesToInt(data, 21) : 1600;
-        final graphMinValue =
-            data.length > 23 ? _parseTwoBytesToInt(data, 23) : 0;
-        debugPrint('RECALIBRATION TARGET: $recalibrationTarget');
-        debugPrint('GRAPH MAX VALUE: $graphMaxValue');
-        debugPrint('GRAPH MIN VALUE: $graphMinValue');
-        debugPrint('UI MODE: $graphMode');
-        debugPrint('POWER MODE: ${PowerMode.fromValue(data[6])}');
+        final bool alarmEnabled = _parseBoolean(data, 4);
+        final bool vibrationEnabled = _parseBoolean(data, 5);
+        final PowerMode powerMode = PowerMode.fromValue(data[6]);
+        final DeviceThresholds thresholds = DeviceThresholds(
+          greenUpperLimit: _parseTwoBytesToInt(data, 7),
+          yellowUpperLimit: _parseTwoBytesToInt(data, 9),
+        );
+        final bool continuosScreenEnabled = _parseBoolean(data, 11);
+        final bool autoCalibration = _parseBoolean(data, 12);
+
+        final bool dndEnabled =
+            data.length > 13 ? _parseBoolean(data, 13) : false;
+        final int dndStartHour = data.length > 14 ? data[14] : 0;
+        final int dndStartMinute = data.length > 15 ? data[15] : 0;
+        final int dndEndHour = data.length > 16 ? data[16] : 0;
+        final int dndEndMinute = data.length > 17 ? data[17] : 0;
+
+        final int recalibrationTarget =
+            data.length > 19 ? _parseTwoBytesToInt(data, 18) : 426;
+        final UIMode uiMode =
+            data.length > 20 ? UIMode.fromValue(data[20]) : UIMode.graph;
+        final int graphMaxValue =
+            data.length > 22 ? _parseTwoBytesToInt(data, 21) : 1600;
+        final int graphMinValue =
+            data.length > 24 ? _parseTwoBytesToInt(data, 23) : 0;
+
+        bool finalScreenOnAlarm = true;
+        bool finalAlarmOnCo2Fall = false;
+        List<AlarmLevel> finalAlarmLevels = defaultAlarmLevels;
+
+        if (data.length >= 25 + 42) {
+          int offset = 25;
+          finalScreenOnAlarm = _parseBoolean(data, offset++);
+          finalAlarmOnCo2Fall = _parseBoolean(data, offset++);
+
+          List<AlarmLevel> parsedLevels = [];
+          for (int i = 0; i < 10; i++) {
+            if (offset + 3 < data.length) {
+              final co2MsbByte = data[offset++] & 0xFF;
+              final co2LsbByte = data[offset++] & 0xFF;
+              final co2Threshold = (co2MsbByte << 8) | co2LsbByte;
+              final repeatCount = data[offset++];
+              final enabled = _parseBoolean(data, offset++);
+
+              parsedLevels.add(AlarmLevel(
+                id: i,
+                co2Threshold: co2Threshold,
+                repeatCount: repeatCount,
+                enabled: enabled,
+              ));
+            } else {
+              parsedLevels.addAll(defaultAlarmLevels.sublist(i));
+              break;
+            }
+          }
+          finalAlarmLevels = parsedLevels;
+          debugPrint(
+              'InitialData: Successfully parsed advanced alarm settings from initial data.');
+        } else {
+          debugPrint(
+              'InitialData: Data too short for advanced alarm settings (length ${data.length}, needed >= ${25 + 42}). Using all default advanced alarm settings.');
+          debugPrint(
+              'InitialData: Remaining data after parsing other settings: ${data.sublist(25).map((e) => e.toRadixString(16)).join()}');
+        }
+
+        debugPrint(
+            'InitialData Final Values -> ScreenOnAlarm: $finalScreenOnAlarm, AlarmOnCo2Fall: $finalAlarmOnCo2Fall');
 
         return settings.copyWith(
           deviceId: deviceId,
-          alarmEnabled: _parseBoolean(data, 4),
-          vibrationEnabled: _parseBoolean(data, 5),
-          powerMode: PowerMode.fromValue(data[6]),
-          thresholds: DeviceThresholds(
-            greenUpperLimit: _parseTwoBytesToInt(data, 7),
-            yellowUpperLimit: _parseTwoBytesToInt(data, 9),
-          ),
-          continuosScreenEnabled: _parseBoolean(data, 11),
-          autoCalibration: _parseBoolean(data, 12),
+          alarmEnabled: alarmEnabled,
+          vibrationEnabled: vibrationEnabled,
+          powerMode: powerMode,
+          thresholds: thresholds,
+          continuosScreenEnabled: continuosScreenEnabled,
+          autoCalibration: autoCalibration,
           dndEnabled: dndEnabled,
           dndStartTime: DateTime(0, 0, 0, dndStartHour, dndStartMinute),
           dndEndTime: DateTime(0, 0, 0, dndEndHour, dndEndMinute),
           recalibrationTarget: recalibrationTarget,
-          uiMode: graphMode,
+          uiMode: uiMode,
           graphMaxValue: graphMaxValue,
           graphMinValue: graphMinValue,
+          screenOnAlarm: finalScreenOnAlarm,
+          alarmOnCo2Fall: finalAlarmOnCo2Fall,
+          alarmLevels: finalAlarmLevels,
         );
       },
     );
-
-    return data[13];
+    return true;
   }
 
   String parseAlias(List<int> data) {
@@ -669,7 +718,8 @@ enum ResponseCommand {
   ascData(0x25),
   getMemoryDump(0x26),
   ascDayCount(0x2A),
-  getDeviceVariant(0x2B);
+  getDeviceVariant(0x2B),
+  getAdvancedAlarmSettings(0x2F);
 
   const ResponseCommand(this.value);
   final int value;

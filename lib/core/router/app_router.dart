@@ -1,5 +1,6 @@
 import 'package:airspothealth/core/router/route_names.dart';
 import 'package:airspothealth/features/add_device/add_device_page.dart';
+import 'package:airspothealth/features/advanced_alarm_settings/advanced_alarm_settings_page.dart';
 import 'package:airspothealth/features/app_setup/app_setup_page.dart';
 import 'package:airspothealth/features/app_setup/app_updates_page.dart';
 import 'package:airspothealth/features/app_setup/latest_news_page.dart';
@@ -154,6 +155,19 @@ class AppRouter {
                         throw ErrorDescription('Device ID is required');
                       }
                       return DeviceUpdatePage(deviceId: deviceId);
+                    },
+                  ),
+                  // Route for advanced alarm settings within device settings
+                  GoRoute(
+                    path: 'advanced-alarm-settings',
+                    name: RouteNames.advancedAlarmSettings,
+                    builder: (context, state) {
+                      final deviceId = state.pathParameters['deviceId'];
+                      if (deviceId == null) {
+                        throw ErrorDescription(
+                            'Device ID is required for advanced alarms');
+                      }
+                      return AdvancedAlarmSettingsPage(deviceId: deviceId);
                     },
                   ),
                   // Route for find my device settings within device settings

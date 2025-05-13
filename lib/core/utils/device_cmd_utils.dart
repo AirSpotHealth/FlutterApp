@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'dart:typed_data';
 
+import 'package:airspothealth/core/models/device_settings.dart';
 import 'package:airspothealth/core/utils/constants.dart';
 import 'package:flutter/material.dart';
 
@@ -308,6 +309,61 @@ class DeviceCmdUtils {
 
   static Uint8List getDeviceVariant() {
     return _buildCommand([prefixHigh, prefixLow, 0x2B, 1, 1]);
+  }
+
+  // ======= Advanced Alarm Settings Commands =======
+  static Uint8List setAdvancedAlarmLevels(int index, AlarmLevel alarmLevel) {
+    if (index < 0 || index > 9) {
+      throw Exception('Index must be between 0 and 9');
+    }
+
+    var thresholdBytes = _getHex2Bytes(alarmLevel.co2Threshold);
+
+    // repeatCount should be a single byte
+    int repeatCountByte = alarmLevel.repeatCount & 0xFF;
+
+    // enabled should be a single byte (0 or 1)
+    int enabledByte = alarmLevel.enabled ? 1 : 0;
+
+    return _buildCommand([
+      prefixHigh,
+      prefixLow,
+      0x2C,
+      5,
+      index,
+      ...thresholdBytes,
+      repeatCountByte,
+      enabledByte
+    ]);
+  }
+
+  static Uint8List resetAdvancedAlarmsToDefault() {
+    return _buildCommand([
+      prefixHigh,
+      prefixLow,
+      0x2F, // Command for Reset to default alarm config
+      0 // Length of payload (no additional data needed beyond command)
+    ]);
+  }
+
+  static Uint8List setScreenOnAlarm(bool enabled) {
+    return _buildCommand([
+      prefixHigh,
+      prefixLow,
+      0x2D, // Command for Set screen_on_alarm
+      1, // Length of payload (enabled status)
+      enabled ? 1 : 0
+    ]);
+  }
+
+  static Uint8List setAlarmOnCo2Fall(bool enabled) {
+    return _buildCommand([
+      prefixHigh,
+      prefixLow,
+      0x2E, // Command for Set alarm on CO2 falling
+      1, // Length of payload (enabled status)
+      enabled ? 1 : 0
+    ]);
   }
 
   // ======= Helper Functions =======

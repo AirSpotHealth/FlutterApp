@@ -75,7 +75,12 @@ class DeviceSettings {
   /// Show rebreathe percentage
   final bool showRebreathePercentage;
 
-  DeviceSettings({
+  /// Advanced alarm settings
+  final bool screenOnAlarm;
+  final bool alarmOnCo2Fall;
+  final List<AlarmLevel> alarmLevels;
+
+  const DeviceSettings({
     required this.alarmEnabled,
     required this.vibrationEnabled,
     required this.powerMode,
@@ -96,6 +101,9 @@ class DeviceSettings {
     this.uiMode = UIMode.graph,
     this.showRebreathePercentage = false,
     this.graphMinValue = 0,
+    this.screenOnAlarm = true,
+    this.alarmOnCo2Fall = false,
+    this.alarmLevels = defaultAlarmLevels,
   });
 
   DeviceSettings.empty({required this.deviceId})
@@ -117,7 +125,10 @@ class DeviceSettings {
         graphMaxValue = 1600,
         uiMode = UIMode.graph,
         showRebreathePercentage = false,
-        graphMinValue = 0;
+        graphMinValue = 0,
+        screenOnAlarm = true,
+        alarmOnCo2Fall = false,
+        alarmLevels = defaultAlarmLevels;
 
   DeviceSettings copyWith({
     bool? alarmEnabled,
@@ -141,6 +152,9 @@ class DeviceSettings {
     int? graphMinValue,
     UIMode? uiMode,
     bool? showRebreathePercentage,
+    bool? screenOnAlarm,
+    bool? alarmOnCo2Fall,
+    List<AlarmLevel>? alarmLevels,
   }) {
     return DeviceSettings(
       alarmEnabled: alarmEnabled ?? this.alarmEnabled,
@@ -165,6 +179,9 @@ class DeviceSettings {
       showRebreathePercentage:
           showRebreathePercentage ?? this.showRebreathePercentage,
       graphMinValue: graphMinValue ?? this.graphMinValue,
+      screenOnAlarm: screenOnAlarm ?? this.screenOnAlarm,
+      alarmOnCo2Fall: alarmOnCo2Fall ?? this.alarmOnCo2Fall,
+      alarmLevels: alarmLevels ?? this.alarmLevels,
     );
   }
 
@@ -301,6 +318,9 @@ class DeviceSettings {
         other.graphMaxValue == graphMaxValue &&
         other.uiMode == uiMode &&
         other.showRebreathePercentage == showRebreathePercentage &&
+        other.screenOnAlarm == screenOnAlarm &&
+        other.alarmOnCo2Fall == alarmOnCo2Fall &&
+        other.alarmLevels == alarmLevels &&
         other.graphMinValue == graphMinValue;
   }
 
@@ -325,11 +345,14 @@ class DeviceSettings {
       graphMaxValue.hashCode ^
       uiMode.hashCode ^
       showRebreathePercentage.hashCode ^
+      screenOnAlarm.hashCode ^
+      alarmOnCo2Fall.hashCode ^
+      alarmLevels.hashCode ^
       graphMinValue.hashCode;
 
   @override
   String toString() {
-    return 'DeviceSettings(alarmEnabled: $alarmEnabled, vibrationEnabled: $vibrationEnabled, powerMode: $powerMode, continuosScreenEnabled: $continuosScreenEnabled, thresholds: $thresholds, deviceId: $deviceId, co2MedAlertEnabled: $co2MedAlertEnabled, co2HighAlertEnabled: $co2HighAlertEnabled, autoSyncTime: $autoSyncTime, autoCalibration: $autoCalibration, autoConnect: $autoConnect, logData: $logData, dndEnabled: $dndEnabled, dndStartTime: $dndStartTime, dndEndTime: $dndEndTime, recalibrationTarget: $recalibrationTarget, graphMaxValue: $graphMaxValue, uiMode: $uiMode, showRebreathePercentage: $showRebreathePercentage, graphMinValue: $graphMinValue)';
+    return 'DeviceSettings(alarmEnabled: $alarmEnabled, vibrationEnabled: $vibrationEnabled, powerMode: $powerMode, continuosScreenEnabled: $continuosScreenEnabled, thresholds: $thresholds, deviceId: $deviceId, co2MedAlertEnabled: $co2MedAlertEnabled, co2HighAlertEnabled: $co2HighAlertEnabled, autoSyncTime: $autoSyncTime, autoCalibration: $autoCalibration, autoConnect: $autoConnect, logData: $logData, dndEnabled: $dndEnabled, dndStartTime: $dndStartTime, dndEndTime: $dndEndTime, recalibrationTarget: $recalibrationTarget, graphMaxValue: $graphMaxValue, uiMode: $uiMode, showRebreathePercentage: $showRebreathePercentage, graphMinValue: $graphMinValue, screenOnAlarm: $screenOnAlarm, alarmOnCo2Fall: $alarmOnCo2Fall, alarmLevels: $alarmLevels)';
   }
 }
 
@@ -454,3 +477,83 @@ enum PowerMode {
     }
   }
 }
+
+@Embedded(ignore: {'copyWith'})
+class AlarmLevel {
+  final int
+      id; // For UI list key or an actual ID if MAX_ALARM_LEVELS is not fixed
+  final int co2Threshold;
+  final int repeatCount;
+  final bool enabled;
+
+  const AlarmLevel({
+    required this.id,
+    required this.co2Threshold,
+    required this.repeatCount,
+    required this.enabled,
+  });
+
+  AlarmLevel copyWith({
+    int? id,
+    int? co2Threshold,
+    int? repeatCount,
+    bool? enabled,
+  }) {
+    return AlarmLevel(
+      id: id ?? this.id,
+      co2Threshold: co2Threshold ?? this.co2Threshold,
+      repeatCount: repeatCount ?? this.repeatCount,
+      enabled: enabled ?? this.enabled,
+    );
+  }
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is AlarmLevel &&
+          runtimeType == other.runtimeType &&
+          id == other.id &&
+          co2Threshold == other.co2Threshold &&
+          repeatCount == other.repeatCount &&
+          enabled == other.enabled;
+
+  @override
+  int get hashCode =>
+      id.hashCode ^
+      co2Threshold.hashCode ^
+      repeatCount.hashCode ^
+      enabled.hashCode;
+
+  // It might be useful to have a factory for default/empty alarm levels
+  factory AlarmLevel.empty(int id) {
+    return AlarmLevel(
+      id: id,
+      co2Threshold: 0,
+      repeatCount: 0,
+      enabled: false,
+    );
+  }
+
+  // Factory for default alarm levels as per the C code
+  factory AlarmLevel.defaultLevel(int id, int co2, int repeats, bool enabled) {
+    return AlarmLevel(
+      id: id,
+      co2Threshold: co2,
+      repeatCount: repeats,
+      enabled: enabled,
+    );
+  }
+}
+
+const defaultAlarmLevels = [
+  AlarmLevel(id: 0, co2Threshold: 800, repeatCount: 1, enabled: true),
+  AlarmLevel(id: 1, co2Threshold: 1000, repeatCount: 2, enabled: true),
+  AlarmLevel(id: 2, co2Threshold: 1200, repeatCount: 3, enabled: true),
+  AlarmLevel(id: 3, co2Threshold: 1500, repeatCount: 5, enabled: true),
+  AlarmLevel(id: 4, co2Threshold: 0, repeatCount: 0, enabled: false),
+  AlarmLevel(id: 5, co2Threshold: 0, repeatCount: 0, enabled: false),
+  AlarmLevel(id: 6, co2Threshold: 0, repeatCount: 0, enabled: false),
+  AlarmLevel(id: 7, co2Threshold: 0, repeatCount: 0, enabled: false),
+  AlarmLevel(id: 8, co2Threshold: 0, repeatCount: 0, enabled: false),
+  AlarmLevel(id: 9, co2Threshold: 0, repeatCount: 0, enabled: false),
+];
