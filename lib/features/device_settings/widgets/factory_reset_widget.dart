@@ -52,6 +52,7 @@ class _FactoryResetSheet extends ConsumerWidget {
     ref.listen(deviceFactoryResetProvider(deviceId), (_, state) {
       if (state is AsyncSuccess) {
         context.pop();
+        context.pop();
         context.showSnackBar('Device factory reset successfully');
       }
     });

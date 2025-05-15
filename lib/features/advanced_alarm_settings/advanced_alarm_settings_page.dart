@@ -1,3 +1,5 @@
+// ignore_for_file: use_build_context_synchronously
+
 import 'package:airspothealth/core/models/device_settings.dart';
 import 'package:airspothealth/core/utils/extensions.dart';
 import 'package:airspothealth/features/advanced_alarm_settings/providers/advanced_alarm_settings_provider.dart';
@@ -18,39 +20,111 @@ class _AdvancedAlarmSettingsPageState
     extends ConsumerState<AdvancedAlarmSettingsPage> {
   @override
   Widget build(BuildContext context) {
-    final alarmSettings =
+    // Watch individual providers
+    final alarmLevelsState =
         ref.watch(advancedAlarmSettingsProvider(widget.deviceId));
+    final screenIlluminationEnabled =
+        ref.watch(screenIlluminationSettingsProvider(widget.deviceId));
+    final alarmOnCo2FallEnabled =
+        ref.watch(alarmOnCo2FallSettingProvider(widget.deviceId));
+
+    // Read notifiers
+    final alarmLevelsNotifier =
+        ref.read(advancedAlarmSettingsProvider(widget.deviceId).notifier);
+    final screenIlluminationNotifier =
+        ref.read(screenIlluminationSettingsProvider(widget.deviceId).notifier);
+    final alarmOnCo2FallNotifier =
+        ref.read(alarmOnCo2FallSettingProvider(widget.deviceId).notifier);
+
+    // Global save button now only depends on alarm levels changes
+    final bool hasUnsavedChanges = alarmLevelsNotifier.hasUnsavedChanges;
 
     return Scaffold(
       backgroundColor: Colors.grey[100],
-      appBar: AppBar(title: const Text('Advanced Alarm Settings'), actions: [
-        IconButton(
-          icon: const Icon(Icons.restore),
-          tooltip: 'Reset to Defaults',
-          onPressed: () {
-            ref
-                .read(advancedAlarmSettingsProvider(widget.deviceId).notifier)
-                .resetToDefaults();
+      appBar: AppBar(
+        title: const Text('Advanced Alarm Settings',
+            style: TextStyle(fontSize: 18)), // Slightly smaller title
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.restore),
+            tooltip: 'Reset to Defaults',
+            onPressed: () async {
+              // Only call the main reset method on alarmLevelsNotifier
+              await alarmLevelsNotifier.resetAlarmLevelsToDefaults();
+              // screenIlluminationNotifier.resetToDefault(); // No longer called from here
+              // alarmOnCo2FallNotifier.resetToDefault(); // No longer called from here
 
-            context.showSnackBar('Alarm settings reset to defaults');
-          },
-        )
-      ]),
-      body: ListView(
-        padding: const EdgeInsets.all(12),
+              if (mounted) {
+                context.showSnackBar('All advanced settings reset to defaults');
+              }
+            },
+          )
+        ],
+      ),
+      body: Stack(
         children: [
-          _buildScreenOnAlarmSetting(alarmSettings.screenOnAlarm),
-          const SizedBox(height: 12),
-          _buildAlarmOnCo2FallSetting(alarmSettings.alarmOnCo2Fall),
-          const SizedBox(height: 12),
-          _buildAlarmLevelsSection(alarmSettings.alarmLevels, false),
-          const SizedBox(height: 80),
+          ListView(
+            padding: const EdgeInsets.fromLTRB(
+                12, 12, 12, 70), // Reduced bottom padding
+            children: [
+              _buildScreenOnAlarmSetting(
+                  screenIlluminationEnabled, screenIlluminationNotifier),
+              const SizedBox(height: 10), // Reduced spacing
+              _buildAlarmOnCo2FallSetting(
+                  alarmOnCo2FallEnabled, alarmOnCo2FallNotifier),
+              const SizedBox(height: 10), // Reduced spacing
+              _buildAlarmLevelsSection(alarmLevelsState.alarmLevels, false),
+            ],
+          ),
+          if (hasUnsavedChanges)
+            Align(
+              alignment: Alignment.bottomCenter,
+              child: Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: context.theme.primaryColor,
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 32, vertical: 12),
+                    textStyle: const TextStyle(
+                        fontSize: 16, fontWeight: FontWeight.bold),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(30.0),
+                    ),
+                  ),
+                  onPressed: () async {
+                    bool anyError = false;
+                    try {
+                      // Only save alarm levels here
+                      if (alarmLevelsNotifier.hasUnsavedChanges) {
+                        await alarmLevelsNotifier.saveAllAlarmLevels();
+                      }
+                      // Screen illumination and CO2 fall are saved immediately on toggle
+                    } catch (e) {
+                      anyError = true;
+                      debugPrint("Error saving alarm level settings: $e");
+                    }
+
+                    if (!mounted) return;
+                    if (anyError) {
+                      context.showSnackBar(
+                          'Failed to save alarm level settings. Please try again.');
+                    } else {
+                      context.showSnackBar('Alarm level changes saved');
+                    }
+                  },
+                  child: const Text('Save Changes',
+                      style: TextStyle(color: Colors.white)),
+                ),
+              ),
+            ),
         ],
       ),
     );
   }
 
-  Widget _buildScreenOnAlarmSetting(bool enabled) {
+  Widget _buildScreenOnAlarmSetting(
+      bool enabled, ScreenIlluminationSettingNotifier notifier) {
     return Container(
       decoration: BoxDecoration(
         color: Colors.white,
@@ -58,46 +132,42 @@ class _AdvancedAlarmSettingsPageState
         boxShadow: [
           BoxShadow(
             color: Colors.black.withValues(alpha: 0.05),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
+            blurRadius: 6, // Reduced blur
+            offset: const Offset(0, 1), // Reduced offset
           ),
         ],
       ),
-      child: Column(
-        children: [
-          ListTile(
-            contentPadding:
-                const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-            title: const Text(
-              'Screen Illumination',
-              style: TextStyle(
-                fontSize: 15,
-                fontWeight: FontWeight.w500,
-              ),
-            ),
-            subtitle: const Text(
-              'Turn on screen when alarm triggers',
-              style: TextStyle(
-                fontSize: 12,
-                color: Colors.grey,
-              ),
-            ),
-            trailing: Switch(
-              value: enabled,
-              onChanged: (value) {
-                ref
-                    .read(
-                        advancedAlarmSettingsProvider(widget.deviceId).notifier)
-                    .setScreenOnAlarm(value);
-              },
-            ),
+      child: ListTile(
+        contentPadding: const EdgeInsets.symmetric(
+            horizontal: 12, vertical: 0), // Reduced vertical padding
+        title: const Text(
+          'Screen Illumination',
+          style: TextStyle(
+            fontSize: 14, // Reduced font size
+            fontWeight: FontWeight.w500,
           ),
-        ],
+        ),
+        subtitle: const Text(
+          'Turn on screen when alarm triggers',
+          style: TextStyle(
+            fontSize: 11, // Reduced font size
+            color: Colors.grey,
+          ),
+        ),
+        trailing: Switch(
+          value: enabled,
+          onChanged: (value) {
+            notifier.setEnabled(value);
+          },
+          materialTapTargetSize:
+              MaterialTapTargetSize.shrinkWrap, // Compress switch
+        ),
       ),
     );
   }
 
-  Widget _buildAlarmOnCo2FallSetting(bool enabled) {
+  Widget _buildAlarmOnCo2FallSetting(
+      bool enabled, AlarmOnCo2FallSettingNotifier notifier) {
     return Container(
       decoration: BoxDecoration(
         color: Colors.white,
@@ -105,41 +175,36 @@ class _AdvancedAlarmSettingsPageState
         boxShadow: [
           BoxShadow(
             color: Colors.black.withValues(alpha: .05),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
+            blurRadius: 6, // Reduced blur
+            offset: const Offset(0, 1), // Reduced offset
           ),
         ],
       ),
-      child: Column(
-        children: [
-          ListTile(
-            contentPadding:
-                const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-            title: const Text(
-              'Alarm on CO2 Fall',
-              style: TextStyle(
-                fontSize: 15,
-                fontWeight: FontWeight.w500,
-              ),
-            ),
-            subtitle: const Text(
-              'Trigger alarm on co2 fall',
-              style: TextStyle(
-                fontSize: 12,
-                color: Colors.grey,
-              ),
-            ),
-            trailing: Switch(
-              value: enabled,
-              onChanged: (value) {
-                ref
-                    .read(
-                        advancedAlarmSettingsProvider(widget.deviceId).notifier)
-                    .setAlarmOnCo2Fall(value);
-              },
-            ),
+      child: ListTile(
+        contentPadding: const EdgeInsets.symmetric(
+            horizontal: 12, vertical: 0), // Reduced vertical padding
+        title: const Text(
+          'Alarm on CO₂ Fall', // Used subscript
+          style: TextStyle(
+            fontSize: 14, // Reduced font size
+            fontWeight: FontWeight.w500,
           ),
-        ],
+        ),
+        subtitle: const Text(
+          'Trigger alarm on CO₂ fall', // Used subscript
+          style: TextStyle(
+            fontSize: 11, // Reduced font size
+            color: Colors.grey,
+          ),
+        ),
+        trailing: Switch(
+          value: enabled,
+          onChanged: (value) {
+            notifier.setEnabled(value);
+          },
+          materialTapTargetSize:
+              MaterialTapTargetSize.shrinkWrap, // Compress switch
+        ),
       ),
     );
   }
@@ -150,25 +215,29 @@ class _AdvancedAlarmSettingsPageState
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 2, vertical: 8),
+          padding: const EdgeInsets.symmetric(
+              horizontal: 2, vertical: 6), // Reduced vertical padding
           child: Row(
             children: [
               const Icon(Icons.notifications_active_outlined,
-                  size: 20, color: Colors.grey),
-              const SizedBox(width: 8),
+                  size: 18, color: Colors.grey), // Reduced icon size
+              const SizedBox(width: 6), // Reduced spacing
               Text('Alarm Levels',
-                  style: context.textTheme.bodyMedium?.weight600),
+                  style: context.textTheme.bodyMedium?.copyWith(
+                      fontWeight: FontWeight.w600,
+                      fontSize: 14)), // Reduced font size
             ],
           ),
         ),
-        const SizedBox(height: 8),
+        const SizedBox(height: 6), // Reduced spacing
         Text(
-          "You can set the number of times the device beeps and/or vibrates when a certain co2 level is reached. You can also set the co2 level at which the alarm triggers.",
+          "Set beeps/vibrations and CO₂ levels for alarms.", // More concise text
           style: context.textTheme.bodySmall?.copyWith(
             color: Colors.grey,
+            fontSize: 11, // Reduced font size
           ),
         ),
-        const SizedBox(height: 12),
+        const SizedBox(height: 10), // Reduced spacing
         Container(
           decoration: BoxDecoration(
             color: Colors.white,
@@ -176,48 +245,49 @@ class _AdvancedAlarmSettingsPageState
             boxShadow: [
               BoxShadow(
                 color: Colors.black.withValues(alpha: .05),
-                blurRadius: 8,
-                offset: const Offset(0, 2),
+                blurRadius: 6, // Reduced blur
+                offset: const Offset(0, 1), // Reduced offset
               ),
             ],
           ),
           child: Column(
             children: [
               Padding(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+                padding: const EdgeInsets.symmetric(
+                    horizontal: 12.0, vertical: 6.0), // Reduced padding
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     Expanded(
                         flex: 2,
-                        child: Text('CO2 (ppm)',
+                        child: Text('CO₂ (ppm)', // Used subscript
                             style: TextStyle(
                                 fontWeight: FontWeight.bold,
-                                fontSize: 13,
+                                fontSize: 12, // Reduced font size
                                 color: Colors.grey.shade700))),
                     Expanded(
                         child: Text('Repeats',
                             textAlign: TextAlign.center,
                             style: TextStyle(
                                 fontWeight: FontWeight.bold,
-                                fontSize: 13,
+                                fontSize: 12, // Reduced font size
                                 color: Colors.grey.shade700))),
                     Expanded(
                         child: Text('Enabled',
                             textAlign: TextAlign.center,
                             style: TextStyle(
                                 fontWeight: FontWeight.bold,
-                                fontSize: 13,
+                                fontSize: 12, // Reduced font size
                                 color: Colors.grey.shade700))),
                   ],
                 ),
               ),
-              const Divider(height: 1, indent: 16, endIndent: 16),
+              const Divider(
+                  height: 1, indent: 12, endIndent: 12), // Reduced indents
               ListView.separated(
                 shrinkWrap: true,
                 itemCount: alarmLevels.length,
-                physics: ClampingScrollPhysics(),
+                physics: const ClampingScrollPhysics(),
                 separatorBuilder: (context, index) {
                   return const Divider(height: 1, indent: 12, endIndent: 12);
                 },
