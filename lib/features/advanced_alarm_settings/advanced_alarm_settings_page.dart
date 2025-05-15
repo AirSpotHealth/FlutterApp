@@ -2,6 +2,7 @@
 
 import 'package:airspothealth/core/models/device_settings.dart';
 import 'package:airspothealth/core/utils/extensions.dart';
+import 'package:airspothealth/core/widgets/button.dart';
 import 'package:airspothealth/features/advanced_alarm_settings/providers/advanced_alarm_settings_provider.dart';
 import 'package:airspothealth/features/advanced_alarm_settings/widgets/alarm_level_row.dart';
 import 'package:flutter/material.dart';
@@ -76,48 +77,68 @@ class _AdvancedAlarmSettingsPageState
               _buildAlarmLevelsSection(alarmLevelsState.alarmLevels, false),
             ],
           ),
-          if (hasUnsavedChanges)
-            Align(
-              alignment: Alignment.bottomCenter,
-              child: Padding(
-                padding: const EdgeInsets.all(16.0),
-                child: ElevatedButton(
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: context.theme.primaryColor,
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 32, vertical: 12),
-                    textStyle: const TextStyle(
-                        fontSize: 16, fontWeight: FontWeight.bold),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(30.0),
-                    ),
+          // Use AnimatedSwitcher for the Save Changes button
+          Align(
+            alignment: Alignment.bottomCenter,
+            child: AnimatedSwitcher(
+              duration: const Duration(milliseconds: 300),
+              transitionBuilder: (Widget child, Animation<double> animation) {
+                final offsetAnimation = Tween<Offset>(
+                  begin: const Offset(0.0, 0.5), // Start slightly below
+                  end: Offset.zero,
+                ).animate(CurvedAnimation(
+                  parent: animation,
+                  curve: Curves.easeInOut,
+                ));
+                final fadeAnimation = CurvedAnimation(
+                  parent: animation,
+                  curve: Curves.easeInOut,
+                );
+                return SlideTransition(
+                  position: offsetAnimation,
+                  child: FadeTransition(
+                    opacity: fadeAnimation,
+                    child: child,
                   ),
-                  onPressed: () async {
-                    bool anyError = false;
-                    try {
-                      // Only save alarm levels here
-                      if (alarmLevelsNotifier.hasUnsavedChanges) {
-                        await alarmLevelsNotifier.saveAllAlarmLevels();
-                      }
-                      // Screen illumination and CO2 fall are saved immediately on toggle
-                    } catch (e) {
-                      anyError = true;
-                      debugPrint("Error saving alarm level settings: $e");
-                    }
+                );
+              },
+              child: hasUnsavedChanges
+                  ? Padding(
+                      key: const ValueKey(
+                          'saveButton'), // Important for AnimatedSwitcher
+                      padding: const EdgeInsets.all(16.0),
+                      child: Button(
+                        label: 'Update Alarm Levels',
+                        prefixIcon: const Icon(Icons.save, color: Colors.white),
+                        backgroundColor: context.theme.primaryColor,
+                        onPressed: () async {
+                          bool anyError = false;
+                          try {
+                            // Only save alarm levels here
+                            if (alarmLevelsNotifier.hasUnsavedChanges) {
+                              await alarmLevelsNotifier.saveAllAlarmLevels();
+                            }
+                            // Screen illumination and CO2 fall are saved immediately on toggle
+                          } catch (e) {
+                            anyError = true;
+                            debugPrint("Error saving alarm level settings: $e");
+                          }
 
-                    if (!mounted) return;
-                    if (anyError) {
-                      context.showSnackBar(
-                          'Failed to save alarm level settings. Please try again.');
-                    } else {
-                      context.showSnackBar('Alarm level changes saved');
-                    }
-                  },
-                  child: const Text('Save Changes',
-                      style: TextStyle(color: Colors.white)),
-                ),
-              ),
+                          if (!mounted) return;
+                          if (anyError) {
+                            context.showSnackBar(
+                                'Failed to save alarm level settings. Please try again.');
+                          } else {
+                            context.showSnackBar('Alarm level changes saved');
+                          }
+                        },
+                      ),
+                    )
+                  : const SizedBox.shrink(
+                      key: ValueKey(
+                          'emptySpace')), // Show empty space when no changes
             ),
+          ),
         ],
       ),
     );
