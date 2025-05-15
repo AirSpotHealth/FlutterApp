@@ -29,8 +29,9 @@ class ScreenIlluminationSettingNotifier
   bool get hasUnsavedChanges => state != _initialValue;
 
   void setEnabled(bool enabled) {
-    if (state == enabled)
+    if (state == enabled) {
       return; // Don't do anything if state is already the same
+    }
     state = enabled;
     saveSetting(); // Immediately attempt to save
   }
@@ -128,15 +129,13 @@ class AdvancedAlarmSettingsNotifier
 
   @override
   AdvancedAlarmSettingsState build(String deviceId) {
-    final deviceSettings = ref.watch(deviceSettingsProvider(deviceId));
-    // Now only concerned with alarmLevels
-    final currentState = AdvancedAlarmSettingsState(
-      alarmLevels: List<AlarmLevel>.from(deviceSettings.alarmLevels
+    final initialDeviceSettings = ref.read(deviceSettingsProvider(deviceId));
+    final initialState = AdvancedAlarmSettingsState(
+      alarmLevels: List<AlarmLevel>.from(initialDeviceSettings.alarmLevels
           .map((level) => level.copyWith())), // Deep copy
     );
-    _initialSettings ??=
-        currentState.copyWith(); // Store initial state only once
-    return currentState;
+    _initialSettings = initialState.copyWith();
+    return initialState;
   }
 
   bool get hasUnsavedChanges {
