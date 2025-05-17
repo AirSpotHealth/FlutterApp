@@ -99,7 +99,7 @@ class _AlarmLevelRowState extends ConsumerState<AlarmLevelRow> {
       initialValue: currentAlarm.co2Threshold,
       title: 'Select CO₂ Level',
       suffix: 'ppm',
-      submitButtonText: 'Save',
+      submitButtonText: 'Done',
       selectedTextColor: context.theme.primaryColor,
       onSubmit: (newValue) {
         if (newValue > 0) {
@@ -121,7 +121,7 @@ class _AlarmLevelRowState extends ConsumerState<AlarmLevelRow> {
       step: 1,
       initialValue: currentAlarm.repeatCount,
       title: 'Select Alarm Repeats',
-      submitButtonText: 'Save',
+      submitButtonText: 'Done',
       selectedTextColor: context.theme.primaryColor,
       onSubmit: (newValue) {
         if (newValue > 0) {

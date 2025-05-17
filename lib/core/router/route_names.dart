@@ -66,4 +66,7 @@ class RouteNames {
 
   /// advanced alarm settings route
   static const String advancedAlarmSettings = '/advanced-alarm-settings';
+
+  /// sensor configuration route
+  static const String sensorConfiguration = '/sensor-configuration';
 }

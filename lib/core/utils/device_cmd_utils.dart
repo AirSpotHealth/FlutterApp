@@ -71,6 +71,10 @@ class DeviceCmdUtils {
     return _buildCommand([prefixHigh, prefixLow, 0x09, 1, 1]);
   }
 
+  static Uint8List getDeviceSensorConfig() {
+    return _buildCommand([prefixHigh, prefixLow, 0x30, 1, 1]);
+  }
+
   // ======= General Commands =======
   static Uint8List getCO2() {
     return _buildCommand([prefixHigh, prefixLow, 1, 1, 1]);

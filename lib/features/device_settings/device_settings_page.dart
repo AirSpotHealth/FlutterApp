@@ -127,6 +127,23 @@ class DeviceSettingsPage extends ConsumerWidget {
               ),
             ),
             const SizedBox(height: 8),
+            SettingItemWidget(
+              item: SettingItem(
+                title: 'Sensor Configuration',
+                assetIcon: Assets.recalibrateSettings,
+                route: RouteNames.sensorConfiguration,
+              ),
+              onTap: () {
+                if (!ref
+                    .read(bleDeviceConnectionProvider(deviceId).notifier)
+                    .isConnected) {
+                  ref.context.showSnackBar('Device not connected');
+                  return;
+                }
+                ref.context.pushNamed(RouteNames.sensorConfiguration,
+                    pathParameters: {'deviceId': deviceId});
+              },
+            ),
             SensorErrorWidget(deviceId: deviceId),
             PopulateFakeDataWidget(deviceId: deviceId),
             TurnOffBluetoothWidget(deviceId: deviceId),
