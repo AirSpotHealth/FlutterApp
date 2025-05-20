@@ -108,7 +108,7 @@ class _AdvancedAlarmSettingsPageState
                           'saveButton'), // Important for AnimatedSwitcher
                       padding: const EdgeInsets.all(16.0),
                       child: Button(
-                        label: 'Update Alarm Levels',
+                        label: 'Save changes',
                         prefixIcon: const Icon(Icons.save, color: Colors.white),
                         backgroundColor: context.theme.primaryColor,
                         onPressed: () async {

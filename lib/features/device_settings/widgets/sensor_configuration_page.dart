@@ -220,167 +220,89 @@ class SensorConfigurationPage extends ConsumerWidget {
         itemBuilder: (context, index) {
           final entry = dataMap.entries.elementAt(index);
           final sensorInfo = _getSensorIcon(entry.key);
-          return _buildSensorCard(context, entry, sensorInfo);
+          return SensorConfigurationCard(
+            sensorInfo: sensorInfo,
+            entry: entry,
+          );
         },
       ),
     );
   }
+}
 
-  Widget _buildSensorCard(
-    BuildContext context,
-    MapEntry<String, dynamic> entry,
-    Map<String, dynamic> sensorInfo,
-  ) {
-    return Hero(
-      tag: 'sensor-${entry.key}',
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
-          onTap: () {
-            _showSensorDetails(context, entry, sensorInfo);
-          },
-          borderRadius: BorderRadius.circular(12),
-          child: Container(
-            margin: const EdgeInsets.only(bottom: 8),
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(12),
-              gradient: LinearGradient(
-                colors: sensorInfo['gradient'] as List<Color>,
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-              ),
-              border: Border.all(
+class SensorConfigurationCard extends StatelessWidget {
+  const SensorConfigurationCard({
+    super.key,
+    required this.sensorInfo,
+    required this.entry,
+  });
+
+  final Map<String, dynamic> sensorInfo;
+
+  final MapEntry<String, dynamic> entry;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 8),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(12),
+        gradient: LinearGradient(
+          colors: sensorInfo['gradient'] as List<Color>,
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        border: Border.all(
+          color: (sensorInfo['color'] as Color).withValues(alpha: 0.1),
+          width: 1,
+        ),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
+        child: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(10),
+              decoration: BoxDecoration(
                 color: (sensorInfo['color'] as Color).withValues(alpha: 0.1),
-                width: 1,
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Icon(
+                sensorInfo['icon'] as IconData,
+                color: sensorInfo['color'] as Color,
+                size: 20,
               ),
             ),
-            child: Padding(
-              padding:
-                  const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
-              child: Row(
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Container(
-                    padding: const EdgeInsets.all(10),
-                    decoration: BoxDecoration(
-                      color:
-                          (sensorInfo['color'] as Color).withValues(alpha: 0.1),
-                      borderRadius: BorderRadius.circular(8),
+                  Text(
+                    entry.key,
+                    style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w500,
+                      color: Colors.grey[700],
                     ),
-                    child: Icon(
-                      sensorInfo['icon'] as IconData,
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    entry.value.toString(),
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
                       color: sensorInfo['color'] as Color,
-                      size: 20,
                     ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          entry.key,
-                          style: TextStyle(
-                            fontSize: 14,
-                            fontWeight: FontWeight.w500,
-                            color: Colors.grey[700],
-                          ),
-                        ),
-                        const SizedBox(height: 2),
-                        Text(
-                          entry.value.toString(),
-                          style: TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w600,
-                            color: sensorInfo['color'] as Color,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  Icon(
-                    Icons.chevron_right,
-                    color:
-                        (sensorInfo['color'] as Color).withValues(alpha: 0.3),
-                    size: 18,
                   ),
                 ],
               ),
             ),
-          ),
-        ),
-      ),
-    );
-  }
-
-  void _showSensorDetails(
-    BuildContext context,
-    MapEntry<String, dynamic> entry,
-    Map<String, dynamic> sensorInfo,
-  ) {
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: Colors.transparent,
-      isScrollControlled: true,
-      builder: (context) => Container(
-        height: MediaQuery.of(context).size.height * 0.7,
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.05),
-              blurRadius: 10,
-              offset: const Offset(0, -2),
+            Icon(
+              Icons.chevron_right,
+              color: (sensorInfo['color'] as Color).withValues(alpha: 0.3),
+              size: 18,
             ),
-          ],
-        ),
-        child: Column(
-          children: [
-            Container(
-              margin: const EdgeInsets.only(top: 8),
-              width: 36,
-              height: 4,
-              decoration: BoxDecoration(
-                color: Colors.grey[300],
-                borderRadius: BorderRadius.circular(2),
-              ),
-            ),
-            const SizedBox(height: 20),
-            Hero(
-              tag: 'sensor-${entry.key}',
-              child: Container(
-                width: 64,
-                height: 64,
-                decoration: BoxDecoration(
-                  color: (sensorInfo['color'] as Color).withValues(alpha: 0.1),
-                  shape: BoxShape.circle,
-                ),
-                child: Icon(
-                  sensorInfo['icon'] as IconData,
-                  size: 32,
-                  color: sensorInfo['color'] as Color,
-                ),
-              ),
-            ),
-            const SizedBox(height: 20),
-            Text(
-              entry.key,
-              style: const TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.w600,
-                color: Colors.black87,
-              ),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              entry.value.toString(),
-              style: TextStyle(
-                fontSize: 28,
-                fontWeight: FontWeight.w700,
-                color: sensorInfo['color'] as Color,
-              ),
-            ),
-            const SizedBox(height: 24),
           ],
         ),
       ),

@@ -20,7 +20,7 @@ class SensorConfigurationNotifier extends AutoDisposeFamilyNotifier<
   AsyncProgressValue<DeviceSensorConfigData?> build(String deviceId) {
     _fetchConfiguration(deviceId);
     return const AsyncInProgress<DeviceSensorConfigData?>(0,
-        message: 'Loading Sensor Config...');
+        message: 'Fetching Sensor Config...');
   }
 
   Future<void> _fetchConfiguration(String deviceId,
@@ -34,26 +34,16 @@ class SensorConfigurationNotifier extends AutoDisposeFamilyNotifier<
       ref
           .read(bleDeviceCommunicationProvider(deviceId).notifier)
           .sendCommand(DeviceCmdUtils.getDeviceSensorConfig());
-
-      await Future.delayed(const Duration(seconds: 2));
-      final dummyBytes = <int>[
-        0x04,
-        0x00,
-        0x00,
-        0x01,
-        0x86,
-        0xA0,
-        0x00,
-        0x01,
-        0xF4
-      ];
-      final configData = DeviceSensorConfigData.fromBytes(dummyBytes);
-      state = AsyncSuccess<DeviceSensorConfigData?>(configData);
     } catch (e, stackTrace) {
       debugPrint(
-          'Error fetching sensor configuration for $deviceId: $e\n$stackTrace');
+          'Error sending command to fetch sensor configuration for $deviceId: $e\n$stackTrace');
       state = AsyncFailure<DeviceSensorConfigData?>(e);
     }
+  }
+
+  /// Called by BleDataService when new sensor configuration data is parsed.
+  void updateSensorConfigData(DeviceSensorConfigData configData) {
+    state = AsyncSuccess<DeviceSensorConfigData?>(configData);
   }
 
   Future<void> refresh() async {

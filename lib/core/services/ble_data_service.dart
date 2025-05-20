@@ -10,6 +10,7 @@ import 'package:airspothealth/core/utils/app_utils.dart';
 import 'package:airspothealth/features/device_graph/providers/ble_device_provider.dart';
 import 'package:airspothealth/features/device_graph/providers/device_history_data_request_provider.dart';
 import 'package:airspothealth/features/device_settings/models/asc_data.dart';
+import 'package:airspothealth/features/device_settings/models/device_sensor_config_data.dart';
 import 'package:airspothealth/features/device_settings/models/progress_model.dart';
 import 'package:airspothealth/features/device_settings/providers/ble_device_version_provider.dart';
 import 'package:airspothealth/features/device_settings/providers/device_asc_data_provider.dart';
@@ -21,6 +22,7 @@ import 'package:airspothealth/features/device_settings/providers/device_reset_se
 import 'package:airspothealth/features/device_settings/providers/device_variant_provider.dart';
 import 'package:airspothealth/features/device_settings/providers/populate_fake_data_provider.dart';
 import 'package:airspothealth/features/device_settings/providers/recalibration_time_provider.dart';
+import 'package:airspothealth/features/device_settings/providers/sensor_configuration_provider.dart';
 import 'package:airspothealth/features/device_settings/widgets/device_ui_mode_widget.dart';
 import 'package:airspothealth/features/devices/providers/device_battery_level_provider.dart';
 import 'package:flutter/material.dart';
@@ -81,6 +83,7 @@ class BleDataService {
       ResponseCommand.getMemoryDump: parser.parseMemoryDump,
       ResponseCommand.ascDayCount: (_) => parser.parseOneByte(data, 4),
       ResponseCommand.getDeviceVariant: (_) => parser.parseOneByte(data, 4),
+      ResponseCommand.getSensorDetails: parser.parseSensorDetails,
     };
 
     final dynamic value = responseParsers[responseCommand]?.call(data);
@@ -172,6 +175,13 @@ class BleDataService {
         ref
             .read(deviceVariantProvider(deviceId).notifier)
             .setDeviceVariant(DeviceVariant.fromValue(value));
+        break;
+      case ResponseCommand.getSensorDetails:
+        if (value is DeviceSensorConfigData) {
+          ref
+              .read(sensorConfigurationProvider(deviceId).notifier)
+              .updateSensorConfigData(value);
+        }
         break;
       default:
         break;
@@ -666,6 +676,74 @@ class ResponseCommandParser {
           'Device settings: ${isarService.read((isar) => isar.deviceSettings.where().findAll())}');
     }
   }
+
+  DeviceSensorConfigData parseSensorDetails(List<int> data) {
+    // Payload starts after CMD_FIRST, CMD_SECOND, CMD_ID, PAYLOAD_LEN (4 bytes)
+    // Payload length is data[3], which should be 16 (0x10)
+    // Expected data structure:
+    // CMD_FIRST_BYTE (0xFF)
+    // CMD_SECOND_BYTE (0xAA)
+    // CMD_ID (0x30)
+    // PAYLOAD_LEN (0x10 = 16 bytes)
+    // Temperature Offset (uint16_t, 2 bytes, big-endian)
+    // Sensor Altitude (uint16_t, 2 bytes, big-endian)
+    // Ambient Pressure (uint16_t, 2 bytes, big-endian, mBar)
+    // ASC Enabled (uint8_t, 1 byte)
+    // ASC Target (uint16_t, 2 bytes, big-endian)
+    // Serial Number (6 bytes)
+    // Sensor Variant (uint8_t, 1 byte)
+    // Checksum (1 byte)
+
+    // Given data format: ffaa301005da000000000001aa4f942b073ba8006b
+    // Header (ffaa3010) - 4 bytes
+    // Payload (05da000000000001aa4f942b073ba800) - 16 bytes
+    // Checksum (6b) - 1 byte
+    // Total length = 4 (header) + 16 (payload) + 1 (checksum) = 21 bytes
+
+    if (data.length < 21) {
+      // Basic check for minimum length
+      throw Exception(
+          'Invalid data length for SensorDetails. Expected at least 21 bytes, got ${data.length}');
+    }
+
+    int offset = 4; // Start of payload after ffaa3010
+
+    var rawTempOffset = (data[offset++] << 8) | data[offset++];
+    // Convert this to actual temperature using the formula:
+    // T_offset [°C] = word[0] * (175 / (2^16 - 1))
+    // word[0] is rawTempOffset (a 16-bit integer)
+    // (2^16 - 1) is 65535
+    final double actualTempOffset = rawTempOffset * (175.0 / 65535.0);
+
+    final altitude = (data[offset++] << 8) | data[offset++];
+    final ambientPressureMbar = (data[offset++] << 8) | data[offset++];
+    final ascEnabled = data[offset++] == 0x01;
+    final ascTarget = (data[offset++] << 8) | data[offset++];
+
+    final serialNoBytes = data.sublist(offset, offset + 6);
+    offset += 6;
+    final serialNumber = serialNoBytes
+        .map((b) => b.toRadixString(16).padLeft(2, '0'))
+        .join()
+        .toUpperCase();
+
+    final sensorVariantByte = data[offset++];
+    final sensorVariant =
+        "SCD4$sensorVariantByte"; // User's change incorporated
+
+    // Note: Checksum is at data[offset] or data[data.length-1]
+    // We are not verifying checksum here but it's good practice to do so.
+
+    return DeviceSensorConfigData(
+      temperatureOffset: actualTempOffset, // Use the converted double value
+      sensorAltitude: altitude,
+      ambientPressure: ambientPressureMbar,
+      ascEnabled: ascEnabled,
+      ascTarget: ascTarget,
+      serialNumber: serialNumber,
+      sensorVariant: sensorVariant,
+    );
+  }
 }
 
 /// Enum representing various response commands with their corresponding integer values.
@@ -708,7 +786,7 @@ enum ResponseCommand {
   setContinuosDisplayResult(0x0E),
   firmwareVersion(0x13),
   recalibrationTime(0x0F),
-  recalibrationConfirm(0x0D),
+  recalibrationConfirm(0x1F),
   locateMyAirspot(0x10),
   dataEraseDone(0xFD),
   batteryLevel(0x20),
@@ -719,11 +797,13 @@ enum ResponseCommand {
   getMemoryDump(0x26),
   ascDayCount(0x2A),
   getDeviceVariant(0x2B),
-  getAdvancedAlarmSettings(0x2F);
+  getAdvancedAlarmSettings(0x2F),
+  getSensorDetails(0x30);
 
   const ResponseCommand(this.value);
   final int value;
 
-  factory ResponseCommand.fromValue(int value) => ResponseCommand.values
-      .firstWhere((e) => e.value == value, orElse: () => throw 'Invalid value');
+  factory ResponseCommand.fromValue(int value) =>
+      ResponseCommand.values.firstWhere((e) => e.value == value,
+          orElse: () => throw 'Invalid value: $value');
 }
