@@ -134,12 +134,6 @@ class DeviceSettingsPage extends ConsumerWidget {
                 route: RouteNames.sensorConfiguration,
               ),
               onTap: () {
-                if (!ref
-                    .read(bleDeviceConnectionProvider(deviceId).notifier)
-                    .isConnected) {
-                  ref.context.showSnackBar('Device not connected');
-                  return;
-                }
                 ref.context.pushNamed(RouteNames.sensorConfiguration,
                     pathParameters: {'deviceId': deviceId});
               },

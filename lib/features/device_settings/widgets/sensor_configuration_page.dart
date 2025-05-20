@@ -214,97 +214,86 @@ class SensorConfigurationPage extends ConsumerWidget {
       onRefresh: () async {
         ref.read(sensorConfigurationProvider(deviceId).notifier).refresh();
       },
-      child: ListView.builder(
-        padding: const EdgeInsets.all(16.0),
-        itemCount: dataMap.length,
-        itemBuilder: (context, index) {
-          final entry = dataMap.entries.elementAt(index);
-          final sensorInfo = _getSensorIcon(entry.key);
-          return SensorConfigurationCard(
-            sensorInfo: sensorInfo,
-            entry: entry,
-          );
-        },
+      child: SingleChildScrollView(
+        child: Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Column(
+            children: dataMap.entries.map<Widget>((entry) {
+              final sensorInfo = _getSensorIcon(entry.key);
+              return Column(
+                children: [
+                  _SensorDetailRow(
+                    sensorInfo: sensorInfo,
+                    entry: entry,
+                  ),
+                  if (dataMap.entries.last != entry)
+                    const Divider(height: 1, indent: 0, endIndent: 0),
+                ],
+              );
+            }).toList(),
+          ),
+        ),
       ),
     );
   }
 }
 
-class SensorConfigurationCard extends StatelessWidget {
-  const SensorConfigurationCard({
-    super.key,
+class _SensorDetailRow extends StatelessWidget {
+  const _SensorDetailRow({
     required this.sensorInfo,
     required this.entry,
   });
 
   final Map<String, dynamic> sensorInfo;
-
   final MapEntry<String, dynamic> entry;
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      margin: const EdgeInsets.only(bottom: 8),
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(12),
-        gradient: LinearGradient(
-          colors: sensorInfo['gradient'] as List<Color>,
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
-        border: Border.all(
-          color: (sensorInfo['color'] as Color).withValues(alpha: 0.1),
-          width: 1,
-        ),
-      ),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
-        child: Row(
-          children: [
-            Container(
-              padding: const EdgeInsets.all(10),
-              decoration: BoxDecoration(
-                color: (sensorInfo['color'] as Color).withValues(alpha: 0.1),
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: Icon(
-                sensorInfo['icon'] as IconData,
-                color: sensorInfo['color'] as Color,
-                size: 20,
-              ),
+      padding: const EdgeInsets.symmetric(horizontal: 0, vertical: 12.0),
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(10),
+            decoration: BoxDecoration(
+              color: sensorInfo['gradient'][0],
+              borderRadius: BorderRadius.circular(8),
             ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    entry.key,
-                    style: TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w500,
-                      color: Colors.grey[700],
-                    ),
+            child: Icon(
+              sensorInfo['icon'] as IconData,
+              color: sensorInfo['color'],
+              size: 20,
+            ),
+          ),
+          const SizedBox(width: 16),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Text(
+                  entry.key,
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w500,
+                    color: Colors.blueGrey.shade700,
                   ),
-                  const SizedBox(height: 2),
-                  Text(
-                    entry.value.toString(),
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w600,
-                      color: sensorInfo['color'] as Color,
-                    ),
+                  overflow: TextOverflow.ellipsis,
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  entry.value.toString(),
+                  style: const TextStyle(
+                    fontSize: 15,
+                    fontWeight: FontWeight.w600,
+                    color: Colors.black,
                   ),
-                ],
-              ),
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ],
             ),
-            Icon(
-              Icons.chevron_right,
-              color: (sensorInfo['color'] as Color).withValues(alpha: 0.3),
-              size: 18,
-            ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
