@@ -370,6 +370,19 @@ class DeviceCmdUtils {
     ]);
   }
 
+  static Uint8List setAltitudePressureScaling(
+      int altitude, int pressure, int scaling) {
+    return _buildCommand([
+      prefixHigh,
+      prefixLow,
+      0x31, // Command for Set altitude/pressure/scaling
+      0x06, // Length of payload (6 bytes)
+      ..._getHex2Bytes(altitude),
+      ..._getHex2Bytes(pressure),
+      ..._getHex2Bytes(scaling),
+    ]);
+  }
+
   // ======= Helper Functions =======
   static Uint8List _getHex2Bytes(int value) {
     var byteArray = Uint8List(2);

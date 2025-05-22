@@ -80,6 +80,15 @@ class DeviceSettings {
   final bool alarmOnCo2Fall;
   final List<AlarmLevel> alarmLevels;
 
+  /// Altitude in meters above sea level
+  final double altitude;
+
+  /// Pressure in hPa
+  final double pressure;
+
+  /// Scaling factor
+  final double scaling;
+
   const DeviceSettings({
     required this.alarmEnabled,
     required this.vibrationEnabled,
@@ -104,6 +113,9 @@ class DeviceSettings {
     this.screenOnAlarm = true,
     this.alarmOnCo2Fall = false,
     this.alarmLevels = defaultAlarmLevels,
+    this.altitude = 0.0,
+    this.pressure = 1013.25,
+    this.scaling = 1.0,
   });
 
   DeviceSettings.empty({required this.deviceId})
@@ -128,7 +140,10 @@ class DeviceSettings {
         graphMinValue = 0,
         screenOnAlarm = true,
         alarmOnCo2Fall = false,
-        alarmLevels = defaultAlarmLevels;
+        alarmLevels = defaultAlarmLevels,
+        altitude = 0.0,
+        pressure = 1013.25,
+        scaling = 1.0;
 
   DeviceSettings copyWith({
     bool? alarmEnabled,
@@ -155,6 +170,9 @@ class DeviceSettings {
     bool? screenOnAlarm,
     bool? alarmOnCo2Fall,
     List<AlarmLevel>? alarmLevels,
+    double? altitude,
+    double? pressure,
+    double? scaling,
   }) {
     return DeviceSettings(
       alarmEnabled: alarmEnabled ?? this.alarmEnabled,
@@ -182,6 +200,9 @@ class DeviceSettings {
       screenOnAlarm: screenOnAlarm ?? this.screenOnAlarm,
       alarmOnCo2Fall: alarmOnCo2Fall ?? this.alarmOnCo2Fall,
       alarmLevels: alarmLevels ?? this.alarmLevels,
+      altitude: altitude ?? this.altitude,
+      pressure: pressure ?? this.pressure,
+      scaling: scaling ?? this.scaling,
     );
   }
 
@@ -291,6 +312,9 @@ class DeviceSettings {
       'uiMode': uiMode.index,
       'showRebreathePercentage': showRebreathePercentage,
       'graphMinValue': graphMinValue,
+      'altitude': altitude,
+      'pressure': pressure,
+      'scaling': scaling,
     };
   }
 
@@ -321,7 +345,10 @@ class DeviceSettings {
         other.screenOnAlarm == screenOnAlarm &&
         other.alarmOnCo2Fall == alarmOnCo2Fall &&
         other.alarmLevels == alarmLevels &&
-        other.graphMinValue == graphMinValue;
+        other.graphMinValue == graphMinValue &&
+        other.altitude == altitude &&
+        other.pressure == pressure &&
+        other.scaling == scaling;
   }
 
   @override
@@ -348,11 +375,14 @@ class DeviceSettings {
       screenOnAlarm.hashCode ^
       alarmOnCo2Fall.hashCode ^
       alarmLevels.hashCode ^
-      graphMinValue.hashCode;
+      graphMinValue.hashCode ^
+      altitude.hashCode ^
+      pressure.hashCode ^
+      scaling.hashCode;
 
   @override
   String toString() {
-    return 'DeviceSettings(alarmEnabled: $alarmEnabled, vibrationEnabled: $vibrationEnabled, powerMode: $powerMode, continuosScreenEnabled: $continuosScreenEnabled, thresholds: $thresholds, deviceId: $deviceId, co2MedAlertEnabled: $co2MedAlertEnabled, co2HighAlertEnabled: $co2HighAlertEnabled, autoSyncTime: $autoSyncTime, autoCalibration: $autoCalibration, autoConnect: $autoConnect, logData: $logData, dndEnabled: $dndEnabled, dndStartTime: $dndStartTime, dndEndTime: $dndEndTime, recalibrationTarget: $recalibrationTarget, graphMaxValue: $graphMaxValue, uiMode: $uiMode, showRebreathePercentage: $showRebreathePercentage, graphMinValue: $graphMinValue, screenOnAlarm: $screenOnAlarm, alarmOnCo2Fall: $alarmOnCo2Fall, alarmLevels: $alarmLevels)';
+    return 'DeviceSettings(alarmEnabled: $alarmEnabled, vibrationEnabled: $vibrationEnabled, powerMode: $powerMode, continuosScreenEnabled: $continuosScreenEnabled, thresholds: $thresholds, deviceId: $deviceId, co2MedAlertEnabled: $co2MedAlertEnabled, co2HighAlertEnabled: $co2HighAlertEnabled, autoSyncTime: $autoSyncTime, autoCalibration: $autoCalibration, autoConnect: $autoConnect, logData: $logData, dndEnabled: $dndEnabled, dndStartTime: $dndStartTime, dndEndTime: $dndEndTime, recalibrationTarget: $recalibrationTarget, graphMaxValue: $graphMaxValue, uiMode: $uiMode, showRebreathePercentage: $showRebreathePercentage, graphMinValue: $graphMinValue, screenOnAlarm: $screenOnAlarm, alarmOnCo2Fall: $alarmOnCo2Fall, alarmLevels: $alarmLevels, altitude: $altitude, pressure: $pressure, scaling: $scaling)';
   }
 }
 

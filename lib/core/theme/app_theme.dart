@@ -73,7 +73,7 @@ class AppTheme {
       color: Colors.grey.shade200,
       thickness: 1,
     ),
-    cardTheme: CardTheme(
+    cardTheme: CardThemeData(
       color: Colors.white,
       elevation: 0,
       surfaceTintColor: Colors.white,

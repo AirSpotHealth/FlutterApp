@@ -1,10 +1,12 @@
 import 'package:airspothealth/core/models/device_settings.dart';
 import 'package:airspothealth/core/providers/device_settings_provider.dart';
+import 'package:airspothealth/core/theme/app_colors.dart';
 import 'package:airspothealth/core/utils/extensions.dart';
 import 'package:airspothealth/core/widgets/button.dart';
 import 'package:airspothealth/features/device_settings/models/progress_model.dart';
 import 'package:airspothealth/features/device_settings/providers/device_reset_sensor_provider.dart';
 import 'package:airspothealth/features/device_settings/providers/recalibration_time_provider.dart';
+import 'package:airspothealth/features/device_settings/widgets/altitude_pressure_scaling_widget.dart';
 import 'package:airspothealth/features/device_settings/widgets/device_settings_name_widget.dart';
 import 'package:airspothealth/features/device_settings/widgets/manual_calibration_widget.dart';
 import 'package:airspothealth/features/device_settings/widgets/next_calibration_date_widget.dart';
@@ -98,6 +100,9 @@ class RecalibrateDevicePage extends ConsumerWidget {
           deviceId: deviceId,
           calibrationTarget: deviceSettings.recalibrationTarget,
         ),
+        const Divider(),
+        AltitudePressureScalingWidget(deviceId: deviceId),
+        const SizedBox(height: 8),
         const Divider(),
         ResetSensorWidget(deviceId: deviceId),
       ],
@@ -213,8 +218,8 @@ class ResetSensorWidget extends ConsumerWidget {
           contentPadding: EdgeInsets.zero,
         ),
         Button(
-          type: ButtonType.outlined,
           disabled: resetSensorStatus.isInProgress,
+          backgroundColor: AppColors.brandColorRed,
           onPressed: () {
             if (resetSensorStatus.isInProgress) return;
 
