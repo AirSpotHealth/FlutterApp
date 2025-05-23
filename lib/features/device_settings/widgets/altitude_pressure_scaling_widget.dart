@@ -171,7 +171,11 @@ class _AltitudePressureScalingWidgetState
                 child: _buildField('Scaling (0.5-2.0)', _scalingController,
                     _onScalingChanged, labelStyle, fieldTextStyle)),
             const SizedBox(width: 8),
-            Button(wrapWidth: true, onPressed: _saveSettings, label: 'SET'),
+            SizedBox(
+              height: 40,
+              child: Button(
+                  wrapWidth: true, onPressed: _saveSettings, label: 'SET'),
+            ),
           ],
         ),
       ],
