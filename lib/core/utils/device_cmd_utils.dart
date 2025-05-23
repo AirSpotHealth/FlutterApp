@@ -370,16 +370,13 @@ class DeviceCmdUtils {
     ]);
   }
 
-  static Uint8List setAltitudePressureScaling(
-      int altitude, int pressure, int scaling) {
+  static Uint8List setScaleFactor(double scaling) {
     return _buildCommand([
       prefixHigh,
       prefixLow,
-      0x31, // Command for Set altitude/pressure/scaling
-      0x06, // Length of payload (6 bytes)
-      ..._getHex2Bytes(altitude),
-      ..._getHex2Bytes(pressure),
-      ..._getHex2Bytes(scaling),
+      0x31, // Command for set scale factor
+      0x02, // Length of payload (4 bytes float value)
+      ...getFloat32Bytes(scaling),
     ]);
   }
 
@@ -389,6 +386,16 @@ class DeviceCmdUtils {
     byteArray[0] = (value >> 8) & 0xFF;
     byteArray[1] = value & 0xFF;
     return byteArray;
+  }
+
+  static Uint8List getFloat32Bytes(double value) {
+    final byteData = ByteData(4);
+    byteData.setFloat32(
+        0,
+        value,
+        Endian
+            .big); // use Endian.little if your BLE peripheral expects little-endian
+    return byteData.buffer.asUint8List();
   }
 
   static Uint8List setRecalibrationTarget(int target) {

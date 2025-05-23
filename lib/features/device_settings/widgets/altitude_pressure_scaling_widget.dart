@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:airspothealth/core/models/device_settings.dart';
 import 'package:airspothealth/core/providers/ble_device_communication_provider.dart';
 import 'package:airspothealth/core/providers/device_settings_provider.dart';
+import 'package:airspothealth/core/utils/app_utils.dart';
 import 'package:airspothealth/core/utils/device_cmd_utils.dart';
 import 'package:airspothealth/core/widgets/button.dart';
 import 'package:flutter/material.dart';
@@ -34,15 +35,19 @@ class _AltitudePressureScalingWidgetState
     _pressureController = TextEditingController();
     _scalingController = TextEditingController();
 
-    // Initialize controllers with current settings
     final deviceSettings = ref.read(deviceSettingsProvider(widget.deviceId));
     _updateTextControllers(deviceSettings);
   }
 
+  double clampScaling(double value) => value.clamp(0.2, 2.0);
+
   void _updateTextControllers(DeviceSettings settings) {
-    _altitudeController.text = settings.altitude.toStringAsFixed(0);
-    _pressureController.text = settings.pressure.toStringAsFixed(2);
-    _scalingController.text = settings.scaling.toStringAsFixed(2);
+    final scaling = clampScaling(settings.scaling);
+    final altitude = convertScalingToAltitude(scaling);
+    final pressure = convertScalingToPressure(scaling);
+    _altitudeController.text = altitude.toStringAsFixed(0);
+    _pressureController.text = pressure.toStringAsFixed(2);
+    _scalingController.text = scaling.toStringAsFixed(2);
   }
 
   @override
@@ -56,28 +61,26 @@ class _AltitudePressureScalingWidgetState
 
   void _onAltitudeChanged(String value) {
     _debounce?.cancel();
-    _debounce = Timer(const Duration(milliseconds: 500), () {
+    _debounce = Timer(const Duration(milliseconds: 1000), () {
       final altitude = double.tryParse(value);
       if (altitude != null) {
-        ref
-            .read(deviceSettingsProvider(widget.deviceId).notifier)
-            .updateSettings(ref
-                .read(deviceSettingsProvider(widget.deviceId))
-                .copyWith(altitude: altitude));
+        final scaling = clampScaling(calculateScalingFromAltitude(altitude));
+        final pressure = convertScalingToPressure(scaling);
+        _pressureController.text = pressure.toStringAsFixed(2);
+        _scalingController.text = scaling.toStringAsFixed(2);
       }
     });
   }
 
   void _onPressureChanged(String value) {
     _debounce?.cancel();
-    _debounce = Timer(const Duration(milliseconds: 500), () {
+    _debounce = Timer(const Duration(milliseconds: 1000), () {
       final pressure = double.tryParse(value);
       if (pressure != null) {
-        ref
-            .read(deviceSettingsProvider(widget.deviceId).notifier)
-            .updateSettings(ref
-                .read(deviceSettingsProvider(widget.deviceId))
-                .copyWith(pressure: pressure));
+        final scaling = clampScaling(calculateScalingFromPressure(pressure));
+        final altitude = convertScalingToAltitude(scaling);
+        _altitudeController.text = altitude.toStringAsFixed(0);
+        _scalingController.text = scaling.toStringAsFixed(2);
       }
     });
   }
@@ -85,49 +88,29 @@ class _AltitudePressureScalingWidgetState
   void _onScalingChanged(String value) {
     _debounce?.cancel();
     _debounce = Timer(const Duration(milliseconds: 500), () {
-      final scaling = double.tryParse(value);
-      if (scaling != null) {
-        ref
-            .read(deviceSettingsProvider(widget.deviceId).notifier)
-            .updateSettings(ref
-                .read(deviceSettingsProvider(widget.deviceId))
-                .copyWith(scaling: scaling));
+      final scalingRaw = double.tryParse(value);
+      if (scalingRaw != null && scalingRaw >= 0.5 && scalingRaw <= 2.0) {
+        final scaling = clampScaling(scalingRaw);
+        final altitude = convertScalingToAltitude(scaling);
+        final pressure = convertScalingToPressure(scaling);
+        _altitudeController.text = altitude.toStringAsFixed(0);
+        _pressureController.text = pressure.toStringAsFixed(2);
+        _scalingController.text = scaling.toStringAsFixed(4); // Show 4 decimals
       }
     });
   }
 
   void _saveSettings() {
+    final raw = double.tryParse(_scalingController.text) ?? 1.0;
+    final clamped = clampScaling(raw.clamp(0.5, 2.0));
+    final rounded = double.parse(clamped.toStringAsFixed(4));
     ref
         .read(bleDeviceCommunicationProvider(widget.deviceId).notifier)
-        .sendCommand(DeviceCmdUtils.setAltitudePressureScaling(
-            ref.read(deviceSettingsProvider(widget.deviceId)).altitude.toInt(),
-            ref.read(deviceSettingsProvider(widget.deviceId)).pressure.toInt(),
-            ref.read(deviceSettingsProvider(widget.deviceId)).scaling.toInt()));
+        .sendCommand(DeviceCmdUtils.setScaleFactor(rounded));
   }
 
   @override
   Widget build(BuildContext context) {
-    ref.listen<DeviceSettings>(deviceSettingsProvider(widget.deviceId),
-        (previous, next) {
-      // Update text controllers if the values change from provider (e.g. due to linked calculations)
-      if (previous?.altitude != next.altitude ||
-          previous?.pressure != next.pressure ||
-          previous?.scaling != next.scaling) {
-        if (mounted) {
-          // Ensure widget is still in the tree
-          _updateTextControllers(next);
-        }
-      }
-    });
-
-    final deviceSettings = ref.watch(deviceSettingsProvider(widget.deviceId));
-    // Initial set or if widget rebuilds and controllers are re-initialized empty
-    if (_altitudeController.text.isEmpty &&
-        _pressureController.text.isEmpty &&
-        _scalingController.text.isEmpty) {
-      _updateTextControllers(deviceSettings);
-    }
-
     const labelStyle = TextStyle(fontSize: 12, color: Colors.grey);
     const fieldTextStyle = TextStyle(fontSize: 14);
 
@@ -146,87 +129,58 @@ class _AltitudePressureScalingWidgetState
         ),
         const SizedBox(height: 16),
         Row(
-          crossAxisAlignment:
-              CrossAxisAlignment.end, // Align items to the bottom
+          crossAxisAlignment: CrossAxisAlignment.end,
           children: [
             Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  const Text('Metres above sea level', style: labelStyle),
-                  const SizedBox(height: 4),
-                  _buildTextField(
-                    controller: _altitudeController,
-                    onChanged: _onAltitudeChanged,
-                    textStyle: fieldTextStyle,
-                  ),
-                ],
-              ),
-            ),
+                child: _buildField(
+                    'Metres above sea level',
+                    _altitudeController,
+                    _onAltitudeChanged,
+                    labelStyle,
+                    fieldTextStyle)),
             const SizedBox(width: 8),
             Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  const Text('Pressure (hPa)', style: labelStyle),
-                  const SizedBox(height: 4),
-                  _buildTextField(
-                    controller: _pressureController,
-                    onChanged: _onPressureChanged,
-                    textStyle: fieldTextStyle,
-                  ),
-                ],
-              ),
-            ),
+                child: _buildField('Pressure (hPa)', _pressureController,
+                    _onPressureChanged, labelStyle, fieldTextStyle)),
             const SizedBox(width: 8),
             Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  const Text('Scaling', style: labelStyle),
-                  const SizedBox(height: 4),
-                  _buildTextField(
-                    controller: _scalingController,
-                    onChanged: _onScalingChanged,
-                    textStyle: fieldTextStyle,
-                  ),
-                ],
-              ),
-            ),
+                child: _buildField('Scaling', _scalingController,
+                    _onScalingChanged, labelStyle, fieldTextStyle)),
             const SizedBox(width: 8),
-            Button(
-              wrapWidth: true,
-              onPressed: _saveSettings,
-              label: 'SET',
-            ),
+            Button(wrapWidth: true, onPressed: _saveSettings, label: 'SET'),
           ],
         ),
       ],
     );
   }
 
-  Widget _buildTextField({
-    required TextEditingController controller,
-    required ValueChanged<String> onChanged,
-    TextStyle? textStyle,
-  }) {
-    return TextFormField(
-      controller: controller,
-      style: textStyle,
-      keyboardType: const TextInputType.numberWithOptions(decimal: true),
-      inputFormatters: [
-        FilteringTextInputFormatter.allow(RegExp(r'^\d*\.?\d*')),
+  Widget _buildField(
+      String label,
+      TextEditingController controller,
+      ValueChanged<String> onChanged,
+      TextStyle labelStyle,
+      TextStyle textStyle) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Text(label, style: labelStyle),
+        const SizedBox(height: 4),
+        TextFormField(
+          controller: controller,
+          style: textStyle,
+          keyboardType: const TextInputType.numberWithOptions(decimal: true),
+          inputFormatters: [
+            FilteringTextInputFormatter.allow(RegExp(r'^\d{0,1}(\.\d{0,4})?$')),
+          ],
+          decoration: const InputDecoration(
+            border: OutlineInputBorder(),
+            contentPadding: EdgeInsets.symmetric(horizontal: 8, vertical: 10),
+            isDense: true,
+          ),
+          onChanged: onChanged,
+        ),
       ],
-      decoration: const InputDecoration(
-        border: OutlineInputBorder(),
-        contentPadding: EdgeInsets.symmetric(
-            horizontal: 8, vertical: 10), // Reduced padding
-        isDense: true, // Makes the TextField more compact
-      ),
-      onChanged: onChanged,
     );
   }
 }

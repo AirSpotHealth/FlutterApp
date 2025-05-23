@@ -1,5 +1,3 @@
-import 'dart:math';
-
 import 'package:airspothealth/core/models/ble_device.dart';
 import 'package:airspothealth/core/models/device_settings.dart';
 import 'package:airspothealth/core/providers/ble_device_communication_provider.dart';
@@ -8,26 +6,6 @@ import 'package:airspothealth/core/utils/device_cmd_utils.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:isar/isar.dart';
-
-const _standardPressure = 1013.25; // Standard sea level pressure in hPa
-
-double calculatePressureFromAltitude(double altitude) {
-  if (altitude == 0) return _standardPressure;
-  return _standardPressure * pow(1 - altitude / 44330, 5.255);
-}
-
-double calculateAltitudeFromPressure(double pressure) {
-  if (pressure == _standardPressure) return 0;
-  return (1 - pow(pressure / _standardPressure, 1 / 5.255)) * 44330;
-}
-
-double calculateScalingFromPressure(double pressure) {
-  return 1013.0 / pressure;
-}
-
-double calculatePressureFromScaling(double scaling) {
-  return 1013.0 / scaling;
-}
 
 final deviceSettingsProvider =
     NotifierProvider.family<_DeviceSettingsNotifier, DeviceSettings, String>(
@@ -61,30 +39,6 @@ class _DeviceSettingsNotifier extends FamilyNotifier<DeviceSettings, String> {
 
   void updateSettings(DeviceSettings settings, {bool sendCommands = true}) {
     DeviceSettings newSettings = settings;
-
-    // Recalculate if one of the altitude/pressure/scaling values changed
-    if (settings.altitude != state.altitude) {
-      final newPressure = calculatePressureFromAltitude(settings.altitude);
-      final newScaling = calculateScalingFromPressure(newPressure);
-      newSettings = newSettings.copyWith(
-        pressure: newPressure,
-        scaling: newScaling,
-      );
-    } else if (settings.pressure != state.pressure) {
-      final newAltitude = calculateAltitudeFromPressure(settings.pressure);
-      final newScaling = calculateScalingFromPressure(settings.pressure);
-      newSettings = newSettings.copyWith(
-        altitude: newAltitude,
-        scaling: newScaling,
-      );
-    } else if (settings.scaling != state.scaling) {
-      final newPressure = calculatePressureFromScaling(settings.scaling);
-      final newAltitude = calculateAltitudeFromPressure(newPressure);
-      newSettings = newSettings.copyWith(
-        pressure: newPressure,
-        altitude: newAltitude,
-      );
-    }
 
     if (sendCommands) {
       // check which settings are changed and send the command to the device
@@ -141,17 +95,11 @@ class _DeviceSettingsNotifier extends FamilyNotifier<DeviceSettings, String> {
             .read(bleDeviceCommunicationProvider(newSettings.deviceId).notifier)
             .sendCommand(
                 DeviceCmdUtils.setAlarmOnCo2Fall(newSettings.alarmOnCo2Fall));
-      } else if (newSettings.altitude != state.altitude ||
-          newSettings.pressure != state.pressure ||
-          newSettings.scaling != state.scaling) {
+      } else if (newSettings.scaling != state.scaling) {
         ref
             .read(bleDeviceCommunicationProvider(newSettings.deviceId).notifier)
-            .sendCommand(DeviceCmdUtils.setAltitudePressureScaling(
-                newSettings.altitude.toInt(),
-                newSettings.pressure.toInt(),
-                newSettings.scaling.toInt()));
-        debugPrint(
-            'Altitude/Pressure/Scaling changed. Sending command to device.');
+            .sendCommand(DeviceCmdUtils.setScaleFactor(newSettings.scaling));
+        debugPrint('Scaling changed. Sending command to device.');
       }
     }
 

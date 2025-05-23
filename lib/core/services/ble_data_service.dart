@@ -1,3 +1,5 @@
+import 'dart:typed_data';
+
 import 'package:airspothealth/core/models/ble_device.dart';
 import 'package:airspothealth/core/models/device_data.dart';
 import 'package:airspothealth/core/models/device_data_type.dart';
@@ -372,6 +374,16 @@ class ResponseCommandParser {
               'InitialData: Remaining data after parsing other settings: ${data.sublist(25).map((e) => e.toRadixString(16)).join()}');
         }
 
+        // check if the scaling is present in the data
+        // it is a 4 byte float value
+        if (data.length >= 25 + 42 + 4) {
+          final scaling = parseFloatFromBytes(data, 25 + 42 + 4);
+          debugPrint('InitialData: Scaling: $scaling');
+
+          // update the scaling in the settings
+          settings = settings.copyWith(scaling: scaling);
+        }
+
         debugPrint(
             'InitialData Final Values -> ScreenOnAlarm: $finalScreenOnAlarm, AlarmOnCo2Fall: $finalAlarmOnCo2Fall');
 
@@ -654,6 +666,12 @@ class ResponseCommandParser {
     final size = data[sizeIndex];
     final contentArray = data.sublist(4, size + 4);
     return String.fromCharCodes(contentArray);
+  }
+
+  double parseFloatFromBytes(List<int> data, int startIndex) {
+    final bytes = data.sublist(startIndex, startIndex + 4);
+    final byteData = ByteData.sublistView(Uint8List.fromList(bytes));
+    return byteData.getFloat32(0, Endian.big); // Big-endian from C code
   }
 
   void _updateDeviceSettings(DeviceSettings Function(DeviceSettings) update) {

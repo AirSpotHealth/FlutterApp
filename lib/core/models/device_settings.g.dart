@@ -118,14 +118,6 @@ const DeviceSettingsSchema = IsarGeneratedSchema(
         target: 'AlarmLevel',
       ),
       IsarPropertySchema(
-        name: 'altitude',
-        type: IsarType.double,
-      ),
-      IsarPropertySchema(
-        name: 'pressure',
-        type: IsarType.double,
-      ),
-      IsarPropertySchema(
         name: 'scaling',
         type: IsarType.double,
       ),
@@ -190,9 +182,7 @@ int serializeDeviceSettings(IsarWriter writer, DeviceSettings object) {
     }
     IsarCore.endList(writer, listWriter);
   }
-  IsarCore.writeDouble(writer, 24, object.altitude);
-  IsarCore.writeDouble(writer, 25, object.pressure);
-  IsarCore.writeDouble(writer, 26, object.scaling);
+  IsarCore.writeDouble(writer, 24, object.scaling);
   return Isar.fastHash(object.deviceId);
 }
 
@@ -362,27 +352,9 @@ DeviceSettings deserializeDeviceSettings(IsarReader reader) {
       }
     }
   }
-  final double _altitude;
-  {
-    final value = IsarCore.readDouble(reader, 24);
-    if (value.isNaN) {
-      _altitude = 0.0;
-    } else {
-      _altitude = value;
-    }
-  }
-  final double _pressure;
-  {
-    final value = IsarCore.readDouble(reader, 25);
-    if (value.isNaN) {
-      _pressure = 1013.25;
-    } else {
-      _pressure = value;
-    }
-  }
   final double _scaling;
   {
-    final value = IsarCore.readDouble(reader, 26);
+    final value = IsarCore.readDouble(reader, 24);
     if (value.isNaN) {
       _scaling = 1.0;
     } else {
@@ -413,8 +385,6 @@ DeviceSettings deserializeDeviceSettings(IsarReader reader) {
     screenOnAlarm: _screenOnAlarm,
     alarmOnCo2Fall: _alarmOnCo2Fall,
     alarmLevels: _alarmLevels,
-    altitude: _altitude,
-    pressure: _pressure,
     scaling: _scaling,
   );
   return object;
@@ -591,24 +561,6 @@ dynamic deserializeDeviceSettingsProp(IsarReader reader, int property) {
       {
         final value = IsarCore.readDouble(reader, 24);
         if (value.isNaN) {
-          return 0.0;
-        } else {
-          return value;
-        }
-      }
-    case 25:
-      {
-        final value = IsarCore.readDouble(reader, 25);
-        if (value.isNaN) {
-          return 1013.25;
-        } else {
-          return value;
-        }
-      }
-    case 26:
-      {
-        final value = IsarCore.readDouble(reader, 26);
-        if (value.isNaN) {
           return 1.0;
         } else {
           return value;
@@ -642,8 +594,6 @@ sealed class _DeviceSettingsUpdate {
     bool? showRebreathePercentage,
     bool? screenOnAlarm,
     bool? alarmOnCo2Fall,
-    double? altitude,
-    double? pressure,
     double? scaling,
   });
 }
@@ -676,8 +626,6 @@ class _DeviceSettingsUpdateImpl implements _DeviceSettingsUpdate {
     Object? showRebreathePercentage = ignore,
     Object? screenOnAlarm = ignore,
     Object? alarmOnCo2Fall = ignore,
-    Object? altitude = ignore,
-    Object? pressure = ignore,
     Object? scaling = ignore,
   }) {
     return collection.updateProperties([
@@ -705,9 +653,7 @@ class _DeviceSettingsUpdateImpl implements _DeviceSettingsUpdate {
             20: showRebreathePercentage as bool?,
           if (screenOnAlarm != ignore) 21: screenOnAlarm as bool?,
           if (alarmOnCo2Fall != ignore) 22: alarmOnCo2Fall as bool?,
-          if (altitude != ignore) 24: altitude as double?,
-          if (pressure != ignore) 25: pressure as double?,
-          if (scaling != ignore) 26: scaling as double?,
+          if (scaling != ignore) 24: scaling as double?,
         }) >
         0;
   }
@@ -736,8 +682,6 @@ sealed class _DeviceSettingsUpdateAll {
     bool? showRebreathePercentage,
     bool? screenOnAlarm,
     bool? alarmOnCo2Fall,
-    double? altitude,
-    double? pressure,
     double? scaling,
   });
 }
@@ -770,8 +714,6 @@ class _DeviceSettingsUpdateAllImpl implements _DeviceSettingsUpdateAll {
     Object? showRebreathePercentage = ignore,
     Object? screenOnAlarm = ignore,
     Object? alarmOnCo2Fall = ignore,
-    Object? altitude = ignore,
-    Object? pressure = ignore,
     Object? scaling = ignore,
   }) {
     return collection.updateProperties(deviceId, {
@@ -796,9 +738,7 @@ class _DeviceSettingsUpdateAllImpl implements _DeviceSettingsUpdateAll {
         20: showRebreathePercentage as bool?,
       if (screenOnAlarm != ignore) 21: screenOnAlarm as bool?,
       if (alarmOnCo2Fall != ignore) 22: alarmOnCo2Fall as bool?,
-      if (altitude != ignore) 24: altitude as double?,
-      if (pressure != ignore) 25: pressure as double?,
-      if (scaling != ignore) 26: scaling as double?,
+      if (scaling != ignore) 24: scaling as double?,
     });
   }
 }
@@ -831,8 +771,6 @@ sealed class _DeviceSettingsQueryUpdate {
     bool? showRebreathePercentage,
     bool? screenOnAlarm,
     bool? alarmOnCo2Fall,
-    double? altitude,
-    double? pressure,
     double? scaling,
   });
 }
@@ -865,8 +803,6 @@ class _DeviceSettingsQueryUpdateImpl implements _DeviceSettingsQueryUpdate {
     Object? showRebreathePercentage = ignore,
     Object? screenOnAlarm = ignore,
     Object? alarmOnCo2Fall = ignore,
-    Object? altitude = ignore,
-    Object? pressure = ignore,
     Object? scaling = ignore,
   }) {
     return query.updateProperties(limit: limit, {
@@ -891,9 +827,7 @@ class _DeviceSettingsQueryUpdateImpl implements _DeviceSettingsQueryUpdate {
         20: showRebreathePercentage as bool?,
       if (screenOnAlarm != ignore) 21: screenOnAlarm as bool?,
       if (alarmOnCo2Fall != ignore) 22: alarmOnCo2Fall as bool?,
-      if (altitude != ignore) 24: altitude as double?,
-      if (pressure != ignore) 25: pressure as double?,
-      if (scaling != ignore) 26: scaling as double?,
+      if (scaling != ignore) 24: scaling as double?,
     });
   }
 }
@@ -935,8 +869,6 @@ class _DeviceSettingsQueryBuilderUpdateImpl
     Object? showRebreathePercentage = ignore,
     Object? screenOnAlarm = ignore,
     Object? alarmOnCo2Fall = ignore,
-    Object? altitude = ignore,
-    Object? pressure = ignore,
     Object? scaling = ignore,
   }) {
     final q = query.build();
@@ -964,9 +896,7 @@ class _DeviceSettingsQueryBuilderUpdateImpl
           20: showRebreathePercentage as bool?,
         if (screenOnAlarm != ignore) 21: screenOnAlarm as bool?,
         if (alarmOnCo2Fall != ignore) 22: alarmOnCo2Fall as bool?,
-        if (altitude != ignore) 24: altitude as double?,
-        if (pressure != ignore) 25: pressure as double?,
-        if (scaling != ignore) 26: scaling as double?,
+        if (scaling != ignore) 24: scaling as double?,
       });
     } finally {
       q.close();
@@ -2004,202 +1934,6 @@ extension DeviceSettingsQueryFilter
   }
 
   QueryBuilder<DeviceSettings, DeviceSettings, QAfterFilterCondition>
-      altitudeEqualTo(
-    double value, {
-    double epsilon = Filter.epsilon,
-  }) {
-    return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(
-        EqualCondition(
-          property: 24,
-          value: value,
-          epsilon: epsilon,
-        ),
-      );
-    });
-  }
-
-  QueryBuilder<DeviceSettings, DeviceSettings, QAfterFilterCondition>
-      altitudeGreaterThan(
-    double value, {
-    double epsilon = Filter.epsilon,
-  }) {
-    return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(
-        GreaterCondition(
-          property: 24,
-          value: value,
-          epsilon: epsilon,
-        ),
-      );
-    });
-  }
-
-  QueryBuilder<DeviceSettings, DeviceSettings, QAfterFilterCondition>
-      altitudeGreaterThanOrEqualTo(
-    double value, {
-    double epsilon = Filter.epsilon,
-  }) {
-    return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(
-        GreaterOrEqualCondition(
-          property: 24,
-          value: value,
-          epsilon: epsilon,
-        ),
-      );
-    });
-  }
-
-  QueryBuilder<DeviceSettings, DeviceSettings, QAfterFilterCondition>
-      altitudeLessThan(
-    double value, {
-    double epsilon = Filter.epsilon,
-  }) {
-    return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(
-        LessCondition(
-          property: 24,
-          value: value,
-          epsilon: epsilon,
-        ),
-      );
-    });
-  }
-
-  QueryBuilder<DeviceSettings, DeviceSettings, QAfterFilterCondition>
-      altitudeLessThanOrEqualTo(
-    double value, {
-    double epsilon = Filter.epsilon,
-  }) {
-    return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(
-        LessOrEqualCondition(
-          property: 24,
-          value: value,
-          epsilon: epsilon,
-        ),
-      );
-    });
-  }
-
-  QueryBuilder<DeviceSettings, DeviceSettings, QAfterFilterCondition>
-      altitudeBetween(
-    double lower,
-    double upper, {
-    double epsilon = Filter.epsilon,
-  }) {
-    return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(
-        BetweenCondition(
-          property: 24,
-          lower: lower,
-          upper: upper,
-          epsilon: epsilon,
-        ),
-      );
-    });
-  }
-
-  QueryBuilder<DeviceSettings, DeviceSettings, QAfterFilterCondition>
-      pressureEqualTo(
-    double value, {
-    double epsilon = Filter.epsilon,
-  }) {
-    return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(
-        EqualCondition(
-          property: 25,
-          value: value,
-          epsilon: epsilon,
-        ),
-      );
-    });
-  }
-
-  QueryBuilder<DeviceSettings, DeviceSettings, QAfterFilterCondition>
-      pressureGreaterThan(
-    double value, {
-    double epsilon = Filter.epsilon,
-  }) {
-    return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(
-        GreaterCondition(
-          property: 25,
-          value: value,
-          epsilon: epsilon,
-        ),
-      );
-    });
-  }
-
-  QueryBuilder<DeviceSettings, DeviceSettings, QAfterFilterCondition>
-      pressureGreaterThanOrEqualTo(
-    double value, {
-    double epsilon = Filter.epsilon,
-  }) {
-    return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(
-        GreaterOrEqualCondition(
-          property: 25,
-          value: value,
-          epsilon: epsilon,
-        ),
-      );
-    });
-  }
-
-  QueryBuilder<DeviceSettings, DeviceSettings, QAfterFilterCondition>
-      pressureLessThan(
-    double value, {
-    double epsilon = Filter.epsilon,
-  }) {
-    return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(
-        LessCondition(
-          property: 25,
-          value: value,
-          epsilon: epsilon,
-        ),
-      );
-    });
-  }
-
-  QueryBuilder<DeviceSettings, DeviceSettings, QAfterFilterCondition>
-      pressureLessThanOrEqualTo(
-    double value, {
-    double epsilon = Filter.epsilon,
-  }) {
-    return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(
-        LessOrEqualCondition(
-          property: 25,
-          value: value,
-          epsilon: epsilon,
-        ),
-      );
-    });
-  }
-
-  QueryBuilder<DeviceSettings, DeviceSettings, QAfterFilterCondition>
-      pressureBetween(
-    double lower,
-    double upper, {
-    double epsilon = Filter.epsilon,
-  }) {
-    return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(
-        BetweenCondition(
-          property: 25,
-          lower: lower,
-          upper: upper,
-          epsilon: epsilon,
-        ),
-      );
-    });
-  }
-
-  QueryBuilder<DeviceSettings, DeviceSettings, QAfterFilterCondition>
       scalingEqualTo(
     double value, {
     double epsilon = Filter.epsilon,
@@ -2207,7 +1941,7 @@ extension DeviceSettingsQueryFilter
     return QueryBuilder.apply(this, (query) {
       return query.addFilterCondition(
         EqualCondition(
-          property: 26,
+          property: 24,
           value: value,
           epsilon: epsilon,
         ),
@@ -2223,7 +1957,7 @@ extension DeviceSettingsQueryFilter
     return QueryBuilder.apply(this, (query) {
       return query.addFilterCondition(
         GreaterCondition(
-          property: 26,
+          property: 24,
           value: value,
           epsilon: epsilon,
         ),
@@ -2239,7 +1973,7 @@ extension DeviceSettingsQueryFilter
     return QueryBuilder.apply(this, (query) {
       return query.addFilterCondition(
         GreaterOrEqualCondition(
-          property: 26,
+          property: 24,
           value: value,
           epsilon: epsilon,
         ),
@@ -2255,7 +1989,7 @@ extension DeviceSettingsQueryFilter
     return QueryBuilder.apply(this, (query) {
       return query.addFilterCondition(
         LessCondition(
-          property: 26,
+          property: 24,
           value: value,
           epsilon: epsilon,
         ),
@@ -2271,7 +2005,7 @@ extension DeviceSettingsQueryFilter
     return QueryBuilder.apply(this, (query) {
       return query.addFilterCondition(
         LessOrEqualCondition(
-          property: 26,
+          property: 24,
           value: value,
           epsilon: epsilon,
         ),
@@ -2288,7 +2022,7 @@ extension DeviceSettingsQueryFilter
     return QueryBuilder.apply(this, (query) {
       return query.addFilterCondition(
         BetweenCondition(
-          property: 26,
+          property: 24,
           lower: lower,
           upper: upper,
           epsilon: epsilon,
@@ -2608,42 +2342,16 @@ extension DeviceSettingsQuerySortBy
     });
   }
 
-  QueryBuilder<DeviceSettings, DeviceSettings, QAfterSortBy> sortByAltitude() {
+  QueryBuilder<DeviceSettings, DeviceSettings, QAfterSortBy> sortByScaling() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(24);
     });
   }
 
   QueryBuilder<DeviceSettings, DeviceSettings, QAfterSortBy>
-      sortByAltitudeDesc() {
-    return QueryBuilder.apply(this, (query) {
-      return query.addSortBy(24, sort: Sort.desc);
-    });
-  }
-
-  QueryBuilder<DeviceSettings, DeviceSettings, QAfterSortBy> sortByPressure() {
-    return QueryBuilder.apply(this, (query) {
-      return query.addSortBy(25);
-    });
-  }
-
-  QueryBuilder<DeviceSettings, DeviceSettings, QAfterSortBy>
-      sortByPressureDesc() {
-    return QueryBuilder.apply(this, (query) {
-      return query.addSortBy(25, sort: Sort.desc);
-    });
-  }
-
-  QueryBuilder<DeviceSettings, DeviceSettings, QAfterSortBy> sortByScaling() {
-    return QueryBuilder.apply(this, (query) {
-      return query.addSortBy(26);
-    });
-  }
-
-  QueryBuilder<DeviceSettings, DeviceSettings, QAfterSortBy>
       sortByScalingDesc() {
     return QueryBuilder.apply(this, (query) {
-      return query.addSortBy(26, sort: Sort.desc);
+      return query.addSortBy(24, sort: Sort.desc);
     });
   }
 }
@@ -2941,42 +2649,16 @@ extension DeviceSettingsQuerySortThenBy
     });
   }
 
-  QueryBuilder<DeviceSettings, DeviceSettings, QAfterSortBy> thenByAltitude() {
+  QueryBuilder<DeviceSettings, DeviceSettings, QAfterSortBy> thenByScaling() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(24);
     });
   }
 
   QueryBuilder<DeviceSettings, DeviceSettings, QAfterSortBy>
-      thenByAltitudeDesc() {
-    return QueryBuilder.apply(this, (query) {
-      return query.addSortBy(24, sort: Sort.desc);
-    });
-  }
-
-  QueryBuilder<DeviceSettings, DeviceSettings, QAfterSortBy> thenByPressure() {
-    return QueryBuilder.apply(this, (query) {
-      return query.addSortBy(25);
-    });
-  }
-
-  QueryBuilder<DeviceSettings, DeviceSettings, QAfterSortBy>
-      thenByPressureDesc() {
-    return QueryBuilder.apply(this, (query) {
-      return query.addSortBy(25, sort: Sort.desc);
-    });
-  }
-
-  QueryBuilder<DeviceSettings, DeviceSettings, QAfterSortBy> thenByScaling() {
-    return QueryBuilder.apply(this, (query) {
-      return query.addSortBy(26);
-    });
-  }
-
-  QueryBuilder<DeviceSettings, DeviceSettings, QAfterSortBy>
       thenByScalingDesc() {
     return QueryBuilder.apply(this, (query) {
-      return query.addSortBy(26, sort: Sort.desc);
+      return query.addSortBy(24, sort: Sort.desc);
     });
   }
 }
@@ -3124,23 +2806,9 @@ extension DeviceSettingsQueryWhereDistinct
   }
 
   QueryBuilder<DeviceSettings, DeviceSettings, QAfterDistinct>
-      distinctByAltitude() {
-    return QueryBuilder.apply(this, (query) {
-      return query.addDistinctBy(24);
-    });
-  }
-
-  QueryBuilder<DeviceSettings, DeviceSettings, QAfterDistinct>
-      distinctByPressure() {
-    return QueryBuilder.apply(this, (query) {
-      return query.addDistinctBy(25);
-    });
-  }
-
-  QueryBuilder<DeviceSettings, DeviceSettings, QAfterDistinct>
       distinctByScaling() {
     return QueryBuilder.apply(this, (query) {
-      return query.addDistinctBy(26);
+      return query.addDistinctBy(24);
     });
   }
 }
@@ -3294,21 +2962,9 @@ extension DeviceSettingsQueryProperty1
     });
   }
 
-  QueryBuilder<DeviceSettings, double, QAfterProperty> altitudeProperty() {
-    return QueryBuilder.apply(this, (query) {
-      return query.addProperty(24);
-    });
-  }
-
-  QueryBuilder<DeviceSettings, double, QAfterProperty> pressureProperty() {
-    return QueryBuilder.apply(this, (query) {
-      return query.addProperty(25);
-    });
-  }
-
   QueryBuilder<DeviceSettings, double, QAfterProperty> scalingProperty() {
     return QueryBuilder.apply(this, (query) {
-      return query.addProperty(26);
+      return query.addProperty(24);
     });
   }
 }
@@ -3472,21 +3128,9 @@ extension DeviceSettingsQueryProperty2<R>
     });
   }
 
-  QueryBuilder<DeviceSettings, (R, double), QAfterProperty> altitudeProperty() {
-    return QueryBuilder.apply(this, (query) {
-      return query.addProperty(24);
-    });
-  }
-
-  QueryBuilder<DeviceSettings, (R, double), QAfterProperty> pressureProperty() {
-    return QueryBuilder.apply(this, (query) {
-      return query.addProperty(25);
-    });
-  }
-
   QueryBuilder<DeviceSettings, (R, double), QAfterProperty> scalingProperty() {
     return QueryBuilder.apply(this, (query) {
-      return query.addProperty(26);
+      return query.addProperty(24);
     });
   }
 }
@@ -3653,23 +3297,9 @@ extension DeviceSettingsQueryProperty3<R1, R2>
   }
 
   QueryBuilder<DeviceSettings, (R1, R2, double), QOperations>
-      altitudeProperty() {
-    return QueryBuilder.apply(this, (query) {
-      return query.addProperty(24);
-    });
-  }
-
-  QueryBuilder<DeviceSettings, (R1, R2, double), QOperations>
-      pressureProperty() {
-    return QueryBuilder.apply(this, (query) {
-      return query.addProperty(25);
-    });
-  }
-
-  QueryBuilder<DeviceSettings, (R1, R2, double), QOperations>
       scalingProperty() {
     return QueryBuilder.apply(this, (query) {
-      return query.addProperty(26);
+      return query.addProperty(24);
     });
   }
 }
