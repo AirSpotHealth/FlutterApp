@@ -375,7 +375,7 @@ class DeviceCmdUtils {
       prefixHigh,
       prefixLow,
       0x31, // Command for set scale factor
-      0x02, // Length of payload (4 bytes float value)
+      0x04, // Length of payload (4 bytes float value)
       ...getFloat32Bytes(scaling),
     ]);
   }

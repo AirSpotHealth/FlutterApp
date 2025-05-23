@@ -377,10 +377,9 @@ class ResponseCommandParser {
         // check if the scaling is present in the data
         // it is a 4 byte float value
         if (data.length >= 25 + 42 + 4) {
-          final scaling = parseFloatFromBytes(data, 25 + 42 + 4);
+          final scaling = parseFloatFromBytes(data, 25 + 42);
           debugPrint('InitialData: Scaling: $scaling');
 
-          // update the scaling in the settings
           settings = settings.copyWith(scaling: scaling);
         }
 
