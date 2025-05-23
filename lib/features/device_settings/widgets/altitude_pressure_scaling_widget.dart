@@ -1,10 +1,9 @@
 import 'dart:async';
 
 import 'package:airspothealth/core/models/device_settings.dart';
-import 'package:airspothealth/core/providers/ble_device_communication_provider.dart';
 import 'package:airspothealth/core/providers/device_settings_provider.dart';
 import 'package:airspothealth/core/utils/app_utils.dart';
-import 'package:airspothealth/core/utils/device_cmd_utils.dart';
+import 'package:airspothealth/core/utils/extensions.dart';
 import 'package:airspothealth/core/widgets/button.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -39,7 +38,7 @@ class _AltitudePressureScalingWidgetState
     _updateTextControllers(deviceSettings);
   }
 
-  double clampScaling(double value) => value.clamp(0.2, 2.0);
+  double clampScaling(double value) => value.clamp(0.5, 2.0);
 
   void _updateTextControllers(DeviceSettings settings) {
     final scaling = clampScaling(settings.scaling);
@@ -47,7 +46,7 @@ class _AltitudePressureScalingWidgetState
     final pressure = convertScalingToPressure(scaling);
     _altitudeController.text = altitude.toStringAsFixed(0);
     _pressureController.text = pressure.toStringAsFixed(2);
-    _scalingController.text = scaling.toStringAsFixed(2);
+    _scalingController.text = scaling.toStringAsFixed(4);
   }
 
   @override
@@ -60,53 +59,78 @@ class _AltitudePressureScalingWidgetState
   }
 
   void _onAltitudeChanged(String value) {
-    _debounce?.cancel();
-    _debounce = Timer(const Duration(milliseconds: 1000), () {
-      final altitude = double.tryParse(value);
-      if (altitude != null) {
-        final scaling = clampScaling(calculateScalingFromAltitude(altitude));
-        final pressure = convertScalingToPressure(scaling);
-        _pressureController.text = pressure.toStringAsFixed(2);
-        _scalingController.text = scaling.toStringAsFixed(2);
-      }
-    });
+    final altitude = double.tryParse(value);
+    if (altitude != null) {
+      final scaling = clampScaling(calculateScalingFromAltitude(altitude));
+      final pressure = convertScalingToPressure(scaling);
+
+      _scalingController.value = TextEditingValue(
+        text: scaling.toStringAsFixed(4),
+        selection:
+            TextSelection.collapsed(offset: scaling.toStringAsFixed(4).length),
+      );
+
+      _pressureController.value = TextEditingValue(
+        text: pressure.toStringAsFixed(2),
+        selection:
+            TextSelection.collapsed(offset: pressure.toStringAsFixed(2).length),
+      );
+    }
   }
 
   void _onPressureChanged(String value) {
-    _debounce?.cancel();
-    _debounce = Timer(const Duration(milliseconds: 1000), () {
-      final pressure = double.tryParse(value);
-      if (pressure != null) {
-        final scaling = clampScaling(calculateScalingFromPressure(pressure));
-        final altitude = convertScalingToAltitude(scaling);
-        _altitudeController.text = altitude.toStringAsFixed(0);
-        _scalingController.text = scaling.toStringAsFixed(2);
-      }
-    });
+    final pressure = double.tryParse(value);
+    if (pressure != null) {
+      final scaling = clampScaling(calculateScalingFromPressure(pressure));
+      final altitude = convertScalingToAltitude(scaling);
+
+      _scalingController.value = TextEditingValue(
+        text: scaling.toStringAsFixed(4),
+        selection:
+            TextSelection.collapsed(offset: scaling.toStringAsFixed(4).length),
+      );
+
+      _altitudeController.value = TextEditingValue(
+        text: altitude.toStringAsFixed(0),
+        selection:
+            TextSelection.collapsed(offset: altitude.toStringAsFixed(0).length),
+      );
+    }
   }
 
   void _onScalingChanged(String value) {
-    _debounce?.cancel();
-    _debounce = Timer(const Duration(milliseconds: 500), () {
-      final scalingRaw = double.tryParse(value);
-      if (scalingRaw != null && scalingRaw >= 0.5 && scalingRaw <= 2.0) {
-        final scaling = clampScaling(scalingRaw);
-        final altitude = convertScalingToAltitude(scaling);
-        final pressure = convertScalingToPressure(scaling);
-        _altitudeController.text = altitude.toStringAsFixed(0);
-        _pressureController.text = pressure.toStringAsFixed(2);
-        _scalingController.text = scaling.toStringAsFixed(4); // Show 4 decimals
-      }
-    });
+    final scalingRaw = double.tryParse(value);
+    if (scalingRaw != null && scalingRaw >= 0.5 && scalingRaw <= 2.0) {
+      final scaling = clampScaling(scalingRaw);
+      final altitude = convertScalingToAltitude(scaling);
+      final pressure = convertScalingToPressure(scaling);
+
+      _altitudeController.value = TextEditingValue(
+        text: altitude.toStringAsFixed(0),
+        selection:
+            TextSelection.collapsed(offset: altitude.toStringAsFixed(0).length),
+      );
+
+      _pressureController.value = TextEditingValue(
+        text: pressure.toStringAsFixed(2),
+        selection:
+            TextSelection.collapsed(offset: pressure.toStringAsFixed(2).length),
+      );
+    }
   }
 
   void _saveSettings() {
-    final raw = double.tryParse(_scalingController.text) ?? 1.0;
+    final raw = double.tryParse(_scalingController.text) ?? 1.0000;
     final clamped = clampScaling(raw.clamp(0.5, 2.0));
     final rounded = double.parse(clamped.toStringAsFixed(4));
-    ref
-        .read(bleDeviceCommunicationProvider(widget.deviceId).notifier)
-        .sendCommand(DeviceCmdUtils.setScaleFactor(rounded));
+    debugPrint('Saving scaling: $rounded');
+    ref.read(deviceSettingsProvider(widget.deviceId).notifier).updateSetting(
+        (settings) => settings.copyWith(scaling: rounded),
+        sendCommands: true);
+
+    FocusScope.of(context).unfocus();
+
+    context.showSnackBar('Settings saved');
   }
 
   @override
@@ -144,7 +168,7 @@ class _AltitudePressureScalingWidgetState
                     _onPressureChanged, labelStyle, fieldTextStyle)),
             const SizedBox(width: 8),
             Expanded(
-                child: _buildField('Scaling', _scalingController,
+                child: _buildField('Scaling (0.5-2.0)', _scalingController,
                     _onScalingChanged, labelStyle, fieldTextStyle)),
             const SizedBox(width: 8),
             Button(wrapWidth: true, onPressed: _saveSettings, label: 'SET'),
@@ -171,7 +195,7 @@ class _AltitudePressureScalingWidgetState
           style: textStyle,
           keyboardType: const TextInputType.numberWithOptions(decimal: true),
           inputFormatters: [
-            FilteringTextInputFormatter.allow(RegExp(r'^\d{0,1}(\.\d{0,4})?$')),
+            FilteringTextInputFormatter.allow(RegExp(r'^\d{0,5}(\.\d{0,4})?$')),
           ],
           decoration: const InputDecoration(
             border: OutlineInputBorder(),
