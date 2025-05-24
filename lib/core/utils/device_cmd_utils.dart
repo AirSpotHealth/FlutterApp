@@ -380,6 +380,16 @@ class DeviceCmdUtils {
     ]);
   }
 
+  static Uint8List setFlightMode(bool flightMode) {
+    return _buildCommand([
+      prefixHigh,
+      prefixLow,
+      0x32, // Command for set flight mode
+      1, // Length of payload (1 byte)
+      flightMode ? 1 : 0
+    ]);
+  }
+
   // ======= Helper Functions =======
   static Uint8List _getHex2Bytes(int value) {
     var byteArray = Uint8List(2);

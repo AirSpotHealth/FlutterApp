@@ -338,6 +338,7 @@ class ResponseCommandParser {
         bool finalScreenOnAlarm = true;
         bool finalAlarmOnCo2Fall = false;
         List<AlarmLevel> finalAlarmLevels = defaultAlarmLevels;
+        bool flightMode = false;
 
         if (data.length >= 25 + 42) {
           int offset = 25;
@@ -383,6 +384,12 @@ class ResponseCommandParser {
           settings = settings.copyWith(scaling: scaling);
         }
 
+        // check if the flight mode is present in the data
+        if (data.length >= 25 + 42 + 4 + 1) {
+          flightMode = _parseBoolean(data, 25 + 42 + 4);
+          debugPrint('InitialData: Flight Mode: $flightMode');
+        }
+
         debugPrint(
             'InitialData Final Values -> ScreenOnAlarm: $finalScreenOnAlarm, AlarmOnCo2Fall: $finalAlarmOnCo2Fall');
 
@@ -404,6 +411,7 @@ class ResponseCommandParser {
           screenOnAlarm: finalScreenOnAlarm,
           alarmOnCo2Fall: finalAlarmOnCo2Fall,
           alarmLevels: finalAlarmLevels,
+          flightMode: flightMode,
         );
       },
     );
@@ -485,13 +493,21 @@ class ResponseCommandParser {
 
       /// Extract the type (1 byte)
       final type = historyData[i + 6];
+      final parsedType = DeviceDataType.fromByte(type).index;
+
+      debugPrint(
+          'TYPE: $parsedType, value: $value, date: ${date.toIso8601String()}');
 
       final deviceData0 = DeviceData(
         deviceId: deviceId,
         dateTime: date,
         value: // if value is > 63000 and less than 65535, then it is a negative value
-            value > 33000 && value <= 65535 ? value - 65536 : value,
-        type: DeviceDataType.fromByte(type).index,
+            (parsedType == DeviceDataType.empty.index &&
+                    value > 33000 &&
+                    value <= 65535)
+                ? value - 65536
+                : value,
+        type: parsedType,
       );
 
       deviceData.add(deviceData0);
@@ -695,28 +711,6 @@ class ResponseCommandParser {
   }
 
   DeviceSensorConfigData parseSensorDetails(List<int> data) {
-    // Payload starts after CMD_FIRST, CMD_SECOND, CMD_ID, PAYLOAD_LEN (4 bytes)
-    // Payload length is data[3], which should be 16 (0x10)
-    // Expected data structure:
-    // CMD_FIRST_BYTE (0xFF)
-    // CMD_SECOND_BYTE (0xAA)
-    // CMD_ID (0x30)
-    // PAYLOAD_LEN (0x10 = 16 bytes)
-    // Temperature Offset (uint16_t, 2 bytes, big-endian)
-    // Sensor Altitude (uint16_t, 2 bytes, big-endian)
-    // Ambient Pressure (uint16_t, 2 bytes, big-endian, mBar)
-    // ASC Enabled (uint8_t, 1 byte)
-    // ASC Target (uint16_t, 2 bytes, big-endian)
-    // Serial Number (6 bytes)
-    // Sensor Variant (uint8_t, 1 byte)
-    // Checksum (1 byte)
-
-    // Given data format: ffaa301005da000000000001aa4f942b073ba8006b
-    // Header (ffaa3010) - 4 bytes
-    // Payload (05da000000000001aa4f942b073ba800) - 16 bytes
-    // Checksum (6b) - 1 byte
-    // Total length = 4 (header) + 16 (payload) + 1 (checksum) = 21 bytes
-
     if (data.length < 21) {
       // Basic check for minimum length
       throw Exception(

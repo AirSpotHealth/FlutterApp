@@ -100,6 +100,10 @@ class _DeviceSettingsNotifier extends FamilyNotifier<DeviceSettings, String> {
             .read(bleDeviceCommunicationProvider(newSettings.deviceId).notifier)
             .sendCommand(DeviceCmdUtils.setScaleFactor(newSettings.scaling));
         debugPrint('Scaling changed. Sending command to device.');
+      } else if (newSettings.flightMode != state.flightMode) {
+        ref
+            .read(bleDeviceCommunicationProvider(newSettings.deviceId).notifier)
+            .sendCommand(DeviceCmdUtils.setFlightMode(newSettings.flightMode));
       }
     }
 

@@ -132,6 +132,12 @@ class _AltitudePressureScalingWidgetState
   void _saveSettings() {
     FocusScope.of(context).unfocus();
 
+    final deviceSettings = ref.read(deviceSettingsProvider(widget.deviceId));
+
+    if (deviceSettings.flightMode) {
+      return;
+    }
+
     if (_formKey.currentState!.validate()) {
       final raw = double.tryParse(_scalingController.text);
       if (raw == null) {
@@ -189,6 +195,9 @@ class _AltitudePressureScalingWidgetState
     const labelStyle = TextStyle(fontSize: 12, color: Colors.grey);
     const fieldTextStyle = TextStyle(fontSize: 14);
 
+    final deviceSettings = ref.watch(deviceSettingsProvider(widget.deviceId));
+    final bool isFlightModeOn = deviceSettings.flightMode;
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -203,6 +212,53 @@ class _AltitudePressureScalingWidgetState
           style: TextStyle(fontSize: 12, color: Colors.grey),
         ),
         const SizedBox(height: 16),
+        if (isFlightModeOn)
+          Padding(
+            padding: const EdgeInsets.only(bottom: 16.0),
+            child: GestureDetector(
+              onTap: () {
+                ref
+                    .read(deviceSettingsProvider(widget.deviceId).notifier)
+                    .updateSetting(
+                      (settings) => settings.copyWith(flightMode: false),
+                      sendCommands: true,
+                    );
+
+                if (mounted) {
+                  context.showSnackBar(
+                      'Flight mode turned off. You can now set scaling.');
+                }
+              },
+              child: Container(
+                padding:
+                    const EdgeInsets.symmetric(vertical: 8.0, horizontal: 12.0),
+                decoration: BoxDecoration(
+                  color: Colors.orange.withValues(alpha: .15),
+                  borderRadius: BorderRadius.circular(4.0),
+                  border: Border.all(
+                      color: Colors.orange.withValues(alpha: .5), width: 1),
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(Icons.flight_takeoff,
+                        color: Colors.orange[700], size: 18),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        'Flight mode is active. Scaling cannot be changed. Tap to turn off.',
+                        style: TextStyle(
+                            color: Colors.orange[800],
+                            fontWeight: FontWeight.normal,
+                            fontSize: 12),
+                        textAlign: TextAlign.center,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
         // Row for Labels
         Row(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -228,31 +284,30 @@ class _AltitudePressureScalingWidgetState
             children: [
               Expanded(
                   child: _buildTextFormField(
-                      // 'Metres above sea level', // Label handled above
-                      _altitudeController,
-                      _onAltitudeChanged,
-                      _validateAltitudeField,
-                      // labelStyle, // Label style handled above
-                      fieldTextStyle)),
+                _altitudeController,
+                _onAltitudeChanged,
+                _validateAltitudeField,
+                fieldTextStyle,
+                enabled: !isFlightModeOn,
+              )),
               const SizedBox(width: 8),
               Expanded(
                 child: _buildTextFormField(
-                  // 'Pressure (hPa)', // Label handled above
                   _pressureController,
                   _onPressureChanged,
                   _validatePressureField,
-                  // labelStyle, // Label style handled above
                   fieldTextStyle,
+                  enabled: !isFlightModeOn,
                 ),
               ),
               const SizedBox(width: 8),
               Expanded(
                 child: _buildTextFormField(
-                  // 'Scaling (0.5-2.0)', // Label handled above
                   _scalingController,
                   _onScalingChanged,
                   _validateScalingField,
                   fieldTextStyle,
+                  enabled: !isFlightModeOn,
                 ),
               ),
               const SizedBox(width: 8),
@@ -260,7 +315,7 @@ class _AltitudePressureScalingWidgetState
                 wrapWidth: true,
                 onPressed: _saveSettings,
                 label: 'SET',
-                disabled: !_isFormValid,
+                disabled: !_isFormValid || isFlightModeOn,
               ),
             ],
           ),
@@ -273,11 +328,13 @@ class _AltitudePressureScalingWidgetState
     TextEditingController controller,
     ValueChanged<String> onChanged,
     String? Function(String?)? validator,
-    TextStyle textStyle,
-  ) {
+    TextStyle textStyle, {
+    bool enabled = true,
+  }) {
     return TextFormField(
       controller: controller,
       style: textStyle,
+      enabled: enabled,
       keyboardType: const TextInputType.numberWithOptions(decimal: true),
       inputFormatters: [
         FilteringTextInputFormatter.allow(RegExp(r'^\d{0,5}(\.\d{0,4})?$')),

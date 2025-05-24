@@ -83,6 +83,9 @@ class DeviceSettings {
   /// Scaling factor
   final double scaling;
 
+  /// Flight mode
+  final bool flightMode;
+
   const DeviceSettings({
     required this.alarmEnabled,
     required this.vibrationEnabled,
@@ -108,6 +111,7 @@ class DeviceSettings {
     this.alarmOnCo2Fall = false,
     this.alarmLevels = defaultAlarmLevels,
     this.scaling = 1.0,
+    this.flightMode = false,
   });
 
   DeviceSettings.empty({required this.deviceId})
@@ -133,7 +137,8 @@ class DeviceSettings {
         screenOnAlarm = true,
         alarmOnCo2Fall = false,
         alarmLevels = defaultAlarmLevels,
-        scaling = 1.0;
+        scaling = 1.0,
+        flightMode = false;
 
   DeviceSettings copyWith({
     bool? alarmEnabled,
@@ -161,6 +166,7 @@ class DeviceSettings {
     bool? alarmOnCo2Fall,
     List<AlarmLevel>? alarmLevels,
     double? scaling,
+    bool? flightMode,
   }) {
     return DeviceSettings(
       alarmEnabled: alarmEnabled ?? this.alarmEnabled,
@@ -189,6 +195,7 @@ class DeviceSettings {
       alarmOnCo2Fall: alarmOnCo2Fall ?? this.alarmOnCo2Fall,
       alarmLevels: alarmLevels ?? this.alarmLevels,
       scaling: scaling ?? this.scaling,
+      flightMode: flightMode ?? this.flightMode,
     );
   }
 
@@ -299,6 +306,7 @@ class DeviceSettings {
       'showRebreathePercentage': showRebreathePercentage,
       'graphMinValue': graphMinValue,
       'scaling': scaling,
+      'flightMode': flightMode,
     };
   }
 
@@ -330,7 +338,8 @@ class DeviceSettings {
         other.alarmOnCo2Fall == alarmOnCo2Fall &&
         other.alarmLevels == alarmLevels &&
         other.graphMinValue == graphMinValue &&
-        other.scaling == scaling;
+        other.scaling == scaling &&
+        other.flightMode == flightMode;
   }
 
   @override
@@ -358,11 +367,12 @@ class DeviceSettings {
       alarmOnCo2Fall.hashCode ^
       alarmLevels.hashCode ^
       graphMinValue.hashCode ^
-      scaling.hashCode;
+      scaling.hashCode ^
+      flightMode.hashCode;
 
   @override
   String toString() {
-    return 'DeviceSettings(alarmEnabled: $alarmEnabled, vibrationEnabled: $vibrationEnabled, powerMode: $powerMode, continuosScreenEnabled: $continuosScreenEnabled, thresholds: $thresholds, deviceId: $deviceId, co2MedAlertEnabled: $co2MedAlertEnabled, co2HighAlertEnabled: $co2HighAlertEnabled, autoSyncTime: $autoSyncTime, autoCalibration: $autoCalibration, autoConnect: $autoConnect, logData: $logData, dndEnabled: $dndEnabled, dndStartTime: $dndStartTime, dndEndTime: $dndEndTime, recalibrationTarget: $recalibrationTarget, graphMaxValue: $graphMaxValue, uiMode: $uiMode, showRebreathePercentage: $showRebreathePercentage, graphMinValue: $graphMinValue, screenOnAlarm: $screenOnAlarm, alarmOnCo2Fall: $alarmOnCo2Fall, alarmLevels: $alarmLevels, scaling: $scaling)';
+    return 'DeviceSettings(alarmEnabled: $alarmEnabled, vibrationEnabled: $vibrationEnabled, powerMode: $powerMode, continuosScreenEnabled: $continuosScreenEnabled, thresholds: $thresholds, deviceId: $deviceId, co2MedAlertEnabled: $co2MedAlertEnabled, co2HighAlertEnabled: $co2HighAlertEnabled, autoSyncTime: $autoSyncTime, autoCalibration: $autoCalibration, autoConnect: $autoConnect, logData: $logData, dndEnabled: $dndEnabled, dndStartTime: $dndStartTime, dndEndTime: $dndEndTime, recalibrationTarget: $recalibrationTarget, graphMaxValue: $graphMaxValue, uiMode: $uiMode, showRebreathePercentage: $showRebreathePercentage, graphMinValue: $graphMinValue, screenOnAlarm: $screenOnAlarm, alarmOnCo2Fall: $alarmOnCo2Fall, alarmLevels: $alarmLevels, scaling: $scaling, flightMode: $flightMode)';
   }
 }
 

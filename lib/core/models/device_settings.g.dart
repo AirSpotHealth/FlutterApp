@@ -121,6 +121,10 @@ const DeviceSettingsSchema = IsarGeneratedSchema(
         name: 'scaling',
         type: IsarType.double,
       ),
+      IsarPropertySchema(
+        name: 'flightMode',
+        type: IsarType.bool,
+      ),
     ],
     indexes: [],
   ),
@@ -183,6 +187,7 @@ int serializeDeviceSettings(IsarWriter writer, DeviceSettings object) {
     IsarCore.endList(writer, listWriter);
   }
   IsarCore.writeDouble(writer, 24, object.scaling);
+  IsarCore.writeBool(writer, 25, object.flightMode);
   return Isar.fastHash(object.deviceId);
 }
 
@@ -361,6 +366,8 @@ DeviceSettings deserializeDeviceSettings(IsarReader reader) {
       _scaling = value;
     }
   }
+  final bool _flightMode;
+  _flightMode = IsarCore.readBool(reader, 25);
   final object = DeviceSettings(
     alarmEnabled: _alarmEnabled,
     vibrationEnabled: _vibrationEnabled,
@@ -386,6 +393,7 @@ DeviceSettings deserializeDeviceSettings(IsarReader reader) {
     alarmOnCo2Fall: _alarmOnCo2Fall,
     alarmLevels: _alarmLevels,
     scaling: _scaling,
+    flightMode: _flightMode,
   );
   return object;
 }
@@ -566,6 +574,8 @@ dynamic deserializeDeviceSettingsProp(IsarReader reader, int property) {
           return value;
         }
       }
+    case 25:
+      return IsarCore.readBool(reader, 25);
     default:
       throw ArgumentError('Unknown property: $property');
   }
@@ -595,6 +605,7 @@ sealed class _DeviceSettingsUpdate {
     bool? screenOnAlarm,
     bool? alarmOnCo2Fall,
     double? scaling,
+    bool? flightMode,
   });
 }
 
@@ -627,6 +638,7 @@ class _DeviceSettingsUpdateImpl implements _DeviceSettingsUpdate {
     Object? screenOnAlarm = ignore,
     Object? alarmOnCo2Fall = ignore,
     Object? scaling = ignore,
+    Object? flightMode = ignore,
   }) {
     return collection.updateProperties([
           deviceId
@@ -654,6 +666,7 @@ class _DeviceSettingsUpdateImpl implements _DeviceSettingsUpdate {
           if (screenOnAlarm != ignore) 21: screenOnAlarm as bool?,
           if (alarmOnCo2Fall != ignore) 22: alarmOnCo2Fall as bool?,
           if (scaling != ignore) 24: scaling as double?,
+          if (flightMode != ignore) 25: flightMode as bool?,
         }) >
         0;
   }
@@ -683,6 +696,7 @@ sealed class _DeviceSettingsUpdateAll {
     bool? screenOnAlarm,
     bool? alarmOnCo2Fall,
     double? scaling,
+    bool? flightMode,
   });
 }
 
@@ -715,6 +729,7 @@ class _DeviceSettingsUpdateAllImpl implements _DeviceSettingsUpdateAll {
     Object? screenOnAlarm = ignore,
     Object? alarmOnCo2Fall = ignore,
     Object? scaling = ignore,
+    Object? flightMode = ignore,
   }) {
     return collection.updateProperties(deviceId, {
       if (alarmEnabled != ignore) 1: alarmEnabled as bool?,
@@ -739,6 +754,7 @@ class _DeviceSettingsUpdateAllImpl implements _DeviceSettingsUpdateAll {
       if (screenOnAlarm != ignore) 21: screenOnAlarm as bool?,
       if (alarmOnCo2Fall != ignore) 22: alarmOnCo2Fall as bool?,
       if (scaling != ignore) 24: scaling as double?,
+      if (flightMode != ignore) 25: flightMode as bool?,
     });
   }
 }
@@ -772,6 +788,7 @@ sealed class _DeviceSettingsQueryUpdate {
     bool? screenOnAlarm,
     bool? alarmOnCo2Fall,
     double? scaling,
+    bool? flightMode,
   });
 }
 
@@ -804,6 +821,7 @@ class _DeviceSettingsQueryUpdateImpl implements _DeviceSettingsQueryUpdate {
     Object? screenOnAlarm = ignore,
     Object? alarmOnCo2Fall = ignore,
     Object? scaling = ignore,
+    Object? flightMode = ignore,
   }) {
     return query.updateProperties(limit: limit, {
       if (alarmEnabled != ignore) 1: alarmEnabled as bool?,
@@ -828,6 +846,7 @@ class _DeviceSettingsQueryUpdateImpl implements _DeviceSettingsQueryUpdate {
       if (screenOnAlarm != ignore) 21: screenOnAlarm as bool?,
       if (alarmOnCo2Fall != ignore) 22: alarmOnCo2Fall as bool?,
       if (scaling != ignore) 24: scaling as double?,
+      if (flightMode != ignore) 25: flightMode as bool?,
     });
   }
 }
@@ -870,6 +889,7 @@ class _DeviceSettingsQueryBuilderUpdateImpl
     Object? screenOnAlarm = ignore,
     Object? alarmOnCo2Fall = ignore,
     Object? scaling = ignore,
+    Object? flightMode = ignore,
   }) {
     final q = query.build();
     try {
@@ -897,6 +917,7 @@ class _DeviceSettingsQueryBuilderUpdateImpl
         if (screenOnAlarm != ignore) 21: screenOnAlarm as bool?,
         if (alarmOnCo2Fall != ignore) 22: alarmOnCo2Fall as bool?,
         if (scaling != ignore) 24: scaling as double?,
+        if (flightMode != ignore) 25: flightMode as bool?,
       });
     } finally {
       q.close();
@@ -2030,6 +2051,20 @@ extension DeviceSettingsQueryFilter
       );
     });
   }
+
+  QueryBuilder<DeviceSettings, DeviceSettings, QAfterFilterCondition>
+      flightModeEqualTo(
+    bool value,
+  ) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        EqualCondition(
+          property: 25,
+          value: value,
+        ),
+      );
+    });
+  }
 }
 
 extension DeviceSettingsQueryObject
@@ -2354,6 +2389,20 @@ extension DeviceSettingsQuerySortBy
       return query.addSortBy(24, sort: Sort.desc);
     });
   }
+
+  QueryBuilder<DeviceSettings, DeviceSettings, QAfterSortBy>
+      sortByFlightMode() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(25);
+    });
+  }
+
+  QueryBuilder<DeviceSettings, DeviceSettings, QAfterSortBy>
+      sortByFlightModeDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(25, sort: Sort.desc);
+    });
+  }
 }
 
 extension DeviceSettingsQuerySortThenBy
@@ -2661,6 +2710,20 @@ extension DeviceSettingsQuerySortThenBy
       return query.addSortBy(24, sort: Sort.desc);
     });
   }
+
+  QueryBuilder<DeviceSettings, DeviceSettings, QAfterSortBy>
+      thenByFlightMode() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(25);
+    });
+  }
+
+  QueryBuilder<DeviceSettings, DeviceSettings, QAfterSortBy>
+      thenByFlightModeDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(25, sort: Sort.desc);
+    });
+  }
 }
 
 extension DeviceSettingsQueryWhereDistinct
@@ -2809,6 +2872,13 @@ extension DeviceSettingsQueryWhereDistinct
       distinctByScaling() {
     return QueryBuilder.apply(this, (query) {
       return query.addDistinctBy(24);
+    });
+  }
+
+  QueryBuilder<DeviceSettings, DeviceSettings, QAfterDistinct>
+      distinctByFlightMode() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addDistinctBy(25);
     });
   }
 }
@@ -2965,6 +3035,12 @@ extension DeviceSettingsQueryProperty1
   QueryBuilder<DeviceSettings, double, QAfterProperty> scalingProperty() {
     return QueryBuilder.apply(this, (query) {
       return query.addProperty(24);
+    });
+  }
+
+  QueryBuilder<DeviceSettings, bool, QAfterProperty> flightModeProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addProperty(25);
     });
   }
 }
@@ -3131,6 +3207,12 @@ extension DeviceSettingsQueryProperty2<R>
   QueryBuilder<DeviceSettings, (R, double), QAfterProperty> scalingProperty() {
     return QueryBuilder.apply(this, (query) {
       return query.addProperty(24);
+    });
+  }
+
+  QueryBuilder<DeviceSettings, (R, bool), QAfterProperty> flightModeProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addProperty(25);
     });
   }
 }
@@ -3300,6 +3382,13 @@ extension DeviceSettingsQueryProperty3<R1, R2>
       scalingProperty() {
     return QueryBuilder.apply(this, (query) {
       return query.addProperty(24);
+    });
+  }
+
+  QueryBuilder<DeviceSettings, (R1, R2, bool), QOperations>
+      flightModeProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addProperty(25);
     });
   }
 }
