@@ -77,8 +77,12 @@ class Button extends StatelessWidget {
     return ElevatedButton(
       onPressed: disabled || loading ? null : onPressed,
       style: context.theme.elevatedButtonTheme.style?.copyWith(
-        backgroundColor:
-            WidgetStateProperty.all(backgroundColor ?? AppColors.primaryColor),
+        backgroundColor: WidgetStateProperty.resolveWith((states) {
+          if (states.contains(WidgetState.disabled)) {
+            return context.theme.colorScheme.onSurface.withValues(alpha: .12);
+          }
+          return backgroundColor ?? AppColors.primaryColor;
+        }),
       ),
       child: loading
           ? const CupertinoActivityIndicator()

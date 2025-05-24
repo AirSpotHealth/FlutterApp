@@ -126,25 +126,29 @@ Future<TimeOfDay?> showCupertinoTimePicker(
 double convertScalingToPressure(double scaling) {
   const double m = -0.0028169;
   const double c = 3.852;
-  return (scaling - c) / m;
+  final result = (scaling - c) / m;
+  return result.isNaN ? 0.0 : result;
 }
 
 /// Converts the scaling factor directly to altitude in meters
 double convertScalingToAltitude(double scaling) {
   final pressure = convertScalingToPressure(scaling);
-  return 44330 * (1 - pow(pressure / 1013.0, 1 / 5.255)) as double;
+  final result = 44330 * (1 - pow(pressure / 1013.0, 1 / 5.255)) as double;
+  return result.isNaN ? 0.0 : result;
 }
 
 /// Calculate scaling from pressure (in hPa)
 double calculateScalingFromPressure(double pressure) {
   const double m = -0.0028169;
   const double c = 3.852;
-  return m * pressure + c;
+  final result = m * pressure + c;
+  return result.isNaN ? 0.0 : result;
 }
 
 /// Calculate scaling from altitude (in meters)
 double calculateScalingFromAltitude(double altitude) {
   const double standardPressure = 1013.0;
   double pressure = standardPressure * pow(1 - (altitude / 44330.0), 5.255);
-  return calculateScalingFromPressure(pressure);
+  final result = calculateScalingFromPressure(pressure);
+  return result.isNaN ? 0.0 : result;
 }

@@ -21,9 +21,9 @@ class FactoryResetWidget extends ConsumerWidget {
     return SettingItemWidget(
       item: SettingItem(
         title: 'Factory Reset',
-        assetIcon: Assets.deviceUpdate, // Placeholder icon
+        assetIcon: Assets.factoryReset, // Placeholder icon
         leadingWidget: Image.asset(
-          Assets.deviceUpdate, // Placeholder icon
+          Assets.factoryReset, // Placeholder icon
           width: 32,
         ),
         suffixWidget: const SizedBox(),

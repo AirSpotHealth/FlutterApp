@@ -25,7 +25,9 @@ class _AltitudePressureScalingWidgetState
   late TextEditingController _pressureController;
   late TextEditingController _scalingController;
 
+  final _formKey = GlobalKey<FormState>();
   Timer? _debounce;
+  bool _isFormValid = false;
 
   @override
   void initState() {
@@ -36,6 +38,11 @@ class _AltitudePressureScalingWidgetState
 
     final deviceSettings = ref.read(deviceSettingsProvider(widget.deviceId));
     _updateTextControllers(deviceSettings);
+
+    _altitudeController.addListener(_validateForm);
+    _pressureController.addListener(_validateForm);
+    _scalingController.addListener(_validateForm);
+    _validateForm(); // Initial validation
   }
 
   double clampScaling(double value) => value.clamp(0.5, 2.0);
@@ -44,13 +51,16 @@ class _AltitudePressureScalingWidgetState
     final scaling = clampScaling(settings.scaling);
     final altitude = convertScalingToAltitude(scaling);
     final pressure = convertScalingToPressure(scaling);
-    _altitudeController.text = altitude.toStringAsFixed(0);
+    _altitudeController.text = altitude.toStringAsFixed(2);
     _pressureController.text = pressure.toStringAsFixed(2);
     _scalingController.text = scaling.toStringAsFixed(4);
   }
 
   @override
   void dispose() {
+    _altitudeController.removeListener(_validateForm);
+    _pressureController.removeListener(_validateForm);
+    _scalingController.removeListener(_validateForm);
     _altitudeController.dispose();
     _pressureController.dispose();
     _scalingController.dispose();
@@ -61,7 +71,7 @@ class _AltitudePressureScalingWidgetState
   void _onAltitudeChanged(String value) {
     final altitude = double.tryParse(value);
     if (altitude != null) {
-      final scaling = clampScaling(calculateScalingFromAltitude(altitude));
+      final scaling = calculateScalingFromAltitude(altitude);
       final pressure = convertScalingToPressure(scaling);
 
       _scalingController.value = TextEditingValue(
@@ -81,7 +91,7 @@ class _AltitudePressureScalingWidgetState
   void _onPressureChanged(String value) {
     final pressure = double.tryParse(value);
     if (pressure != null) {
-      final scaling = clampScaling(calculateScalingFromPressure(pressure));
+      final scaling = calculateScalingFromPressure(pressure);
       final altitude = convertScalingToAltitude(scaling);
 
       _scalingController.value = TextEditingValue(
@@ -93,7 +103,7 @@ class _AltitudePressureScalingWidgetState
       _altitudeController.value = TextEditingValue(
         text: altitude.toStringAsFixed(0),
         selection:
-            TextSelection.collapsed(offset: altitude.toStringAsFixed(0).length),
+            TextSelection.collapsed(offset: altitude.toStringAsFixed(2).length),
       );
     }
   }
@@ -108,7 +118,7 @@ class _AltitudePressureScalingWidgetState
       _altitudeController.value = TextEditingValue(
         text: altitude.toStringAsFixed(0),
         selection:
-            TextSelection.collapsed(offset: altitude.toStringAsFixed(0).length),
+            TextSelection.collapsed(offset: altitude.toStringAsFixed(2).length),
       );
 
       _pressureController.value = TextEditingValue(
@@ -120,17 +130,58 @@ class _AltitudePressureScalingWidgetState
   }
 
   void _saveSettings() {
-    final raw = double.tryParse(_scalingController.text) ?? 1.0000;
-    final clamped = clampScaling(raw.clamp(0.5, 2.0));
-    final rounded = double.parse(clamped.toStringAsFixed(4));
-    debugPrint('Saving scaling: $rounded');
-    ref.read(deviceSettingsProvider(widget.deviceId).notifier).updateSetting(
-        (settings) => settings.copyWith(scaling: rounded),
-        sendCommands: true);
-
     FocusScope.of(context).unfocus();
 
-    context.showSnackBar('Settings saved');
+    if (_formKey.currentState!.validate()) {
+      final raw = double.tryParse(_scalingController.text);
+      if (raw == null) {
+        context.showSnackBar('Invalid scaling value. Settings not saved.');
+        return;
+      }
+
+      final clamped = clampScaling(raw);
+      final rounded = double.parse(clamped.toStringAsFixed(4));
+      debugPrint('Saving scaling: $rounded');
+      ref.read(deviceSettingsProvider(widget.deviceId).notifier).updateSetting(
+          (settings) => settings.copyWith(scaling: rounded),
+          sendCommands: true);
+
+      context.showSnackBar('Settings saved');
+    } else {
+      setState(() {
+        _isFormValid = false;
+      });
+    }
+  }
+
+  String? _validateAltitudeField(String? value) {
+    if (value == null || value.isEmpty) return 'Required';
+    if (double.tryParse(value) == null) return 'Invalid';
+    return null;
+  }
+
+  String? _validatePressureField(String? value) {
+    if (value == null || value.isEmpty) return 'Required';
+    if (double.tryParse(value) == null) return 'Invalid';
+    return null;
+  }
+
+  String? _validateScalingField(String? value) {
+    if (value == null || value.isEmpty) return 'Required';
+    final scaling = double.tryParse(value);
+    if (scaling == null || scaling < 0.5 || scaling > 2.0) {
+      return 'Invalid';
+    }
+    return null;
+  }
+
+  void _validateForm() {
+    final isValid = _formKey.currentState?.validate() ?? false;
+    if (_isFormValid != isValid) {
+      setState(() {
+        _isFormValid = isValid;
+      });
+    }
   }
 
   @override
@@ -152,63 +203,94 @@ class _AltitudePressureScalingWidgetState
           style: TextStyle(fontSize: 12, color: Colors.grey),
         ),
         const SizedBox(height: 16),
+        // Row for Labels
         Row(
-          crossAxisAlignment: CrossAxisAlignment.end,
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Expanded(
-                child: _buildField(
-                    'Metres above sea level',
-                    _altitudeController,
-                    _onAltitudeChanged,
-                    labelStyle,
-                    fieldTextStyle)),
+            Expanded(child: Text('Metres above sea level', style: labelStyle)),
             const SizedBox(width: 8),
-            Expanded(
-                child: _buildField('Pressure (hPa)', _pressureController,
-                    _onPressureChanged, labelStyle, fieldTextStyle)),
+            Expanded(child: Text('Pressure (hPa)', style: labelStyle)),
             const SizedBox(width: 8),
-            Expanded(
-                child: _buildField('Scaling (0.5-2.0)', _scalingController,
-                    _onScalingChanged, labelStyle, fieldTextStyle)),
+            Expanded(child: Text('Scaling (0.5-2.0)', style: labelStyle)),
             const SizedBox(width: 8),
             SizedBox(
-              height: 40,
-              child: Button(
-                  wrapWidth: true, onPressed: _saveSettings, label: 'SET'),
-            ),
+                width: 60), // Placeholder for button width, adjust as needed
           ],
+        ),
+        const SizedBox(height: 4), // Space between labels and fields
+        // Row for TextFields and Button
+        Form(
+          key: _formKey,
+          child: Row(
+            crossAxisAlignment:
+                CrossAxisAlignment.baseline, // Align by baseline
+            textBaseline: TextBaseline.alphabetic, // Use alphabetic baseline
+            children: [
+              Expanded(
+                  child: _buildTextFormField(
+                      // 'Metres above sea level', // Label handled above
+                      _altitudeController,
+                      _onAltitudeChanged,
+                      _validateAltitudeField,
+                      // labelStyle, // Label style handled above
+                      fieldTextStyle)),
+              const SizedBox(width: 8),
+              Expanded(
+                child: _buildTextFormField(
+                  // 'Pressure (hPa)', // Label handled above
+                  _pressureController,
+                  _onPressureChanged,
+                  _validatePressureField,
+                  // labelStyle, // Label style handled above
+                  fieldTextStyle,
+                ),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: _buildTextFormField(
+                  // 'Scaling (0.5-2.0)', // Label handled above
+                  _scalingController,
+                  _onScalingChanged,
+                  _validateScalingField,
+                  fieldTextStyle,
+                ),
+              ),
+              const SizedBox(width: 8),
+              Button(
+                wrapWidth: true,
+                onPressed: _saveSettings,
+                label: 'SET',
+                disabled: !_isFormValid,
+              ),
+            ],
+          ),
         ),
       ],
     );
   }
 
-  Widget _buildField(
-      String label,
-      TextEditingController controller,
-      ValueChanged<String> onChanged,
-      TextStyle labelStyle,
-      TextStyle textStyle) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Text(label, style: labelStyle),
-        const SizedBox(height: 4),
-        TextFormField(
-          controller: controller,
-          style: textStyle,
-          keyboardType: const TextInputType.numberWithOptions(decimal: true),
-          inputFormatters: [
-            FilteringTextInputFormatter.allow(RegExp(r'^\d{0,5}(\.\d{0,4})?$')),
-          ],
-          decoration: const InputDecoration(
-            border: OutlineInputBorder(),
-            contentPadding: EdgeInsets.symmetric(horizontal: 8, vertical: 10),
-            isDense: true,
-          ),
-          onChanged: onChanged,
-        ),
+  Widget _buildTextFormField(
+    TextEditingController controller,
+    ValueChanged<String> onChanged,
+    String? Function(String?)? validator,
+    TextStyle textStyle,
+  ) {
+    return TextFormField(
+      controller: controller,
+      style: textStyle,
+      keyboardType: const TextInputType.numberWithOptions(decimal: true),
+      inputFormatters: [
+        FilteringTextInputFormatter.allow(RegExp(r'^\d{0,5}(\.\d{0,4})?$')),
       ],
+      decoration: const InputDecoration(
+        border: OutlineInputBorder(),
+        contentPadding: EdgeInsets.symmetric(horizontal: 8, vertical: 10),
+        isDense: true,
+        helperText: ' ',
+      ),
+      onChanged: onChanged,
+      validator: validator,
+      autovalidateMode: AutovalidateMode.onUserInteraction,
     );
   }
 }
