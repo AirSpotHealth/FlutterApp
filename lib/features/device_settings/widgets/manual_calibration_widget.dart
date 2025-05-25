@@ -29,7 +29,7 @@ class ManualCalibrationWidget extends ConsumerWidget {
                 style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold)),
             subtitle: const Text(
               'To calibrate this AirSpot, place the device outdoors for at least 5 minutes, away from any people or CO2 sources, then tap the icon below. See full manual for details.',
-              style: TextStyle(fontSize: 12, color: Colors.grey),
+              style: TextStyle(fontSize: 12, color: Colors.black),
             ),
             contentPadding: EdgeInsets.zero,
           ),

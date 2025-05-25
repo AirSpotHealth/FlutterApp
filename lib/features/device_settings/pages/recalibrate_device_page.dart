@@ -75,7 +75,7 @@ class RecalibrateDevicePage extends ConsumerWidget {
               style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold)),
           subtitle: const Text(
             'Automatically calibrate the sensor based on the lowest CO₂ reading in the previous 7 days.',
-            style: TextStyle(fontSize: 12, color: Colors.grey),
+            style: TextStyle(fontSize: 12, color: Colors.black),
           ),
           value: deviceSettings.autoCalibration,
           onChanged: calibrationStatus.isInProgress
@@ -90,7 +90,7 @@ class RecalibrateDevicePage extends ConsumerWidget {
         const SizedBox(height: 4),
         Text(
           'If Auto Calibration is enabled, AirSpot will calibrate itself on the assumption that it has made measurements in fresh air at least once a week. It is usually best to leave this OFF unless you are sure AirSpot will be measuring fresh air at least every few days. See full manual for details.',
-          style: TextStyle(fontSize: 12, color: Colors.grey),
+          style: TextStyle(fontSize: 12, color: Colors.black),
         ),
         if (deviceSettings.autoCalibration)
           NextCalibrationDateWidget(deviceId: deviceId),
@@ -213,7 +213,7 @@ class ResetSensorWidget extends ConsumerWidget {
           ),
           subtitle: const Text(
             "If you are experiencing issues with your AirSpot's accuracy, you can reset the sensor to its factory settings. This will erase all calibration data and settings.",
-            style: TextStyle(fontSize: 12, color: Colors.grey),
+            style: TextStyle(fontSize: 12, color: Colors.black),
           ),
           contentPadding: EdgeInsets.zero,
         ),

@@ -90,6 +90,9 @@ class _CalibrationCorrectionWidgetState
                 controller: calibrationValueController,
                 decoration: InputDecoration(
                   labelText: 'Calibration Target',
+                  labelStyle: context.textTheme.bodyMedium?.copyWith(
+                    color: context.theme.colorScheme.onSurface,
+                  ),
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(8),
                     borderSide: BorderSide(color: Colors.grey.shade300),
@@ -101,7 +104,9 @@ class _CalibrationCorrectionWidgetState
                   contentPadding:
                       const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
                   helperMaxLines: 3,
-                  helperStyle: context.textTheme.bodySmall,
+                  helperStyle: context.textTheme.bodySmall?.copyWith(
+                    color: Colors.black,
+                  ),
                   suffixIcon: Padding(
                     padding: EdgeInsets.all(4),
                     child: Button(

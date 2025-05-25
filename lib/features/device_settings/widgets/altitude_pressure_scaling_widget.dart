@@ -202,7 +202,10 @@ class _AltitudePressureScalingWidgetState
 
   @override
   Widget build(BuildContext context) {
-    const labelStyle = TextStyle(fontSize: 12, color: Colors.grey);
+    final labelStyle = context.textTheme.bodyMedium?.copyWith(
+      fontSize: 12,
+      color: context.theme.colorScheme.onSurface,
+    );
     const fieldTextStyle = TextStyle(fontSize: 14);
 
     final deviceSettings = ref.watch(deviceSettingsProvider(widget.deviceId));
@@ -227,7 +230,7 @@ class _AltitudePressureScalingWidgetState
         const SizedBox(height: 4),
         const Text(
           'For most accurate calibration, set altitude or air pressure or scaling here (optional advanced feature, see manual.)',
-          style: TextStyle(fontSize: 12, color: Colors.grey),
+          style: TextStyle(fontSize: 12, color: Colors.black),
         ),
         const SizedBox(height: 16),
         if (isFlightModeOn)
