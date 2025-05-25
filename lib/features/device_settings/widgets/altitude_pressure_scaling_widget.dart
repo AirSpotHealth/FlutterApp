@@ -48,6 +48,16 @@ class _AltitudePressureScalingWidgetState
   double clampScaling(double value) => value.clamp(0.5, 2.0);
 
   void _updateTextControllers(DeviceSettings settings) {
+    if (settings.flightMode) {
+      final scaling = 1.6;
+      final altitude = convertScalingToAltitude(scaling);
+      final pressure = convertScalingToPressure(scaling);
+      _altitudeController.text = altitude.toStringAsFixed(2);
+      _pressureController.text = pressure.toStringAsFixed(2);
+      _scalingController.text = scaling.toStringAsFixed(4);
+      return; // Ensure we don't override with general settings if flight mode is on
+    }
+
     final scaling = clampScaling(settings.scaling);
     final altitude = convertScalingToAltitude(scaling);
     final pressure = convertScalingToPressure(scaling);
@@ -197,6 +207,14 @@ class _AltitudePressureScalingWidgetState
 
     final deviceSettings = ref.watch(deviceSettingsProvider(widget.deviceId));
     final bool isFlightModeOn = deviceSettings.flightMode;
+
+    // Listen to changes in deviceSettingsProvider to update text fields
+    ref.listen<DeviceSettings>(deviceSettingsProvider(widget.deviceId),
+        (previous, next) {
+      if (previous?.flightMode != next.flightMode) {
+        _updateTextControllers(next);
+      }
+    });
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,

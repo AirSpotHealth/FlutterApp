@@ -29,7 +29,8 @@ class FlightModeWidget extends ConsumerWidget {
               text: TextSpan(
                 recognizer: TapGestureRecognizer()
                   ..onTap = () {
-                    context.tryLaunchUrl('https://airspothealth.com');
+                    context.tryLaunchUrl(
+                        'https://airspothealth.com/a/blog/flight-mode-airspot');
                   },
                 text: 'Learn more',
                 style: TextStyle(

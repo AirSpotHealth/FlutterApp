@@ -502,7 +502,7 @@ class ResponseCommandParser {
         deviceId: deviceId,
         dateTime: date,
         value: // if value is > 63000 and less than 65535, then it is a negative value
-            (parsedType == DeviceDataType.empty.index &&
+            (parsedType != DeviceDataType.flightMode.index &&
                     value > 33000 &&
                     value <= 65535)
                 ? value - 65536
