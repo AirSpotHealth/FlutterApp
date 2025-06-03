@@ -4,6 +4,7 @@ import 'package:airspothealth/core/utils/extensions.dart';
 import 'package:airspothealth/features/add_device/providers/ble_device_connection_provider.dart';
 import 'package:airspothealth/features/device_settings/models/setting_item.dart';
 import 'package:airspothealth/features/device_settings/widgets/setting_item_widget.dart';
+import 'package:airspothealth/i18n/strings.g.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -18,7 +19,7 @@ class AutoConnectSettingWidget extends ConsumerWidget {
     return SettingItemWidget(
       onTap: () {},
       item: SettingItem(
-        title: 'Auto Connect',
+        title: t.deviceSettings.autoConnect,
         assetIcon: Assets.autoConnectSettings,
         suffixWidget: SizedBox(
           height: 24,
@@ -28,7 +29,7 @@ class AutoConnectSettingWidget extends ConsumerWidget {
               if (!ref
                   .read(bleDeviceConnectionProvider(deviceId).notifier)
                   .isConnected) {
-                context.showSnackBar('Device is not connected');
+                context.showSnackBar(t.deviceIsNotConnected);
                 Navigator.of(context).pop();
                 return;
               }

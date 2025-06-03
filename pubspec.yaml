@@ -2,7 +2,7 @@ name: airspothealth
 description: App for Airspot Health
 publish_to: none # Remove this line if you wish to publish to pub.dev
 
-version: 3.4.9+107
+version: 3.4.10+108
 
 environment:
   sdk: ^3.5.3
@@ -38,6 +38,13 @@ dependencies:
   share_plus: ^11.0.0
   system_date_time_format: ^1.2.2
   bottom_picker: ^3.2.0
+
+  # Internationalization dependencies
+  slang: ^4.7.2
+  slang_flutter: ^4.7.0
+  flutter_localizations:
+    sdk: flutter
+
   isar:
     version: ^4.0.3
     hosted: https://pub.isar-community.dev
@@ -52,6 +59,9 @@ dev_dependencies:
   flutter_launcher_icons: ^0.14.3
   flutter_lints: ^5.0.0
   build_runner: ^2.4.15
+
+  # Internationalization build runner
+  slang_build_runner: ^4.7.0
 
 flutter:
   uses-material-design: true

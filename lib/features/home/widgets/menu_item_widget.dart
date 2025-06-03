@@ -3,6 +3,7 @@ import 'package:airspothealth/core/utils/assets.dart';
 import 'package:airspothealth/core/utils/extensions.dart';
 import 'package:airspothealth/core/utils/external_urls.dart';
 import 'package:airspothealth/features/home/models/menu_item.dart';
+import 'package:airspothealth/i18n/strings.g.dart';
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:go_router/go_router.dart';
@@ -63,42 +64,42 @@ class MenuItemWidget extends StatelessWidget {
 }
 
 class MenuItems {
-  static final List<MenuItem> items = [
-    MenuItem(
-      title: 'Devices',
-      description: 'Device List and Management',
-      iconAsset: Assets.device,
-      route: RouteNames.devices,
-    ),
-    MenuItem(
-      title: 'AirMap',
-      description: 'Geolocate indoor air quality with the Clean Air Map.',
-      iconAsset: Assets.airMap,
-      externalUrl: ExternalUrls.airmap,
-    ),
-    MenuItem(
-      title: 'App Set Up',
-      description: 'Review app notifications, updates and privacy policy.',
-      iconAsset: Assets.appSetup,
-      route: RouteNames.appSetup,
-    ),
-    MenuItem(
-      title: 'Solutions',
-      description: 'Great advice for healthy living in fresh air.',
-      iconAsset: Assets.solutions,
-      route: RouteNames.solutions,
-    ),
-    MenuItem(
-      title: 'Shop',
-      description: 'Great products from AirSpot and our affiliate partners.',
-      iconAsset: Assets.shop,
-      externalUrl: ExternalUrls.shop,
-    ),
-    MenuItem(
-      title: 'News',
-      description: 'Latest updates on fresh air living.',
-      iconAsset: Assets.news,
-      externalUrl: ExternalUrls.news,
-    ),
-  ];
+  static List<MenuItem> get items => [
+        MenuItem(
+          title: t.home.menu.devices,
+          description: t.home.menu.devicesDescription,
+          iconAsset: Assets.device,
+          route: RouteNames.devices,
+        ),
+        MenuItem(
+          title: t.home.menu.airMap,
+          description: t.home.menu.airMapDescription,
+          iconAsset: Assets.airMap,
+          externalUrl: ExternalUrls.airmap,
+        ),
+        MenuItem(
+          title: t.home.menu.appSetup,
+          description: t.home.menu.appSetupDescription,
+          iconAsset: Assets.appSetup,
+          route: RouteNames.appSetup,
+        ),
+        MenuItem(
+          title: t.home.menu.solutions,
+          description: t.home.menu.solutionsDescription,
+          iconAsset: Assets.solutions,
+          route: RouteNames.solutions,
+        ),
+        MenuItem(
+          title: t.home.menu.shop,
+          description: t.home.menu.shopDescription,
+          iconAsset: Assets.shop,
+          externalUrl: ExternalUrls.shop,
+        ),
+        MenuItem(
+          title: t.home.menu.news,
+          description: t.home.menu.newsDescription,
+          iconAsset: Assets.news,
+          externalUrl: ExternalUrls.news,
+        ),
+      ];
 }

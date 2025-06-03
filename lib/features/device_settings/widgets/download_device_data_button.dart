@@ -2,6 +2,7 @@ import 'package:airspothealth/core/theme/app_colors.dart';
 import 'package:airspothealth/core/widgets/button.dart';
 import 'package:airspothealth/features/device_settings/models/progress_model.dart';
 import 'package:airspothealth/features/device_settings/providers/device_data_download_provider.dart';
+import 'package:airspothealth/i18n/strings.g.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -65,11 +66,11 @@ class DownloadDeviceDataButton extends ConsumerWidget {
 
   String _getLabel(AsyncProgressValue progress) {
     if (progress is AsyncInProgress) {
-      return 'Downloading...';
+      return t.downloading;
     } else if (progress is AsyncSuccess) {
-      return 'CSV Data Exported';
+      return t.csvDataExported;
     } else {
-      return 'Export CSV Data';
+      return t.exportCsvData;
     }
   }
 }

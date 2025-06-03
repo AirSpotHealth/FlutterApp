@@ -9,6 +9,7 @@ import 'package:airspothealth/features/device_settings/widgets/device_firmware_u
 import 'package:airspothealth/features/device_settings/widgets/device_settings_name_widget.dart';
 import 'package:airspothealth/features/device_settings/widgets/device_version_update_widget.dart';
 import 'package:airspothealth/features/devices/providers/device_battery_level_provider.dart';
+import 'package:airspothealth/i18n/strings.g.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -97,10 +98,10 @@ class _DeviceUpdatePageState extends ConsumerState<DeviceUpdatePage> {
           ),
         );
       } else {
-        ref.context.showSnackBar('No file selected');
+        ref.context.showSnackBar(t.noFileSelected);
       }
     }).catchError((e) {
-      ref.context.showSnackBar('Error selecting file: $e');
+      ref.context.showSnackBar(t.errorSelectingFile(error: e));
     });
   }
 }
@@ -122,7 +123,7 @@ class CurrentDeviceVersionWidget extends ConsumerWidget {
       ),
       child: Row(
         children: [
-          const Text('Installed Version: '),
+          Text(t.deviceSettings.installedVersion),
           const Spacer(),
           Text(version ?? 'N/A'),
         ],

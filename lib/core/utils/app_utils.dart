@@ -2,6 +2,7 @@ import 'dart:math';
 
 import 'package:airspothealth/core/theme/app_colors.dart';
 import 'package:airspothealth/core/widgets/button.dart';
+import 'package:airspothealth/i18n/strings.g.dart';
 import 'package:flutter/cupertino.dart'
     show CupertinoTimerPicker, CupertinoTimerPickerMode;
 import 'package:flutter/material.dart';
@@ -106,7 +107,7 @@ Future<TimeOfDay?> showCupertinoTimePicker(
             onPressed: () {
               Navigator.of(context).pop();
             },
-            child: const Text('Cancel'),
+            child: Text(t.common.cancel),
           ),
           Button(
             type: ButtonType.text,
@@ -114,7 +115,7 @@ Future<TimeOfDay?> showCupertinoTimePicker(
             onPressed: () {
               Navigator.of(context).pop(selectedTime);
             },
-            child: const Text('Ok'),
+            child: Text(t.common.ok),
           ),
         ],
       );

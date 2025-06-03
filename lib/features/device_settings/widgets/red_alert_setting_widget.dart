@@ -1,6 +1,7 @@
 import 'package:airspothealth/core/providers/device_settings_provider.dart';
 import 'package:airspothealth/features/device_settings/models/setting_item.dart';
 import 'package:airspothealth/features/device_settings/widgets/setting_item_widget.dart';
+import 'package:airspothealth/i18n/strings.g.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -16,7 +17,7 @@ class RedAlertSettingWidget extends ConsumerWidget {
     return SettingItemWidget(
         onTap: () {},
         item: SettingItem(
-          title: 'Red Alert',
+          title: t.deviceSettings.redAlert,
           leadingWidget: const Icon(
             CupertinoIcons.bell,
             color: Colors.red,

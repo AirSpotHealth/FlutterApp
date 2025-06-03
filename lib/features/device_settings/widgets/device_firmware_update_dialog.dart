@@ -6,6 +6,7 @@ import 'package:airspothealth/features/device_settings/models/progress_model.dar
 import 'package:airspothealth/features/device_settings/models/remote_version.dart';
 import 'package:airspothealth/features/device_settings/providers/dfu_update_provider.dart';
 import 'package:airspothealth/features/device_settings/widgets/download_device_data_button.dart';
+import 'package:airspothealth/i18n/strings.g.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -68,12 +69,12 @@ class _DeviceFirmwareUpdateDialogState
   Widget build(BuildContext context) {
     ref.listen(dfuUpdateProvider, (oldState, newState) {
       if (newState is AsyncFailure && newState != oldState) {
-        context.showSnackBar('Failed to update firmware, ${newState.error}');
+        context.showSnackBar(t.firmwareUpdateFailed(error: newState.error));
         return;
       }
 
       if (newState is AsyncSuccess) {
-        context.showSnackBar('Firmware updated successfully');
+        context.showSnackBar(t.firmwareUpdatedSuccessfully);
 
         Navigator.of(context).pop();
         Navigator.of(context).pop();
@@ -94,7 +95,7 @@ class _DeviceFirmwareUpdateDialogState
               icon: const Icon(Icons.close),
               onPressed: () {
                 if (updateState is AsyncInProgress) {
-                  context.showSnackBar('Firmware update in progress...');
+                  context.showSnackBar(t.firmwareUpdateInProgress);
                   return;
                 }
 
@@ -105,13 +106,13 @@ class _DeviceFirmwareUpdateDialogState
           const AppLogo(),
           const SizedBox(height: 8),
           Text(
-            'Airspot device firmware update',
+            t.airspotDeviceFirmwareUpdate,
             style: context.textTheme.bodyLarge?.weight700,
             textAlign: TextAlign.center,
           ),
           if (remoteVersion != null) ...[
             Text(
-              remoteVersion!.changeLog ?? 'No change log available',
+              remoteVersion!.changeLog ?? t.deviceSettings.noChangeLogAvailable,
               style: context.textTheme.bodySmall?.copyWith(
                 letterSpacing: 0.5,
                 fontWeight: FontWeight.w400,
@@ -122,7 +123,7 @@ class _DeviceFirmwareUpdateDialogState
           ],
           if (remoteVersion?.requireErase == true) ...[
             Text(
-              'Warning: This device update will erase the CO2 history stored on the device. If you want to keep it, download it first. It will be saved as a .csv (spreadsheet).',
+              t.firmwareUpdateWarning,
               style: context.textTheme.bodySmall?.copyWith(color: Colors.red),
             ),
             const SizedBox(height: 16),
@@ -130,7 +131,7 @@ class _DeviceFirmwareUpdateDialogState
           ],
           if (widget.currentVersion == null) ...[
             const SizedBox(height: 12),
-            WarningText(text: 'Failed to read installed firmware version.'),
+            WarningText(text: t.failedToReadFirmwareVersion),
           ],
           const SizedBox(height: 16),
           if (updateState is AsyncInProgress) ...[
@@ -151,7 +152,7 @@ class _DeviceFirmwareUpdateDialogState
                   .updateFirmware(
                       url: remoteVersion!.downloadUrl, deviceId: deviceId),
               child: Text(
-                widget.currentVersion == null ? 'Update Anyway!' : 'Update Now',
+                widget.currentVersion == null ? t.updateAnyway : t.updateNow,
                 style: TextStyle(
                   color: Colors.white,
                   fontWeight: FontWeight.bold,

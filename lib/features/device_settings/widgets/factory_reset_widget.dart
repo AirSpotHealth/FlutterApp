@@ -7,6 +7,7 @@ import 'package:airspothealth/features/device_settings/models/progress_model.dar
 import 'package:airspothealth/features/device_settings/models/setting_item.dart';
 import 'package:airspothealth/features/device_settings/providers/device_factory_reset_provider.dart';
 import 'package:airspothealth/features/device_settings/widgets/setting_item_widget.dart';
+import 'package:airspothealth/i18n/strings.g.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -20,7 +21,7 @@ class FactoryResetWidget extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     return SettingItemWidget(
       item: SettingItem(
-        title: 'Factory Reset',
+        title: t.deviceSettings.factoryReset,
         assetIcon: Assets.factoryReset, // Placeholder icon
         leadingWidget: Image.asset(
           Assets.factoryReset, // Placeholder icon
@@ -53,7 +54,7 @@ class _FactoryResetSheet extends ConsumerWidget {
       if (state is AsyncSuccess) {
         context.pop();
         context.pop();
-        context.showSnackBar('Device factory reset successfully');
+        context.showSnackBar(t.deviceFactoryResetSuccessfully);
       }
     });
     final AsyncProgressValue resetProgress =
@@ -67,12 +68,12 @@ class _FactoryResetSheet extends ConsumerWidget {
           mainAxisSize: MainAxisSize.min,
           children: [
             Text(
-              'Are you sure you want to factory reset this device?',
+              t.areYouSureFactoryReset,
               style: context.textTheme.bodyMedium?.weight600,
             ),
             const SizedBox(height: 4),
             Text(
-              'Factory reset will erase all settings and data on the device. This action cannot be undone.',
+              t.factoryResetWarning,
               style: context.textTheme.bodySmall?.copyWith(
                 color: AppColors.neutralGrey,
               ),
@@ -94,7 +95,7 @@ class _FactoryResetSheet extends ConsumerWidget {
               children: [
                 Button(
                   disabled: resetProgress is AsyncInProgress,
-                  label: 'Cancel',
+                  label: t.common.cancel,
                   type: ButtonType.outlined,
                   wrapWidth: true,
                   onPressed: () {
@@ -104,8 +105,9 @@ class _FactoryResetSheet extends ConsumerWidget {
                 Button(
                   disabled: resetProgress is AsyncInProgress,
                   label: resetProgress is AsyncInProgress
-                      ? resetProgress.message ?? 'Resetting device....'
-                      : 'Factory Reset',
+                      ? resetProgress.message ??
+                          t.deviceSettings.resettingDevice
+                      : t.deviceSettings.factoryReset,
                   suffixIcon: resetProgress is AsyncInProgress
                       ? const SizedBox(
                           height: 20,

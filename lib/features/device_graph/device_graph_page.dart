@@ -9,6 +9,7 @@ import 'package:airspothealth/features/device_graph/widgets/device_data_aggregat
 import 'package:airspothealth/features/device_graph/widgets/graph_settings_widget.dart';
 import 'package:airspothealth/features/device_settings/models/progress_model.dart';
 import 'package:airspothealth/features/device_settings/providers/device_data_download_provider.dart';
+import 'package:airspothealth/i18n/strings.g.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -95,7 +96,7 @@ class ExportDataButton extends ConsumerWidget {
               children: [
                 FaIcon(FontAwesomeIcons.fileCsv, color: Colors.green),
                 const SizedBox(width: 8),
-                const Text('Save as CSV'),
+                Text(t.deviceGraph.saveAsCsv),
               ],
             ),
           ),
@@ -109,7 +110,7 @@ class ExportDataButton extends ConsumerWidget {
               children: [
                 FaIcon(FontAwesomeIcons.share, color: Colors.blue),
                 const SizedBox(width: 8),
-                const Text('Share'),
+                Text(t.deviceGraph.share),
               ],
             ),
           ),

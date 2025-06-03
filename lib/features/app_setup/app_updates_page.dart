@@ -4,6 +4,7 @@ import 'package:airspothealth/core/widgets/app_logo.dart';
 import 'package:airspothealth/core/widgets/tappable_widget.dart';
 import 'package:airspothealth/features/app_setup/providers/app_version_provider.dart';
 import 'package:airspothealth/features/app_setup/providers/dev_mode_provider.dart';
+import 'package:airspothealth/i18n/strings.g.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -19,7 +20,7 @@ class AppUpdatesPage extends ConsumerWidget {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('AirSpot App Update'),
+        title: Text(t.appSetup.airspotAppUpdate),
       ),
       body: Padding(
         padding: const EdgeInsets.all(16),
@@ -31,22 +32,22 @@ class AppUpdatesPage extends ConsumerWidget {
               onTap: () {
                 ref.read(devModeProvider.notifier).toggleDevMode();
 
-                context.showSnackBar('Dev Mode is now enabled.');
+                context.showSnackBar(t.devModeEnabled);
               },
               tapCount: 7,
               child: _buildVersionInfoRow(
-                label: 'Installed Version:',
+                label: t.deviceSettings.installedVersion,
                 child: versionStatus.when(
                   data: (data) => Text(data?.localVersion ?? 'Unknown',
                       style: const TextStyle(fontWeight: FontWeight.bold)),
                   loading: () => const CupertinoActivityIndicator(),
-                  error: (error, stackTrace) => const Text('Unknown'),
+                  error: (error, stackTrace) => Text(t.common.unknown),
                 ),
               ),
             ),
             const SizedBox(height: 16),
             _buildVersionInfoRow(
-              label: 'Latest Version:',
+              label: t.latestVersionLabel,
               child: versionStatus.when(
                 data: (data) => Row(
                   mainAxisSize: MainAxisSize.min,
@@ -67,7 +68,7 @@ class AppUpdatesPage extends ConsumerWidget {
                           Padding(
                             padding: const EdgeInsets.only(left: 16),
                             child: ElevatedButton(
-                              child: const Text('Update Now'),
+                              child: Text(t.common.updateNow),
                               onPressed: () {
                                 context.tryLaunchUrl(data!.appStoreLink);
                               },
@@ -76,8 +77,8 @@ class AppUpdatesPage extends ConsumerWidget {
                         ],
                       )
                     else
-                      const Text(
-                        'Up to date',
+                      Text(
+                        t.common.upToDate,
                         style: TextStyle(
                           fontWeight: FontWeight.bold,
                           color: AppColors.primaryColor,
@@ -86,7 +87,7 @@ class AppUpdatesPage extends ConsumerWidget {
                   ],
                 ),
                 loading: () => const CupertinoActivityIndicator(),
-                error: (error, stackTrace) => const Text('Unknown'),
+                error: (error, stackTrace) => Text(t.common.unknown),
               ),
             ),
           ],

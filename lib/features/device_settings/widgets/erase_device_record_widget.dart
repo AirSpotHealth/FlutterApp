@@ -7,6 +7,7 @@ import 'package:airspothealth/features/device_settings/models/progress_model.dar
 import 'package:airspothealth/features/device_settings/models/setting_item.dart';
 import 'package:airspothealth/features/device_settings/providers/device_data_erase_provider.dart';
 import 'package:airspothealth/features/device_settings/widgets/setting_item_widget.dart';
+import 'package:airspothealth/i18n/strings.g.dart';
 import 'package:animated_icon/animated_icon.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -21,7 +22,7 @@ class EraseDeviceRecordWidget extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     return SettingItemWidget(
       item: SettingItem(
-        title: 'Erase Device Data',
+        title: t.deviceSettings.eraseDeviceData,
         assetIcon: Assets.airGraph,
         leadingWidget: Image.asset(
           Assets.eraseIcon,
@@ -54,7 +55,7 @@ class _DataEraseSheet extends ConsumerWidget {
       if (state is AsyncSuccess) {
         context.pop();
 
-        context.showSnackBar('Device data erased successfully');
+        context.showSnackBar(t.deviceDataErasedSuccessfully);
       }
     });
     final AsyncProgressValue eraseProgress =
@@ -68,12 +69,12 @@ class _DataEraseSheet extends ConsumerWidget {
           mainAxisSize: MainAxisSize.min,
           children: [
             Text(
-              'Are you sure you want to erase all data from this device?',
+              t.deviceSettings.areYouSureEraseData,
               style: context.textTheme.bodyMedium?.weight600,
             ),
             const SizedBox(height: 4),
             Text(
-              'Erasing data will remove all the CO2 history stored in the device. This action cannot be undone.',
+              t.deviceSettings.eraseDataWarning,
               style: context.textTheme.bodySmall?.copyWith(
                 color: AppColors.neutralGrey,
               ),
@@ -95,7 +96,7 @@ class _DataEraseSheet extends ConsumerWidget {
               children: [
                 Button(
                   disabled: eraseProgress is AsyncInProgress,
-                  label: 'Cancel',
+                  label: t.common.cancel,
                   type: ButtonType.outlined,
                   wrapWidth: true,
                   onPressed: () {
@@ -105,8 +106,9 @@ class _DataEraseSheet extends ConsumerWidget {
                 Button(
                   disabled: eraseProgress is AsyncInProgress,
                   label: eraseProgress is AsyncInProgress
-                      ? eraseProgress.message ?? 'Erasing device data....'
-                      : 'Erase Device Data',
+                      ? eraseProgress.message ??
+                          t.deviceSettings.erasingDeviceData
+                      : t.deviceSettings.eraseDeviceData,
                   suffixIcon: eraseProgress is AsyncInProgress
                       ? AnimateIcon(
                           onTap: () {},

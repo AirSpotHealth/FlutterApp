@@ -16,6 +16,7 @@ import 'package:airspothealth/features/device_settings/providers/firmware_remote
 import 'package:airspothealth/features/devices/widgets/device_battery_level_widget.dart';
 import 'package:airspothealth/features/devices/widgets/device_value_refresh_widget.dart';
 import 'package:airspothealth/features/devices/widgets/device_value_widget.dart';
+import 'package:airspothealth/i18n/strings.g.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_blue_plus/flutter_blue_plus.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -126,7 +127,7 @@ class BleDeviceWidget extends ConsumerWidget {
                 );
               },
               child: Text(
-                'Tap to update firmware',
+                t.tapToUpdateFirmware,
                 style: context.textTheme.labelLarge?.copyWith(
                   color: AppColors.brandColorRed,
                 ),
@@ -173,7 +174,7 @@ class BleDeviceWidget extends ConsumerWidget {
                         .forget();
                     ref.context.pop();
                   },
-                  child: const Text('Forget Device'),
+                  child: Text(t.forgetDevice),
                 ),
               ],
             ),
@@ -197,7 +198,7 @@ class BleDeviceWidget extends ConsumerWidget {
       const SizedBox(width: 6),
       Expanded(
         child: Text(
-          bleDevice.alias ?? 'No Nickname',
+          bleDevice.alias ?? t.noNickname,
           style: ref.context.textTheme.labelLarge?.copyWith(
             color: bleDevice.alias == null
                 ? AppColors.neutralGrey
@@ -206,7 +207,7 @@ class BleDeviceWidget extends ConsumerWidget {
         ),
       ),
       Text(
-        'connected',
+        t.devices.connectedStatus,
         style: ref.context.textTheme.labelLarge
             ?.copyWith(color: AppColors.brandColorGreen),
       ),
@@ -262,8 +263,8 @@ class BleDeviceWidget extends ConsumerWidget {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Text(
-                'Change Device Nickname',
+              Text(
+                t.changeDeviceNickname,
                 style: TextStyle(
                   fontSize: 18,
                   fontWeight: FontWeight.w600,
@@ -272,8 +273,8 @@ class BleDeviceWidget extends ConsumerWidget {
               const SizedBox(height: 16),
               TextFormField(
                 controller: controller,
-                decoration: const InputDecoration(
-                  hintText: 'Enter nickname',
+                decoration: InputDecoration(
+                  hintText: t.enterNickname,
                   border: OutlineInputBorder(
                       borderSide: BorderSide(color: AppColors.primaryColor)),
                   enabledBorder: OutlineInputBorder(
@@ -289,7 +290,7 @@ class BleDeviceWidget extends ConsumerWidget {
               onPressed: () {
                 Navigator.of(context).pop();
               },
-              child: const Text('Cancel'),
+              child: Text(t.common.cancel),
             ),
             ElevatedButton(
               onPressed: () {
@@ -298,7 +299,7 @@ class BleDeviceWidget extends ConsumerWidget {
                     .updateDeviceAlias(deviceId, controller.text);
                 Navigator.of(context).pop();
               },
-              child: const Text('Save'),
+              child: Text(t.common.save),
             ),
           ],
         );
@@ -334,13 +335,12 @@ class ConnectButtonRow extends ConsumerWidget {
       children: [
         Expanded(
           child: Text(
-            isDeviceAvailable ? 'Not Connected' : 'Unavailable',
+            isDeviceAvailable ? t.notConnected : t.unavailable,
             style: TextStyle(color: AppColors.neutralGrey),
           ),
         ),
         if (bondState == BluetoothBondState.bonded)
-          const Text('Connected',
-              style: TextStyle(color: AppColors.primaryColor))
+          Text(t.connected, style: TextStyle(color: AppColors.primaryColor))
         else
           TappableWidget(
             onTap: () {
@@ -358,8 +358,8 @@ class ConnectButtonRow extends ConsumerWidget {
               ),
               child: Text(
                 bondState == BluetoothBondState.bonding
-                    ? 'Connecting...'
-                    : 'Connect',
+                    ? t.bluetooth.connecting
+                    : t.common.connect,
                 style: TextStyle(color: Colors.white),
               ),
             ),

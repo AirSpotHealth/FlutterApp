@@ -6,6 +6,7 @@ import 'package:airspothealth/features/device_settings/models/progress_model.dar
 import 'package:airspothealth/features/device_settings/models/setting_item.dart';
 import 'package:airspothealth/features/device_settings/providers/device_data_dump_provider.dart';
 import 'package:airspothealth/features/device_settings/widgets/setting_item_widget.dart';
+import 'package:airspothealth/i18n/strings.g.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -19,7 +20,7 @@ class DeviceDataDumpWidget extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     return SettingItemWidget(
       item: SettingItem(
-        title: 'Dump Device Data',
+        title: t.deviceSettings.deviceDataDump,
         leadingWidget: IconBgWidget(
             backgroundColor: Colors.teal,
             child: const Icon(Icons.dataset_rounded)),
@@ -79,22 +80,22 @@ class _DataDumpSheetWidgetState extends ConsumerState<DataDumpSheetWidget> {
       ),
       child: ListView(
         children: [
-          Text('Device data dump',
+          Text(t.deviceSettings.deviceDataDump,
               style: context.textTheme.bodyMedium?.weight700),
           const SizedBox(height: 16),
           if (dataDumpState is AsyncNone) ...[
             TextFormField(
               controller: _numberOfPagesController,
-              decoration: const InputDecoration(
-                labelText: 'Number of pages',
-                hintText: 'Enter number of pages to dump',
+              decoration: InputDecoration(
+                labelText: t.deviceSettings.numberOfPages,
+                hintText: t.deviceSettings.enterNumberOfPages,
                 border: OutlineInputBorder(),
               ),
               onTapOutside: (_) => FocusScope.of(context).unfocus(),
               autovalidateMode: AutovalidateMode.onUserInteraction,
               validator: (value) {
                 if (value == null || value.isEmpty) {
-                  return 'Please enter number of pages';
+                  return t.deviceSettings.pleaseEnterNumberOfPages;
                 }
 
                 final int? numberOfPages = int.tryParse(value);
@@ -102,7 +103,7 @@ class _DataDumpSheetWidgetState extends ConsumerState<DataDumpSheetWidget> {
                 if (numberOfPages == null ||
                     numberOfPages <= 1 ||
                     numberOfPages > 16384) {
-                  return 'Please enter a valid number of pages';
+                  return t.deviceSettings.pleaseEnterValidNumberOfPages;
                 }
                 return null; // added return for the successful case
               },
@@ -118,7 +119,7 @@ class _DataDumpSheetWidgetState extends ConsumerState<DataDumpSheetWidget> {
 
                 _startDump(_numberOfPagesController.text);
               },
-              child: const Text('Start Data Dump'),
+              child: Text(t.deviceSettings.startDataDump),
             ),
           ],
           if (dataDumpState is AsyncInProgress)
@@ -147,7 +148,7 @@ class _DataDumpSheetWidgetState extends ConsumerState<DataDumpSheetWidget> {
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
-        Text(progress.message ?? 'Processing device data....'),
+        Text(progress.message ?? t.deviceSettings.processingDeviceData),
         const SizedBox(height: 16),
         LinearProgressIndicator(value: progress.progress),
       ],
@@ -159,7 +160,7 @@ class _DataDumpSheetWidgetState extends ConsumerState<DataDumpSheetWidget> {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       mainAxisSize: MainAxisSize.min,
       children: [
-        Text('Failed to dump device data: ${failure.error}'),
+        Text(t.deviceSettings.failedToDumpDeviceData(error: failure.error)),
         const SizedBox(height: 16),
         Button(
           wrapWidth: true,
@@ -168,7 +169,7 @@ class _DataDumpSheetWidgetState extends ConsumerState<DataDumpSheetWidget> {
                 .read(deviceDataDumpProvider(widget.deviceId).notifier)
                 .startDataDump();
           },
-          child: const Text('Retry'),
+          child: Text(t.common.retry),
         ),
       ],
     );
@@ -178,14 +179,14 @@ class _DataDumpSheetWidgetState extends ConsumerState<DataDumpSheetWidget> {
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
-        Text('Device data dumped successfully'),
+        Text(t.deviceSettings.deviceDataDumpedSuccessfully),
         const SizedBox(height: 16),
         Button(
           onPressed: () {
             ref.context.pop();
             ref.invalidate(deviceDataDumpProvider(widget.deviceId));
           },
-          child: const Text('Close'),
+          child: Text(t.common.close),
         ),
       ],
     );

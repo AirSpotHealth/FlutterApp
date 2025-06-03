@@ -4,6 +4,7 @@ import 'package:airspothealth/core/router/route_names.dart';
 import 'package:airspothealth/core/theme/app_colors.dart';
 import 'package:airspothealth/core/widgets/app_logo.dart';
 import 'package:airspothealth/features/devices/widgets/ble_device_widget.dart';
+import 'package:airspothealth/i18n/strings.g.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -31,8 +32,8 @@ class DevicesPage extends ConsumerWidget {
                   children: [
                     Icon(Icons.add, size: 20),
                     const SizedBox(width: 2),
-                    const Text(
-                      'Add Device',
+                    Text(
+                      t.devices.addDevice,
                       style: TextStyle(fontSize: 14, color: Colors.white),
                     )
                   ],
@@ -42,7 +43,7 @@ class DevicesPage extends ConsumerWidget {
           ],
         ),
         body: savedDevicesList.isEmpty
-            ? const Center(child: Text('No devices connected'))
+            ? Center(child: Text(t.devices.noDevicesConnected))
             : ListView.separated(
                 separatorBuilder: (context, index) =>
                     const SizedBox(height: 12),
@@ -59,7 +60,7 @@ class DevicesPage extends ConsumerWidget {
 
   FloatingActionButton _buildAddDeviceButton(BuildContext context) =>
       FloatingActionButton.extended(
-        label: const Text('Add Device'),
+        label: Text(t.devices.addDevice),
         icon: const Icon(Icons.add),
         onPressed: () => context.pushNamed(RouteNames.addDevice),
       );

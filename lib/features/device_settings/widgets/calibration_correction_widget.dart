@@ -1,6 +1,7 @@
 import 'package:airspothealth/features/device_settings/models/asc_data.dart';
 import 'package:airspothealth/features/device_settings/models/progress_model.dart';
 import 'package:airspothealth/features/device_settings/providers/device_asc_data_provider.dart';
+import 'package:airspothealth/i18n/strings.g.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -38,12 +39,13 @@ class CalibrationCorrectionWidget extends ConsumerWidget {
               CupertinoActivityIndicator()
             else if (ascDataProgress is AsyncFailure)
               Text(
-                'Failed to get ASC data: ${ascDataProgress.error}',
+                t.failedToGetAscData(error: ascDataProgress.error),
                 style: const TextStyle(color: Colors.red),
               )
             else if (ascDataProgress is AsyncSuccess) ...[
               Text(
-                "The last correction applied was ${(ascDataProgress.data as AscData).correction}.",
+                t.lastCorrectionApplied(
+                    correction: (ascDataProgress.data as AscData).correction),
                 style: const TextStyle(
                   fontSize: 14,
                   fontWeight: FontWeight.w600,
@@ -52,7 +54,7 @@ class CalibrationCorrectionWidget extends ConsumerWidget {
               ),
               const SizedBox(height: 12),
               Text(
-                'Tap to get latest values',
+                t.tapToGetLatestValues,
                 style: const TextStyle(
                   fontSize: 12,
                   color: Colors.grey,

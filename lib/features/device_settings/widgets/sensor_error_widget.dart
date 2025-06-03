@@ -3,6 +3,7 @@ import 'package:airspothealth/core/utils/device_cmd_utils.dart';
 import 'package:airspothealth/core/widgets/icon_bg_widget.dart';
 import 'package:airspothealth/features/device_settings/models/setting_item.dart';
 import 'package:airspothealth/features/device_settings/widgets/setting_item_widget.dart';
+import 'package:airspothealth/i18n/strings.g.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
@@ -24,7 +25,7 @@ class _SensorErrorWidgetState extends ConsumerState<SensorErrorWidget> {
   Widget build(BuildContext context) {
     return SettingItemWidget(
         item: SettingItem(
-          title: 'Test Sensor Error',
+          title: t.deviceSettings.testSensorError,
           leadingWidget: IconBgWidget(
             backgroundColor: Colors.teal,
             child: FaIcon(

@@ -2,9 +2,9 @@ import 'package:airspothealth/core/models/device_settings.dart';
 import 'package:airspothealth/core/providers/ble_device_communication_provider.dart';
 import 'package:airspothealth/core/providers/device_settings_provider.dart';
 import 'package:airspothealth/core/theme/app_colors.dart';
-import 'package:airspothealth/core/utils/constants.dart';
 import 'package:airspothealth/core/utils/extensions.dart';
 import 'package:airspothealth/core/widgets/button.dart';
+import 'package:airspothealth/i18n/strings.g.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -60,7 +60,7 @@ class _Co2PpmRangePickerWidgetState
         Padding(
           padding: const EdgeInsets.only(bottom: 16),
           child: Text(
-            'CO₂ PPM Zones',
+            t.deviceSettings.co2PpmZones,
             style: context.textTheme.bodyMedium?.weight600,
           ),
         ),
@@ -85,13 +85,13 @@ class _Co2PpmRangePickerWidgetState
               child: _ZoneValueDropdown(
                 deviceId: widget.deviceId,
                 currentValue: _selectedGreenValue,
-                label: 'Green Zone (Up to)',
+                label: t.deviceSettings.greenZoneUpTo,
                 values: _ppmValues,
                 valueColor: AppColors.brandColorGreen,
                 onValueChanged: (int newValue) {
                   if (newValue >= _selectedYellowValue) {
                     context.showSnackBar(
-                        'Green zone cannot be greater than yellow zone');
+                        t.deviceSettings.greenZoneCannotBeGreater);
                     return;
                   }
 
@@ -105,7 +105,7 @@ class _Co2PpmRangePickerWidgetState
             Button(
               wrapWidth: true,
               onPressed: hasChanged ? () => _updateValues() : null,
-              child: const Text('Set'),
+              child: Text(t.common.set),
             ),
           ],
         ),
@@ -117,13 +117,13 @@ class _Co2PpmRangePickerWidgetState
               child: _ZoneValueDropdown(
                 deviceId: widget.deviceId,
                 currentValue: _selectedYellowValue,
-                label: 'Yellow Zone (Up to)',
+                label: t.deviceSettings.yellowZoneUpTo,
                 values: _ppmValues,
                 valueColor: AppColors.brandColorAmber,
                 onValueChanged: (int newValue) {
                   if (newValue < _selectedGreenValue) {
-                    context.showSnackBar(
-                        'Yellow zone cannot be less than green zone');
+                    context
+                        .showSnackBar(t.deviceSettings.yellowZoneCannotBeLess);
                     return;
                   }
 
@@ -137,7 +137,7 @@ class _Co2PpmRangePickerWidgetState
             Button(
               wrapWidth: true,
               onPressed: hasChanged ? () => _updateValues() : null,
-              child: const Text('Set'),
+              child: Text(t.common.set),
             ),
           ],
         ),
@@ -151,8 +151,7 @@ class _Co2PpmRangePickerWidgetState
   void _updateValues() {
     // Simple validation: ensure green is less than yellow
     if (_selectedGreenValue >= _selectedYellowValue) {
-      context.showSnackBar(
-          'Green ${Constants.co2Text} must be less than yellow ${Constants.co2Text}');
+      context.showSnackBar(t.deviceSettings.greenCo2MustBeLess);
       return;
     }
 
@@ -179,17 +178,17 @@ class _Co2PpmRangePickerWidgetState
         .sendCommand(updatedSettings.thresholdsCmd);
 
     // Show feedback to the user
-    context.showSnackBar('CO₂ PPM Zones updated successfully');
+    context.showSnackBar(t.deviceSettings.co2PpmZonesUpdated);
   }
 
   Widget _buildLegend() {
     return Row(
       children: [
-        _buildLegendItem('Good', AppColors.brandColorGreen),
+        _buildLegendItem(t.deviceSettings.good, AppColors.brandColorGreen),
         const SizedBox(width: 16),
-        _buildLegendItem('Warning', AppColors.brandColorAmber),
+        _buildLegendItem(t.deviceSettings.warning, AppColors.brandColorAmber),
         const SizedBox(width: 16),
-        _buildLegendItem('Alert', AppColors.brandColorRed),
+        _buildLegendItem(t.deviceSettings.alert, AppColors.brandColorRed),
       ],
     );
   }
@@ -287,7 +286,7 @@ class _ZoneValueDropdown extends ConsumerWidget {
         ),
         const SizedBox(height: 8),
         Text(
-          'Select a value between $kMinValue and $kMaxValue ppm',
+          t.deviceSettings.selectValueBetween(min: kMinValue, max: kMaxValue),
           style: context.textTheme.bodySmall?.copyWith(
             color: Colors.grey.shade600,
           ),

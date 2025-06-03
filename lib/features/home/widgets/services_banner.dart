@@ -1,5 +1,6 @@
 import 'package:airspothealth/core/providers/services_status_provider.dart';
 import 'package:airspothealth/core/utils/extensions.dart';
+import 'package:airspothealth/i18n/strings.g.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -17,10 +18,9 @@ class ServicesBanner extends ConsumerWidget {
       return const SizedBox.shrink();
     }
 
-    final String message = 'Bluetooth is Disabled';
+    final String message = t.bluetoothIsDisabled;
 
-    final String bluetoothEnableInfo =
-        'Settings > Bluetooth > Turn On Bluetooth';
+    final String bluetoothEnableInfo = t.bluetoothEnableInfo;
 
     return Material(
       elevation: 10,
@@ -51,7 +51,7 @@ class ServicesBanner extends ConsumerWidget {
             ),
             const SizedBox(height: 12),
             Text(
-              'Please enable the bluetooth service to continue:',
+              t.pleaseEnableBluetoothService,
               style: context.textTheme.bodySmall?.copyWith(
                 color: Colors.white,
               ),

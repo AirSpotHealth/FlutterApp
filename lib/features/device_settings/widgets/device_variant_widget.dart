@@ -3,6 +3,7 @@ import 'package:airspothealth/features/device_settings/models/progress_model.dar
 import 'package:airspothealth/features/device_settings/models/setting_item.dart';
 import 'package:airspothealth/features/device_settings/providers/device_variant_provider.dart';
 import 'package:airspothealth/features/device_settings/widgets/setting_item_widget.dart';
+import 'package:airspothealth/i18n/strings.g.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -17,7 +18,7 @@ class DeviceVariantWidget extends ConsumerWidget {
 
     return SettingItemWidget(
       item: SettingItem(
-        title: 'Device Variant',
+        title: t.deviceSettings.deviceVariant,
         suffixWidget: deviceVariant.when(
           none: () => const SizedBox(),
           inProgress: (progress, message) =>

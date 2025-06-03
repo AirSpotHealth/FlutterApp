@@ -6,6 +6,7 @@ import 'package:airspothealth/features/device_settings/providers/ble_device_vers
 import 'package:airspothealth/features/device_settings/providers/firmware_remote_version_provider.dart';
 import 'package:airspothealth/features/device_settings/widgets/device_firmware_update_dialog.dart';
 import 'package:airspothealth/features/devices/providers/device_battery_level_provider.dart';
+import 'package:airspothealth/i18n/strings.g.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -37,11 +38,11 @@ class DeviceVersionUpdateWidget extends ConsumerWidget {
         ),
         child: Row(
           children: [
-            const Text('Latest Version: '),
+            Text(t.deviceSettings.latestVersion),
             const Spacer(),
             remoteVersion.when(
               data: (version) => Text(
-                remoteVersion.value?.versionName ?? 'N/A',
+                remoteVersion.value?.versionName ?? t.deviceSettings.na,
                 style: const TextStyle(
                   color: AppColors.brandColorAmber,
                   fontWeight: FontWeight.bold,
@@ -67,15 +68,15 @@ class DeviceVersionUpdateWidget extends ConsumerWidget {
                   if (!batteryState.isCharging &&
                       batteryState.level != null &&
                       batteryState.level! < 20) {
-                    context.showSnackBar(
-                        'Battery too low for updating. Please connect charger.');
+                    context
+                        .showSnackBar(t.deviceSettings.batteryTooLowForUpdate);
                     return;
                   }
 
                   _showUpdateDialog(
                       context, remoteVersion.value!, currentVersion);
                 },
-                label: 'Update',
+                label: t.common.update,
               ),
             ]
           ],

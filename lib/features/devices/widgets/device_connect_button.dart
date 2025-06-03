@@ -2,6 +2,7 @@ import 'package:airspothealth/core/theme/app_colors.dart';
 import 'package:airspothealth/core/utils/extensions.dart';
 import 'package:airspothealth/core/widgets/tappable_widget.dart';
 import 'package:airspothealth/features/add_device/providers/ble_device_connection_provider.dart';
+import 'package:airspothealth/i18n/strings.g.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_blue_plus/flutter_blue_plus.dart';
@@ -18,8 +19,8 @@ class DeviceConnectButton extends ConsumerWidget {
 
     return bleDevice.when(
       cases: {
-        BluetoothBondState.bonded: () => const Text('Connected',
-            style: TextStyle(color: AppColors.primaryColor)),
+        BluetoothBondState.bonded: () => Text(t.devices.connectedStatus,
+            style: const TextStyle(color: AppColors.primaryColor)),
         BluetoothBondState.bonding: () => const CupertinoActivityIndicator(),
         BluetoothBondState.none: () => TappableWidget(
               onTap: () => ref
@@ -32,14 +33,14 @@ class DeviceConnectButton extends ConsumerWidget {
                   color: AppColors.primaryColor,
                   borderRadius: BorderRadius.circular(5),
                 ),
-                child: const Text(
-                  'Connect',
-                  style: TextStyle(color: Colors.white),
+                child: Text(
+                  t.common.connect,
+                  style: const TextStyle(color: Colors.white),
                 ),
               ),
             ),
       },
-      orElse: () => const Text('Unknown state'),
+      orElse: () => Text(t.common.unknownState),
     );
   }
 }

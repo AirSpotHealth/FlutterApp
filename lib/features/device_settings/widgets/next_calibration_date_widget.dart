@@ -1,6 +1,7 @@
 import 'package:airspothealth/core/providers/ble_device_communication_provider.dart';
 import 'package:airspothealth/core/utils/device_cmd_utils.dart';
 import 'package:airspothealth/features/device_settings/providers/device_asc_day_count_provider.dart';
+import 'package:airspothealth/i18n/strings.g.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
@@ -44,7 +45,7 @@ class _NextCalibrationDateWidgetState
         ),
         child: Row(
           children: [
-            Text('Next Auto Calibration:',
+            Text(t.deviceSettings.nextAutoCalibration,
                 style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500)),
             const SizedBox(width: 8),
             Expanded(

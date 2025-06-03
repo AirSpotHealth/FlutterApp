@@ -5,6 +5,7 @@ import 'package:airspothealth/core/providers/device_settings_provider.dart';
 import 'package:airspothealth/core/utils/app_utils.dart';
 import 'package:airspothealth/core/utils/extensions.dart';
 import 'package:airspothealth/core/widgets/button.dart';
+import 'package:airspothealth/i18n/strings.g.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -151,7 +152,7 @@ class _AltitudePressureScalingWidgetState
     if (_formKey.currentState!.validate()) {
       final raw = double.tryParse(_scalingController.text);
       if (raw == null) {
-        context.showSnackBar('Invalid scaling value. Settings not saved.');
+        context.showSnackBar(t.invalidScalingValue);
         return;
       }
 
@@ -162,7 +163,7 @@ class _AltitudePressureScalingWidgetState
           (settings) => settings.copyWith(scaling: rounded),
           sendCommands: true);
 
-      context.showSnackBar('Settings saved');
+      context.showSnackBar(t.settingsSaved);
     } else {
       setState(() {
         _isFormValid = false;
@@ -171,22 +172,22 @@ class _AltitudePressureScalingWidgetState
   }
 
   String? _validateAltitudeField(String? value) {
-    if (value == null || value.isEmpty) return 'Required';
-    if (double.tryParse(value) == null) return 'Invalid';
+    if (value == null || value.isEmpty) return t.required;
+    if (double.tryParse(value) == null) return t.invalid;
     return null;
   }
 
   String? _validatePressureField(String? value) {
-    if (value == null || value.isEmpty) return 'Required';
-    if (double.tryParse(value) == null) return 'Invalid';
+    if (value == null || value.isEmpty) return t.required;
+    if (double.tryParse(value) == null) return t.invalid;
     return null;
   }
 
   String? _validateScalingField(String? value) {
-    if (value == null || value.isEmpty) return 'Required';
+    if (value == null || value.isEmpty) return t.required;
     final scaling = double.tryParse(value);
     if (scaling == null || scaling < 0.5 || scaling > 2.0) {
-      return 'Invalid';
+      return t.invalid;
     }
     return null;
   }
@@ -223,13 +224,13 @@ class _AltitudePressureScalingWidgetState
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         const SizedBox(height: 8),
-        const Text(
-          'Altitude/Pressure',
+        Text(
+          t.altitudePressure,
           style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
         ),
         const SizedBox(height: 4),
-        const Text(
-          'For most accurate calibration, set altitude or air pressure or scaling here (optional advanced feature, see manual.)',
+        Text(
+          t.altitudePressureDescription,
           style: TextStyle(fontSize: 12, color: Colors.black),
         ),
         const SizedBox(height: 16),
@@ -246,8 +247,7 @@ class _AltitudePressureScalingWidgetState
                     );
 
                 if (mounted) {
-                  context.showSnackBar(
-                      'Flight mode turned off. You can now set scaling.');
+                  context.showSnackBar(t.flightModeTurnedOff);
                 }
               },
               child: Container(
@@ -267,7 +267,7 @@ class _AltitudePressureScalingWidgetState
                     const SizedBox(width: 8),
                     Expanded(
                       child: Text(
-                        'Flight mode is active. Scaling cannot be changed. Tap to turn off.',
+                        t.flightModeActive,
                         style: TextStyle(
                             color: Colors.orange[800],
                             fontWeight: FontWeight.normal,
@@ -284,11 +284,13 @@ class _AltitudePressureScalingWidgetState
         Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Expanded(child: Text('Metres above sea level', style: labelStyle)),
+            Expanded(
+                child: Text(t.deviceSettings.metresAboveSeaLevel,
+                    style: labelStyle)),
             const SizedBox(width: 8),
-            Expanded(child: Text('Pressure (hPa)', style: labelStyle)),
+            Expanded(child: Text(t.deviceSettings.pressure, style: labelStyle)),
             const SizedBox(width: 8),
-            Expanded(child: Text('Scaling (0.5-2.0)', style: labelStyle)),
+            Expanded(child: Text(t.deviceSettings.scaling, style: labelStyle)),
             const SizedBox(width: 8),
             SizedBox(
                 width: 60), // Placeholder for button width, adjust as needed
@@ -335,7 +337,7 @@ class _AltitudePressureScalingWidgetState
               Button(
                 wrapWidth: true,
                 onPressed: _saveSettings,
-                label: 'SET',
+                label: t.common.set,
                 disabled: !_isFormValid || isFlightModeOn,
               ),
             ],

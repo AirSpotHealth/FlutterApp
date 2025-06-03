@@ -31,6 +31,7 @@ import 'package:airspothealth/features/device_settings/widgets/power_off_device_
 import 'package:airspothealth/features/device_settings/widgets/sensor_error_widget.dart';
 import 'package:airspothealth/features/device_settings/widgets/setting_item_widget.dart';
 import 'package:airspothealth/features/device_settings/widgets/vibrate_setting_widget.dart';
+import 'package:airspothealth/i18n/strings.g.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -41,39 +42,35 @@ class DeviceSettingsPage extends ConsumerWidget {
 
   final String deviceId;
 
-  static final _deviceSettingsList = <SettingItem>[
-    // SettingItem(
-    //   title: 'High ${Constants.co2Text} Alert',
-    //   assetIcon: Assets.co2Settings,
-    //   route: RouteNames.co2Settings,
-    //   enabled: true,
-    // ),
-    SettingItem(
-      title: 'Device Screen Settings',
-      assetIcon: Assets.screenSettings,
-      route: RouteNames.screenSettings,
-    ),
-    SettingItem(
-      title: 'Do Not Disturb',
-      assetIcon: Assets.doNotDisturbSettings,
-      route: RouteNames.doNotDisturbSettings,
-    ),
-    SettingItem(
-      title: 'AirSpot Device Update',
-      assetIcon: Assets.deviceUpdate,
-      route: RouteNames.deviceUpdate,
-    ),
-    SettingItem(
-      title: 'Calibrate Device',
-      assetIcon: Assets.recalibrateSettings,
-      route: RouteNames.recalibrateSettings,
-    ),
-    SettingItem(
-      title: 'Locate my Airspot',
-      assetIcon: Assets.findMyDevice,
-      route: RouteNames.findMyDevice,
-    )
-  ];
+  List<SettingItem> _getDeviceSettingsList() {
+    return [
+      SettingItem(
+        title: t.deviceSettings.deviceScreenSettings,
+        assetIcon: Assets.screenSettings,
+        route: RouteNames.screenSettings,
+      ),
+      SettingItem(
+        title: t.deviceSettings.doNotDisturb,
+        assetIcon: Assets.doNotDisturbSettings,
+        route: RouteNames.doNotDisturbSettings,
+      ),
+      SettingItem(
+        title: t.deviceSettings.airspotDeviceUpdate,
+        assetIcon: Assets.deviceUpdate,
+        route: RouteNames.deviceUpdate,
+      ),
+      SettingItem(
+        title: t.deviceSettings.calibrateDevice,
+        assetIcon: Assets.recalibrateSettings,
+        route: RouteNames.recalibrateSettings,
+      ),
+      SettingItem(
+        title: t.deviceSettings.locateMyAirspot,
+        assetIcon: Assets.findMyDevice,
+        route: RouteNames.findMyDevice,
+      )
+    ];
+  }
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -82,7 +79,7 @@ class DeviceSettingsPage extends ConsumerWidget {
     final bool devMode = ref.watch(devModeProvider);
 
     if (device == null) {
-      ref.context.showSnackBar('Device with id $deviceId not found');
+      ref.context.showSnackBar(t.deviceSettings.deviceNotConnected);
       context.pop();
       return const SizedBox();
     }
@@ -128,7 +125,7 @@ class DeviceSettingsPage extends ConsumerWidget {
     return [
       const SizedBox(height: 16),
       Text(
-        'Dev Settings',
+        t.deviceSettings.devSettings,
         style: TextStyle(
           color: Colors.black,
           fontSize: 14,
@@ -138,7 +135,7 @@ class DeviceSettingsPage extends ConsumerWidget {
       const SizedBox(height: 8),
       SettingItemWidget(
         item: SettingItem(
-          title: 'Sensor Configuration',
+          title: t.deviceSettings.sensorConfiguration,
           assetIcon: Assets.recalibrateSettings,
           route: RouteNames.sensorConfiguration,
         ),
@@ -162,7 +159,7 @@ class DeviceSettingsPage extends ConsumerWidget {
   SettingItemWidget _buildTimeSettingWidget(WidgetRef ref) {
     return SettingItemWidget(
       item: SettingItem(
-        title: 'Time Settings',
+        title: t.deviceSettings.timeSettings,
         assetIcon: Assets.timeSettings,
         route: RouteNames.timeSettings,
       ),
@@ -170,7 +167,7 @@ class DeviceSettingsPage extends ConsumerWidget {
         if (!ref
             .read(bleDeviceConnectionProvider(deviceId).notifier)
             .isConnected) {
-          ref.context.showSnackBar('Device not connected');
+          ref.context.showSnackBar(t.deviceSettings.deviceNotConnected);
 
           Navigator.of(ref.context).pop();
           return;
@@ -183,14 +180,14 @@ class DeviceSettingsPage extends ConsumerWidget {
   }
 
   Iterable<Widget> _buildSettingsList(WidgetRef ref) {
-    return _deviceSettingsList.map(
+    return _getDeviceSettingsList().map(
       (item) => SettingItemWidget(
         item: item,
         onTap: () {
           if (!ref
               .read(bleDeviceConnectionProvider(deviceId).notifier)
               .isConnected) {
-            ref.context.showSnackBar('Device not connected');
+            ref.context.showSnackBar(t.deviceSettings.deviceNotConnected);
 
             Navigator.of(ref.context).pop();
             return;
@@ -223,7 +220,7 @@ class PowerModeSettingWidget extends ConsumerWidget {
 
     return SettingItemWidget(
       item: SettingItem(
-        title: '${Constants.co2Text} reading rate',
+        title: t.deviceSettings.co2ReadingRate(co2Text: Constants.co2Text),
         assetIcon: powerMode.assetIcon,
         route: RouteNames.powerModeSettings,
       ),
@@ -231,7 +228,7 @@ class PowerModeSettingWidget extends ConsumerWidget {
         if (!ref
             .read(bleDeviceConnectionProvider(deviceId).notifier)
             .isConnected) {
-          ref.context.showSnackBar('Device not connected');
+          ref.context.showSnackBar(t.deviceSettings.deviceNotConnected);
 
           Navigator.of(ref.context).pop();
           return;
@@ -253,7 +250,7 @@ class TurnOffBluetoothWidget extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     return SettingItemWidget(
       item: SettingItem(
-        title: 'Turn off Device BT',
+        title: t.deviceSettings.turnOffDeviceBt,
         assetIcon: Assets.autoConnectSettings,
         suffixWidget: const SizedBox(),
         leadingWidget: IconBgWidget(
@@ -278,7 +275,7 @@ class DeleteLocalCacheWidget extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     return SettingItemWidget(
       item: SettingItem(
-        title: 'Delete Local Cache',
+        title: t.deviceSettings.deleteLocalCache,
         assetIcon: Assets.autoConnectSettings,
         suffixWidget: const SizedBox(),
         leadingWidget: IconBgWidget(
@@ -296,7 +293,7 @@ class DeleteLocalCacheWidget extends ConsumerWidget {
 
         ref.invalidate(deviceHistoryDataRequestProvider(deviceId));
 
-        ref.context.showSnackBar('Local cache deleted');
+        ref.context.showSnackBar(t.deviceSettings.localCacheDeleted);
       },
     );
   }
@@ -311,7 +308,7 @@ class RestartDeviceWidget extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     return SettingItemWidget(
       item: SettingItem(
-        title: 'Restart Device',
+        title: t.deviceSettings.restartDevice,
         assetIcon: Assets.autoConnectSettings,
         leadingWidget: IconBgWidget(
           backgroundColor: Colors.deepPurpleAccent,
@@ -348,16 +345,18 @@ class SetAscDurationWidget extends ConsumerWidget {
           },
           decoration: InputDecoration(
             isDense: true,
-            labelText: 'ASC Duration (seconds)',
+            labelText: t.deviceSettings.ascDurationSeconds,
           ),
           validator: (value) {
-            if (value == null || value.isEmpty) return 'Duration is required';
+            if (value == null || value.isEmpty) {
+              return t.deviceSettings.durationIsRequired;
+            }
 
             final int? duration = int.tryParse(value);
 
-            if (duration == null) return 'Invalid duration';
+            if (duration == null) return t.deviceSettings.invalidDuration;
 
-            if (duration < 30) return 'Duration must be at least 30 seconds';
+            if (duration < 30) return t.deviceSettings.durationMustBeAtLeast30;
 
             return null;
           },

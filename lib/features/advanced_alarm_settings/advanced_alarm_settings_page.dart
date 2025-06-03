@@ -5,6 +5,7 @@ import 'package:airspothealth/core/utils/extensions.dart';
 import 'package:airspothealth/core/widgets/button.dart';
 import 'package:airspothealth/features/advanced_alarm_settings/providers/advanced_alarm_settings_provider.dart';
 import 'package:airspothealth/features/advanced_alarm_settings/widgets/alarm_level_row.dart';
+import 'package:airspothealth/i18n/strings.g.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -43,12 +44,12 @@ class _AdvancedAlarmSettingsPageState
     return Scaffold(
       backgroundColor: Colors.grey[100],
       appBar: AppBar(
-        title: const Text('Advanced Alarm Settings',
+        title: Text(t.advancedAlarmSettings.title,
             style: TextStyle(fontSize: 18)), // Slightly smaller title
         actions: [
           IconButton(
             icon: const Icon(Icons.restore),
-            tooltip: 'Reset to Defaults',
+            tooltip: t.deviceSettings.resetToDefaults,
             onPressed: () async {
               // Only call the main reset method on alarmLevelsNotifier
               await alarmLevelsNotifier.resetAlarmLevelsToDefaults();
@@ -56,7 +57,7 @@ class _AdvancedAlarmSettingsPageState
               // alarmOnCo2FallNotifier.resetToDefault(); // No longer called from here
 
               if (mounted) {
-                context.showSnackBar('All advanced settings reset to defaults');
+                context.showSnackBar(t.deviceSettings.allAdvancedSettingsReset);
               }
             },
           )
@@ -108,7 +109,7 @@ class _AdvancedAlarmSettingsPageState
                           'saveButton'), // Important for AnimatedSwitcher
                       padding: const EdgeInsets.all(16.0),
                       child: Button(
-                        label: 'Save changes',
+                        label: t.deviceSettings.saveChanges,
                         prefixIcon: const Icon(Icons.save, color: Colors.white),
                         backgroundColor: context.theme.primaryColor,
                         onPressed: () async {
@@ -127,9 +128,10 @@ class _AdvancedAlarmSettingsPageState
                           if (!mounted) return;
                           if (anyError) {
                             context.showSnackBar(
-                                'Failed to save alarm level settings. Please try again.');
+                                t.deviceSettings.failedToSaveAlarmSettings);
                           } else {
-                            context.showSnackBar('Alarm level changes saved');
+                            context.showSnackBar(
+                                t.deviceSettings.alarmLevelChangesSaved);
                           }
                         },
                       ),
@@ -161,15 +163,15 @@ class _AdvancedAlarmSettingsPageState
       child: ListTile(
         contentPadding: const EdgeInsets.symmetric(
             horizontal: 12, vertical: 0), // Reduced vertical padding
-        title: const Text(
-          'Screen Illumination',
+        title: Text(
+          t.deviceSettings.screenIllumination,
           style: TextStyle(
             fontSize: 14, // Reduced font size
             fontWeight: FontWeight.w500,
           ),
         ),
-        subtitle: const Text(
-          'Turn on screen when alarm triggers',
+        subtitle: Text(
+          t.deviceSettings.turnOnScreenWhenAlarmTriggers,
           style: TextStyle(
             fontSize: 11, // Reduced font size
             color: Colors.grey,
@@ -204,15 +206,15 @@ class _AdvancedAlarmSettingsPageState
       child: ListTile(
         contentPadding: const EdgeInsets.symmetric(
             horizontal: 12, vertical: 0), // Reduced vertical padding
-        title: const Text(
-          'Alarm on CO₂ Fall', // Used subscript
+        title: Text(
+          t.deviceSettings.alarmOnCo2Fall,
           style: TextStyle(
             fontSize: 14, // Reduced font size
             fontWeight: FontWeight.w500,
           ),
         ),
-        subtitle: const Text(
-          'Trigger alarm on CO₂ fall', // Used subscript
+        subtitle: Text(
+          t.deviceSettings.triggerAlarmOnCo2Fall,
           style: TextStyle(
             fontSize: 11, // Reduced font size
             color: Colors.grey,
@@ -243,7 +245,7 @@ class _AdvancedAlarmSettingsPageState
               const Icon(Icons.notifications_active_outlined,
                   size: 18, color: Colors.grey), // Reduced icon size
               const SizedBox(width: 6), // Reduced spacing
-              Text('Alarm Levels',
+              Text(t.deviceSettings.alarmLevels,
                   style: context.textTheme.bodyMedium?.copyWith(
                       fontWeight: FontWeight.w600,
                       fontSize: 14)), // Reduced font size
@@ -252,7 +254,7 @@ class _AdvancedAlarmSettingsPageState
         ),
         const SizedBox(height: 6), // Reduced spacing
         Text(
-          "Set beeps/vibrations and CO₂ levels for alarms.", // More concise text
+          t.deviceSettings.setBeepsVibrationsAndCo2Levels,
           style: context.textTheme.bodySmall?.copyWith(
             color: Colors.grey,
             fontSize: 11, // Reduced font size
@@ -281,20 +283,20 @@ class _AdvancedAlarmSettingsPageState
                   children: [
                     Expanded(
                         flex: 2,
-                        child: Text('CO₂ (ppm)', // Used subscript
+                        child: Text(t.deviceSettings.co2Ppm,
                             style: TextStyle(
                                 fontWeight: FontWeight.bold,
                                 fontSize: 12, // Reduced font size
                                 color: Colors.grey.shade700))),
                     Expanded(
-                        child: Text('Repeats',
+                        child: Text(t.deviceSettings.repeats,
                             textAlign: TextAlign.center,
                             style: TextStyle(
                                 fontWeight: FontWeight.bold,
                                 fontSize: 12, // Reduced font size
                                 color: Colors.grey.shade700))),
                     Expanded(
-                        child: Text('Enabled',
+                        child: Text(t.deviceSettings.enabled,
                             textAlign: TextAlign.center,
                             style: TextStyle(
                                 fontWeight: FontWeight.bold,

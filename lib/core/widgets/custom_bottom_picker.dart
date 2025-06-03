@@ -1,4 +1,5 @@
 import 'package:airspothealth/core/theme/app_colors.dart';
+import 'package:airspothealth/i18n/strings.g.dart';
 import 'package:flutter/material.dart';
 
 /// A robust custom bottom picker that can display a scrollable list of items
@@ -334,7 +335,7 @@ class CustomBottomPicker<T> extends StatefulWidget {
                         ),
                       ),
 
-                      const Text(':',
+                      Text(t.timeFormat.colon,
                           style: TextStyle(
                               fontSize: 24, fontWeight: FontWeight.bold)),
 

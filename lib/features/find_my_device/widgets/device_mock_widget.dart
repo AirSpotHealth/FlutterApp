@@ -11,6 +11,7 @@ import 'package:airspothealth/core/utils/extensions.dart';
 import 'package:airspothealth/core/widgets/tappable_widget.dart';
 import 'package:airspothealth/features/add_device/providers/ble_device_connection_provider.dart';
 import 'package:airspothealth/features/devices/providers/device_battery_level_provider.dart';
+import 'package:airspothealth/i18n/strings.g.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_blue_plus/flutter_blue_plus.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -165,7 +166,7 @@ class DeviceMockWidget extends ConsumerWidget {
           Text(Constants.co2Text,
               style: TextStyle(color: Colors.white, fontSize: 10)),
           const SizedBox(width: 8),
-          const Text('PPM',
+          Text(t.devices.ppm,
               style: TextStyle(color: Colors.white, fontSize: 10)),
           const Spacer(),
           Icon(

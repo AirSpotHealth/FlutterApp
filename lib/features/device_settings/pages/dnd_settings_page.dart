@@ -3,6 +3,7 @@ import 'package:airspothealth/core/providers/device_settings_provider.dart';
 import 'package:airspothealth/core/theme/app_colors.dart';
 import 'package:airspothealth/core/utils/extensions.dart';
 import 'package:airspothealth/features/device_settings/widgets/device_settings_name_widget.dart';
+import 'package:airspothealth/i18n/strings.g.dart';
 import 'package:airspothealth/main.dart';
 import 'package:bottom_picker/bottom_picker.dart';
 import 'package:flutter/material.dart';
@@ -31,7 +32,8 @@ class DndSettingsPage extends ConsumerWidget {
       backgroundColor: Colors.white,
       appBar: AppBar(
         title: DeviceSettingsNameWidget(
-            deviceId: deviceId, suffixText: 'Do not disturb Settings'),
+            deviceId: deviceId,
+            suffixText: t.deviceSettings.doNotDisturbSettings),
       ),
       body: Padding(
         padding: const EdgeInsets.all(12.0),
@@ -62,7 +64,7 @@ class DndSettingsPage extends ConsumerWidget {
       BuildContext context, WidgetRef ref, DeviceSettings deviceSettings) {
     return ListTile(
       contentPadding: _padding,
-      title: Text('Do not disturb', style: _styles['title']),
+      title: Text(t.deviceSettings.doNotDisturb, style: _styles['title']),
       trailing: Switch(
         value: deviceSettings.dndEnabled,
         onChanged: (value) =>
@@ -81,12 +83,12 @@ class DndSettingsPage extends ConsumerWidget {
     return ListTile(
       contentPadding: _padding,
       title: Text(
-        isStartTime ? 'Start time' : 'End time',
+        isStartTime ? t.deviceSettings.startTime : t.deviceSettings.endTime,
         style: _styles['title'],
       ),
       subtitle: Text(
         time == null
-            ? 'Not set'
+            ? t.deviceSettings.notSet
             : is12Hour
                 ? time.format12Hour()
                 : '${time.hour.toString().padLeft(2, '0')}:${time.minute.toString().padLeft(2, '0')}',
@@ -115,7 +117,9 @@ class DndSettingsPage extends ConsumerWidget {
 
     BottomPicker.time(
       pickerTitle: Text(
-        'Select ${isStartTime ? 'start' : 'end'} time',
+        isStartTime
+            ? t.deviceSettings.selectStartTime
+            : t.deviceSettings.selectEndTime,
         style: _styles['title'],
       ),
       initialTime: Time(

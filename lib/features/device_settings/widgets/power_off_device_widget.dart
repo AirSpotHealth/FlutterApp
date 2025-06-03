@@ -7,6 +7,7 @@ import 'package:airspothealth/core/widgets/app_bottomsheet.dart';
 import 'package:airspothealth/core/widgets/button.dart';
 import 'package:airspothealth/features/device_settings/models/setting_item.dart';
 import 'package:airspothealth/features/device_settings/widgets/setting_item_widget.dart';
+import 'package:airspothealth/i18n/strings.g.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -19,7 +20,7 @@ class PowerOffDeviceWidget extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     return SettingItemWidget(
       item: SettingItem(
-        title: 'Power Off Device',
+        title: t.deviceSettings.powerOffDevice,
         assetIcon: Assets.powerOff,
         suffixWidget: const SizedBox(),
       ),
@@ -37,12 +38,12 @@ class PowerOffDeviceWidget extends ConsumerWidget {
             mainAxisSize: MainAxisSize.min,
             children: [
               Text(
-                'Are you sure you want to power off the device?',
+                t.deviceSettings.areYouSurePowerOff,
                 style: context.textTheme.bodyLarge?.weight600,
               ),
               const SizedBox(height: 16),
               Text(
-                'This will put the device into sleep mode and you will need to press the button on the device to turn it back on. This is useful if you are not using the device for a long period of time and want to save battery.',
+                t.deviceSettings.powerOffDescription,
                 style: context.textTheme.bodyMedium,
               ),
               const SizedBox(height: 20),
@@ -51,7 +52,7 @@ class PowerOffDeviceWidget extends ConsumerWidget {
                 children: [
                   Button(
                     wrapWidth: true,
-                    label: 'Cancel',
+                    label: t.common.cancel,
                     type: ButtonType.text,
                     onPressed: () {
                       Navigator.of(context).pop();
@@ -59,7 +60,7 @@ class PowerOffDeviceWidget extends ConsumerWidget {
                   ),
                   Button(
                     wrapWidth: true,
-                    label: 'Power Off',
+                    label: t.deviceSettings.powerOff,
                     backgroundColor: AppColors.brandColorRed,
                     onPressed: () {
                       ref

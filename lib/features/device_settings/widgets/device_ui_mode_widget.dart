@@ -3,6 +3,7 @@ import 'package:airspothealth/core/theme/app_colors.dart';
 import 'package:airspothealth/core/utils/assets.dart';
 import 'package:airspothealth/core/utils/extensions.dart';
 import 'package:airspothealth/core/widgets/button.dart';
+import 'package:airspothealth/i18n/strings.g.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -14,11 +15,11 @@ enum UIMode {
   String get displayName {
     switch (this) {
       case UIMode.plain:
-        return 'Plain';
+        return t.plain;
       case UIMode.graph:
-        return 'Graph';
+        return t.graph;
       case UIMode.bar:
-        return 'Colour Bars';
+        return t.colourBars;
     }
   }
 
@@ -73,7 +74,7 @@ class _DeviceUIModeWidgetState extends ConsumerState<DeviceUIModeWidget> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          'Screen Mode',
+          t.screenMode,
           style: context.textTheme.bodyMedium?.weight600,
         ),
         const SizedBox(height: 16),
@@ -161,7 +162,7 @@ class _DeviceUIModeWidgetState extends ConsumerState<DeviceUIModeWidget> {
                 child: _GraphValueDropdown(
                   deviceId: widget.deviceId,
                   currentValue: _graphMaxValue,
-                  label: 'Graph Max Value',
+                  label: t.graphMaxValue,
                   isMinValue: false,
                   onValueChanged: (newValue) {
                     setState(() {
@@ -180,10 +181,10 @@ class _DeviceUIModeWidgetState extends ConsumerState<DeviceUIModeWidget> {
                         deviceSettings.copyWith(graphMaxValue: _graphMaxValue),
                       );
                   context.showSnackBar(
-                    'Graph Max Value set to $_graphMaxValue',
+                    t.graphMaxValueSet(value: _graphMaxValue),
                   );
                 },
-                child: const Text('Set'),
+                child: Text(t.common.set),
               ),
             ],
           ),
@@ -194,7 +195,7 @@ class _DeviceUIModeWidgetState extends ConsumerState<DeviceUIModeWidget> {
                 child: _GraphValueDropdown(
                   deviceId: widget.deviceId,
                   currentValue: _graphMinValue,
-                  label: 'Graph Min Value',
+                  label: t.graphMinValue,
                   isMinValue: true,
                   onValueChanged: (newValue) {
                     setState(() {
@@ -213,10 +214,10 @@ class _DeviceUIModeWidgetState extends ConsumerState<DeviceUIModeWidget> {
                         deviceSettings.copyWith(graphMinValue: _graphMinValue),
                       );
                   context.showSnackBar(
-                    'Graph Min Value set to $_graphMinValue',
+                    t.graphMinValueSet(value: _graphMinValue),
                   );
                 },
-                child: const Text('Set'),
+                child: Text(t.common.set),
               ),
             ],
           ),
@@ -306,7 +307,7 @@ class _GraphValueDropdown extends ConsumerWidget {
         ),
         const SizedBox(height: 8),
         Text(
-          'Select a value between 400 and 5000 ppm',
+          t.selectValueBetween400And5000,
           style: context.textTheme.bodySmall?.copyWith(
             color: Colors.grey.shade600,
           ),

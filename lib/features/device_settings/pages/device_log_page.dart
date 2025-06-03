@@ -5,6 +5,7 @@ import 'package:airspothealth/core/utils/extensions.dart';
 import 'package:airspothealth/features/device_graph/providers/ble_device_provider.dart';
 import 'package:airspothealth/features/device_settings/models/log_data.dart';
 import 'package:airspothealth/features/device_settings/providers/device_log_provider.dart';
+import 'package:airspothealth/i18n/strings.g.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -52,7 +53,8 @@ class DeviceLogPage extends ConsumerWidget {
 
     return Scaffold(
         appBar: AppBar(
-          title: Text('${device.alias ?? device.name} log'),
+          title: Text(t.deviceSettings
+              .deviceLog(deviceName: device.alias ?? device.name)),
           actions: [
             IconButton(
               onPressed: () {
@@ -77,7 +79,8 @@ class DeviceLogPage extends ConsumerWidget {
             final entries = parseLog(log);
 
             if (entries.isEmpty) {
-              return const Center(child: Text('No log entries available'));
+              return Center(
+                  child: Text(t.deviceSettings.noLogEntriesAvailable));
             }
 
             return Column(
@@ -111,18 +114,8 @@ class DeviceLogPage extends ConsumerWidget {
             );
           },
           loading: () => const Center(child: CircularProgressIndicator()),
-          error: (error, stackTrace) => Center(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                const Text('Error loading device log'),
-                ElevatedButton(
-                  onPressed: () => ref.invalidate(deviceLogProvider(deviceId)),
-                  child: const Text('Retry'),
-                ),
-              ],
-            ),
-          ),
+          error: (error, stackTrace) =>
+              Text(t.deviceSettings.errorLoadingDeviceLog),
         ),
         floatingActionButton: FloatingActionButton(
           onPressed: () {

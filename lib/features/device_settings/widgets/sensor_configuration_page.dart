@@ -1,6 +1,7 @@
 import 'package:airspothealth/features/device_settings/models/device_sensor_config_data.dart';
 import 'package:airspothealth/features/device_settings/models/progress_model.dart';
 import 'package:airspothealth/features/device_settings/providers/sensor_configuration_provider.dart';
+import 'package:airspothealth/i18n/strings.g.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
@@ -88,7 +89,7 @@ class SensorConfigurationPage extends ConsumerWidget {
       backgroundColor: Colors.grey[50],
       appBar: AppBar(
         title: Text(
-          'Sensor Configuration',
+          t.sensorConfiguration,
           style: TextStyle(
             fontSize: 18,
             fontWeight: FontWeight.w500,
@@ -128,7 +129,7 @@ class SensorConfigurationPage extends ConsumerWidget {
               size: 64, color: Colors.blueGrey.withValues(alpha: 0.5)),
           const SizedBox(height: 24),
           Text(
-            'Sensor configuration not loaded.',
+            t.sensorConfigurationNotLoaded,
             style: TextStyle(
               fontSize: 18,
               color: Colors.blueGrey[800],
@@ -138,7 +139,7 @@ class SensorConfigurationPage extends ConsumerWidget {
           const SizedBox(height: 32),
           ElevatedButton.icon(
             icon: const Icon(Icons.cloud_download_outlined),
-            label: const Text('Fetch Configuration'),
+            label: Text(t.fetchConfiguration),
             onPressed: () => ref
                 .read(sensorConfigurationProvider(deviceId).notifier)
                 .refresh(),
@@ -161,7 +162,7 @@ class SensorConfigurationPage extends ConsumerWidget {
           const CircularProgressIndicator(),
           const SizedBox(height: 24),
           Text(
-            message ?? 'Loading sensor data...',
+            message ?? t.loadingSensorData,
             style: TextStyle(
               fontSize: 16,
               color: Colors.blueGrey[600],
@@ -182,7 +183,7 @@ class SensorConfigurationPage extends ConsumerWidget {
               size: 64, color: Colors.redAccent.withValues(alpha: 0.7)),
           const SizedBox(height: 24),
           Text(
-            'Error: ${error.toString()}',
+            t.errorLabel(error: error.toString()),
             style: const TextStyle(
               fontSize: 16,
               color: Colors.redAccent,
@@ -193,7 +194,7 @@ class SensorConfigurationPage extends ConsumerWidget {
           const SizedBox(height: 32),
           ElevatedButton.icon(
             icon: const Icon(Icons.refresh),
-            label: const Text('Retry'),
+            label: Text(t.retry),
             onPressed: () => ref
                 .read(sensorConfigurationProvider(deviceId).notifier)
                 .refresh(),

@@ -1,3 +1,4 @@
+import 'package:airspothealth/i18n/strings.g.dart';
 import 'package:flutter/material.dart';
 
 class LatestNewsPage extends StatelessWidget {
@@ -7,29 +8,9 @@ class LatestNewsPage extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Latest News'),
+        title: Text(t.appSetup.latestNews),
       ),
-      body: ListView(
-        padding: const EdgeInsets.all(16),
-        children: [
-          Row(
-            children: [
-              Expanded(
-                child: ElevatedButton(
-                    style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.red.shade800),
-                    onPressed: () {},
-                    child: const Text('Latest News')),
-              ),
-              const SizedBox(width: 24),
-              Switch(
-                value: false,
-                onChanged: (value) {},
-              ),
-            ],
-          ),
-        ],
-      ),
+      body: Center(child: Text(t.appSetup.latestNews)),
     );
   }
 }

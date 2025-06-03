@@ -2,6 +2,7 @@ import 'package:airspothealth/core/utils/assets.dart';
 import 'package:airspothealth/core/utils/extensions.dart';
 import 'package:airspothealth/features/device_settings/providers/recalibration_time_provider.dart';
 import 'package:airspothealth/features/device_settings/widgets/calibration_target_widget.dart';
+import 'package:airspothealth/i18n/strings.g.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -25,10 +26,11 @@ class ManualCalibrationWidget extends ConsumerWidget {
       child: Column(
         children: [
           ListTile(
-            title: const Text('Manual Calibration',
-                style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold)),
-            subtitle: const Text(
-              'To calibrate this AirSpot, place the device outdoors for at least 5 minutes, away from any people or CO2 sources, then tap the icon below. See full manual for details.',
+            title: Text(t.deviceSettings.manualCalibration,
+                style:
+                    const TextStyle(fontSize: 14, fontWeight: FontWeight.bold)),
+            subtitle: Text(
+              t.deviceSettings.manualCalibrationDescription,
               style: TextStyle(fontSize: 12, color: Colors.black),
             ),
             contentPadding: EdgeInsets.zero,
@@ -44,7 +46,7 @@ class ManualCalibrationWidget extends ConsumerWidget {
               mainAxisSize: MainAxisSize.min,
               children: [
                 Text(
-                  'Tap to start calibration',
+                  t.deviceSettings.tapToStartCalibration,
                   style: context.textTheme.bodyMedium?.weight500,
                 ),
                 const SizedBox(height: 8),

@@ -1,6 +1,7 @@
 import 'package:airspothealth/core/providers/device_settings_provider.dart';
 import 'package:airspothealth/core/utils/extensions.dart';
 import 'package:airspothealth/core/widgets/button.dart';
+import 'package:airspothealth/i18n/strings.g.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -46,24 +47,24 @@ class _CalibrationCorrectionWidgetState
               settings.copyWith(recalibrationTarget: calibrationValue),
           sendCommands: true,
         );
-    context.showSnackBar('Calibration target updated to $calibrationValue');
+    context.showSnackBar(t.calibrationTargetUpdated(value: calibrationValue));
   }
 
   String? _validateInput(String? value) {
     if (value == null || value.isEmpty) {
-      return 'Please enter a calibration target';
+      return t.deviceSettings.pleaseEnterCalibrationTarget;
     }
 
     if (int.tryParse(value) == null) {
-      return 'Please enter a valid number';
+      return t.deviceSettings.pleaseEnterValidNumber;
     }
 
     if (int.parse(value) <= 0) {
-      return 'Please enter a positive number greater than 0';
+      return t.deviceSettings.pleaseEnterPositiveNumber;
     }
 
     if (int.parse(value) > 1000) {
-      return 'Please enter a number less than 1000';
+      return t.deviceSettings.pleaseEnterNumberLessThan1000;
     }
 
     return null;
@@ -89,7 +90,7 @@ class _CalibrationCorrectionWidgetState
               child: TextFormField(
                 controller: calibrationValueController,
                 decoration: InputDecoration(
-                  labelText: 'Calibration Target',
+                  labelText: t.deviceSettings.calibrationTarget,
                   labelStyle: context.textTheme.bodyMedium?.copyWith(
                     color: context.theme.colorScheme.onSurface,
                   ),
@@ -113,7 +114,7 @@ class _CalibrationCorrectionWidgetState
                       wrapWidth: true,
                       height: 40,
                       onPressed: _submitTarget,
-                      label: 'SET',
+                      label: t.common.set,
                     ),
                   ),
                 ),
@@ -132,7 +133,7 @@ class _CalibrationCorrectionWidgetState
         ),
         const SizedBox(height: 12),
         Text(
-          "You can set the CO2 level of the air where calibration takes place. If unknown, 420-450 is typical for outdoors. This value is used for manual or automatic calibration.",
+          t.deviceSettings.calibrationTargetDescription,
           style: context.textTheme.bodySmall,
         ),
       ],

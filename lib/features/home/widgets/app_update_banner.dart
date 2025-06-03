@@ -3,6 +3,7 @@ import 'package:airspothealth/core/utils/extensions.dart';
 import 'package:airspothealth/features/app_setup/providers/app_version_provider.dart';
 import 'package:airspothealth/features/home/models/menu_item.dart';
 import 'package:airspothealth/features/home/widgets/menu_item_widget.dart';
+import 'package:airspothealth/i18n/strings.g.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -46,7 +47,7 @@ class AppUpdateBanner extends ConsumerWidget {
                       ),
                     ),
                     child: Text(
-                      'Update Available',
+                      t.updateAvailable,
                       style: context.textTheme.bodySmall?.copyWith(
                         color: Colors.white,
                         fontWeight: FontWeight.bold,

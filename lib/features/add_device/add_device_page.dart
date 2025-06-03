@@ -3,6 +3,7 @@ import 'package:airspothealth/core/widgets/app_bottomsheet.dart';
 import 'package:airspothealth/core/widgets/button.dart';
 import 'package:airspothealth/features/add_device/providers/ble_search_results_provider.dart';
 import 'package:airspothealth/features/add_device/widgets/ble_new_device_item.dart';
+import 'package:airspothealth/i18n/strings.g.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_blue_plus/flutter_blue_plus.dart';
@@ -102,7 +103,7 @@ class _AddDevicePageState extends ConsumerState<AddDevicePage>
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Add Airspot Device'),
+        title: Text(t.devices.addDeviceTitle),
       ),
       body: RefreshIndicator.adaptive(
         onRefresh: () async {
@@ -126,8 +127,8 @@ class _AddDevicePageState extends ConsumerState<AddDevicePage>
                 alignment: Alignment.center,
                 height: MediaQuery.of(context).size.height * 0.8,
                 padding: const EdgeInsets.all(16),
-                child: const Text(
-                  'No devices found, swipe down to refresh',
+                child: Text(
+                  t.bluetooth.noDevicesFoundSwipeRefresh,
                 ),
               )
             else

@@ -1,3 +1,4 @@
+import 'package:airspothealth/core/providers/language_provider.dart';
 import 'package:airspothealth/core/router/app_router.dart';
 import 'package:airspothealth/core/services/isar_service.dart';
 import 'package:airspothealth/core/services/notification_service.dart';
@@ -5,7 +6,9 @@ import 'package:airspothealth/core/services/prefs_service.dart';
 import 'package:airspothealth/core/theme/app_theme.dart';
 import 'package:airspothealth/core/utils/storage_keys.dart';
 import 'package:airspothealth/features/home/widgets/services_banner.dart';
+import 'package:airspothealth/i18n/strings.g.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import 'package:package_info_plus/package_info_plus.dart';
@@ -16,6 +19,9 @@ late final DateFormat systemTimeFormat;
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  // Initialize slang with default locale (will be overridden by language provider)
+  LocaleSettings.setLocale(AppLocale.en);
 
   await [
     IsarService().initialize(),
@@ -32,8 +38,10 @@ void main() async {
   await _checkVersion();
 
   runApp(
-    const ProviderScope(
-      child: AirspotApp(),
+    ProviderScope(
+      child: TranslationProvider(
+        child: const AirspotApp(),
+      ),
     ),
   );
 }
@@ -69,15 +77,21 @@ Future<void> _checkVersion() async {
   }
 }
 
-class AirspotApp extends StatelessWidget {
+class AirspotApp extends ConsumerWidget {
   const AirspotApp({super.key});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    // Watch the language provider to rebuild when locale changes
+    final currentLocale = ref.watch(languageProvider);
+
     return MaterialApp.router(
       theme: AppTheme.theme,
       routerConfig: AppRouter.router,
       debugShowCheckedModeBanner: false,
+      localizationsDelegates: GlobalMaterialLocalizations.delegates,
+      supportedLocales: AppLocaleUtils.supportedLocales,
+      locale: currentLocale.flutterLocale,
       builder: (context, child) => MediaQuery(
         data: MediaQuery.of(context).copyWith(
           textScaler: const TextScaler.linear(1.0),

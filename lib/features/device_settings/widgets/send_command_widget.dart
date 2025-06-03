@@ -3,6 +3,7 @@ import 'package:airspothealth/core/utils/extensions.dart';
 import 'package:airspothealth/features/device_graph/providers/ble_device_provider.dart';
 import 'package:airspothealth/features/device_settings/models/setting_item.dart';
 import 'package:airspothealth/features/device_settings/widgets/setting_item_widget.dart';
+import 'package:airspothealth/i18n/strings.g.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -16,7 +17,7 @@ class SendCommandWidget extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     return SettingItemWidget(
       item: SettingItem(
-        title: 'Send Command',
+        title: t.deviceSettings.sendCommand,
         leadingWidget: const Icon(Icons.send),
         suffixWidget: const Icon(
           Icons.arrow_forward_ios,
@@ -68,13 +69,14 @@ class _SendCommandSheetState extends ConsumerState<SendCommandSheet> {
       child: ListView(
         shrinkWrap: true,
         children: [
-          Text('Send Command to ${device.alias ?? device.name}'),
+          Text(t.deviceSettings
+              .sendCommandTo(deviceName: device.alias ?? device.name)),
           const SizedBox(height: 16),
           TextFormField(
             controller: _commandController,
-            decoration: const InputDecoration(
-              labelText: 'Command',
-              hintText: 'Enter command',
+            decoration: InputDecoration(
+              labelText: t.deviceSettings.command,
+              hintText: t.deviceSettings.enterCommand,
             ),
           ),
           const SizedBox(height: 16),
@@ -100,7 +102,7 @@ class _SendCommandSheetState extends ConsumerState<SendCommandSheet> {
                 _commandController.clear();
                 context.pop();
               },
-              child: const Text('Send'),
+              child: Text(t.common.send),
             ),
           ),
           const SizedBox(height: 16),

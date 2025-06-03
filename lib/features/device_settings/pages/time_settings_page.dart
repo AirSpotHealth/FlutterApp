@@ -4,6 +4,7 @@ import 'package:airspothealth/core/theme/app_colors.dart';
 import 'package:airspothealth/core/utils/device_cmd_utils.dart';
 import 'package:airspothealth/core/utils/extensions.dart';
 import 'package:airspothealth/features/device_settings/widgets/device_settings_name_widget.dart';
+import 'package:airspothealth/i18n/strings.g.dart';
 import 'package:airspothealth/main.dart';
 import 'package:bottom_picker/bottom_picker.dart';
 import 'package:flutter/material.dart';
@@ -87,7 +88,7 @@ class _TimeSettingsPageState extends ConsumerState<TimeSettingsPage> {
       appBar: AppBar(
         title: DeviceSettingsNameWidget(
           deviceId: widget.deviceId,
-          suffixText: 'Time Settings',
+          suffixText: t.deviceSettings.timeSettings,
         ),
       ),
       body: ListView(
@@ -106,7 +107,8 @@ class _TimeSettingsPageState extends ConsumerState<TimeSettingsPage> {
   Widget _buildAutoSyncTile(bool autoSyncTime) {
     return SwitchListTile(
       contentPadding: _horizontalPadding,
-      title: Text('Sync with mobile device', style: _styles['title']),
+      title:
+          Text(t.deviceSettings.syncWithMobileDevice, style: _styles['title']),
       value: autoSyncTime,
       onChanged: _updateAutoSync,
     );
@@ -115,7 +117,7 @@ class _TimeSettingsPageState extends ConsumerState<TimeSettingsPage> {
   Widget _buildManualTimePicker(bool is12Hour) {
     return ListTile(
       contentPadding: _horizontalPadding,
-      title: Text('Manual Time', style: _styles['title']),
+      title: Text(t.deviceSettings.manualTime, style: _styles['title']),
       leading: const Icon(Icons.access_time),
       subtitle: Text(
         is12Hour
@@ -134,7 +136,7 @@ class _TimeSettingsPageState extends ConsumerState<TimeSettingsPage> {
 
   void _showTimePicker(BuildContext context, bool is12Hour) {
     BottomPicker.time(
-      pickerTitle: Text('Select time', style: _styles['title']),
+      pickerTitle: Text(t.deviceSettings.selectTime, style: _styles['title']),
       initialTime: Time(
         hours: _selectedHour,
         minutes: _selectedMinute,

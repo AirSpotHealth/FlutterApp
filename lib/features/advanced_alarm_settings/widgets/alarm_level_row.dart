@@ -2,6 +2,7 @@ import 'package:airspothealth/core/models/device_settings.dart';
 import 'package:airspothealth/core/utils/extensions.dart';
 import 'package:airspothealth/core/widgets/custom_bottom_picker.dart';
 import 'package:airspothealth/features/advanced_alarm_settings/providers/advanced_alarm_settings_provider.dart';
+import 'package:airspothealth/i18n/strings.g.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -97,9 +98,9 @@ class _AlarmLevelRowState extends ConsumerState<AlarmLevelRow> {
       max: 5000,
       step: 100,
       initialValue: currentAlarm.co2Threshold,
-      title: 'Select CO₂ Level',
-      suffix: 'ppm',
-      submitButtonText: 'Done',
+      title: t.selectCo2Level,
+      suffix: t.units.ppm,
+      submitButtonText: t.done,
       selectedTextColor: context.theme.primaryColor,
       onSubmit: (newValue) {
         if (newValue > 0) {
@@ -120,8 +121,8 @@ class _AlarmLevelRowState extends ConsumerState<AlarmLevelRow> {
       max: 10,
       step: 1,
       initialValue: currentAlarm.repeatCount,
-      title: 'Select Alarm Repeats',
-      submitButtonText: 'Done',
+      title: t.selectAlarmRepeats,
+      submitButtonText: t.done,
       selectedTextColor: context.theme.primaryColor,
       onSubmit: (newValue) {
         if (newValue > 0) {
@@ -167,7 +168,7 @@ class _AlarmLevelRowState extends ConsumerState<AlarmLevelRow> {
                     ),
                     const SizedBox(width: 4),
                     Text(
-                      'ppm',
+                      t.units.ppm,
                       style: TextStyle(
                         fontSize: 11,
                         color: Colors.grey[600],

@@ -10,6 +10,7 @@ import 'package:airspothealth/features/device_settings/widgets/altitude_pressure
 import 'package:airspothealth/features/device_settings/widgets/device_settings_name_widget.dart';
 import 'package:airspothealth/features/device_settings/widgets/manual_calibration_widget.dart';
 import 'package:airspothealth/features/device_settings/widgets/next_calibration_date_widget.dart';
+import 'package:airspothealth/i18n/strings.g.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -71,10 +72,12 @@ class RecalibrateDevicePage extends ConsumerWidget {
       children: [
         SwitchListTile(
           contentPadding: EdgeInsets.zero,
-          title: const Text('Auto Calibration',
-              style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold)),
-          subtitle: const Text(
-            'Automatically calibrate the sensor based on the lowest CO₂ reading in the previous 7 days.',
+          title: Text(
+            t.autoCalibration,
+            style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
+          ),
+          subtitle: Text(
+            t.autoCalibrationDescription,
             style: TextStyle(fontSize: 12, color: Colors.black),
           ),
           value: deviceSettings.autoCalibration,
@@ -89,7 +92,7 @@ class RecalibrateDevicePage extends ConsumerWidget {
         ),
         const SizedBox(height: 4),
         Text(
-          'If Auto Calibration is enabled, AirSpot will calibrate itself on the assumption that it has made measurements in fresh air at least once a week. It is usually best to leave this OFF unless you are sure AirSpot will be measuring fresh air at least every few days. See full manual for details.',
+          t.autoCalibrationWarning,
           style: TextStyle(fontSize: 12, color: Colors.black),
         ),
         if (deviceSettings.autoCalibration)
@@ -117,14 +120,15 @@ class RecalibrateDevicePage extends ConsumerWidget {
           mainAxisAlignment: MainAxisAlignment.center,
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
-            const Text(
-              'Calibrating',
+            Text(
+              t.calibratingStatus,
               style: TextStyle(fontSize: 14),
             ),
             Text(
               (calibrationStatus as AsyncInProgress).progress < 0
-                  ? 'Initialising...'
-                  : 'Remaining Time: ${calibrationStatus.progress.toInt()} seconds',
+                  ? t.initialisingStatus
+                  : t.remainingTime(
+                      seconds: calibrationStatus.progress.toInt()),
               style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
             ),
           ],
@@ -138,12 +142,13 @@ class RecalibrateDevicePage extends ConsumerWidget {
           mainAxisAlignment: MainAxisAlignment.center,
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
-            const Text(
-              'Calibration Completed',
+            Text(
+              t.calibrationCompleted,
               style: TextStyle(fontSize: 14),
             ),
             Text(
-              'Correction Value: ${(calibrationStatus as AsyncSuccess).data}',
+              t.correctionValue(
+                  value: (calibrationStatus as AsyncSuccess).data.toString()),
               style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
             ),
           ],
@@ -154,13 +159,13 @@ class RecalibrateDevicePage extends ConsumerWidget {
     return Center(
       child: Column(
         children: [
-          const Text(
-            'Calibration Failed',
+          Text(
+            t.calibrationFailed,
             style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
           ),
           const SizedBox(height: 16),
           Text(
-            'Error: ${(calibrationStatus as AsyncFailure).error}',
+            t.errorLabel(error: (calibrationStatus as AsyncFailure).error),
             style: const TextStyle(fontSize: 20),
           ),
         ],
@@ -184,7 +189,7 @@ class ResetSensorWidget extends ConsumerWidget {
       if (nStatus.isSuccess) {
         // show a success message
         WidgetsBinding.instance.addPostFrameCallback((_) {
-          context.showSnackBar('Sensor reset successfully');
+          context.showSnackBar(t.sensorResetSuccessfully);
         });
         return;
       }
@@ -193,7 +198,7 @@ class ResetSensorWidget extends ConsumerWidget {
         // show an error message
         WidgetsBinding.instance.addPostFrameCallback((_) {
           context.showSnackBar(
-              'Failed to reset sensor: ${(nStatus as AsyncFailure).error}');
+              t.failedToResetSensor(error: (nStatus as AsyncFailure).error));
         });
         return;
       }
@@ -208,11 +213,11 @@ class ResetSensorWidget extends ConsumerWidget {
       children: [
         ListTile(
           title: Text(
-            'Reset Sensor',
+            t.resetSensor,
             style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
           ),
-          subtitle: const Text(
-            "If you are experiencing issues with your AirSpot's accuracy, you can reset the sensor to its factory settings. This will erase all calibration data and settings.",
+          subtitle: Text(
+            t.resetSensorDescription,
             style: TextStyle(fontSize: 12, color: Colors.black),
           ),
           contentPadding: EdgeInsets.zero,
@@ -229,7 +234,7 @@ class ResetSensorWidget extends ConsumerWidget {
           },
           child: resetSensorStatus.isInProgress
               ? const CupertinoActivityIndicator()
-              : const Text('Reset Sensor'),
+              : Text(t.resetSensor),
         ),
       ],
     );

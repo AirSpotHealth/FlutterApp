@@ -3,6 +3,7 @@ import 'package:airspothealth/features/device_settings/models/progress_model.dar
 import 'package:airspothealth/features/device_settings/models/setting_item.dart';
 import 'package:airspothealth/features/device_settings/providers/populate_fake_data_provider.dart';
 import 'package:airspothealth/features/device_settings/widgets/setting_item_widget.dart';
+import 'package:airspothealth/i18n/strings.g.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -19,7 +20,7 @@ class PopulateFakeDataWidget extends ConsumerWidget {
 
     return SettingItemWidget(
       item: SettingItem(
-        title: 'Populate Fake Data',
+        title: t.deviceSettings.populateFakeData,
         leadingWidget: IconBgWidget(
           backgroundColor: Colors.pink,
           child: Icon(Icons.data_object),

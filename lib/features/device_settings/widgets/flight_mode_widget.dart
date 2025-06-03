@@ -4,6 +4,7 @@ import 'package:airspothealth/core/utils/extensions.dart';
 import 'package:airspothealth/features/add_device/providers/ble_device_connection_provider.dart';
 import 'package:airspothealth/features/device_settings/models/setting_item.dart';
 import 'package:airspothealth/features/device_settings/widgets/setting_item_widget.dart';
+import 'package:airspothealth/i18n/strings.g.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -20,7 +21,7 @@ class FlightModeWidget extends ConsumerWidget {
     return SettingItemWidget(
       onTap: () {},
       item: SettingItem(
-        title: 'Flight Mode',
+        title: t.flightMode,
         assetIcon: Assets.flightMode,
         suffixWidget: Row(
           crossAxisAlignment: CrossAxisAlignment.end,
@@ -32,7 +33,7 @@ class FlightModeWidget extends ConsumerWidget {
                     context.tryLaunchUrl(
                         'https://airspothealth.com/a/blog/flight-mode-airspot');
                   },
-                text: 'Learn more',
+                text: t.learnMore,
                 style: TextStyle(
                   color: context.textTheme.bodyMedium?.color,
                   fontSize: 12,
@@ -49,7 +50,7 @@ class FlightModeWidget extends ConsumerWidget {
                   if (!ref
                       .read(bleDeviceConnectionProvider(deviceId).notifier)
                       .isConnected) {
-                    context.showSnackBar('Device is not connected');
+                    context.showSnackBar(t.deviceIsNotConnected);
                     Navigator.of(context).pop();
                     return;
                   }

@@ -1,6 +1,7 @@
 import 'package:airspothealth/core/theme/app_colors.dart';
 import 'package:airspothealth/features/device_graph/models/graph_settings.dart';
 import 'package:airspothealth/features/device_graph/providers/graph_settings_provider.dart';
+import 'package:airspothealth/i18n/strings.g.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -25,17 +26,17 @@ class GraphSettingsWidget extends ConsumerWidget {
           //     () => ref.read(graphSettingsProvider.notifier).setSettings(
           //         settings.copyWith(showZoomSlider: !settings.showZoomSlider))),
           _buildPopupMenuItem(
-              'Area Fill',
+              t.deviceGraph.graphSettings.areaFill,
               settings.showAreaFill,
               () => ref.read(graphSettingsProvider.notifier).setSettings(
                   settings.copyWith(showAreaFill: !settings.showAreaFill))),
           _buildPopupMenuItem(
-              'Mark Lines',
+              t.deviceGraph.graphSettings.markLines,
               settings.showMarkLines,
               () => ref.read(graphSettingsProvider.notifier).setSettings(
                   settings.copyWith(showMarkLines: !settings.showMarkLines))),
           _buildPopupMenuItem(
-              'Rebreathed %',
+              t.deviceGraph.graphSettings.rebreathePercentage,
               settings.showRebreathePercentage,
               () => ref.read(graphSettingsProvider.notifier).setSettings(
                   settings.copyWith(

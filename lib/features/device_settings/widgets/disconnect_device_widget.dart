@@ -3,6 +3,7 @@ import 'package:airspothealth/core/utils/assets.dart';
 import 'package:airspothealth/features/add_device/providers/ble_device_connection_provider.dart';
 import 'package:airspothealth/features/device_settings/models/setting_item.dart';
 import 'package:airspothealth/features/device_settings/widgets/setting_item_widget.dart';
+import 'package:airspothealth/i18n/strings.g.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -15,7 +16,7 @@ class DisconnectDeviceWidget extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     return SettingItemWidget(
       item: SettingItem(
-        title: 'Disconnect Device',
+        title: t.deviceSettings.disconnectDevice,
         assetIcon: Assets.airGraph,
         leadingWidget: Image.asset(
           Assets.disconnectIcon,

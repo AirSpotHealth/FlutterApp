@@ -11,6 +11,7 @@ import 'package:airspothealth/core/services/ble_service.dart';
 import 'package:airspothealth/core/utils/extensions.dart';
 import 'package:airspothealth/features/device_settings/models/progress_model.dart';
 import 'package:airspothealth/features/device_settings/providers/dfu_update_provider.dart';
+import 'package:airspothealth/i18n/strings.g.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter_blue_plus/flutter_blue_plus.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -139,7 +140,7 @@ class _BleDeviceConnectionNotifier
     if (path.contains(device.remoteId.str) &&
         RegExp(r'^\/devices\/[A-Za-z0-9:%_-]+(?:\/[A-Za-z0-9:%_-]+)*$')
             .hasMatch(path)) {
-      context.showSnackBar('Device disconnected.');
+      context.showSnackBar(t.deviceDisconnected);
 
       router.popUntilPath(RouteNames.devices);
     }

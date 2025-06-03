@@ -1,6 +1,7 @@
 import 'package:airspothealth/core/theme/app_colors.dart';
 import 'package:airspothealth/features/add_device/providers/ble_device_connection_provider.dart';
 import 'package:airspothealth/features/devices/widgets/device_connect_button.dart';
+import 'package:airspothealth/i18n/strings.g.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_blue_plus/flutter_blue_plus.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -17,8 +18,8 @@ class BleNewDeviceItem extends ConsumerWidget {
         (oldStatus, newStatus) {
       if (newStatus == BluetoothBondState.bonded && oldStatus != newStatus) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Device connected successfully'),
+          SnackBar(
+            content: Text(t.devices.deviceConnectedSuccessfully),
           ),
         );
       }

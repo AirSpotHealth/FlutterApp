@@ -2,6 +2,7 @@ import 'package:airspothealth/core/models/ble_device.dart';
 import 'package:airspothealth/core/providers/ble_saved_devices_provider.dart';
 import 'package:airspothealth/features/device_settings/widgets/device_settings_name_widget.dart';
 import 'package:airspothealth/features/find_my_device/widgets/device_mock_widget.dart';
+import 'package:airspothealth/i18n/strings.g.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -18,10 +19,10 @@ class FindMyDevicePage extends ConsumerWidget {
     if (devices == null) {
       return Scaffold(
         appBar: AppBar(
-          title: const Text('Locate My Airspot'),
+          title: Text(t.findMyDevice.title),
         ),
-        body: const Center(
-          child: Text('Device not found.'),
+        body: Center(
+          child: Text(t.findMyDevice.deviceNotFound),
         ),
       );
     }
