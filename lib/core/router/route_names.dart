@@ -69,4 +69,7 @@ class RouteNames {
 
   /// sensor configuration route
   static const String sensorConfiguration = '/sensor-configuration';
+
+  /// factory test route
+  static const String factoryTest = '/factory-test';
 }
