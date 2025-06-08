@@ -459,4 +459,48 @@ class DeviceCmdUtils {
   static Uint8List resetButtonCounter() {
     return _buildCommand([prefixHigh, prefixLow, 0xD8, 1, 1]);
   }
+
+  /// Manual test commands (0xD2 for start, 0xD3 for confirmation)
+  static Uint8List startManualChargeTest() {
+    return _buildCommand(
+        [prefixHigh, prefixLow, 0xD2, 1, 6]); // MANUAL_TEST_CHARGE = 6
+  }
+
+  static Uint8List startManualScreenEdgeTest() {
+    return _buildCommand(
+        [prefixHigh, prefixLow, 0xD2, 1, 7]); // MANUAL_TEST_EDGE = 7
+  }
+
+  static Uint8List startManualScreenBlackTest() {
+    return _buildCommand(
+        [prefixHigh, prefixLow, 0xD2, 1, 8]); // MANUAL_TEST_BLACK = 8
+  }
+
+  static Uint8List startManualScreenWhiteTest() {
+    return _buildCommand(
+        [prefixHigh, prefixLow, 0xD2, 1, 9]); // MANUAL_TEST_WHITE = 9
+  }
+
+  static Uint8List startManualButtonTest() {
+    return _buildCommand(
+        [prefixHigh, prefixLow, 0xD2, 1, 10]); // MANUAL_TEST_BUTTON = 10
+  }
+
+  static Uint8List startManualBuzzerTest() {
+    return _buildCommand(
+        [prefixHigh, prefixLow, 0xD2, 1, 11]); // MANUAL_TEST_BUZZER = 11
+  }
+
+  static Uint8List startManualVibrationTest() {
+    return _buildCommand(
+        [prefixHigh, prefixLow, 0xD2, 1, 12]); // MANUAL_TEST_VIBRATION = 12
+  }
+
+  static Uint8List confirmManualTestPassed() {
+    return _buildCommand([prefixHigh, prefixLow, 0xD3, 1, 1]); // 1 = passed
+  }
+
+  static Uint8List confirmManualTestFailed() {
+    return _buildCommand([prefixHigh, prefixLow, 0xD3, 1, 0]); // 0 = failed
+  }
 }

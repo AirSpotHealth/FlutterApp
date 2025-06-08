@@ -1,14 +1,40 @@
+import 'dart:convert';
+import 'dart:io';
+
+import 'package:airspothealth/core/services/network_service.dart';
 import 'package:airspothealth/core/utils/extensions.dart';
+import 'package:airspothealth/features/device_graph/providers/ble_device_provider.dart';
 import 'package:airspothealth/features/factory_test/models/factory_test_models.dart';
 import 'package:airspothealth/features/factory_test/providers/factory_test_provider.dart';
+import 'package:file_saver/file_saver.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:intl/intl.dart';
+import 'package:path_provider/path_provider.dart';
+import 'package:share_plus/share_plus.dart';
 
-class SubmitResultsTab extends ConsumerWidget {
+class SubmitResultsTab extends ConsumerStatefulWidget {
   const SubmitResultsTab({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<SubmitResultsTab> createState() => _SubmitResultsTabState();
+}
+
+class _SubmitResultsTabState extends ConsumerState<SubmitResultsTab> {
+  final TextEditingController _commentController = TextEditingController();
+  final TextEditingController _testedByController = TextEditingController();
+  bool _isSubmitting = false;
+  bool _isExporting = false;
+
+  @override
+  void dispose() {
+    _commentController.dispose();
+    _testedByController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final factoryTestState = ref.watch(factoryTestProvider);
 
     if (!factoryTestState.isTestingComplete) {
@@ -19,16 +45,16 @@ class SubmitResultsTab extends ConsumerWidget {
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               Icon(
-                Icons.schedule,
+                Icons.schedule_outlined,
                 size: 64,
-                color: Colors.grey.shade400,
+                color: Colors.grey.shade300,
               ),
-              const SizedBox(height: 16),
+              const SizedBox(height: 24),
               Text(
                 'Complete All Tests First',
                 style: context.textTheme.headlineSmall?.copyWith(
-                  fontWeight: FontWeight.bold,
-                  color: Colors.black87,
+                  fontWeight: FontWeight.w600,
+                  color: Colors.grey.shade700,
                 ),
               ),
               const SizedBox(height: 8),
@@ -36,7 +62,7 @@ class SubmitResultsTab extends ConsumerWidget {
                 'Results will be available after all tests are completed',
                 textAlign: TextAlign.center,
                 style: context.textTheme.bodyMedium?.copyWith(
-                  color: Colors.grey.shade600,
+                  color: Colors.grey.shade500,
                 ),
               ),
             ],
@@ -46,19 +72,31 @@ class SubmitResultsTab extends ConsumerWidget {
     }
 
     return Container(
-      color: Colors.white,
+      color: Colors.grey.shade50,
       child: Column(
         children: [
-          _buildHeader(context, factoryTestState),
+          _buildCleanHeader(context, factoryTestState),
           Expanded(
-            child: _buildResults(context, ref, factoryTestState),
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  _buildSubmissionSection(),
+                  const SizedBox(height: 16),
+                  _buildResultsSummary(factoryTestState),
+                  const SizedBox(height: 16),
+                  _buildActionSection(context, factoryTestState),
+                ],
+              ),
+            ),
           ),
         ],
       ),
     );
   }
 
-  Widget _buildHeader(BuildContext context, FactoryTestState state) {
+  Widget _buildCleanHeader(BuildContext context, FactoryTestState state) {
     final automaticPassed = state.automaticTests.tests
         .where((test) => test.status == TestStatus.pass)
         .length;
@@ -74,164 +112,52 @@ class SubmitResultsTab extends ConsumerWidget {
     final overallSuccess = totalTests > 0 && totalPassed == totalTests;
 
     return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: overallSuccess
-              ? [Colors.green.shade400, Colors.green.shade600]
-              : [Colors.red.shade400, Colors.red.shade600],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
-      ),
-      child: Column(
-        children: [
-          Icon(
-            overallSuccess ? Icons.check_circle : Icons.cancel,
-            size: 64,
-            color: Colors.white,
-          ),
-          const SizedBox(height: 16),
-          Text(
-            overallSuccess ? 'Factory Test Passed!' : 'Factory Test Failed',
-            style: context.textTheme.headlineMedium?.copyWith(
-              color: Colors.white,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            '$totalPassed of $totalTests tests passed',
-            style: context.textTheme.bodyLarge?.copyWith(
-              color: Colors.white.withValues(alpha: 0.9),
-            ),
-          ),
-          const SizedBox(height: 16),
-          Row(
-            children: [
-              Expanded(
-                child: _buildQuickStat(
-                    'Automatic', automaticPassed, automaticTotal),
-              ),
-              const SizedBox(width: 16),
-              Expanded(
-                child: _buildQuickStat('Manual', manualPassed, manualTotal),
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildQuickStat(String label, int passed, int total) {
-    return Container(
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.2),
-        borderRadius: BorderRadius.circular(8),
-      ),
-      child: Column(
-        children: [
-          Text(
-            '$passed/$total',
-            style: const TextStyle(
-              color: Colors.white,
-              fontWeight: FontWeight.bold,
-              fontSize: 18,
-            ),
-          ),
-          const SizedBox(height: 4),
-          Text(
-            label,
-            style: const TextStyle(
-              color: Colors.white,
-              fontSize: 12,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildResults(
-      BuildContext context, WidgetRef ref, FactoryTestState state) {
-    return SingleChildScrollView(
-      padding: const EdgeInsets.all(20),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          _buildTestSection('Automatic Tests', state.automaticTests.tests),
-          const SizedBox(height: 24),
-          _buildTestSection('Manual Tests', state.manualTests.tests),
-          const SizedBox(height: 32),
-          _buildActionButtons(context, ref, state),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildTestSection(String title, List<TestResult> tests) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          title,
-          style: const TextStyle(
-            fontSize: 18,
-            fontWeight: FontWeight.bold,
-            color: Colors.black87,
-          ),
-        ),
-        const SizedBox(height: 12),
-        ...tests.map((test) => _buildTestResultItem(test)),
-      ],
-    );
-  }
-
-  Widget _buildTestResultItem(TestResult test) {
-    final isPass = test.status == TestStatus.pass;
-
-    return Container(
-      margin: const EdgeInsets.only(bottom: 8),
-      padding: const EdgeInsets.all(12),
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(
-          color: isPass ? Colors.green.shade200 : Colors.red.shade200,
-        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.05),
+            blurRadius: 10,
+            offset: const Offset(0, 2),
+          ),
+        ],
       ),
       child: Row(
         children: [
-          Icon(
-            isPass ? Icons.check_circle : Icons.cancel,
-            color: isPass ? Colors.green : Colors.red,
-            size: 20,
+          Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: overallSuccess ? Colors.green.shade50 : Colors.red.shade50,
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Icon(
+              overallSuccess ? Icons.check_circle : Icons.cancel,
+              size: 20,
+              color:
+                  overallSuccess ? Colors.green.shade600 : Colors.red.shade600,
+            ),
           ),
           const SizedBox(width: 12),
           Expanded(
-            child: Text(
-              test.testName,
-              style: const TextStyle(
-                fontWeight: FontWeight.w500,
-                color: Colors.black87,
-              ),
-            ),
-          ),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-            decoration: BoxDecoration(
-              color: isPass ? Colors.green.shade50 : Colors.red.shade50,
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: Text(
-              isPass ? 'PASS' : 'FAIL',
-              style: TextStyle(
-                color: isPass ? Colors.green.shade700 : Colors.red.shade700,
-                fontWeight: FontWeight.bold,
-                fontSize: 10,
-              ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  overallSuccess ? 'All Tests Passed' : 'Some Tests Failed',
+                  style: context.textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.w600,
+                    color: Colors.grey.shade800,
+                  ),
+                ),
+                Text(
+                  '$totalPassed of $totalTests tests completed successfully',
+                  style: context.textTheme.bodyMedium?.copyWith(
+                    color: Colors.grey.shade600,
+                  ),
+                ),
+              ],
             ),
           ),
         ],
@@ -239,124 +165,764 @@ class SubmitResultsTab extends ConsumerWidget {
     );
   }
 
-  Widget _buildActionButtons(
-      BuildContext context, WidgetRef ref, FactoryTestState state) {
-    final automaticPassed = state.automaticTests.tests
-        .where((test) => test.status == TestStatus.pass)
-        .length;
-    final automaticTotal = state.automaticTests.tests.length;
-
-    final manualPassed = state.manualTests.tests
-        .where((test) => test.status == TestStatus.pass)
-        .length;
-    final manualTotal = state.manualTests.tests.length;
-
-    final totalPassed = automaticPassed + manualPassed;
-    final totalTests = automaticTotal + manualTotal;
-    final overallSuccess = totalTests > 0 && totalPassed == totalTests;
-
-    return Column(
-      children: [
-        // Device Status
-        Container(
-          width: double.infinity,
-          padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            color: overallSuccess ? Colors.green.shade50 : Colors.red.shade50,
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(
-              color:
-                  overallSuccess ? Colors.green.shade200 : Colors.red.shade200,
+  Widget _buildSubmissionSection() {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.04),
+            blurRadius: 6,
+            offset: const Offset(0, 1),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Submit Results',
+            style: context.textTheme.titleMedium?.copyWith(
+              fontWeight: FontWeight.w600,
+              color: Colors.grey.shade800,
             ),
           ),
-          child: Column(
-            children: [
-              Icon(
-                overallSuccess ? Icons.thumb_up : Icons.thumb_down,
-                size: 48,
-                color: overallSuccess
-                    ? Colors.green.shade600
-                    : Colors.red.shade600,
+          const SizedBox(height: 16),
+
+          // Tested By Field
+          Text(
+            'Tested By',
+            style: context.textTheme.labelMedium?.copyWith(
+              fontWeight: FontWeight.w500,
+              color: Colors.grey.shade700,
+            ),
+          ),
+          const SizedBox(height: 6),
+          TextFormField(
+            controller: _testedByController,
+            decoration: InputDecoration(
+              hintText: 'Enter tester name',
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(8),
+                borderSide: BorderSide(color: Colors.grey.shade300),
               ),
-              const SizedBox(height: 8),
+              enabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(8),
+                borderSide: BorderSide(color: Colors.grey.shade300),
+              ),
+              focusedBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(8),
+                borderSide:
+                    const BorderSide(color: Color(0xFFFF8C00), width: 2),
+              ),
+              contentPadding:
+                  const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+              filled: true,
+              fillColor: Colors.grey.shade50,
+              isDense: true,
+            ),
+          ),
+          const SizedBox(height: 12),
+
+          // Comments Field
+          Text(
+            'Comments (Optional)',
+            style: context.textTheme.labelMedium?.copyWith(
+              fontWeight: FontWeight.w500,
+              color: Colors.grey.shade700,
+            ),
+          ),
+          const SizedBox(height: 6),
+          TextFormField(
+            controller: _commentController,
+            maxLines: 2,
+            decoration: InputDecoration(
+              hintText: 'Add any additional notes about the test',
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(8),
+                borderSide: BorderSide(color: Colors.grey.shade300),
+              ),
+              enabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(8),
+                borderSide: BorderSide(color: Colors.grey.shade300),
+              ),
+              focusedBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(8),
+                borderSide:
+                    const BorderSide(color: Color(0xFFFF8C00), width: 2),
+              ),
+              contentPadding:
+                  const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+              filled: true,
+              fillColor: Colors.grey.shade50,
+              isDense: true,
+            ),
+          ),
+          const SizedBox(height: 16),
+
+          // Submit Button
+          SizedBox(
+            width: double.infinity,
+            child: ElevatedButton(
+              onPressed: _isSubmitting
+                  ? null
+                  : () => _submitResults(ref.watch(factoryTestProvider)),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFFFF8C00),
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(vertical: 12),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                elevation: 0,
+              ),
+              child: _isSubmitting
+                  ? const SizedBox(
+                      height: 16,
+                      width: 16,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                      ),
+                    )
+                  : const Text(
+                      'Submit Test Results',
+                      style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildResultsSummary(FactoryTestState state) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.04),
+            blurRadius: 6,
+            offset: const Offset(0, 1),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
               Text(
-                overallSuccess
-                    ? 'Device Approved for Production'
-                    : 'Device Rejected - Retest Required',
-                style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.bold,
-                  color: overallSuccess
-                      ? Colors.green.shade700
-                      : Colors.red.shade700,
+                'Test Summary',
+                style: context.textTheme.titleMedium?.copyWith(
+                  fontWeight: FontWeight.w600,
+                  color: Colors.grey.shade800,
                 ),
               ),
-              const SizedBox(height: 4),
-              Text(
-                overallSuccess
-                    ? 'All factory tests passed successfully'
-                    : 'Some tests failed and need to be addressed',
-                style: TextStyle(
-                  fontSize: 14,
-                  color: overallSuccess
-                      ? Colors.green.shade600
-                      : Colors.red.shade600,
+              const Spacer(),
+              IconButton(
+                onPressed:
+                    _isExporting ? null : () => _showExportOptions(state),
+                icon: _isExporting
+                    ? const SizedBox(
+                        width: 20,
+                        height: 20,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      )
+                    : Icon(Icons.download_outlined,
+                        color: Colors.grey.shade600),
+                style: IconButton.styleFrom(
+                  backgroundColor: Colors.grey.shade100,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
                 ),
               ),
             ],
           ),
-        ),
-        const SizedBox(height: 24),
+          const SizedBox(height: 16),
+          _buildTestCategory('Automatic Tests', state.automaticTests.tests),
+          const SizedBox(height: 12),
+          _buildTestCategory('Manual Tests', state.manualTests.tests),
+        ],
+      ),
+    );
+  }
 
-        // Action Buttons
+  Widget _buildTestCategory(String title, List<TestResult> tests) {
+    final passCount =
+        tests.where((test) => test.status == TestStatus.pass).length;
+    final totalCount = tests.length;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
         Row(
           children: [
-            Expanded(
-              child: OutlinedButton(
-                onPressed: () => _restartTest(context, ref),
-                style: OutlinedButton.styleFrom(
-                  side: BorderSide(color: Colors.grey.shade400),
-                  padding: const EdgeInsets.symmetric(vertical: 12),
-                ),
-                child: const Text('Start New Test'),
+            Text(
+              title,
+              style: const TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.w600,
+                color: Colors.black87,
               ),
             ),
-            const SizedBox(width: 16),
-            Expanded(
-              child: ElevatedButton(
-                onPressed: () => _exportResults(context, state),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFFFF8C00),
-                  foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(vertical: 12),
+            const Spacer(),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+              decoration: BoxDecoration(
+                color: passCount == totalCount
+                    ? Colors.green.shade50
+                    : Colors.orange.shade50,
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(
+                  color: passCount == totalCount
+                      ? Colors.green.shade200
+                      : Colors.orange.shade200,
                 ),
-                child: const Text('Export Results'),
+              ),
+              child: Text(
+                '$passCount/$totalCount',
+                style: TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600,
+                  color: passCount == totalCount
+                      ? Colors.green.shade700
+                      : Colors.orange.shade700,
+                ),
               ),
             ),
           ],
         ),
-        const SizedBox(height: 12),
-        SizedBox(
-          width: double.infinity,
+        const SizedBox(height: 8),
+        ...tests.map((test) => Padding(
+              padding: const EdgeInsets.only(bottom: 6),
+              child: Row(
+                children: [
+                  Icon(
+                    test.status == TestStatus.pass
+                        ? Icons.check_circle
+                        : Icons.cancel,
+                    size: 16,
+                    color: test.status == TestStatus.pass
+                        ? Colors.green.shade600
+                        : Colors.red.shade600,
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Text(
+                      test.testName,
+                      style: const TextStyle(
+                        fontSize: 14,
+                        color: Colors.black87,
+                      ),
+                    ),
+                  ),
+                  if (test.comment != null && test.comment!.isNotEmpty)
+                    Text(
+                      _cleanupComment(test.comment!),
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: Colors.grey.shade600,
+                      ),
+                    ),
+                ],
+              ),
+            )),
+      ],
+    );
+  }
+
+  Widget _buildActionSection(BuildContext context, FactoryTestState state) {
+    return Row(
+      children: [
+        Expanded(
+          child: OutlinedButton(
+            onPressed: () => _restartTest(context),
+            style: OutlinedButton.styleFrom(
+              padding: const EdgeInsets.symmetric(vertical: 12),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(8),
+              ),
+              side: BorderSide(color: Colors.grey.shade300),
+            ),
+            child: const Text(
+              'Start New Test',
+              style: TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ),
+        ),
+        const SizedBox(width: 12),
+        Expanded(
           child: ElevatedButton(
             onPressed: () => Navigator.of(context).pop(),
             style: ElevatedButton.styleFrom(
               backgroundColor: Colors.grey.shade600,
               foregroundColor: Colors.white,
               padding: const EdgeInsets.symmetric(vertical: 12),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(8),
+              ),
+              elevation: 0,
             ),
-            child: const Text('Exit Factory Test'),
+            child: const Text(
+              'Exit Factory Test',
+              style: TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
           ),
         ),
       ],
     );
   }
 
-  void _restartTest(BuildContext context, WidgetRef ref) {
+  bool _isOverallSuccess(FactoryTestState state) {
+    final automaticPassed = state.automaticTests.tests
+        .where((test) => test.status == TestStatus.pass)
+        .length;
+    final automaticTotal = state.automaticTests.tests.length;
+
+    final manualPassed = state.manualTests.tests
+        .where((test) => test.status == TestStatus.pass)
+        .length;
+    final manualTotal = state.manualTests.tests.length;
+
+    final totalPassed = automaticPassed + manualPassed;
+    final totalTests = automaticTotal + manualTotal;
+
+    return totalTests > 0 && totalPassed == totalTests;
+  }
+
+  String _cleanupComment(String comment) {
+    // Handle special case for charge test with redundant auto-start + user confirmation
+    if (comment.contains('Auto-started after automatic tests completed') &&
+        comment.contains('User confirmed')) {
+      // For charge test, just show "User confirmed" without the auto-start part
+      return 'User confirmed';
+    }
+
+    // Keep other "User confirmed" comments as they are meaningful
+    return comment;
+  }
+
+  void _showExportOptions(FactoryTestState state) {
+    showModalBottomSheet(
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (context) => Container(
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: 40,
+              height: 4,
+              decoration: BoxDecoration(
+                color: Colors.grey.shade300,
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+            const SizedBox(height: 20),
+            Text(
+              'Export Test Results',
+              style: context.textTheme.titleLarge?.copyWith(
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+            const SizedBox(height: 24),
+            _buildExportOption(
+              icon: Icons.table_chart_outlined,
+              title: 'Export as CSV',
+              subtitle: 'Spreadsheet format',
+              onTap: () {
+                Navigator.pop(context);
+                _exportResults(state, 'csv');
+              },
+            ),
+            const SizedBox(height: 12),
+            _buildExportOption(
+              icon: Icons.code_outlined,
+              title: 'Export as JSON',
+              subtitle: 'Structured data format',
+              onTap: () {
+                Navigator.pop(context);
+                _exportResults(state, 'json');
+              },
+            ),
+            const SizedBox(height: 12),
+            _buildExportOption(
+              icon: Icons.share_outlined,
+              title: 'Share Results',
+              subtitle: 'Share via other apps',
+              onTap: () {
+                Navigator.pop(context);
+                _shareResults(state);
+              },
+            ),
+            const SizedBox(height: 20),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildExportOption({
+    required IconData icon,
+    required String title,
+    required String subtitle,
+    required VoidCallback onTap,
+  }) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(12),
+      child: Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          border: Border.all(color: Colors.grey.shade200),
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: Colors.grey.shade100,
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Icon(icon, size: 20, color: Colors.grey.shade600),
+            ),
+            const SizedBox(width: 16),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    title,
+                    style: const TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  Text(
+                    subtitle,
+                    style: TextStyle(
+                      fontSize: 14,
+                      color: Colors.grey.shade600,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            Icon(Icons.arrow_forward_ios,
+                size: 16, color: Colors.grey.shade400),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Future<void> _exportResults(FactoryTestState state, String format) async {
+    if (_isExporting) return;
+
+    setState(() {
+      _isExporting = true;
+    });
+
+    try {
+      final device = ref.read(bleDeviceProvider(state.selectedDeviceId!));
+      final fileName = _generateFileName(device.name);
+
+      if (format == 'csv') {
+        await _exportAsCsv(state, device, fileName);
+      } else if (format == 'json') {
+        await _exportAsJson(state, device, fileName);
+      }
+
+      if (mounted) {
+        context.showSnackBar('Results exported successfully!');
+      }
+    } catch (e) {
+      if (mounted) {
+        context.showSnackBar('Export failed: $e');
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isExporting = false;
+        });
+      }
+    }
+  }
+
+  Future<void> _exportAsCsv(
+      FactoryTestState state, device, String fileName) async {
+    final csvContent = _generateCsvContent(state, device);
+    final bytes = utf8.encode(csvContent);
+
+    await FileSaver.instance.saveAs(
+      name: fileName,
+      bytes: bytes,
+      mimeType: MimeType.csv,
+      ext: 'csv',
+    );
+  }
+
+  Future<void> _exportAsJson(
+      FactoryTestState state, device, String fileName) async {
+    final jsonContent = _generateJsonContent(state, device);
+    final bytes = utf8.encode(jsonContent);
+
+    await FileSaver.instance.saveAs(
+      name: fileName,
+      bytes: bytes,
+      mimeType: MimeType.custom,
+      ext: 'json',
+    );
+  }
+
+  Future<void> _shareResults(FactoryTestState state) async {
+    if (_isExporting) return;
+
+    setState(() {
+      _isExporting = true;
+    });
+
+    try {
+      final device = ref.read(bleDeviceProvider(state.selectedDeviceId!));
+      final directory = await getApplicationDocumentsDirectory();
+      final fileName = _generateFileName(device.name);
+
+      // Create both CSV and JSON files
+      final csvFile = File('${directory.path}/$fileName.csv');
+      final jsonFile = File('${directory.path}/$fileName.json');
+
+      await csvFile.writeAsString(_generateCsvContent(state, device));
+      await jsonFile.writeAsString(_generateJsonContent(state, device));
+
+      await SharePlus.instance.share(ShareParams(
+        files: [XFile(csvFile.path), XFile(jsonFile.path)],
+        text: 'Factory Test Results for ${device.name}',
+      ));
+    } catch (e) {
+      if (mounted) {
+        context.showSnackBar('Share failed: $e');
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isExporting = false;
+        });
+      }
+    }
+  }
+
+  String _generateFileName(String deviceName) {
+    final timestamp = DateFormat('yyyy-MM-dd-HH-mm-ss').format(DateTime.now());
+    return '${deviceName.replaceAll(' ', '-')}-factory-test-$timestamp';
+  }
+
+  String _generateCsvContent(FactoryTestState state, device) {
+    final buffer = StringBuffer();
+
+    // Header information
+    buffer.writeln('FACTORY TEST RESULTS');
+    buffer.writeln('Device Name,${device.name}');
+    buffer.writeln('Device ID,${device.deviceId}');
+    buffer.writeln('Firmware Version,${device.firmwareVersion}');
+    buffer.writeln(
+        'Test Date,${DateFormat('yyyy-MM-dd HH:mm:ss').format(DateTime.now())}');
+    buffer.writeln('Tested By,${_testedByController.text}');
+    buffer.writeln(
+        'Overall Status,${_isOverallSuccess(state) ? 'PASS' : 'FAIL'}');
+    buffer.writeln('Comments,${_commentController.text}');
+    buffer.writeln();
+
+    // Test results
+    buffer.writeln('Test Category,Test Name,Status,Comment');
+
+    for (final test in state.automaticTests.tests) {
+      buffer.writeln(
+          'Automatic,${test.testName},${test.status.name.toUpperCase()},"${test.comment ?? ''}"');
+    }
+
+    for (final test in state.manualTests.tests) {
+      buffer.writeln(
+          'Manual,${test.testName},${test.status.name.toUpperCase()},"${test.comment ?? ''}"');
+    }
+
+    return buffer.toString();
+  }
+
+  String _generateJsonContent(FactoryTestState state, device) {
+    final data = {
+      'deviceInfo': {
+        'deviceName': device.name,
+        'deviceId': device.deviceId,
+        'macAddress': device.address,
+        'firmwareVersion': device.firmwareVersion,
+      },
+      'testInfo': {
+        'testDate': DateTime.now().toIso8601String(),
+        'testedBy': _testedByController.text,
+        'comment': _commentController.text,
+        'overallStatus': _isOverallSuccess(state) ? 'PASS' : 'FAIL',
+      },
+      'testDetails': {
+        'automaticTests': state.automaticTests.tests
+            .map((test) => {
+                  'testName': test.testName,
+                  'status': test.status.name.toUpperCase(),
+                  'comment': test.comment ?? '',
+                })
+            .toList(),
+        'manualTests': state.manualTests.tests
+            .map((test) => {
+                  'testName': test.testName,
+                  'status': test.status.name.toUpperCase(),
+                  'comment': test.comment ?? '',
+                })
+            .toList(),
+      },
+    };
+
+    return const JsonEncoder.withIndent('  ').convert(data);
+  }
+
+  Future<void> _submitResults(FactoryTestState state) async {
+    if (_isSubmitting) return;
+
+    // Validate required fields
+    if (_testedByController.text.trim().isEmpty) {
+      context.showSnackBar('Please enter the tester name');
+      return;
+    }
+
+    setState(() {
+      _isSubmitting = true;
+    });
+
+    try {
+      final device = ref.read(bleDeviceProvider(state.selectedDeviceId!));
+
+      // Prepare API payload according to the database structure
+      final payload = {
+        'mac_address': device.address,
+        'device_id': device.deviceId,
+        'tested_by': _testedByController.text.trim(),
+        'status': _isOverallSuccess(state) ? 'PASS' : 'FAIL',
+        'comment': _commentController.text.trim(),
+        'sensor_variant':
+            1, // Default to 1, should be extracted from device if available
+        'device_type': 'as1', // Default device type
+        'test_details': {
+          'manualTests': state.manualTests.tests
+              .map((test) => {
+                    'status': test.status.name == 'pass' ? 'Pass' : 'Fail',
+                    'comment': test.comment ?? '',
+                    'testName': test.testName,
+                  })
+              .toList(),
+          'automaticTests': state.automaticTests.tests
+              .map((test) => {
+                    'status': test.status.name == 'pass' ? 'Pass' : 'Fail',
+                    'comment': test.comment ?? '',
+                    'testName': test.testName,
+                  })
+              .toList(),
+        },
+      };
+
+      // Submit to API
+      final response =
+          await NetworkService.instance.post('/factory-test/submit', payload);
+
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        if (mounted) {
+          context.showSnackBar('Test results submitted successfully!');
+          // Optionally navigate back or show success dialog
+          _showSubmissionSuccessDialog();
+        }
+      } else {
+        throw Exception('Server responded with status ${response.statusCode}');
+      }
+    } catch (e) {
+      if (mounted) {
+        context.showSnackBar('Submission failed: $e');
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isSubmitting = false;
+        });
+      }
+    }
+  }
+
+  void _showSubmissionSuccessDialog() {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        icon: Container(
+          padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(
+            color: Colors.green.shade50,
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: Icon(Icons.cloud_done, color: Colors.green.shade600, size: 32),
+        ),
+        title: const Text(
+          'Submission Successful',
+          style: TextStyle(fontWeight: FontWeight.w600),
+        ),
+        content: const Text(
+          'Factory test results have been successfully submitted to the server.',
+        ),
+        actions: [
+          ElevatedButton(
+            onPressed: () {
+              Navigator.of(context).pop(); // Close dialog
+              Navigator.of(context).pop(); // Exit factory test
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFFFF8C00),
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8)),
+            ),
+            child: const Text('Continue'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _restartTest(BuildContext context) {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Start New Test'),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: const Text(
+          'Start New Test',
+          style: TextStyle(fontWeight: FontWeight.w600),
+        ),
         content: const Text(
           'Are you sure you want to start a new factory test? '
           'This will reset all current results.',
@@ -373,17 +939,13 @@ class SubmitResultsTab extends ConsumerWidget {
             },
             style: ElevatedButton.styleFrom(
               backgroundColor: const Color(0xFFFF8C00),
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8)),
             ),
             child: const Text('Start New Test'),
           ),
         ],
       ),
     );
-  }
-
-  void _exportResults(BuildContext context, FactoryTestState state) {
-    // This would implement the results export functionality
-    // For now, just show a success message
-    context.showSnackBar('Results exported successfully!');
   }
 }
