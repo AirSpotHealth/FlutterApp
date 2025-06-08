@@ -77,6 +77,7 @@ class FactoryTestNotifier extends AutoDisposeNotifier<FactoryTestState> {
       TestResult(testName: 'Buzzer Test', status: TestStatus.notStarted),
       TestResult(testName: 'Vibration Test', status: TestStatus.notStarted),
       TestResult(testName: 'Case Check', status: TestStatus.notStarted),
+      TestResult(testName: 'LCD with OCA?', status: TestStatus.notStarted),
     ];
   }
 
@@ -390,47 +391,64 @@ class FactoryTestNotifier extends AutoDisposeNotifier<FactoryTestState> {
 
   /// Execute a BLE command with timeout and retry logic
   Future<void> _executeCommand(FactoryTestCommand command) async {
+    debugPrint('_executeCommand called for: ${command.type}');
+
     if (_writeCharacteristic == null) {
+      debugPrint('ERROR: Write characteristic not available');
       throw 'Write characteristic not available';
     }
 
+    debugPrint('Adding command to queue: ${command.command}');
     _commandQueue.add(command);
 
     if (!_isProcessingCommand) {
+      debugPrint('Starting command queue processing...');
       await _processCommandQueue();
+    } else {
+      debugPrint('Command queue already processing, command added to queue');
     }
   }
 
   /// Process the command queue
   Future<void> _processCommandQueue() async {
+    debugPrint(
+        '_processCommandQueue started, queue length: ${_commandQueue.length}');
     _isProcessingCommand = true;
 
     while (_commandQueue.isNotEmpty) {
       final command = _commandQueue.removeAt(0);
+      debugPrint(
+          'Processing command: ${command.type}, bytes: ${command.command}');
 
       int retryCount = 0;
       bool success = false;
 
       while (retryCount <= command.maxRetries && !success) {
         try {
+          debugPrint(
+              'Attempting to write command (attempt ${retryCount + 1})...');
           await _writeCharacteristic!.write(command.command);
-          debugPrint('Command sent: ${command.type}');
+          debugPrint('Command sent successfully: ${command.type}');
           success = true;
         } catch (error) {
           retryCount++;
           debugPrint('Command failed (attempt $retryCount): $error');
 
           if (retryCount <= command.maxRetries) {
+            debugPrint('Waiting before retry...');
             await Future.delayed(Duration(milliseconds: 500 * retryCount));
           }
         }
       }
 
       if (!success) {
+        debugPrint(
+            'Command ${command.type} failed after ${command.maxRetries} retries');
         throw 'Command ${command.type} failed after ${command.maxRetries} retries';
       }
     }
 
+    debugPrint('Command queue processing complete');
     _isProcessingCommand = false;
   }
 
@@ -458,6 +476,12 @@ class FactoryTestNotifier extends AutoDisposeNotifier<FactoryTestState> {
         break;
       case 0xDB: // Buzzer test result
         _handleBuzzerTestResult(data);
+        break;
+      case 0xD2: // Manual test started response
+        _handleManualTestStartedResponse(data);
+        break;
+      case 0xD3: // Manual test confirmation response
+        _handleManualTestConfirmationResponse(data);
         break;
       default:
         debugPrint(
@@ -500,6 +524,9 @@ class FactoryTestNotifier extends AutoDisposeNotifier<FactoryTestState> {
     if (allComplete) {
       _clearAutomaticTestTimeout();
       state = state.copyWith(phase: FactoryTestPhase.runningManualTests);
+
+      // Auto-start charge test (it's automatically available after automatic tests)
+      _autoStartChargeTest();
     }
   }
 
@@ -509,14 +536,19 @@ class FactoryTestNotifier extends AutoDisposeNotifier<FactoryTestState> {
 
     final updatedTests = state.manualTests.tests.map((test) {
       if (test.testName == 'Charge Test') {
-        return test.copyWith(
-          status: chargeStatus.isCharging || chargeStatus.isDisconnected
-              ? TestStatus.pass
-              : TestStatus.fail,
-          comment: chargeStatus.description,
-          timestamp: DateTime.now(),
-          deviceResponseReceived: true,
-        );
+        // Only update if test hasn't been manually confirmed yet
+        if (test.status == TestStatus.running) {
+          return test.copyWith(
+            status: chargeStatus.isCharging || chargeStatus.isDisconnected
+                ? TestStatus.pass
+                : TestStatus.fail,
+            comment: chargeStatus.description,
+            timestamp: DateTime.now(),
+            deviceResponseReceived: true,
+          );
+        }
+        // If already passed/failed by user, don't override
+        return test;
       }
       return test;
     }).toList();
@@ -573,122 +605,368 @@ class FactoryTestNotifier extends AutoDisposeNotifier<FactoryTestState> {
     );
   }
 
-  // Manual test control methods
-  Future<void> startChargeTest() async {
-    final command = FactoryTestCommand(
-      type: FactoryTestCommandType.getChargeStatus,
-      command: DeviceCmdUtils.getChargeStatus(),
-    );
-    await _executeCommand(command);
-  }
+  /// Handle manual test started response (0xD2 response)
+  void _handleManualTestStartedResponse(List<int> data) {
+    if (data.length < 5) return;
 
-  Future<void> startScreenEdgeTest() async {
-    final command = FactoryTestCommand(
-      type: FactoryTestCommandType.displayScreenTest,
-      command: DeviceCmdUtils.displayScreenTest(ScreenTestType.edge.value),
-    );
-    await _executeCommand(command);
-  }
+    final testType = data[4];
+    final testName = _getTestNameFromType(testType);
 
-  Future<void> startScreenBlackTest() async {
-    final command = FactoryTestCommand(
-      type: FactoryTestCommandType.displayScreenTest,
-      command: DeviceCmdUtils.displayScreenTest(ScreenTestType.black.value),
-    );
-    await _executeCommand(command);
-  }
+    debugPrint('Manual test started response for: $testName (type: $testType)');
 
-  Future<void> startScreenWhiteTest() async {
-    final command = FactoryTestCommand(
-      type: FactoryTestCommandType.displayScreenTest,
-      command: DeviceCmdUtils.displayScreenTest(ScreenTestType.white.value),
-    );
-    await _executeCommand(command);
-  }
-
-  Future<void> returnToNormalScreen() async {
-    final command = FactoryTestCommand(
-      type: FactoryTestCommandType.displayScreenTest,
-      command: DeviceCmdUtils.displayScreenTest(ScreenTestType.normal.value),
-    );
-    await _executeCommand(command);
-  }
-
-  Future<void> startButtonTest() async {
-    // Reset button counter first
-    final resetCommand = FactoryTestCommand(
-      type: FactoryTestCommandType.resetButtonCounter,
-      command: DeviceCmdUtils.resetButtonCounter(),
-    );
-    await _executeCommand(resetCommand);
-
-    // Wait a bit then get button count
-    await Future.delayed(const Duration(seconds: 1));
-
-    final getCommand = FactoryTestCommand(
-      type: FactoryTestCommandType.getButtonPressCount,
-      command: DeviceCmdUtils.getButtonPressCount(),
-    );
-    await _executeCommand(getCommand);
-  }
-
-  Future<void> startBuzzerTest() async {
-    final command = FactoryTestCommand(
-      type: FactoryTestCommandType.buzzerTest,
-      command: DeviceCmdUtils.buzzerTest(3), // 3 beeps
-    );
-    await _executeCommand(command);
-  }
-
-  Future<void> startVibrationTest() async {
-    final command = FactoryTestCommand(
-      type: FactoryTestCommandType.vibrationTest,
-      command: DeviceCmdUtils.openVibration(), // Use existing vibration command
-    );
-    await _executeCommand(command);
-
-    // Turn off vibration after a delay
-    Timer(const Duration(seconds: 2), () async {
-      final stopCommand = FactoryTestCommand(
-        type: FactoryTestCommandType.vibrationTest,
-        command: DeviceCmdUtils.closeVibration(),
-      );
-      await _executeCommand(stopCommand);
-    });
-  }
-
-  /// Update user confirmation for manual tests
-  void updateUserConfirmation(String testName, bool confirmed) {
-    final updatedConfirmations =
-        Map<String, bool>.from(state.manualTests.userConfirmations);
-    updatedConfirmations[testName] = confirmed;
-
-    // Update test status if user confirmed and device responded
     final updatedTests = state.manualTests.tests.map((test) {
-      if (test.testName == testName && confirmed) {
+      if (test.testName == testName) {
         return test.copyWith(
-          status: TestStatus.pass,
-          comment: '${test.comment ?? ''} - User confirmed',
+          deviceResponseReceived: true,
+          timestamp: DateTime.now(),
+          comment: '${test.comment ?? ''} - Device response received',
         );
       }
       return test;
     }).toList();
 
-    final allComplete = updatedTests.every((test) =>
-        test.status == TestStatus.pass || test.status == TestStatus.fail);
+    state = state.copyWith(
+      manualTests: state.manualTests.copyWith(tests: updatedTests),
+    );
+  }
+
+  /// Handle manual test confirmation response (0xD3 response)
+  void _handleManualTestConfirmationResponse(List<int> data) {
+    if (data.length < 5) return;
+
+    final confirmed = data[4] == 1;
+
+    debugPrint(
+        'Manual test confirmation response: ${confirmed ? "PASS" : "FAIL"}');
+
+    // This response confirms that the device received our confirmation command
+    // The actual test status update is handled in updateUserConfirmation method
+  }
+
+  /// Get test name from test type constant
+  String _getTestNameFromType(int testType) {
+    switch (testType) {
+      case ManualTestType.manualTestCharge:
+        return 'Charge Test';
+      case ManualTestType.manualTestEdge:
+        return 'Screen Edge Test';
+      case ManualTestType.manualTestBlackScreen:
+        return 'Screen Black Test';
+      case ManualTestType.manualTestWhiteScreen:
+        return 'Screen White Test';
+      case ManualTestType.manualTestButton:
+        return 'Button Test';
+      case ManualTestType.manualTestBuzzer:
+        return 'Buzzer Test';
+      case ManualTestType.manualTestVibration:
+        return 'Vibration Test';
+      case ManualTestType.manualTestCaseCheck:
+        return 'Case Check';
+      case ManualTestType.manualTestLcdOca:
+        return 'LCD with OCA?';
+      default:
+        return 'Unknown Test';
+    }
+  }
+
+  /// Auto-start charge test when manual tests phase begins
+  void _autoStartChargeTest() {
+    debugPrint('Auto-starting charge test...');
+
+    // Update charge test status to running only if it's not already completed
+    final updatedTests = state.manualTests.tests.map((test) {
+      if (test.testName == 'Charge Test') {
+        // Only auto-start if the test hasn't been completed yet
+        if (test.status == TestStatus.notStarted) {
+          return test.copyWith(
+            status: TestStatus.running,
+            comment: 'Auto-started after automatic tests completed',
+            timestamp: DateTime.now(),
+            deviceResponseReceived: true, // Charge test is auto-available
+          );
+        }
+        // If test is already passed/failed, don't change its status
+        return test;
+      }
+      return test;
+    }).toList();
 
     state = state.copyWith(
-      manualTests: state.manualTests.copyWith(
-        tests: updatedTests,
-        userConfirmations: updatedConfirmations,
-        isComplete: allComplete,
-      ),
+      manualTests: state.manualTests.copyWith(tests: updatedTests),
     );
 
-    // If all tests are complete, move to completed phase
-    if (allComplete && state.automaticTests.isComplete) {
-      state = state.copyWith(phase: FactoryTestPhase.completed);
+    debugPrint('Charge test auto-started and ready for user confirmation');
+  }
+
+  // Manual test control methods using new robust protocol
+  Future<void> startChargeTest() async {
+    try {
+      await _updateTestStatus('Charge Test', TestStatus.running);
+
+      final command = FactoryTestCommand(
+        type: FactoryTestCommandType.startManualTest,
+        command: DeviceCmdUtils.startManualChargeTest(),
+        parameters: {'testType': ManualTestType.manualTestCharge},
+      );
+      await _executeCommand(command);
+
+      debugPrint('Charge test command sent successfully');
+    } catch (error) {
+      debugPrint('Error starting charge test: $error');
+      await _updateTestStatus(
+          'Charge Test', TestStatus.fail, 'Failed to start test: $error');
     }
+  }
+
+  Future<void> startScreenEdgeTest() async {
+    try {
+      await _updateTestStatus('Screen Edge Test', TestStatus.running);
+
+      final command = FactoryTestCommand(
+        type: FactoryTestCommandType.startManualTest,
+        command: DeviceCmdUtils.startManualScreenEdgeTest(),
+        parameters: {'testType': ManualTestType.manualTestEdge},
+      );
+      await _executeCommand(command);
+
+      debugPrint('Screen edge test command sent successfully');
+    } catch (error) {
+      debugPrint('Error starting screen edge test: $error');
+      await _updateTestStatus(
+          'Screen Edge Test', TestStatus.fail, 'Failed to start test: $error');
+    }
+  }
+
+  Future<void> startScreenBlackTest() async {
+    try {
+      await _updateTestStatus('Screen Black Test', TestStatus.running);
+
+      final command = FactoryTestCommand(
+        type: FactoryTestCommandType.startManualTest,
+        command: DeviceCmdUtils.startManualScreenBlackTest(),
+        parameters: {'testType': ManualTestType.manualTestBlackScreen},
+      );
+      await _executeCommand(command);
+
+      debugPrint('Screen black test command sent successfully');
+    } catch (error) {
+      debugPrint('Error starting screen black test: $error');
+      await _updateTestStatus(
+          'Screen Black Test', TestStatus.fail, 'Failed to start test: $error');
+    }
+  }
+
+  Future<void> startScreenWhiteTest() async {
+    try {
+      await _updateTestStatus('Screen White Test', TestStatus.running);
+
+      final command = FactoryTestCommand(
+        type: FactoryTestCommandType.startManualTest,
+        command: DeviceCmdUtils.startManualScreenWhiteTest(),
+        parameters: {'testType': ManualTestType.manualTestWhiteScreen},
+      );
+      await _executeCommand(command);
+
+      debugPrint('Screen white test command sent successfully');
+    } catch (error) {
+      debugPrint('Error starting screen white test: $error');
+      await _updateTestStatus(
+          'Screen White Test', TestStatus.fail, 'Failed to start test: $error');
+    }
+  }
+
+  Future<void> returnToNormalScreen() async {
+    try {
+      final command = FactoryTestCommand(
+        type: FactoryTestCommandType.displayScreenTest,
+        command: DeviceCmdUtils.displayScreenTest(ScreenTestType.normal.value),
+      );
+      await _executeCommand(command);
+
+      debugPrint('Return to normal screen command sent successfully');
+    } catch (error) {
+      debugPrint('Error returning to normal screen: $error');
+    }
+  }
+
+  Future<void> startButtonTest() async {
+    try {
+      await _updateTestStatus('Button Test', TestStatus.running);
+
+      final command = FactoryTestCommand(
+        type: FactoryTestCommandType.startManualTest,
+        command: DeviceCmdUtils.startManualButtonTest(),
+        parameters: {'testType': ManualTestType.manualTestButton},
+      );
+      await _executeCommand(command);
+
+      debugPrint('Button test command sent successfully');
+    } catch (error) {
+      debugPrint('Error starting button test: $error');
+      await _updateTestStatus(
+          'Button Test', TestStatus.fail, 'Failed to start test: $error');
+    }
+  }
+
+  Future<void> startBuzzerTest() async {
+    try {
+      await _updateTestStatus('Buzzer Test', TestStatus.running);
+
+      final command = FactoryTestCommand(
+        type: FactoryTestCommandType.startManualTest,
+        command: DeviceCmdUtils.startManualBuzzerTest(),
+        parameters: {'testType': ManualTestType.manualTestBuzzer},
+      );
+      await _executeCommand(command);
+
+      debugPrint('Buzzer test command sent successfully');
+    } catch (error) {
+      debugPrint('Error starting buzzer test: $error');
+      await _updateTestStatus(
+          'Buzzer Test', TestStatus.fail, 'Failed to start test: $error');
+    }
+  }
+
+  Future<void> startVibrationTest() async {
+    try {
+      await _updateTestStatus('Vibration Test', TestStatus.running);
+
+      final command = FactoryTestCommand(
+        type: FactoryTestCommandType.startManualTest,
+        command: DeviceCmdUtils.startManualVibrationTest(),
+        parameters: {'testType': ManualTestType.manualTestVibration},
+      );
+      await _executeCommand(command);
+
+      debugPrint('Vibration test command sent successfully');
+    } catch (error) {
+      debugPrint('Error starting vibration test: $error');
+      await _updateTestStatus(
+          'Vibration Test', TestStatus.fail, 'Failed to start test: $error');
+    }
+  }
+
+  /// Helper method to update test status
+  Future<void> _updateTestStatus(String testName, TestStatus status,
+      [String? comment]) async {
+    final updatedTests = state.manualTests.tests.map((test) {
+      if (test.testName == testName) {
+        return test.copyWith(
+          status: status,
+          comment: comment ?? test.comment,
+          timestamp:
+              status != TestStatus.notStarted ? DateTime.now() : test.timestamp,
+          // Device doesn't acknowledge start commands, so we assume they're received
+          deviceResponseReceived:
+              status == TestStatus.running ? true : test.deviceResponseReceived,
+        );
+      }
+      return test;
+    }).toList();
+
+    state = state.copyWith(
+      manualTests: state.manualTests.copyWith(tests: updatedTests),
+    );
+  }
+
+  /// Update user confirmation for manual tests with device confirmation
+  Future<void> updateUserConfirmation(String testName, bool confirmed) async {
+    try {
+      debugPrint('=== MANUAL TEST CONFIRMATION START ===');
+      debugPrint('Test: $testName, Confirmed: ${confirmed ? "PASS" : "FAIL"}');
+
+      // Send confirmation command to device
+      final command = FactoryTestCommand(
+        type: FactoryTestCommandType.confirmManualTest,
+        command: confirmed
+            ? DeviceCmdUtils.confirmManualTestPassed()
+            : DeviceCmdUtils.confirmManualTestFailed(),
+        parameters: {'testName': testName, 'confirmed': confirmed},
+      );
+
+      debugPrint('Command bytes: ${command.command}');
+      debugPrint('Executing command...');
+      await _executeCommand(command);
+      debugPrint('Command executed successfully');
+
+      final updatedConfirmations =
+          Map<String, bool>.from(state.manualTests.userConfirmations);
+      updatedConfirmations[testName] = confirmed;
+
+      // Update test status based on user confirmation
+      final updatedTests = state.manualTests.tests.map((test) {
+        if (test.testName == testName) {
+          return test.copyWith(
+            status: confirmed ? TestStatus.pass : TestStatus.fail,
+            comment: confirmed
+                ? '${test.comment ?? ''} - User confirmed'
+                : '${test.comment ?? ''} - User marked as failed',
+            timestamp: DateTime.now(),
+          );
+        }
+        return test;
+      }).toList();
+
+      final allComplete = updatedTests.every((test) =>
+          test.status == TestStatus.pass || test.status == TestStatus.fail);
+
+      state = state.copyWith(
+        manualTests: state.manualTests.copyWith(
+          tests: updatedTests,
+          userConfirmations: updatedConfirmations,
+          isComplete: allComplete,
+        ),
+      );
+
+      // If all tests are complete, move to completed phase
+      if (allComplete && state.automaticTests.isComplete) {
+        state = state.copyWith(phase: FactoryTestPhase.completed);
+      }
+
+      debugPrint(
+          'User confirmation sent for $testName: ${confirmed ? "PASS" : "FAIL"}');
+    } catch (error) {
+      debugPrint('Error sending user confirmation for $testName: $error');
+      // Still update local state even if device command fails
+      final updatedConfirmations =
+          Map<String, bool>.from(state.manualTests.userConfirmations);
+      updatedConfirmations[testName] = confirmed;
+
+      final updatedTests = state.manualTests.tests.map((test) {
+        if (test.testName == testName) {
+          return test.copyWith(
+            status: confirmed ? TestStatus.pass : TestStatus.fail,
+            comment:
+                '${test.comment ?? ''} - ${confirmed ? "User confirmed" : "User marked as failed"} (device command failed)',
+            timestamp: DateTime.now(),
+          );
+        }
+        return test;
+      }).toList();
+
+      state = state.copyWith(
+        manualTests: state.manualTests.copyWith(
+          tests: updatedTests,
+          userConfirmations: updatedConfirmations,
+        ),
+      );
+    }
+  }
+
+  /// Update test comment
+  void updateTestComment(String testName, String comment) {
+    final updatedTests = state.manualTests.tests.map((test) {
+      if (test.testName == testName) {
+        return test.copyWith(comment: comment);
+      }
+      return test;
+    }).toList();
+
+    state = state.copyWith(
+      manualTests: state.manualTests.copyWith(tests: updatedTests),
+    );
+
+    debugPrint('Updated comment for $testName: $comment');
   }
 
   /// Retry automatic tests after timeout/failure

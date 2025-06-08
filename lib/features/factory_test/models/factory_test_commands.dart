@@ -1,10 +1,29 @@
 import 'dart:typed_data';
 
+/// Manual test type constants (as expected by device)
+class ManualTestType {
+  static const int manualTestCharge = 6;
+  static const int manualTestEdge = 7;
+  static const int manualTestBlackScreen = 8;
+  static const int manualTestWhiteScreen = 9;
+  static const int manualTestButton = 10;
+  static const int manualTestBuzzer = 11;
+  static const int manualTestVibration = 12;
+  static const int manualTestCaseCheck = 13;
+  static const int manualTestLcdOca = 14;
+}
+
 /// Factory test BLE command types
 enum FactoryTestCommandType {
   enterFactoryMode,
   startAutomaticTests,
   endFactoryTest,
+
+  // Manual test commands
+  startManualTest,
+  confirmManualTest,
+
+  // Legacy commands (for backward compatibility)
   displayScreenTest,
   buzzerTest,
   vibrationTest,
