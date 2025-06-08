@@ -30,11 +30,13 @@ class AutomaticTestsTab extends ConsumerWidget {
           padding: const EdgeInsets.symmetric(horizontal: 16),
           child: Row(
             children: [
-              Text(
-                'Automatic Tests Status',
-                style: context.textTheme.bodyMedium?.copyWith(
-                  fontWeight: FontWeight.w600,
-                  color: AppColors.textPrimary,
+              Expanded(
+                child: Text(
+                  'Automatic Tests Status',
+                  style: context.textTheme.bodyMedium?.copyWith(
+                    fontWeight: FontWeight.w600,
+                    color: AppColors.textPrimary,
+                  ),
                 ),
               ),
               if (factoryTestState.automaticTests.isRunning) ...[
@@ -58,12 +60,14 @@ class AutomaticTestsTab extends ConsumerWidget {
                             color: AppColors.primaryColor,
                           ),
                         ),
-                        const SizedBox(width: 6),
-                        Text(
-                          'Running (timeout 1 min)',
-                          style: context.textTheme.bodySmall?.copyWith(
-                            color: AppColors.primaryColor,
-                            fontWeight: FontWeight.w500,
+                        const SizedBox(width: 4),
+                        Expanded(
+                          child: Text(
+                            'Running (timeout 1 min)',
+                            style: context.textTheme.bodySmall?.copyWith(
+                              color: AppColors.primaryColor,
+                              fontWeight: FontWeight.w500,
+                            ),
                           ),
                         ),
                       ],

@@ -10,6 +10,7 @@ class ManualTestsTab extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final factoryTestState = ref.watch(factoryTestProvider);
+    final manualTests = factoryTestState.manualTests;
 
     if (!factoryTestState.automaticTests.isComplete) {
       return Container(
@@ -47,332 +48,357 @@ class ManualTestsTab extends ConsumerWidget {
 
     return Container(
       color: Colors.white,
-      child: Column(
-        children: [
-          _buildProgressSection(context, ref, factoryTestState),
-          Expanded(
-            child: _buildTestResults(context, ref, factoryTestState),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildProgressSection(
-      BuildContext context, WidgetRef ref, FactoryTestState state) {
-    final completedCount = state.manualTests.tests
-        .where((test) =>
-            test.status == TestStatus.pass || test.status == TestStatus.fail)
-        .length;
-
-    final totalTests = state.manualTests.tests.length;
-
-    return Container(
-      padding: const EdgeInsets.all(20),
-      color: Colors.white,
+      padding: const EdgeInsets.all(16.0),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'Manual Tests\nProgress',
-            style: context.textTheme.headlineSmall?.copyWith(
-              fontWeight: FontWeight.bold,
-              color: Colors.black87,
+            manualTests.isComplete
+                ? 'All manual tests completed!'
+                : 'Follow the instructions to perform manual tests on the device.',
+            style: context.textTheme.bodyMedium?.copyWith(
+              color: Colors.grey.shade600,
             ),
           ),
-          const SizedBox(height: 20),
-
-          // Progress bar
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text(
-                    '$completedCount of $totalTests tests completed',
-                    style: context.textTheme.bodyLarge?.copyWith(
-                      color: Colors.black87,
-                    ),
-                  ),
-                  Text(
-                    '${totalTests > 0 ? ((completedCount / totalTests) * 100).round() : 0}%',
-                    style: context.textTheme.bodyLarge?.copyWith(
-                      fontWeight: FontWeight.bold,
-                      color: const Color(0xFFFF8C00),
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 8),
-              Container(
-                height: 6,
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(3),
-                  color: Colors.grey.shade200,
-                ),
-                child: ClipRRect(
-                  borderRadius: BorderRadius.circular(3),
-                  child: LinearProgressIndicator(
-                    value: totalTests > 0 ? completedCount / totalTests : 0,
-                    backgroundColor: Colors.transparent,
-                    valueColor: AlwaysStoppedAnimation<Color>(
-                      completedCount == totalTests && totalTests > 0
-                          ? Colors.green.shade500
-                          : Colors.purple.shade500,
-                    ),
-                    minHeight: 6,
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildTestResults(
-      BuildContext context, WidgetRef ref, FactoryTestState state) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 20),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            'Manual Test Instructions:',
-            style: context.textTheme.headlineSmall?.copyWith(
-              fontWeight: FontWeight.bold,
-              color: Colors.black87,
-            ),
-          ),
-          const SizedBox(height: 16),
           Expanded(
-            child: ListView.builder(
-              itemCount: state.manualTests.tests.length,
+            child: ListView.separated(
+              itemCount: manualTests.tests.length,
+              separatorBuilder: (context, index) => const SizedBox(height: 6),
               itemBuilder: (context, index) {
-                final test = state.manualTests.tests[index];
-                return _buildTestItem(context, ref, test);
+                final test = manualTests.tests[index];
+                return _buildManualTestCard(context, ref, test);
               },
             ),
           ),
+
+          // Complete button
+          if (manualTests.isComplete)
+            Padding(
+              padding: const EdgeInsets.only(top: 16),
+              child: SizedBox(
+                width: double.infinity,
+                child: ElevatedButton(
+                  onPressed: () {
+                    // The provider will automatically transition to completed phase
+                    // when all tests are complete
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.green,
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(vertical: 16),
+                  ),
+                  child: const Text(
+                    'All Tests Complete!',
+                    style: TextStyle(fontSize: 16),
+                  ),
+                ),
+              ),
+            ),
         ],
       ),
     );
   }
 
-  Widget _buildTestItem(BuildContext context, WidgetRef ref, TestResult test) {
-    final canPerformTest = test.status == TestStatus.notStarted ||
-        test.status == TestStatus.running;
+  Widget _buildManualTestCard(
+      BuildContext context, WidgetRef ref, TestResult test) {
+    final isChargeTest = test.testName == 'Charge Test';
+    final isCaseCheck = test.testName == 'Case Check';
+    final isLcdOcaCheck = test.testName == 'LCD with OCA?';
+    final needsManualStart = !isChargeTest && !isCaseCheck && !isLcdOcaCheck;
 
-    return Container(
-      margin: const EdgeInsets.only(bottom: 16),
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.grey.shade200),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.grey.withValues(alpha: 0.1),
-            blurRadius: 4,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Container(
-                width: 40,
-                height: 40,
-                decoration: BoxDecoration(
-                  color: _getStatusColor(test.status).withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(20),
-                ),
-                child: Icon(
-                  _getStatusIcon(test.status),
-                  color: _getStatusColor(test.status),
-                  size: 20,
-                ),
-              ),
-              const SizedBox(width: 16),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      test.testName,
-                      style: const TextStyle(
-                        fontWeight: FontWeight.bold,
-                        fontSize: 16,
-                        color: Colors.black87,
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      _getTestDescription(test.testName),
-                      style: TextStyle(
-                        fontSize: 14,
-                        color: Colors.grey.shade600,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                decoration: BoxDecoration(
-                  color: _getStatusColor(test.status).withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Text(
-                  _getStatusText(test.status),
-                  style: TextStyle(
-                    color: _getStatusColor(test.status),
-                    fontWeight: FontWeight.w600,
-                    fontSize: 12,
-                  ),
-                ),
-              ),
-            ],
-          ),
-          if (canPerformTest) ...[
-            const SizedBox(height: 16),
-            Text(
-              _getTestInstructions(test.testName),
-              style: TextStyle(
-                fontSize: 14,
-                color: Colors.grey.shade700,
-                height: 1.5,
-              ),
-            ),
-            const SizedBox(height: 16),
+    return Card(
+      elevation: 1,
+      child: Padding(
+        padding: const EdgeInsets.all(12.0),
+        child: Column(
+          children: [
+            // Main test row - dense layout
             Row(
               children: [
-                Expanded(
-                  child: OutlinedButton(
-                    onPressed: () =>
-                        _markTestResult(ref, test.testName, TestStatus.fail),
-                    style: OutlinedButton.styleFrom(
-                      side: BorderSide(color: Colors.red.shade300),
-                      foregroundColor: Colors.red.shade600,
-                    ),
-                    child: const Text('Fail'),
-                  ),
-                ),
+                _buildStatusIcon(test.status),
                 const SizedBox(width: 12),
                 Expanded(
-                  child: ElevatedButton(
-                    onPressed: () =>
-                        _markTestResult(ref, test.testName, TestStatus.pass),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.green,
-                      foregroundColor: Colors.white,
-                    ),
-                    child: const Text('Pass'),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        test.testName,
+                        style: const TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      Text(
+                        _getTestDescription(test.testName),
+                        style: const TextStyle(
+                          fontSize: 12,
+                          color: Colors.grey,
+                        ),
+                      ),
+                    ],
                   ),
                 ),
+                _buildStatusText(test.status),
               ],
             ),
+
+            // Test controls
+            if (test.status != TestStatus.pass) ...[
+              const SizedBox(height: 10),
+              _buildTestControls(
+                  context, ref, test, isChargeTest, needsManualStart),
+            ],
           ],
-        ],
+        ),
       ),
     );
   }
 
-  IconData _getStatusIcon(TestStatus status) {
-    switch (status) {
-      case TestStatus.notStarted:
-        return Icons.schedule;
-      case TestStatus.running:
-        return Icons.autorenew;
-      case TestStatus.pass:
-        return Icons.check_circle;
-      case TestStatus.fail:
-        return Icons.cancel;
+  Widget _buildTestControls(BuildContext context, WidgetRef ref,
+      TestResult test, bool isChargeTest, bool needsManualStart) {
+    // Charge Test: Auto-started, show Pass/Fail immediately
+    if (isChargeTest) {
+      return _buildPassFailButtons(context, ref, test);
+    }
+
+    // Case Check and LCD with OCA: Visual only, show Pass/Fail immediately
+    if (test.testName == 'Case Check' || test.testName == 'LCD with OCA?') {
+      return _buildPassFailButtons(context, ref, test);
+    }
+
+    // Other tests: Need manual start first
+    if (needsManualStart) {
+      if (test.status == TestStatus.notStarted) {
+        return _buildStartButton(ref, test);
+      } else {
+        return Column(
+          children: [
+            _buildPassFailButtons(context, ref, test),
+            if (test.testName == 'Screen White Test') ...[
+              const SizedBox(height: 8),
+              _buildReturnToNormalButton(ref),
+            ],
+          ],
+        );
+      }
+    }
+
+    return const SizedBox.shrink();
+  }
+
+  Widget _buildStartButton(WidgetRef ref, TestResult test) {
+    return SizedBox(
+      width: double.infinity,
+      child: ElevatedButton.icon(
+        onPressed: () => _startTest(ref, test.testName),
+        icon: const Icon(Icons.play_arrow, size: 18),
+        label: const Text('Start Test'),
+        style: ElevatedButton.styleFrom(
+          backgroundColor: Colors.blue,
+          foregroundColor: Colors.white,
+          padding: const EdgeInsets.symmetric(vertical: 12),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildPassFailButtons(
+      BuildContext context, WidgetRef ref, TestResult test) {
+    return Row(
+      children: [
+        Expanded(
+          child: ElevatedButton.icon(
+            onPressed: () => ref
+                .read(factoryTestProvider.notifier)
+                .updateUserConfirmation(test.testName, true),
+            icon: const Icon(Icons.check, size: 16),
+            label: const Text('Pass'),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.green,
+              foregroundColor: Colors.white,
+              padding: const EdgeInsets.symmetric(vertical: 10),
+            ),
+          ),
+        ),
+        const SizedBox(width: 8),
+        Expanded(
+          child: ElevatedButton.icon(
+            onPressed: () => _showFailDialog(context, ref, test),
+            icon: const Icon(Icons.close, size: 16),
+            label: const Text('Fail'),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.red,
+              foregroundColor: Colors.white,
+              padding: const EdgeInsets.symmetric(vertical: 10),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildReturnToNormalButton(WidgetRef ref) {
+    return SizedBox(
+      width: double.infinity,
+      child: OutlinedButton.icon(
+        onPressed: () =>
+            ref.read(factoryTestProvider.notifier).returnToNormalScreen(),
+        icon: const Icon(Icons.visibility, size: 16),
+        label: const Text('Return to Normal Screen'),
+        style: OutlinedButton.styleFrom(
+          padding: const EdgeInsets.symmetric(vertical: 8),
+        ),
+      ),
+    );
+  }
+
+  void _startTest(WidgetRef ref, String testName) {
+    switch (testName) {
+      case 'Screen Edge Test':
+        ref.read(factoryTestProvider.notifier).startScreenEdgeTest();
+        break;
+      case 'Screen Black Test':
+        ref.read(factoryTestProvider.notifier).startScreenBlackTest();
+        break;
+      case 'Screen White Test':
+        ref.read(factoryTestProvider.notifier).startScreenWhiteTest();
+        break;
+      case 'Button Test':
+        ref.read(factoryTestProvider.notifier).startButtonTest();
+        break;
+      case 'Buzzer Test':
+        ref.read(factoryTestProvider.notifier).startBuzzerTest();
+        break;
+      case 'Vibration Test':
+        ref.read(factoryTestProvider.notifier).startVibrationTest();
+        break;
     }
   }
 
-  Color _getStatusColor(TestStatus status) {
-    switch (status) {
-      case TestStatus.notStarted:
-        return Colors.grey;
-      case TestStatus.running:
-        return const Color(0xFFFF8C00);
-      case TestStatus.pass:
-        return Colors.green;
-      case TestStatus.fail:
-        return Colors.red;
-    }
-  }
-
-  String _getStatusText(TestStatus status) {
-    switch (status) {
-      case TestStatus.notStarted:
-        return 'Pending';
-      case TestStatus.running:
-        return 'Running';
-      case TestStatus.pass:
-        return 'Passed';
-      case TestStatus.fail:
-        return 'Failed';
-    }
+  void _showFailDialog(BuildContext context, WidgetRef ref, TestResult test) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text('Mark ${test.testName} as Failed'),
+        content: const Text(
+          'Are you sure you want to mark this test as failed? You can add a comment to explain the issue.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              Navigator.of(context).pop();
+              ref
+                  .read(factoryTestProvider.notifier)
+                  .updateUserConfirmation(test.testName, false);
+            },
+            style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+            child: const Text('Mark as Failed',
+                style: TextStyle(color: Colors.white)),
+          ),
+        ],
+      ),
+    );
   }
 
   String _getTestDescription(String testName) {
-    switch (testName.toLowerCase()) {
-      case 'charge test':
-        return 'Test device charging functionality';
-      case 'screen test - edge':
-        return 'Test screen edge functionality';
-      case 'screen test - black':
-        return 'Test screen black display';
-      case 'screen test - white':
-        return 'Test screen white display';
-      case 'button test':
-        return 'Test device button functionality';
-      case 'buzzer test':
-        return 'Test device buzzer';
-      case 'vibration test':
-        return 'Test device vibration motor';
-      case 'case check':
-        return 'Visual inspection of device case';
+    switch (testName) {
+      case 'Charge Test':
+        return 'Connect charger and verify connection/disconnection';
+      case 'Screen Edge Test':
+        return 'Check if all screen edges are visible clearly';
+      case 'Screen Black Test':
+        return 'Look for any bright pixels on black screen';
+      case 'Screen White Test':
+        return 'Look for any dark pixels on white screen';
+      case 'Button Test':
+        return 'Press device button 3+ times to test responsiveness';
+      case 'Buzzer Test':
+        return 'Listen for clear beeps from device buzzer';
+      case 'Vibration Test':
+        return 'Feel for smooth vibration from device motor';
+      case 'Case Check':
+        return 'Visual inspection: no scratches, cracks, or defects';
+      case 'LCD with OCA?':
+        return 'Visual inspection: Does the LCD have OCA (Optically Clear Adhesive)?';
       default:
         return 'Manual test';
     }
   }
 
-  String _getTestInstructions(String testName) {
-    switch (testName.toLowerCase()) {
-      case 'charge test':
-        return 'Connect the charging cable to the device. Check if the charging indicator appears on the screen and the LED lights up.';
-      case 'screen test - edge':
-        return 'Check if the screen edges are working properly. Look for any dead pixels or discoloration around the edges.';
-      case 'screen test - black':
-        return 'The screen should display a solid black color. Check for any bright pixels or inconsistencies.';
-      case 'screen test - white':
-        return 'The screen should display a solid white color. Check for any dark pixels or color inconsistencies.';
-      case 'button test':
-        return 'Press the device button multiple times. Check if the button clicks properly and responds as expected.';
-      case 'buzzer test':
-        return 'Listen for the buzzer sound. The device should produce a clear audible beep when activated.';
-      case 'vibration test':
-        return 'Feel for device vibration. The device should vibrate smoothly when the vibration motor is activated.';
-      case 'case check':
-        return 'Visually inspect the device case for any cracks, scratches, or manufacturing defects. Check all edges and surfaces.';
-      default:
-        return 'Follow the test instructions and mark as pass or fail based on the results.';
+  Widget _buildStatusIcon(TestStatus status) {
+    switch (status) {
+      case TestStatus.notStarted:
+        return const Icon(
+          Icons.radio_button_unchecked,
+          color: Colors.grey,
+          size: 22,
+        );
+      case TestStatus.running:
+        return const SizedBox(
+          width: 22,
+          height: 22,
+          child: CircularProgressIndicator(
+            strokeWidth: 2,
+            valueColor: AlwaysStoppedAnimation<Color>(Colors.orange),
+          ),
+        );
+      case TestStatus.pass:
+        return const Icon(
+          Icons.check_circle,
+          color: Colors.green,
+          size: 22,
+        );
+      case TestStatus.fail:
+        return const Icon(
+          Icons.error,
+          color: Colors.red,
+          size: 22,
+        );
     }
   }
 
-  void _markTestResult(WidgetRef ref, String testName, TestStatus status) {
-    // This would call a method on the provider to update the test result
-    // For now, we'll just print since I don't have the exact method signature
-    debugPrint('Marking $testName as ${status.name}');
-    // ref.read(factoryTestProvider.notifier).updateManualTestResult(testName, status);
+  Widget _buildStatusText(TestStatus status) {
+    switch (status) {
+      case TestStatus.notStarted:
+        return const Text(
+          'Pending',
+          style: TextStyle(
+            color: Colors.grey,
+            fontWeight: FontWeight.bold,
+            fontSize: 12,
+          ),
+        );
+      case TestStatus.running:
+        return const Text(
+          'Running...',
+          style: TextStyle(
+            color: Colors.orange,
+            fontWeight: FontWeight.bold,
+            fontSize: 12,
+          ),
+        );
+      case TestStatus.pass:
+        return const Text(
+          'PASS',
+          style: TextStyle(
+            color: Colors.green,
+            fontWeight: FontWeight.bold,
+            fontSize: 12,
+          ),
+        );
+      case TestStatus.fail:
+        return const Text(
+          'FAIL',
+          style: TextStyle(
+            color: Colors.red,
+            fontWeight: FontWeight.bold,
+            fontSize: 12,
+          ),
+        );
+    }
   }
 }
