@@ -1,9 +1,7 @@
 import 'dart:convert';
 import 'dart:io';
 
-import 'package:airspothealth/core/services/network_service.dart';
 import 'package:airspothealth/core/utils/extensions.dart';
-import 'package:airspothealth/features/device_graph/providers/ble_device_provider.dart';
 import 'package:airspothealth/features/factory_test/models/factory_test_models.dart';
 import 'package:airspothealth/features/factory_test/providers/factory_test_provider.dart';
 import 'package:file_saver/file_saver.dart';
@@ -23,7 +21,6 @@ class SubmitResultsTab extends ConsumerStatefulWidget {
 class _SubmitResultsTabState extends ConsumerState<SubmitResultsTab> {
   final TextEditingController _commentController = TextEditingController();
   final TextEditingController _testedByController = TextEditingController();
-  bool _isSubmitting = false;
   bool _isExporting = false;
 
   @override
@@ -82,7 +79,9 @@ class _SubmitResultsTabState extends ConsumerState<SubmitResultsTab> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  _buildSubmissionSection(),
+                  _buildSubmissionSection(factoryTestState),
+                  const SizedBox(height: 16),
+                  _buildDeviceInfo(factoryTestState),
                   const SizedBox(height: 16),
                   _buildResultsSummary(factoryTestState),
                   const SizedBox(height: 16),
@@ -165,7 +164,7 @@ class _SubmitResultsTabState extends ConsumerState<SubmitResultsTab> {
     );
   }
 
-  Widget _buildSubmissionSection() {
+  Widget _buildSubmissionSection(FactoryTestState state) {
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(16),
@@ -267,19 +266,19 @@ class _SubmitResultsTabState extends ConsumerState<SubmitResultsTab> {
           SizedBox(
             width: double.infinity,
             child: ElevatedButton(
-              onPressed: _isSubmitting
+              onPressed: state.isSubmittingResults
                   ? null
-                  : () => _submitResults(ref.watch(factoryTestProvider)),
+                  : () => _submitResults(state),
               style: ElevatedButton.styleFrom(
                 backgroundColor: const Color(0xFFFF8C00),
                 foregroundColor: Colors.white,
-                padding: const EdgeInsets.symmetric(vertical: 12),
+                padding: const EdgeInsets.symmetric(vertical: 16),
                 shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(8),
+                  borderRadius: BorderRadius.circular(12),
                 ),
                 elevation: 0,
               ),
-              child: _isSubmitting
+              child: state.isSubmittingResults
                   ? const SizedBox(
                       height: 16,
                       width: 16,
@@ -291,12 +290,73 @@ class _SubmitResultsTabState extends ConsumerState<SubmitResultsTab> {
                   : const Text(
                       'Submit Test Results',
                       style: TextStyle(
-                        fontSize: 14,
                         fontWeight: FontWeight.w600,
+                        fontSize: 16,
                       ),
                     ),
             ),
           ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildDeviceInfo(FactoryTestState state) {
+    final device = ref.read(factoryTestProvider).selectedDeviceId;
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.04),
+            blurRadius: 6,
+            offset: const Offset(0, 1),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Device Information',
+            style: context.textTheme.titleMedium?.copyWith(
+              fontWeight: FontWeight.w600,
+              color: Colors.grey.shade800,
+            ),
+          ),
+          const SizedBox(height: 12),
+          Row(
+            children: [
+              Icon(Icons.devices, size: 18, color: Colors.grey.shade600),
+              const SizedBox(width: 12),
+              Text(
+                'Device: $device',
+                style: context.textTheme.bodyMedium?.copyWith(
+                  color: Colors.grey.shade700,
+                ),
+              ),
+            ],
+          ),
+          if (state.selectedDeviceVariant != null) ...[
+            const SizedBox(height: 8),
+            Row(
+              children: [
+                Icon(Icons.memory, size: 18, color: Colors.grey.shade600),
+                const SizedBox(width: 12),
+                Text(
+                  'Sensor: ${state.selectedDeviceVariant == 0 ? 'SCD40' : 'SCD41'}',
+                  style: context.textTheme.bodyMedium?.copyWith(
+                    color: Colors.grey.shade700,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ],
+            ),
+          ],
         ],
       ),
     );
@@ -646,13 +706,13 @@ class _SubmitResultsTabState extends ConsumerState<SubmitResultsTab> {
     });
 
     try {
-      final device = ref.read(bleDeviceProvider(state.selectedDeviceId!));
-      final fileName = _generateFileName(device.name);
+      final deviceId = ref.read(factoryTestProvider).selectedDeviceId;
+      final fileName = _generateFileName(deviceId!);
 
       if (format == 'csv') {
-        await _exportAsCsv(state, device, fileName);
+        await _exportAsCsv(state, deviceId, fileName);
       } else if (format == 'json') {
-        await _exportAsJson(state, device, fileName);
+        await _exportAsJson(state, deviceId, fileName);
       }
 
       if (mounted) {
@@ -672,8 +732,8 @@ class _SubmitResultsTabState extends ConsumerState<SubmitResultsTab> {
   }
 
   Future<void> _exportAsCsv(
-      FactoryTestState state, device, String fileName) async {
-    final csvContent = _generateCsvContent(state, device);
+      FactoryTestState state, String deviceId, String fileName) async {
+    final csvContent = _generateCsvContent(state, deviceId);
     final bytes = utf8.encode(csvContent);
 
     await FileSaver.instance.saveAs(
@@ -685,8 +745,8 @@ class _SubmitResultsTabState extends ConsumerState<SubmitResultsTab> {
   }
 
   Future<void> _exportAsJson(
-      FactoryTestState state, device, String fileName) async {
-    final jsonContent = _generateJsonContent(state, device);
+      FactoryTestState state, String deviceId, String fileName) async {
+    final jsonContent = _generateJsonContent(state, deviceId);
     final bytes = utf8.encode(jsonContent);
 
     await FileSaver.instance.saveAs(
@@ -705,20 +765,20 @@ class _SubmitResultsTabState extends ConsumerState<SubmitResultsTab> {
     });
 
     try {
-      final device = ref.read(bleDeviceProvider(state.selectedDeviceId!));
+      final deviceId = ref.read(factoryTestProvider).selectedDeviceId;
       final directory = await getApplicationDocumentsDirectory();
-      final fileName = _generateFileName(device.name);
+      final fileName = _generateFileName(deviceId!);
 
       // Create both CSV and JSON files
       final csvFile = File('${directory.path}/$fileName.csv');
       final jsonFile = File('${directory.path}/$fileName.json');
 
-      await csvFile.writeAsString(_generateCsvContent(state, device));
-      await jsonFile.writeAsString(_generateJsonContent(state, device));
+      await csvFile.writeAsString(_generateCsvContent(state, deviceId));
+      await jsonFile.writeAsString(_generateJsonContent(state, deviceId));
 
       await SharePlus.instance.share(ShareParams(
         files: [XFile(csvFile.path), XFile(jsonFile.path)],
-        text: 'Factory Test Results for ${device.name}',
+        text: 'Factory Test Results for $deviceId',
       ));
     } catch (e) {
       if (mounted) {
@@ -733,19 +793,18 @@ class _SubmitResultsTabState extends ConsumerState<SubmitResultsTab> {
     }
   }
 
-  String _generateFileName(String deviceName) {
+  String _generateFileName(String deviceId) {
     final timestamp = DateFormat('yyyy-MM-dd-HH-mm-ss').format(DateTime.now());
-    return '${deviceName.replaceAll(' ', '-')}-factory-test-$timestamp';
+    return '$deviceId-factory-test-$timestamp';
   }
 
-  String _generateCsvContent(FactoryTestState state, device) {
+  String _generateCsvContent(FactoryTestState state, String deviceId) {
     final buffer = StringBuffer();
 
     // Header information
     buffer.writeln('FACTORY TEST RESULTS');
-    buffer.writeln('Device Name,${device.name}');
-    buffer.writeln('Device ID,${device.deviceId}');
-    buffer.writeln('Firmware Version,${device.firmwareVersion}');
+    buffer.writeln('Device ID,$deviceId');
+    buffer.writeln('Device Variant,${state.selectedDeviceVariant}');
     buffer.writeln(
         'Test Date,${DateFormat('yyyy-MM-dd HH:mm:ss').format(DateTime.now())}');
     buffer.writeln('Tested By,${_testedByController.text}');
@@ -755,28 +814,26 @@ class _SubmitResultsTabState extends ConsumerState<SubmitResultsTab> {
     buffer.writeln();
 
     // Test results
-    buffer.writeln('Test Category,Test Name,Status,Comment');
+    buffer.writeln('Test Category,Test Name,Status,Comment,Value');
 
     for (final test in state.automaticTests.tests) {
       buffer.writeln(
-          'Automatic,${test.testName},${test.status.name.toUpperCase()},"${test.comment ?? ''}"');
+          'Automatic,${test.testName},${test.status.name.toUpperCase()},"${test.comment ?? ''}",${test.value}');
     }
 
     for (final test in state.manualTests.tests) {
       buffer.writeln(
-          'Manual,${test.testName},${test.status.name.toUpperCase()},"${test.comment ?? ''}"');
+          'Manual,${test.testName},${test.status.name.toUpperCase()},"${test.comment ?? ''}",${test.value}');
     }
 
     return buffer.toString();
   }
 
-  String _generateJsonContent(FactoryTestState state, device) {
+  String _generateJsonContent(FactoryTestState state, String deviceId) {
     final data = {
       'deviceInfo': {
-        'deviceName': device.name,
-        'deviceId': device.deviceId,
-        'macAddress': device.address,
-        'firmwareVersion': device.firmwareVersion,
+        'deviceId': deviceId,
+        'deviceVariant': state.selectedDeviceVariant,
       },
       'testInfo': {
         'testDate': DateTime.now().toIso8601String(),
@@ -806,71 +863,45 @@ class _SubmitResultsTabState extends ConsumerState<SubmitResultsTab> {
   }
 
   Future<void> _submitResults(FactoryTestState state) async {
-    if (_isSubmitting) return;
-
     // Validate required fields
     if (_testedByController.text.trim().isEmpty) {
       context.showSnackBar('Please enter the tester name');
       return;
     }
 
-    setState(() {
-      _isSubmitting = true;
-    });
-
     try {
-      final device = ref.read(bleDeviceProvider(state.selectedDeviceId!));
+      final device = ref.read(factoryTestProvider).selectedDeviceId;
 
-      // Prepare API payload according to the database structure
-      final payload = {
-        'mac_address': device.address,
-        'device_id': device.deviceId,
-        'tested_by': _testedByController.text.trim(),
-        'status': _isOverallSuccess(state) ? 'PASS' : 'FAIL',
-        'comment': _commentController.text.trim(),
-        'sensor_variant':
-            1, // Default to 1, should be extracted from device if available
-        'device_type': 'as1', // Default device type
-        'test_details': {
-          'manualTests': state.manualTests.tests
-              .map((test) => {
-                    'status': test.status.name == 'pass' ? 'Pass' : 'Fail',
-                    'comment': test.comment ?? '',
-                    'testName': test.testName,
-                  })
-              .toList(),
-          'automaticTests': state.automaticTests.tests
-              .map((test) => {
-                    'status': test.status.name == 'pass' ? 'Pass' : 'Fail',
-                    'comment': test.comment ?? '',
-                    'testName': test.testName,
-                  })
-              .toList(),
-        },
-      };
+      await ref.read(factoryTestProvider.notifier).submitTestResults(
+            macAddress: device!,
+            deviceId: device,
+            testedBy: _testedByController.text.trim(),
+            status: _isOverallSuccess(state) ? 'PASS' : 'FAIL',
+            comment: _commentController.text.trim().isEmpty
+                ? null
+                : _commentController.text.trim(),
+            sensorVariant:
+                ref.read(factoryTestProvider.notifier).getSensorVariant(device),
+            deviceType:
+                ref.read(factoryTestProvider.notifier).getDeviceType(device),
+          );
 
-      // Submit to API
-      final response =
-          await NetworkService.instance.post('/factory-test/submit', payload);
-
-      if (response.statusCode == 200 || response.statusCode == 201) {
+      // Check if submission was successful
+      final updatedState = ref.read(factoryTestProvider);
+      if (updatedState.resultsSubmitted) {
         if (mounted) {
           context.showSnackBar('Test results submitted successfully!');
-          // Optionally navigate back or show success dialog
           _showSubmissionSuccessDialog();
         }
-      } else {
-        throw Exception('Server responded with status ${response.statusCode}');
+      } else if (updatedState.submissionError != null) {
+        if (mounted) {
+          context.showSnackBar(updatedState.submissionError!);
+        }
       }
     } catch (e) {
+      debugPrint('Error submitting results: $e');
       if (mounted) {
-        context.showSnackBar('Submission failed: $e');
-      }
-    } finally {
-      if (mounted) {
-        setState(() {
-          _isSubmitting = false;
-        });
+        context.showSnackBar('Failed to submit results: ${e.toString()}');
       }
     }
   }
@@ -894,7 +925,9 @@ class _SubmitResultsTabState extends ConsumerState<SubmitResultsTab> {
           style: TextStyle(fontWeight: FontWeight.w600),
         ),
         content: const Text(
-          'Factory test results have been successfully submitted to the server.',
+          'Factory test results have been successfully submitted to the server.\n\n'
+          'The device is now restarting in normal mode.',
+          style: TextStyle(height: 1.4),
         ),
         actions: [
           ElevatedButton(

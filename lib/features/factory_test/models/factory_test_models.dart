@@ -166,42 +166,74 @@ class FactoryTestState {
   final FactoryTestPhase phase;
   final FactoryTestConnectionState connectionState;
   final String? selectedDeviceId;
+  final int? selectedDeviceVariant;
   final List<FactoryTestDevice> availableDevices;
   final AutomaticTestsState automaticTests;
   final ManualTestsState manualTests;
   final String? error;
   final bool isScanning;
+  final bool isSubmittingResults;
+  final bool resultsSubmitted;
+  final String? submissionError;
 
   FactoryTestState({
     required this.phase,
     required this.connectionState,
     this.selectedDeviceId,
+    this.selectedDeviceVariant,
     required this.availableDevices,
     required this.automaticTests,
     required this.manualTests,
     this.error,
     this.isScanning = false,
+    this.isSubmittingResults = false,
+    this.resultsSubmitted = false,
+    this.submissionError,
   });
+
+  static FactoryTestState emptyState() {
+    return FactoryTestState(
+      phase: FactoryTestPhase.deviceSelection,
+      connectionState: FactoryTestConnectionState.idle,
+      availableDevices: [],
+      automaticTests: AutomaticTestsState(tests: []),
+      manualTests: ManualTestsState(tests: [], userConfirmations: {}),
+      error: null,
+      isScanning: false,
+      isSubmittingResults: false,
+      resultsSubmitted: false,
+      submissionError: null,
+    );
+  }
 
   FactoryTestState copyWith({
     FactoryTestPhase? phase,
     FactoryTestConnectionState? connectionState,
     String? selectedDeviceId,
+    int? selectedDeviceVariant,
     List<FactoryTestDevice>? availableDevices,
     AutomaticTestsState? automaticTests,
     ManualTestsState? manualTests,
     String? error,
     bool? isScanning,
+    bool? isSubmittingResults,
+    bool? resultsSubmitted,
+    String? submissionError,
   }) {
     return FactoryTestState(
       phase: phase ?? this.phase,
       connectionState: connectionState ?? this.connectionState,
       selectedDeviceId: selectedDeviceId ?? this.selectedDeviceId,
+      selectedDeviceVariant:
+          selectedDeviceVariant ?? this.selectedDeviceVariant,
       availableDevices: availableDevices ?? this.availableDevices,
       automaticTests: automaticTests ?? this.automaticTests,
       manualTests: manualTests ?? this.manualTests,
       error: error ?? this.error,
       isScanning: isScanning ?? this.isScanning,
+      isSubmittingResults: isSubmittingResults ?? this.isSubmittingResults,
+      resultsSubmitted: resultsSubmitted ?? this.resultsSubmitted,
+      submissionError: submissionError ?? this.submissionError,
     );
   }
 
