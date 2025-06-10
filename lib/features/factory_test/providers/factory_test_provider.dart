@@ -1000,6 +1000,32 @@ class FactoryTestNotifier extends AutoDisposeNotifier<FactoryTestState> {
     }
   }
 
+  /// Send 0xDE command to end factory test mode and restart device in normal mode
+  Future<void> endFactoryTestMode() async {
+    try {
+      debugPrint('Sending 0xDE command to end factory test mode');
+
+      // Send the factory test end command (0xDE)
+      final command = FactoryTestCommand(
+        type: FactoryTestCommandType.endFactoryTest,
+        command: DeviceCmdUtils.factoryTestEnd(),
+        timeout: const Duration(seconds: 5),
+        maxRetries: 1, // Only try once since device will restart
+      );
+
+      await _executeCommand(command);
+
+      // Clean up after sending command
+      _cleanup();
+
+      debugPrint('Factory test end command sent successfully');
+    } catch (error) {
+      debugPrint('Error sending factory test end command: $error');
+      // Clean up even if command fails
+      _cleanup();
+    }
+  }
+
   /// Reset factory test to start over
   void resetFactoryTest() {
     _clearAutomaticTestTimeout(); // Clear timeout before cleanup

@@ -171,15 +171,7 @@ class ManualTestsTab extends ConsumerWidget {
       if (test.status == TestStatus.notStarted) {
         return _buildStartButton(ref, test);
       } else {
-        return Column(
-          children: [
-            _buildPassFailButtons(context, ref, test),
-            if (test.testName == 'Screen White Test') ...[
-              const SizedBox(height: 8),
-              _buildReturnToNormalButton(ref),
-            ],
-          ],
-        );
+        return _buildPassFailButtons(context, ref, test);
       }
     }
 
