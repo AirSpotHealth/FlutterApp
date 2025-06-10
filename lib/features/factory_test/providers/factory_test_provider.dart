@@ -497,8 +497,6 @@ class FactoryTestNotifier extends AutoDisposeNotifier<FactoryTestState> {
       ),
     );
 
-    _bleService.disconnect(_connectedDevice!);
-
     _cleanup();
   }
 
