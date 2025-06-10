@@ -187,7 +187,7 @@ class _DeviceSelectionTabState extends ConsumerState<DeviceSelectionTab> {
               'Pull down to refresh or tap the refresh button',
               style: TextStyle(
                 fontSize: 12,
-                color: AppColors.textSecondary.withOpacity(0.7),
+                color: AppColors.textSecondary.withValues(alpha: .7),
               ),
             ),
           ],

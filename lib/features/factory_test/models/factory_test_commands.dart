@@ -146,6 +146,16 @@ class FactoryTestResponseParser {
         'Data Received: ${BleDataService.bytesToHexStr(data)}, testType: $testType, result: $result');
 
     switch (testType) {
+      case 0: // Sensor variant detection
+        final sensorVariant = data.length > 5 ? data[5] : 0;
+        final sensorType = sensorVariant == 0 ? 'SCD40' : 'SCD41';
+        return {
+          'testName': 'Sensor Variant Detection',
+          'status': 'Pass', // This is informational, always pass
+          'comment': 'Detected sensor: $sensorType',
+          'value': sensorVariant,
+        };
+
       case 1: // Sensor test
         if (data.length >= 8) {
           final co2Value = (data[6] << 8) | data[7];
