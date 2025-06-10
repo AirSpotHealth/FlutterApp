@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:airspothealth/core/services/ble_service.dart';
+import 'package:airspothealth/core/services/network_service.dart';
 import 'package:airspothealth/core/utils/constants.dart';
 import 'package:airspothealth/core/utils/device_cmd_utils.dart';
 import 'package:airspothealth/features/factory_test/models/factory_test_commands.dart';
@@ -462,26 +463,17 @@ class FactoryTestNotifier extends AutoDisposeNotifier<FactoryTestState> {
     final commandByte = data[2];
 
     switch (commandByte) {
-      case 0xDD: // Automatic test result
-        _handleAutomaticTestResult(data);
-        break;
-      case 0xDA: // Charge status
-        _handleChargeStatusResult(data);
-        break;
-      case 0xD9: // Button press count
-        _handleButtonPressResult(data);
-        break;
-      case 0xDC: // Screen test result
-        _handleScreenTestResult(data);
-        break;
-      case 0xDB: // Buzzer test result
-        _handleBuzzerTestResult(data);
+      case 0xD0: // Factory mode stopped from device
+        _handleFactoryModeStopped(data);
         break;
       case 0xD2: // Manual test started response
         _handleManualTestStartedResponse(data);
         break;
       case 0xD3: // Manual test confirmation response
         _handleManualTestConfirmationResponse(data);
+        break;
+      case 0xDD: // Automatic test result
+        _handleAutomaticTestResult(data);
         break;
       default:
         debugPrint(
@@ -490,10 +482,44 @@ class FactoryTestNotifier extends AutoDisposeNotifier<FactoryTestState> {
     }
   }
 
+  /// Handle factory mode stopped from device
+  void _handleFactoryModeStopped(List<int> data) {
+    debugPrint('Factory mode stopped from device');
+    state = FactoryTestState(
+      phase: FactoryTestPhase.deviceSelection,
+      connectionState: FactoryTestConnectionState.idle,
+      availableDevices: [],
+      automaticTests:
+          AutomaticTestsState(tests: _createInitialAutomaticTests()),
+      manualTests: ManualTestsState(
+        tests: _createInitialManualTests(),
+        userConfirmations: {},
+      ),
+    );
+
+    _bleService.disconnect(_connectedDevice!);
+
+    _cleanup();
+  }
+
   /// Handle automatic test results
   void _handleAutomaticTestResult(List<int> data) {
     final result = FactoryTestResponseParser.parseAutomaticTestResult(data);
     final testName = result['testName'] as String;
+
+    // Check if this is sensor variant detection
+    if (testName == 'Sensor Variant Detection') {
+      final sensorVariant = result['value'] as int?;
+
+      debugPrint('Detected sensor variant: $sensorVariant');
+
+      // Store the detected sensor variant in state
+      state = state.copyWith(selectedDeviceVariant: sensorVariant);
+
+      // This is an informational test, so we don't need to track it in the test list
+      // Just log it and continue
+      return;
+    }
 
     final updatedTests = state.automaticTests.tests.map((test) {
       if (test.testName == testName) {
@@ -528,81 +554,6 @@ class FactoryTestNotifier extends AutoDisposeNotifier<FactoryTestState> {
       // Auto-start charge test (it's automatically available after automatic tests)
       _autoStartChargeTest();
     }
-  }
-
-  /// Handle charge status result
-  void _handleChargeStatusResult(List<int> data) {
-    final chargeStatus = FactoryTestResponseParser.parseChargeStatus(data);
-
-    final updatedTests = state.manualTests.tests.map((test) {
-      if (test.testName == 'Charge Test') {
-        // Only update if test hasn't been manually confirmed yet
-        if (test.status == TestStatus.running) {
-          return test.copyWith(
-            status: chargeStatus.isCharging || chargeStatus.isDisconnected
-                ? TestStatus.pass
-                : TestStatus.fail,
-            comment: chargeStatus.description,
-            timestamp: DateTime.now(),
-            deviceResponseReceived: true,
-          );
-        }
-        // If already passed/failed by user, don't override
-        return test;
-      }
-      return test;
-    }).toList();
-
-    state = state.copyWith(
-      manualTests: state.manualTests.copyWith(tests: updatedTests),
-    );
-  }
-
-  /// Handle button press result
-  void _handleButtonPressResult(List<int> data) {
-    final buttonCount = FactoryTestResponseParser.parseButtonPressCount(data);
-
-    final updatedTests = state.manualTests.tests.map((test) {
-      if (test.testName == 'Button Test') {
-        return test.copyWith(
-          status: buttonCount.count >= 3 ? TestStatus.pass : TestStatus.fail,
-          comment: 'Button pressed ${buttonCount.count} times',
-          value: buttonCount.count,
-          timestamp: DateTime.now(),
-          deviceResponseReceived: true,
-        );
-      }
-      return test;
-    }).toList();
-
-    state = state.copyWith(
-      manualTests: state.manualTests.copyWith(tests: updatedTests),
-    );
-  }
-
-  /// Handle screen test result
-  void _handleScreenTestResult(List<int> data) {
-    final success = FactoryTestResponseParser.parseGenericResponse(data);
-    // Screen test success is handled by user confirmation
-  }
-
-  /// Handle buzzer test result
-  void _handleBuzzerTestResult(List<int> data) {
-    final success = FactoryTestResponseParser.parseGenericResponse(data);
-
-    final updatedTests = state.manualTests.tests.map((test) {
-      if (test.testName == 'Buzzer Test') {
-        return test.copyWith(
-          deviceResponseReceived: true,
-          timestamp: DateTime.now(),
-        );
-      }
-      return test;
-    }).toList();
-
-    state = state.copyWith(
-      manualTests: state.manualTests.copyWith(tests: updatedTests),
-    );
   }
 
   /// Handle manual test started response (0xD2 response)
@@ -772,20 +723,6 @@ class FactoryTestNotifier extends AutoDisposeNotifier<FactoryTestState> {
       debugPrint('Error starting screen white test: $error');
       await _updateTestStatus(
           'Screen White Test', TestStatus.fail, 'Failed to start test: $error');
-    }
-  }
-
-  Future<void> returnToNormalScreen() async {
-    try {
-      final command = FactoryTestCommand(
-        type: FactoryTestCommandType.displayScreenTest,
-        command: DeviceCmdUtils.displayScreenTest(ScreenTestType.normal.value),
-      );
-      await _executeCommand(command);
-
-      debugPrint('Return to normal screen command sent successfully');
-    } catch (error) {
-      debugPrint('Error returning to normal screen: $error');
     }
   }
 
@@ -1024,6 +961,230 @@ class FactoryTestNotifier extends AutoDisposeNotifier<FactoryTestState> {
       // Clean up even if command fails
       _cleanup();
     }
+  }
+
+  /// Submit factory test results to the API
+  Future<void> submitTestResults({
+    required String macAddress,
+    required String deviceId,
+    required String testedBy,
+    required String status,
+    String? comment,
+    int sensorVariant = 0,
+    String deviceType = 'as1',
+  }) async {
+    // Set submitting state
+    state = state.copyWith(
+      isSubmittingResults: true,
+      submissionError: null,
+      resultsSubmitted: false,
+    );
+
+    try {
+      // Create automatic tests array
+      final List<Map<String, dynamic>> automaticTests = [];
+      for (final test in state.automaticTests.tests) {
+        automaticTests.add({
+          'status': test.status.name == 'pass' ? 'Pass' : 'Fail',
+          'value': _formatTestValue(test.testName, test.value),
+          'testName': test.testName,
+        });
+      }
+
+      // Create manual tests array
+      final List<Map<String, dynamic>> manualTests = [];
+      for (final test in state.manualTests.tests) {
+        manualTests.add({
+          'status': test.status.name == 'pass' ? 'Pass' : 'Fail',
+          'value': _formatTestValue(test.testName, test.value),
+          'testName': test.testName,
+        });
+      }
+
+      // Structure test_details as an object with automaticTests and manualTests
+      final Map<String, dynamic> testDetails = {
+        'automaticTests': automaticTests,
+        'manualTests': manualTests,
+      };
+
+      // Prepare API payload according to the new structure
+      final payload = {
+        'mac_address': macAddress,
+        'device_id': deviceId,
+        'tested_by': testedBy,
+        'status': status,
+        'comment': comment?.isEmpty == true ? null : comment,
+        'sensor_variant': sensorVariant,
+        'device_type': deviceType,
+        'test_details': testDetails,
+      };
+
+      debugPrint('Submitting factory test results: ${payload.toString()}');
+
+      // Get API key from environment
+      const apiKey = String.fromEnvironment('API_KEY');
+
+      // Prepare headers
+      final headers = <String, String>{};
+      if (apiKey.isNotEmpty) {
+        headers['x-api-key'] = apiKey;
+      }
+
+      // Submit to API with headers
+      final response = await NetworkService.instance.post(
+        '/device_tests',
+        payload,
+        headers: headers.isNotEmpty ? headers : null,
+      );
+
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        debugPrint('Factory test results submitted successfully');
+
+        // Send 0xDE command to end factory test mode and restart device
+        debugPrint(
+            'Sending 0xDE command to end factory test mode after successful submission');
+        try {
+          await endFactoryTestMode();
+          debugPrint('Factory test mode ended successfully after submission');
+        } catch (commandError) {
+          debugPrint(
+              'Warning: Failed to send end factory test command after submission: $commandError');
+          // Don't fail the submission if the command fails, just log it
+        }
+
+        state = state.copyWith(
+          isSubmittingResults: false,
+          resultsSubmitted: true,
+          submissionError: null,
+        );
+      } else {
+        final errorMessage = response.data != null
+            ? 'Server error: ${response.data}'
+            : 'Server responded with status ${response.statusCode}';
+        throw Exception(errorMessage);
+      }
+    } catch (e) {
+      debugPrint('Factory test submission error: $e');
+      String errorMessage = 'Submission failed';
+      if (e.toString().contains('DioException')) {
+        errorMessage =
+            'Network error: Please check your internet connection ${e.toString()}';
+      } else if (e.toString().contains('Server error')) {
+        errorMessage = e.toString().replaceFirst('Exception: ', '');
+      } else {
+        errorMessage = 'Submission failed: ${e.toString()}';
+      }
+
+      state = state.copyWith(
+        isSubmittingResults: false,
+        resultsSubmitted: false,
+        submissionError: errorMessage,
+      );
+    }
+  }
+
+  /// Get sensor variant from device info
+  int getSensorVariant(dynamic device) {
+    // Use the detected sensor variant from the device if available
+    if (state.selectedDeviceVariant != null) {
+      debugPrint(
+          'Using detected sensor variant: ${state.selectedDeviceVariant}');
+      return state.selectedDeviceVariant!;
+    }
+
+    // Fallback: Try to extract sensor variant from device properties
+    if (device?.firmwareVersion != null) {
+      // Implement logic here to determine sensor variant based on firmware
+      return 1;
+    }
+
+    // Default sensor variant if not detected
+    debugPrint('No sensor variant detected, using default: 1');
+    return 1;
+  }
+
+  /// Get device type from device info
+  String getDeviceType(dynamic device) {
+    return 'as1'; // Default device type
+  }
+
+  /// Format test value with appropriate suffix based on test name
+  dynamic _formatTestValue(String testName, dynamic value) {
+    if (value == null) return null;
+
+    switch (testName) {
+      case 'Sensor Test':
+        return '$value ppm';
+      case 'Battery Voltage Test':
+        return '${value}mV';
+      case 'LF Crystal Test':
+        return '$value kHz';
+      case 'Memory Test':
+      case 'LCD Controller Test':
+      case 'Charge Test':
+      case 'Screen Edge Test':
+      case 'Screen Black Test':
+      case 'Screen White Test':
+      case 'Button Test':
+      case 'Buzzer Test':
+      case 'Vibration Test':
+      case 'Case Check':
+      case 'LCD with OCA?':
+        return null; // These tests typically don't have numeric values
+      default:
+        return value; // Return raw value for unknown tests
+    }
+  }
+
+  /// Export factory test results in the specified format
+  Map<String, dynamic> exportTestResults({
+    required String macAddress,
+    required String deviceId,
+    required String testedBy,
+    required String status,
+    String? comment,
+    int sensorVariant = 0,
+    String deviceType = 'as1',
+  }) {
+    // Create automatic tests array
+    final List<Map<String, dynamic>> automaticTests = [];
+    for (final test in state.automaticTests.tests) {
+      automaticTests.add({
+        'status': test.status.name == 'pass' ? 'Pass' : 'Fail',
+        'value': _formatTestValue(test.testName, test.value),
+        'testName': test.testName,
+      });
+    }
+
+    // Create manual tests array
+    final List<Map<String, dynamic>> manualTests = [];
+    for (final test in state.manualTests.tests) {
+      manualTests.add({
+        'status': test.status.name == 'pass' ? 'Pass' : 'Fail',
+        'value': _formatTestValue(test.testName, test.value),
+        'testName': test.testName,
+      });
+    }
+
+    // Structure test_details as an object with automaticTests and manualTests
+    final Map<String, dynamic> testDetails = {
+      'automaticTests': automaticTests,
+      'manualTests': manualTests,
+    };
+
+    // Prepare export payload according to the specified structure
+    final exportData = {
+      'mac_address': macAddress,
+      'device_id': deviceId,
+      'tested_by': testedBy,
+      'status': status,
+      'comment': comment?.isEmpty == true ? null : comment,
+      'sensor_variant': sensorVariant,
+      'device_type': deviceType,
+      'test_details': testDetails,
+    };
+
+    return exportData;
   }
 
   /// Reset factory test to start over

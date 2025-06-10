@@ -209,6 +209,8 @@ class _FactoryTestPageState extends ConsumerState<FactoryTestPage>
 
   Widget _buildHeader(FactoryTestState state) {
     String deviceName = 'Select Device';
+    String? sensorInfo;
+
     if (state.selectedDeviceId != null) {
       final device = state.availableDevices
           .where((d) => d.deviceId == state.selectedDeviceId)
@@ -216,6 +218,12 @@ class _FactoryTestPageState extends ConsumerState<FactoryTestPage>
       if (device != null) {
         deviceName = device.name;
       }
+    }
+
+    // Add sensor variant info if detected
+    if (state.selectedDeviceVariant != null) {
+      final sensorType = state.selectedDeviceVariant == 0 ? 'SCD40' : 'SCD41';
+      sensorInfo = 'Sensor: $sensorType';
     }
 
     return Container(
@@ -255,6 +263,14 @@ class _FactoryTestPageState extends ConsumerState<FactoryTestPage>
                         color: AppColors.textOnPrimary,
                       ),
                     ),
+                    if (sensorInfo != null)
+                      Text(
+                        sensorInfo,
+                        style: context.textTheme.bodySmall?.copyWith(
+                          color: AppColors.textOnPrimary.withValues(alpha: 0.8),
+                          fontStyle: FontStyle.italic,
+                        ),
+                      ),
                   ],
                 ),
               ),

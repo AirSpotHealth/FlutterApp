@@ -143,7 +143,8 @@ class ManualTestsTab extends ConsumerWidget {
             ),
 
             // Test controls
-            if (test.status != TestStatus.pass) ...[
+            if (test.status != TestStatus.pass &&
+                test.status != TestStatus.fail) ...[
               const SizedBox(height: 10),
               _buildTestControls(
                   context, ref, test, isChargeTest, needsManualStart),
@@ -226,21 +227,6 @@ class ManualTestsTab extends ConsumerWidget {
           ),
         ),
       ],
-    );
-  }
-
-  Widget _buildReturnToNormalButton(WidgetRef ref) {
-    return SizedBox(
-      width: double.infinity,
-      child: OutlinedButton.icon(
-        onPressed: () =>
-            ref.read(factoryTestProvider.notifier).returnToNormalScreen(),
-        icon: const Icon(Icons.visibility, size: 16),
-        label: const Text('Return to Normal Screen'),
-        style: OutlinedButton.styleFrom(
-          padding: const EdgeInsets.symmetric(vertical: 8),
-        ),
-      ),
     );
   }
 
