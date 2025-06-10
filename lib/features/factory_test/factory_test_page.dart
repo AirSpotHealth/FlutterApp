@@ -40,6 +40,117 @@ class _FactoryTestPageState extends ConsumerState<FactoryTestPage>
     super.dispose();
   }
 
+  /// Check if any tests are currently in progress
+  bool _isTestInProgress(FactoryTestState state) {
+    // Check if automatic tests are running
+    if (state.automaticTests.isRunning) return true;
+
+    // Check if in connecting/factory mode setup phases
+    if (state.phase == FactoryTestPhase.connecting ||
+        state.phase == FactoryTestPhase.enteringFactoryMode ||
+        state.phase == FactoryTestPhase.reconnecting ||
+        state.phase == FactoryTestPhase.runningAutomaticTests ||
+        state.phase == FactoryTestPhase.runningManualTests) {
+      return true;
+    }
+
+    // Check if any manual tests have been started (not in notStarted state)
+    if (state.manualTests.tests.any((test) =>
+        test.status == TestStatus.running ||
+        test.status == TestStatus.pass ||
+        test.status == TestStatus.fail)) {
+      return true;
+    }
+
+    return false;
+  }
+
+  /// Handle back navigation with confirmation if tests are in progress
+  Future<bool> _handleBackNavigation() async {
+    final factoryTestState = ref.read(factoryTestProvider);
+
+    if (_isTestInProgress(factoryTestState)) {
+      return await _showExitConfirmationDialog() ?? false;
+    }
+
+    return true; // Allow navigation if no tests in progress
+  }
+
+  /// Show confirmation dialog when trying to exit during tests
+  Future<bool?> _showExitConfirmationDialog() async {
+    return showDialog<bool>(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => AlertDialog(
+        backgroundColor: AppColors.backgroundPrimary,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(16),
+        ),
+        title: Row(
+          children: [
+            Icon(
+              Icons.warning_rounded,
+              color: AppColors.brandColorRed,
+              size: 24,
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Text(
+                'Exit Factory Test?',
+                style: context.textTheme.headlineSmall?.copyWith(
+                  fontWeight: FontWeight.bold,
+                  color: AppColors.textPrimary,
+                ),
+              ),
+            ),
+          ],
+        ),
+        content: Text(
+          'Tests are currently in progress. If you exit now:\n\n'
+          '• All test data will be lost\n'
+          '• The device will restart in normal mode\n'
+          '• You will need to start the factory test process again\n\n'
+          'Are you sure you want to continue?',
+          style: context.textTheme.bodyMedium?.copyWith(
+            color: AppColors.textPrimary,
+            height: 1.4,
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: Text(
+              'Stay',
+              style: context.textTheme.bodyMedium?.copyWith(
+                color: AppColors.textSecondary,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ),
+          ElevatedButton(
+            onPressed: () async {
+              Navigator.of(context).pop(true);
+              // Send 0xDE command to end factory test mode and restart device in normal mode
+              await ref.read(factoryTestProvider.notifier).endFactoryTestMode();
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.brandColorRed,
+              foregroundColor: AppColors.textOnPrimary,
+              elevation: 0,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(8),
+              ),
+            ),
+            child: const Text(
+              'Exit & Restart Device',
+              style: TextStyle(fontWeight: FontWeight.w600),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final factoryTestState = ref.watch(factoryTestProvider);
@@ -49,37 +160,49 @@ class _FactoryTestPageState extends ConsumerState<FactoryTestPage>
       _updateTabBasedOnProgress(factoryTestState);
     });
 
-    return Scaffold(
-      backgroundColor: AppColors.backgroundSecondary,
-      body: Column(
-        children: [
-          _buildHeader(factoryTestState),
-          _buildTabCards(factoryTestState),
-          Expanded(
-            child: PageView(
-              controller: _pageController,
-              onPageChanged: (index) {
-                if (_isTabEnabled(index, factoryTestState)) {
-                  _tabController.animateTo(index);
-                } else {
-                  // Don't allow swiping to disabled pages
-                  _pageController.animateToPage(
-                    _tabController.index,
-                    duration: const Duration(milliseconds: 300),
-                    curve: Curves.easeInOut,
-                  );
-                  _showTabRestrictedMessage(index);
-                }
-              },
-              children: const [
-                DeviceSelectionTab(),
-                AutomaticTestsTab(),
-                ManualTestsTab(),
-                SubmitResultsTab(),
-              ],
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, result) async {
+        if (didPop) return;
+
+        final navigator = Navigator.of(context);
+        final shouldPop = await _handleBackNavigation();
+        if (shouldPop && mounted) {
+          navigator.pop();
+        }
+      },
+      child: Scaffold(
+        backgroundColor: AppColors.backgroundSecondary,
+        body: Column(
+          children: [
+            _buildHeader(factoryTestState),
+            _buildTabCards(factoryTestState),
+            Expanded(
+              child: PageView(
+                controller: _pageController,
+                onPageChanged: (index) {
+                  if (_isTabEnabled(index, factoryTestState)) {
+                    _tabController.animateTo(index);
+                  } else {
+                    // Don't allow swiping to disabled pages
+                    _pageController.animateToPage(
+                      _tabController.index,
+                      duration: const Duration(milliseconds: 300),
+                      curve: Curves.easeInOut,
+                    );
+                    _showTabRestrictedMessage(index);
+                  }
+                },
+                children: const [
+                  DeviceSelectionTab(),
+                  AutomaticTestsTab(),
+                  ManualTestsTab(),
+                  SubmitResultsTab(),
+                ],
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
@@ -105,7 +228,13 @@ class _FactoryTestPageState extends ConsumerState<FactoryTestPage>
           child: Row(
             children: [
               IconButton(
-                onPressed: () => Navigator.of(context).pop(),
+                onPressed: () async {
+                  final navigator = Navigator.of(context);
+                  final shouldPop = await _handleBackNavigation();
+                  if (shouldPop && mounted) {
+                    navigator.pop();
+                  }
+                },
                 icon: const Icon(Icons.arrow_back,
                     color: AppColors.textOnPrimary),
               ),

@@ -1,5 +1,8 @@
 import 'dart:typed_data';
 
+import 'package:airspothealth/core/services/ble_data_service.dart';
+import 'package:flutter/material.dart';
+
 /// Manual test type constants (as expected by device)
 class ManualTestType {
   static const int manualTestCharge = 6;
@@ -139,6 +142,9 @@ class FactoryTestResponseParser {
     final testType = data[4];
     final result = data.length > 5 ? data[5] : 0;
 
+    debugPrint(
+        'Data Received: ${BleDataService.bytesToHexStr(data)}, testType: $testType, result: $result');
+
     switch (testType) {
       case 1: // Sensor test
         if (data.length >= 8) {
@@ -174,16 +180,16 @@ class FactoryTestResponseParser {
         };
 
       case 3: // Memory test
-
+        final memoryTestValue = data[6];
         return {
           'testName': 'Memory Test',
-          'status': result == 0 ? 'Pass' : 'Fail',
-          'comment': result == 0 ? 'Memory OK' : 'Memory test failed',
-          'value': result == 1
+          'status': memoryTestValue == 0 ? 'Pass' : 'Fail',
+          'comment': memoryTestValue == 0 ? 'Memory OK' : 'Memory test failed',
+          'value': memoryTestValue == 1
               ? 'Erase failed'
-              : result == 2
+              : memoryTestValue == 2
                   ? 'Write failed'
-                  : result == 3
+                  : memoryTestValue == 3
                       ? 'Read failed'
                       : null,
         };
