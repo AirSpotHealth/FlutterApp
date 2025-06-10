@@ -1,5 +1,6 @@
 import 'package:airspothealth/core/router/route_names.dart';
 import 'package:airspothealth/features/add_device/add_device_page.dart';
+import 'package:airspothealth/features/advanced_alarm_settings/advanced_alarm_settings_page.dart';
 import 'package:airspothealth/features/app_setup/app_setup_page.dart';
 import 'package:airspothealth/features/app_setup/app_updates_page.dart';
 import 'package:airspothealth/features/app_setup/latest_news_page.dart';
@@ -13,6 +14,7 @@ import 'package:airspothealth/features/device_settings/pages/dnd_settings_page.d
 import 'package:airspothealth/features/device_settings/pages/power_mode_settings_page.dart';
 import 'package:airspothealth/features/device_settings/pages/recalibrate_device_page.dart';
 import 'package:airspothealth/features/device_settings/pages/time_settings_page.dart';
+import 'package:airspothealth/features/device_settings/widgets/sensor_configuration_page.dart';
 import 'package:airspothealth/features/devices/devices_page.dart';
 import 'package:airspothealth/features/find_my_device/find_my_device_page.dart';
 import 'package:airspothealth/features/home/homepage.dart';
@@ -61,17 +63,21 @@ class AppRouter {
             routes: [
               // data log route
               GoRoute(
-                path: 'data-log',
+                path: RouteNames.dataLog,
                 name: RouteNames.dataLog,
                 builder: (context, state) {
-                  final deviceId = state.pathParameters['deviceId'];
-                  if (deviceId == null) {
-                    throw ErrorDescription('Device ID is required');
-                  }
+                  final String deviceId = state.pathParameters['deviceId']!;
                   return DeviceLogPage(deviceId: deviceId);
                 },
               ),
-
+              GoRoute(
+                path: RouteNames.sensorConfiguration,
+                name: RouteNames.sensorConfiguration,
+                builder: (context, state) {
+                  final String deviceId = state.pathParameters['deviceId']!;
+                  return SensorConfigurationPage(deviceId: deviceId);
+                },
+              ),
               // Route for device settings
               GoRoute(
                 path: 'settings',
@@ -154,6 +160,19 @@ class AppRouter {
                         throw ErrorDescription('Device ID is required');
                       }
                       return DeviceUpdatePage(deviceId: deviceId);
+                    },
+                  ),
+                  // Route for advanced alarm settings within device settings
+                  GoRoute(
+                    path: 'advanced-alarm-settings',
+                    name: RouteNames.advancedAlarmSettings,
+                    builder: (context, state) {
+                      final deviceId = state.pathParameters['deviceId'];
+                      if (deviceId == null) {
+                        throw ErrorDescription(
+                            'Device ID is required for advanced alarms');
+                      }
+                      return AdvancedAlarmSettingsPage(deviceId: deviceId);
                     },
                   ),
                   // Route for find my device settings within device settings

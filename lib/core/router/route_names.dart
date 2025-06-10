@@ -63,4 +63,10 @@ class RouteNames {
 
   /// do not disturb settings route
   static const String doNotDisturbSettings = '/do-not-disturb-settings';
+
+  /// advanced alarm settings route
+  static const String advancedAlarmSettings = '/advanced-alarm-settings';
+
+  /// sensor configuration route
+  static const String sensorConfiguration = '/sensor-configuration';
 }

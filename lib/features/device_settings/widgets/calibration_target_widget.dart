@@ -61,6 +61,11 @@ class _CalibrationCorrectionWidgetState
     if (int.parse(value) <= 0) {
       return 'Please enter a positive number greater than 0';
     }
+
+    if (int.parse(value) > 1000) {
+      return 'Please enter a number less than 1000';
+    }
+
     return null;
   }
 
@@ -85,6 +90,9 @@ class _CalibrationCorrectionWidgetState
                 controller: calibrationValueController,
                 decoration: InputDecoration(
                   labelText: 'Calibration Target',
+                  labelStyle: context.textTheme.bodyMedium?.copyWith(
+                    color: context.theme.colorScheme.onSurface,
+                  ),
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(8),
                     borderSide: BorderSide(color: Colors.grey.shade300),
@@ -94,9 +102,20 @@ class _CalibrationCorrectionWidgetState
                     borderSide: BorderSide(color: Colors.grey.shade300),
                   ),
                   contentPadding:
-                      const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                      const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
                   helperMaxLines: 3,
-                  helperStyle: context.textTheme.bodySmall,
+                  helperStyle: context.textTheme.bodySmall?.copyWith(
+                    color: Colors.black,
+                  ),
+                  suffixIcon: Padding(
+                    padding: EdgeInsets.all(4),
+                    child: Button(
+                      wrapWidth: true,
+                      height: 40,
+                      onPressed: _submitTarget,
+                      label: 'SET',
+                    ),
+                  ),
                 ),
                 onTapOutside: (_) => FocusScope.of(context).unfocus(),
                 validator: _validateInput,
@@ -109,11 +128,6 @@ class _CalibrationCorrectionWidgetState
               ),
             ),
             const SizedBox(width: 12),
-            Button(
-              wrapWidth: true,
-              onPressed: _submitTarget,
-              label: 'SET',
-            ),
           ],
         ),
         const SizedBox(height: 12),

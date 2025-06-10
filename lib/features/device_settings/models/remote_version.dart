@@ -1,3 +1,5 @@
+import 'package:airspothealth/core/utils/app_utils.dart';
+
 class RemoteVersion {
   final String id;
   final String versionName;
@@ -100,4 +102,12 @@ class RemoteVersion {
   }
 
   String get downloadUrl => fileUrl;
+
+  bool isVersionGreaterThanCurrentVersion(String? currentVersion) {
+    if (currentVersion == null) {
+      return false;
+    }
+
+    return AppUtils.isVersionGreater(currentVersion, versionName);
+  }
 }

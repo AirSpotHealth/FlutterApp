@@ -38,59 +38,80 @@ class _DeviceSettingsNotifier extends FamilyNotifier<DeviceSettings, String> {
   }
 
   void updateSettings(DeviceSettings settings, {bool sendCommands = true}) {
+    DeviceSettings newSettings = settings;
+
     if (sendCommands) {
       // check which settings are changed and send the command to the device
-      if (settings.alarmEnabled != state.alarmEnabled) {
+      if (newSettings.alarmEnabled != state.alarmEnabled) {
         ref
-            .read(bleDeviceCommunicationProvider(settings.deviceId).notifier)
-            .sendCommand(settings.alarmCmd);
-      } else if (settings.vibrationEnabled != state.vibrationEnabled) {
+            .read(bleDeviceCommunicationProvider(newSettings.deviceId).notifier)
+            .sendCommand(newSettings.alarmCmd);
+      } else if (newSettings.vibrationEnabled != state.vibrationEnabled) {
         ref
-            .read(bleDeviceCommunicationProvider(settings.deviceId).notifier)
-            .sendCommand(settings.vibrationCmd);
-      } else if (settings.powerMode != state.powerMode) {
+            .read(bleDeviceCommunicationProvider(newSettings.deviceId).notifier)
+            .sendCommand(newSettings.vibrationCmd);
+      } else if (newSettings.powerMode != state.powerMode) {
         ref
-            .read(bleDeviceCommunicationProvider(settings.deviceId).notifier)
-            .sendCommand(settings.powerModeCmd);
-      } else if (settings.continuosScreenEnabled !=
+            .read(bleDeviceCommunicationProvider(newSettings.deviceId).notifier)
+            .sendCommand(newSettings.powerModeCmd);
+      } else if (newSettings.continuosScreenEnabled !=
           state.continuosScreenEnabled) {
         ref
-            .read(bleDeviceCommunicationProvider(settings.deviceId).notifier)
-            .sendCommand(settings.continuousScreenCmd);
-      } else if (settings.autoSyncTime != state.autoSyncTime) {
+            .read(bleDeviceCommunicationProvider(newSettings.deviceId).notifier)
+            .sendCommand(newSettings.continuousScreenCmd);
+      } else if (newSettings.autoSyncTime != state.autoSyncTime) {
         ref
-            .read(bleDeviceCommunicationProvider(settings.deviceId).notifier)
-            .sendCommand(settings.autoSyncTimeCmd);
-      } else if (settings.autoCalibration != state.autoCalibration) {
+            .read(bleDeviceCommunicationProvider(newSettings.deviceId).notifier)
+            .sendCommand(newSettings.autoSyncTimeCmd);
+      } else if (newSettings.autoCalibration != state.autoCalibration) {
         ref
-            .read(bleDeviceCommunicationProvider(settings.deviceId).notifier)
-            .sendCommand(settings.autoCalibrationCmd);
-      } else if (settings.dndEnabled != state.dndEnabled ||
-          settings.dndStartTime != state.dndStartTime ||
-          settings.dndEndTime != state.dndEndTime) {
+            .read(bleDeviceCommunicationProvider(newSettings.deviceId).notifier)
+            .sendCommand(newSettings.autoCalibrationCmd);
+      } else if (newSettings.dndEnabled != state.dndEnabled ||
+          newSettings.dndStartTime != state.dndStartTime ||
+          newSettings.dndEndTime != state.dndEndTime) {
         ref
-            .read(bleDeviceCommunicationProvider(settings.deviceId).notifier)
-            .sendCommand(settings.dndCmd);
-      } else if (settings.recalibrationTarget != state.recalibrationTarget) {
+            .read(bleDeviceCommunicationProvider(newSettings.deviceId).notifier)
+            .sendCommand(newSettings.dndCmd);
+      } else if (newSettings.recalibrationTarget != state.recalibrationTarget) {
         ref
-            .read(bleDeviceCommunicationProvider(settings.deviceId).notifier)
+            .read(bleDeviceCommunicationProvider(newSettings.deviceId).notifier)
             .sendCommand(DeviceCmdUtils.setRecalibrationTarget(
-                settings.recalibrationTarget));
-      } else if (settings.uiMode != state.uiMode ||
-          settings.graphMaxValue != state.graphMaxValue ||
-          settings.graphMinValue != state.graphMinValue) {
+                newSettings.recalibrationTarget));
+      } else if (newSettings.uiMode != state.uiMode ||
+          newSettings.graphMaxValue != state.graphMaxValue ||
+          newSettings.graphMinValue != state.graphMinValue) {
         ref
-            .read(bleDeviceCommunicationProvider(settings.deviceId).notifier)
-            .sendCommand(DeviceCmdUtils.setGraphMode(settings.uiMode.index,
-                settings.graphMaxValue, settings.graphMinValue));
+            .read(bleDeviceCommunicationProvider(newSettings.deviceId).notifier)
+            .sendCommand(DeviceCmdUtils.setGraphMode(newSettings.uiMode.index,
+                newSettings.graphMaxValue, newSettings.graphMinValue));
+      } else if (newSettings.screenOnAlarm != state.screenOnAlarm) {
+        ref
+            .read(bleDeviceCommunicationProvider(newSettings.deviceId).notifier)
+            .sendCommand(
+                DeviceCmdUtils.setScreenOnAlarm(newSettings.screenOnAlarm));
+      } else if (newSettings.alarmOnCo2Fall != state.alarmOnCo2Fall) {
+        ref
+            .read(bleDeviceCommunicationProvider(newSettings.deviceId).notifier)
+            .sendCommand(
+                DeviceCmdUtils.setAlarmOnCo2Fall(newSettings.alarmOnCo2Fall));
+      } else if (newSettings.scaling != state.scaling) {
+        ref
+            .read(bleDeviceCommunicationProvider(newSettings.deviceId).notifier)
+            .sendCommand(DeviceCmdUtils.setScaleFactor(newSettings.scaling));
+        debugPrint('Scaling changed. Sending command to device.');
+      } else if (newSettings.flightMode != state.flightMode) {
+        ref
+            .read(bleDeviceCommunicationProvider(newSettings.deviceId).notifier)
+            .sendCommand(DeviceCmdUtils.setFlightMode(newSettings.flightMode));
       }
     }
 
     _isarService.write((isar) {
-      isar.deviceSettings.put(settings);
+      isar.deviceSettings.put(newSettings);
     });
 
-    state = settings;
+    state = newSettings;
   }
 
   void removeSettings() {

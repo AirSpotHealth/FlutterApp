@@ -68,4 +68,6 @@ class Assets {
 
   static const String screenSettings =
       'assets/images/device_screen_settings.png';
+  static const String factoryReset = 'assets/images/ic_factory_reset.png';
+  static const String flightMode = 'assets/images/ic_flight_mode.png';
 }

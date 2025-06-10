@@ -1,10 +1,12 @@
-abstract class AsyncProgressValue {}
+abstract class AsyncProgressValue<T> {
+  const AsyncProgressValue();
+}
 
-class AsyncNone implements AsyncProgressValue {
+class AsyncNone<T> implements AsyncProgressValue<T> {
   const AsyncNone();
 }
 
-class AsyncInProgress implements AsyncProgressValue {
+class AsyncInProgress<T> implements AsyncProgressValue<T> {
   const AsyncInProgress(this.progress, {this.message});
 
   final double progress;
@@ -16,13 +18,13 @@ class AsyncInProgress implements AsyncProgressValue {
   }
 }
 
-class AsyncSuccess implements AsyncProgressValue {
+class AsyncSuccess<T> implements AsyncProgressValue<T> {
   const AsyncSuccess(this.data);
 
   final Object? data;
 }
 
-class AsyncFailure implements AsyncProgressValue {
+class AsyncFailure<T> implements AsyncProgressValue<T> {
   const AsyncFailure(this.error);
 
   final Object error;

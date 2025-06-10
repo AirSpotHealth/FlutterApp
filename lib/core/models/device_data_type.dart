@@ -18,6 +18,8 @@ enum DeviceDataType {
   dfuUpdate,
   dfuUpdateFail,
   co2Retry,
+  flightMode,
+  scaling,
   empty;
 
   static DeviceDataType fromByte(int byte) =>
@@ -60,7 +62,9 @@ const deviceDataByteMap = {
   0x0F: DeviceDataType.calibrationTargetUpdate,
   0x10: DeviceDataType.dfuUpdate,
   0x11: DeviceDataType.dfuUpdateFail,
-  0x12: DeviceDataType.co2Retry
+  0x12: DeviceDataType.co2Retry,
+  0x13: DeviceDataType.flightMode,
+  0x14: DeviceDataType.scaling,
   // 0x12: DeviceDataType.empty,
 };
 
@@ -84,6 +88,8 @@ const deviceDataTypeMap = {
   DeviceDataType.dfuUpdate: 'DFU Update',
   DeviceDataType.dfuUpdateFail: 'DFU Update Fail',
   DeviceDataType.co2Retry: 'CO2 Retry',
+  DeviceDataType.flightMode: 'Flight Mode',
+  DeviceDataType.scaling: 'Scaling',
   DeviceDataType.empty: '-',
 };
 
@@ -93,6 +99,9 @@ const sensorErrorMap = {
   0x03: 'Sensor Reset Error',
   0x04: 'Sensor Measurement Start Error',
   0x05: 'Sensor Data Status Error',
+  0x06: 'Sensor Variant Check Error',
+  0x07: 'Sensor Measurement Stop Error',
+  0x08: 'Invalid CO2 Reading',
 };
 
 const deviceDataOrder = [
@@ -115,4 +124,6 @@ const deviceDataOrder = [
   DeviceDataType.calibrationCorrection,
   DeviceDataType.dfuUpdate,
   DeviceDataType.dfuUpdateFail,
+  DeviceDataType.flightMode,
+  DeviceDataType.scaling,
 ];

@@ -1,3 +1,5 @@
+import 'dart:math';
+
 import 'package:airspothealth/core/theme/app_colors.dart';
 import 'package:airspothealth/core/widgets/button.dart';
 import 'package:flutter/cupertino.dart'
@@ -118,4 +120,35 @@ Future<TimeOfDay?> showCupertinoTimePicker(
       );
     },
   );
+}
+
+/// Converts the scaling factor to pressure in hPa
+double convertScalingToPressure(double scaling) {
+  const double m = -0.0028169;
+  const double c = 3.852;
+  final result = (scaling - c) / m;
+  return result.isNaN ? 0.0 : result;
+}
+
+/// Converts the scaling factor directly to altitude in meters
+double convertScalingToAltitude(double scaling) {
+  final pressure = convertScalingToPressure(scaling);
+  final result = 44330 * (1 - pow(pressure / 1013.0, 1 / 5.255)) as double;
+  return result.isNaN ? 0.0 : result;
+}
+
+/// Calculate scaling from pressure (in hPa)
+double calculateScalingFromPressure(double pressure) {
+  const double m = -0.0028169;
+  const double c = 3.852;
+  final result = m * pressure + c;
+  return result.isNaN ? 0.0 : result;
+}
+
+/// Calculate scaling from altitude (in meters)
+double calculateScalingFromAltitude(double altitude) {
+  const double standardPressure = 1013.0;
+  double pressure = standardPressure * pow(1 - (altitude / 44330.0), 5.255);
+  final result = calculateScalingFromPressure(pressure);
+  return result.isNaN ? 0.0 : result;
 }

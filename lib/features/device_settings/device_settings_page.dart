@@ -6,7 +6,6 @@ import 'package:airspothealth/core/providers/ble_saved_devices_provider.dart';
 import 'package:airspothealth/core/providers/device_settings_provider.dart';
 import 'package:airspothealth/core/providers/isar_service_provider.dart';
 import 'package:airspothealth/core/router/route_names.dart';
-import 'package:airspothealth/core/utils/app_utils.dart';
 import 'package:airspothealth/core/utils/assets.dart';
 import 'package:airspothealth/core/utils/constants.dart';
 import 'package:airspothealth/core/utils/device_cmd_utils.dart';
@@ -17,13 +16,15 @@ import 'package:airspothealth/features/app_setup/providers/dev_mode_provider.dar
 import 'package:airspothealth/features/device_graph/providers/ble_device_provider.dart';
 import 'package:airspothealth/features/device_graph/providers/device_history_data_request_provider.dart';
 import 'package:airspothealth/features/device_settings/models/setting_item.dart';
-import 'package:airspothealth/features/device_settings/providers/ble_device_version_provider.dart';
 import 'package:airspothealth/features/device_settings/widgets/alarm_setting_widget.dart';
 import 'package:airspothealth/features/device_settings/widgets/auto_connect_setting_widget.dart';
 import 'package:airspothealth/features/device_settings/widgets/device_data_dump_widget.dart';
 import 'package:airspothealth/features/device_settings/widgets/device_settings_name_widget.dart';
+import 'package:airspothealth/features/device_settings/widgets/device_variant_widget.dart';
 import 'package:airspothealth/features/device_settings/widgets/disconnect_device_widget.dart';
 import 'package:airspothealth/features/device_settings/widgets/erase_device_record_widget.dart';
+import 'package:airspothealth/features/device_settings/widgets/factory_reset_widget.dart';
+import 'package:airspothealth/features/device_settings/widgets/flight_mode_widget.dart';
 import 'package:airspothealth/features/device_settings/widgets/forget_device_widget.dart';
 import 'package:airspothealth/features/device_settings/widgets/populate_fake_data_widget.dart';
 import 'package:airspothealth/features/device_settings/widgets/power_off_device_widget.dart';
@@ -110,36 +111,52 @@ class DeviceSettingsPage extends ConsumerWidget {
           _buildTimeSettingWidget(ref),
           PowerModeSettingWidget(deviceId: deviceId),
           ..._buildSettingsList(ref),
+          FlightModeWidget(deviceId: deviceId),
           // DeviceDataDownloadSettingWidget(deviceId: deviceId),
           DisconnectDeviceWidget(device: device),
           ForgetDeviceWidget(deviceId: deviceId),
           PowerOffDeviceWidget(deviceId: deviceId),
-          if (AppUtils.isNewFirmwareVersion(
-              ref.read(bleDeviceVersionProvider(deviceId))))
-            EraseDeviceRecordWidget(deviceId: deviceId),
-          if (devMode) ...[
-            const SizedBox(height: 16),
-            Text(
-              'Dev Settings',
-              style: TextStyle(
-                color: Colors.black,
-                fontSize: 14,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-            const SizedBox(height: 8),
-            SensorErrorWidget(deviceId: deviceId),
-            PopulateFakeDataWidget(deviceId: deviceId),
-            TurnOffBluetoothWidget(deviceId: deviceId),
-            DeleteLocalCacheWidget(deviceId: deviceId),
-            DeviceDataDumpWidget(deviceId: deviceId),
-            // ImportCsvDataWidget(deviceId: deviceId),
-            SetAscDurationWidget(deviceId: deviceId),
-            //RestartDeviceWidget(deviceId: deviceId),
-          ],
+          EraseDeviceRecordWidget(deviceId: deviceId),
+          FactoryResetWidget(deviceId: deviceId),
+          if (devMode) ..._addDevModeWidgets(ref),
         ],
       ),
     );
+  }
+
+  List<Widget> _addDevModeWidgets(WidgetRef ref) {
+    return [
+      const SizedBox(height: 16),
+      Text(
+        'Dev Settings',
+        style: TextStyle(
+          color: Colors.black,
+          fontSize: 14,
+          fontWeight: FontWeight.bold,
+        ),
+      ),
+      const SizedBox(height: 8),
+      SettingItemWidget(
+        item: SettingItem(
+          title: 'Sensor Configuration',
+          assetIcon: Assets.recalibrateSettings,
+          route: RouteNames.sensorConfiguration,
+        ),
+        onTap: () {
+          ref.context.pushNamed(RouteNames.sensorConfiguration,
+              pathParameters: {'deviceId': deviceId});
+        },
+      ),
+      SensorErrorWidget(deviceId: deviceId),
+      PopulateFakeDataWidget(deviceId: deviceId),
+      TurnOffBluetoothWidget(deviceId: deviceId),
+      DeleteLocalCacheWidget(deviceId: deviceId),
+      DeviceDataDumpWidget(deviceId: deviceId),
+      // ImportCsvDataWidget(deviceId: deviceId),
+      SetAscDurationWidget(deviceId: deviceId),
+      DeviceVariantWidget(deviceId: deviceId),
+      //RestartDeviceWidget(deviceId: deviceId),
+    ];
   }
 
   SettingItemWidget _buildTimeSettingWidget(WidgetRef ref) {

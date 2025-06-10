@@ -4,9 +4,14 @@ import 'package:airspothealth/core/providers/device_settings_provider.dart';
 import 'package:airspothealth/core/theme/app_colors.dart';
 import 'package:airspothealth/core/utils/constants.dart';
 import 'package:airspothealth/core/utils/extensions.dart';
-import 'package:flutter/cupertino.dart';
+import 'package:airspothealth/core/widgets/button.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+
+// Define constants at the file level so they're accessible to all classes
+const int kMinValue = 400;
+const int kMaxValue = 4000;
+const int kStepSize = 50;
 
 class Co2PpmRangePickerWidget extends ConsumerStatefulWidget {
   const Co2PpmRangePickerWidget({required this.deviceId, super.key});
@@ -20,26 +25,23 @@ class Co2PpmRangePickerWidget extends ConsumerStatefulWidget {
 
 class _Co2PpmRangePickerWidgetState
     extends ConsumerState<Co2PpmRangePickerWidget> {
-  // Define the range of values for the pickers
-  static const int minValue = 400;
-  static const int maxValue = 4000;
-  static const int stepSize = 50;
-
   // Generate the list of values for the pickers
   final List<int> _ppmValues = List<int>.generate(
-    ((maxValue - minValue) ~/ stepSize) + 1,
-    (index) => minValue + (index * stepSize),
+    ((kMaxValue - kMinValue) ~/ kStepSize) + 1,
+    (index) => kMinValue + (index * kStepSize),
   );
 
   // Selected values
-  late int _selectedGreenValue =
-      ref.read(deviceSettingsProvider(widget.deviceId)).greenUpperLimit;
-  late int _selectedYellowValue =
-      ref.read(deviceSettingsProvider(widget.deviceId)).yellowUpperLimit;
+  late int _selectedGreenValue;
+  late int _selectedYellowValue;
 
   @override
   void initState() {
     super.initState();
+    _selectedGreenValue =
+        ref.read(deviceSettingsProvider(widget.deviceId)).greenUpperLimit;
+    _selectedYellowValue =
+        ref.read(deviceSettingsProvider(widget.deviceId)).yellowUpperLimit;
   }
 
   @override
@@ -51,10 +53,6 @@ class _Co2PpmRangePickerWidgetState
     final bool hasChanged =
         _selectedGreenValue != deviceSettings.greenUpperLimit ||
             _selectedYellowValue != deviceSettings.yellowUpperLimit;
-
-    // Get indices for selected values
-    final int greenIndex = _ppmValues.indexOf(_selectedGreenValue);
-    final int yellowIndex = _ppmValues.indexOf(_selectedYellowValue);
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -73,78 +71,79 @@ class _Co2PpmRangePickerWidgetState
           height: 30,
           child: CustomPaint(
             painter: _CO2PPMRangePainter(
-              redValue: _selectedYellowValue,
               yellowValue: _selectedGreenValue,
+              redValue: _selectedYellowValue,
             ),
           ),
         ),
+        const SizedBox(height: 16),
 
+        // Green zone dropdown
         Row(
           children: [
             Expanded(
-              child: _buildThresholdCard(
-                'Green Zone',
-                'Up to:',
-                AppColors.brandColorGreen,
-                greenIndex,
-                (index) {
-                  if (index > yellowIndex) {
+              child: _ZoneValueDropdown(
+                deviceId: widget.deviceId,
+                currentValue: _selectedGreenValue,
+                label: 'Green Zone (Up to)',
+                values: _ppmValues,
+                valueColor: AppColors.brandColorGreen,
+                onValueChanged: (int newValue) {
+                  if (newValue >= _selectedYellowValue) {
+                    context.showSnackBar(
+                        'Green zone cannot be greater than yellow zone');
                     return;
                   }
 
                   setState(() {
-                    _selectedGreenValue = _ppmValues[index];
+                    _selectedGreenValue = newValue;
                   });
                 },
               ),
             ),
-            const SizedBox(width: 16),
-            Expanded(
-              child: _buildThresholdCard(
-                'Yellow Zone',
-                'Up to:',
-                AppColors.brandColorAmber,
-                yellowIndex,
-                (index) {
-                  if (index < greenIndex) {
-                    return;
-                  }
-
-                  setState(() {
-                    _selectedYellowValue = _ppmValues[index];
-                  });
-                },
-              ),
+            const SizedBox(width: 12),
+            Button(
+              wrapWidth: true,
+              onPressed: hasChanged ? () => _updateValues() : null,
+              child: const Text('Set'),
             ),
           ],
         ),
         const SizedBox(height: 16),
-        _buildLegend(),
-        const SizedBox(height: 16),
+        // Yellow zone dropdown
+        Row(
+          children: [
+            Expanded(
+              child: _ZoneValueDropdown(
+                deviceId: widget.deviceId,
+                currentValue: _selectedYellowValue,
+                label: 'Yellow Zone (Up to)',
+                values: _ppmValues,
+                valueColor: AppColors.brandColorAmber,
+                onValueChanged: (int newValue) {
+                  if (newValue < _selectedGreenValue) {
+                    context.showSnackBar(
+                        'Yellow zone cannot be less than green zone');
+                    return;
+                  }
 
-        // Update button
-        SizedBox(
-          width: double.infinity,
-          child: ElevatedButton(
-            onPressed: hasChanged ? () => _updateValues() : null,
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.primaryColor,
-              foregroundColor: Colors.white,
-              disabledBackgroundColor: Colors.grey[300],
-              padding: const EdgeInsets.symmetric(vertical: 12),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(8),
+                  setState(() {
+                    _selectedYellowValue = newValue;
+                  });
+                },
               ),
             ),
-            child: const Text(
-              'Update PPM Zones',
-              style: TextStyle(
-                fontWeight: FontWeight.bold,
-                fontSize: 16,
-              ),
+            const SizedBox(width: 12),
+            Button(
+              wrapWidth: true,
+              onPressed: hasChanged ? () => _updateValues() : null,
+              child: const Text('Set'),
             ),
-          ),
+          ],
         ),
+
+        const SizedBox(height: 16),
+        _buildLegend(),
       ],
     );
   }
@@ -178,89 +177,9 @@ class _Co2PpmRangePickerWidgetState
     ref
         .read(bleDeviceCommunicationProvider(widget.deviceId).notifier)
         .sendCommand(updatedSettings.thresholdsCmd);
-  }
 
-  Widget _buildThresholdCard(
-    String title,
-    String subtitle,
-    Color color,
-    int initialIndex,
-    Function(int) onChanged,
-  ) {
-    return Card(
-      elevation: 2,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
-        side: BorderSide(color: color.withValues(alpha: 0.3), width: 1),
-      ),
-      child: Padding(
-        padding: const EdgeInsets.all(12),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Container(
-                  width: 12,
-                  height: 12,
-                  decoration: BoxDecoration(
-                    color: color,
-                    shape: BoxShape.circle,
-                  ),
-                ),
-                const SizedBox(width: 8),
-                Text(
-                  title,
-                  style: const TextStyle(
-                    fontWeight: FontWeight.bold,
-                    fontSize: 14,
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 8),
-            Text(
-              subtitle,
-              style: TextStyle(
-                color: Colors.grey[600],
-                fontSize: 12,
-              ),
-            ),
-            const SizedBox(height: 8),
-            _buildPicker(initialIndex, onChanged, color),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildPicker(int initialIndex, Function(int) onChanged, Color color) {
-    return Container(
-      height: 120,
-      decoration: BoxDecoration(
-        color: Colors.grey[100],
-        borderRadius: BorderRadius.circular(8),
-      ),
-      child: CupertinoPicker(
-        scrollController:
-            FixedExtentScrollController(initialItem: initialIndex),
-        itemExtent: 40,
-        backgroundColor: Colors.transparent,
-        onSelectedItemChanged: onChanged,
-        children: _ppmValues.map((value) {
-          return Center(
-            child: Text(
-              '$value ppm',
-              style: TextStyle(
-                color: Colors.black87,
-                fontWeight: FontWeight.w500,
-                fontSize: 16,
-              ),
-            ),
-          );
-        }).toList(),
-      ),
-    );
+    // Show feedback to the user
+    context.showSnackBar('CO₂ PPM Zones updated successfully');
   }
 
   Widget _buildLegend() {
@@ -292,6 +211,85 @@ class _Co2PpmRangePickerWidgetState
           style: TextStyle(
             fontSize: 12,
             color: Colors.grey[700],
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _ZoneValueDropdown extends ConsumerWidget {
+  final String deviceId;
+  final int currentValue;
+  final String label;
+  final List<int> values;
+  final Color valueColor;
+  final Function(int) onValueChanged;
+
+  const _ZoneValueDropdown({
+    required this.deviceId,
+    required this.currentValue,
+    required this.label,
+    required this.values,
+    required this.valueColor,
+    required this.onValueChanged,
+  });
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            Container(
+              width: 12,
+              height: 12,
+              decoration: BoxDecoration(
+                color: valueColor,
+                shape: BoxShape.circle,
+              ),
+            ),
+            const SizedBox(width: 8),
+            Text(
+              label,
+              style: context.textTheme.bodyMedium?.weight600,
+            ),
+          ],
+        ),
+        const SizedBox(height: 8),
+        Container(
+          decoration: BoxDecoration(
+            border: Border.all(color: Colors.grey.shade300),
+            borderRadius: BorderRadius.circular(8),
+          ),
+          padding: const EdgeInsets.symmetric(horizontal: 12),
+          child: DropdownButtonHideUnderline(
+            child: DropdownButton<int>(
+              value:
+                  values.contains(currentValue) ? currentValue : values.first,
+              isExpanded: true,
+              icon: const Icon(Icons.arrow_drop_down),
+              style: context.textTheme.bodyMedium,
+              items: values.map<DropdownMenuItem<int>>((int value) {
+                return DropdownMenuItem<int>(
+                  value: value,
+                  child: Text('$value ppm'),
+                );
+              }).toList(),
+              onChanged: (int? newValue) {
+                if (newValue != null) {
+                  onValueChanged(newValue);
+                }
+              },
+            ),
+          ),
+        ),
+        const SizedBox(height: 8),
+        Text(
+          'Select a value between $kMinValue and $kMaxValue ppm',
+          style: context.textTheme.bodySmall?.copyWith(
+            color: Colors.grey.shade600,
           ),
         ),
       ],

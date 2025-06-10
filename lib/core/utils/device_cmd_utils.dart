@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'dart:typed_data';
 
+import 'package:airspothealth/core/models/device_settings.dart';
 import 'package:airspothealth/core/utils/constants.dart';
 import 'package:flutter/material.dart';
 
@@ -24,22 +25,39 @@ class DeviceCmdUtils {
     return checksum;
   }
 
-  // ======= Time Commands =======
   static Uint8List setTime({int? hour, int? min}) {
-    int totalSeconds;
+    // Get current time or specified time in local time
+    final now = DateTime.now();
+    final DateTime localTime;
 
-    if (hour == null || min == null) {
-      DateTime calendar2000 = DateTime(2000, 1, 1, 0, 0, 0);
-      int startEpochMillis = calendar2000.millisecondsSinceEpoch;
-      int currentEpochMillis = DateTime.now().millisecondsSinceEpoch;
-      totalSeconds = (currentEpochMillis - startEpochMillis) ~/ 1000;
+    if (hour != null && min != null) {
+      // Set to specified hour and minute of current day in local time
+      localTime = DateTime(now.year, now.month, now.day, hour, min);
     } else {
-      totalSeconds = _convertToSeconds(hour, min);
+      localTime = now;
     }
 
-    var byteArray = ByteData(4)..setInt32(0, totalSeconds, Endian.big);
-    return _buildCommand(
-        [prefixHigh, prefixLow, 0x04, 0x04, ...byteArray.buffer.asUint8List()]);
+    // The device displays time as-is without timezone adjustment,
+    // so we need to adjust the timestamp we send to account for the
+    // local timezone offset
+    final timezoneOffsetSeconds = localTime.timeZoneOffset.inSeconds;
+
+    // Add the timezone offset to compensate (device will show local time)
+    final int adjustedSeconds =
+        (localTime.millisecondsSinceEpoch ~/ 1000) + timezoneOffsetSeconds;
+
+    debugPrint('Local time: ${localTime.toIso8601String()}');
+    debugPrint('Timezone offset (seconds): $timezoneOffsetSeconds');
+    debugPrint('Adjusted timestamp: $adjustedSeconds');
+
+    // Convert to bytes
+    final bytes = Uint8List(4);
+    bytes[0] = (adjustedSeconds >> 24) & 0xFF;
+    bytes[1] = (adjustedSeconds >> 16) & 0xFF;
+    bytes[2] = (adjustedSeconds >> 8) & 0xFF;
+    bytes[3] = adjustedSeconds & 0xFF;
+
+    return _buildCommand([prefixHigh, prefixLow, 0x04, 0x04, ...bytes]);
   }
 
   // ======= Alias Commands =======
@@ -53,9 +71,8 @@ class DeviceCmdUtils {
     return _buildCommand([prefixHigh, prefixLow, 0x09, 1, 1]);
   }
 
-  // Helper method to convert hours and minutes to total seconds
-  static int _convertToSeconds(int hours, int minutes) {
-    return (hours * 3600) + (minutes * 60);
+  static Uint8List getDeviceSensorConfig() {
+    return _buildCommand([prefixHigh, prefixLow, 0x30, 1, 1]);
   }
 
   // ======= General Commands =======
@@ -294,12 +311,101 @@ class DeviceCmdUtils {
     return _buildCommand([prefixHigh, prefixLow, 0x2A, 1, 1]);
   }
 
+  static Uint8List getDeviceVariant() {
+    return _buildCommand([prefixHigh, prefixLow, 0x2B, 1, 1]);
+  }
+
+  // ======= Advanced Alarm Settings Commands =======
+  static Uint8List setAdvancedAlarmLevels(int index, AlarmLevel alarmLevel) {
+    if (index < 0 || index > 9) {
+      throw Exception('Index must be between 0 and 9');
+    }
+
+    var thresholdBytes = _getHex2Bytes(alarmLevel.co2Threshold);
+
+    // repeatCount should be a single byte
+    int repeatCountByte = alarmLevel.repeatCount & 0xFF;
+
+    // enabled should be a single byte (0 or 1)
+    int enabledByte = alarmLevel.enabled ? 1 : 0;
+
+    return _buildCommand([
+      prefixHigh,
+      prefixLow,
+      0x2C,
+      5,
+      index,
+      ...thresholdBytes,
+      repeatCountByte,
+      enabledByte
+    ]);
+  }
+
+  static Uint8List resetAdvancedAlarmsToDefault() {
+    return _buildCommand([
+      prefixHigh,
+      prefixLow,
+      0x2F, // Command for Reset to default alarm config
+      0 // Length of payload (no additional data needed beyond command)
+    ]);
+  }
+
+  static Uint8List setScreenOnAlarm(bool enabled) {
+    return _buildCommand([
+      prefixHigh,
+      prefixLow,
+      0x2D, // Command for Set screen_on_alarm
+      1, // Length of payload (enabled status)
+      enabled ? 1 : 0
+    ]);
+  }
+
+  static Uint8List setAlarmOnCo2Fall(bool enabled) {
+    return _buildCommand([
+      prefixHigh,
+      prefixLow,
+      0x2E, // Command for Set alarm on CO2 falling
+      1, // Length of payload (enabled status)
+      enabled ? 1 : 0
+    ]);
+  }
+
+  static Uint8List setScaleFactor(double scaling) {
+    return _buildCommand([
+      prefixHigh,
+      prefixLow,
+      0x31, // Command for set scale factor
+      0x04, // Length of payload (4 bytes float value)
+      ...getFloat32Bytes(scaling),
+    ]);
+  }
+
+  static Uint8List setFlightMode(bool flightMode) {
+    return _buildCommand([
+      prefixHigh,
+      prefixLow,
+      0x32, // Command for set flight mode
+      1, // Length of payload (1 byte)
+      flightMode ? 1 : 0
+    ]);
+  }
+
   // ======= Helper Functions =======
   static Uint8List _getHex2Bytes(int value) {
     var byteArray = Uint8List(2);
     byteArray[0] = (value >> 8) & 0xFF;
     byteArray[1] = value & 0xFF;
     return byteArray;
+  }
+
+  static Uint8List getFloat32Bytes(double value) {
+    final byteData = ByteData(4);
+    byteData.setFloat32(
+        0,
+        value,
+        Endian
+            .big); // use Endian.little if your BLE peripheral expects little-endian
+    return byteData.buffer.asUint8List();
   }
 
   static Uint8List setRecalibrationTarget(int target) {
@@ -309,6 +415,10 @@ class DeviceCmdUtils {
 
   static Uint8List eraseData() {
     return _buildCommand([prefixHigh, prefixLow, 0xFD, 1, 1]);
+  }
+
+  static Uint8List factoryReset() {
+    return _buildCommand([prefixHigh, prefixLow, 0xFA, 1, 1]);
   }
 
   static Uint8List setSensorError(bool high) {

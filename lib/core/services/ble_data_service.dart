@@ -1,3 +1,5 @@
+import 'dart:typed_data';
+
 import 'package:airspothealth/core/models/ble_device.dart';
 import 'package:airspothealth/core/models/device_data.dart';
 import 'package:airspothealth/core/models/device_data_type.dart';
@@ -10,6 +12,7 @@ import 'package:airspothealth/core/utils/app_utils.dart';
 import 'package:airspothealth/features/device_graph/providers/ble_device_provider.dart';
 import 'package:airspothealth/features/device_graph/providers/device_history_data_request_provider.dart';
 import 'package:airspothealth/features/device_settings/models/asc_data.dart';
+import 'package:airspothealth/features/device_settings/models/device_sensor_config_data.dart';
 import 'package:airspothealth/features/device_settings/models/progress_model.dart';
 import 'package:airspothealth/features/device_settings/providers/ble_device_version_provider.dart';
 import 'package:airspothealth/features/device_settings/providers/device_asc_data_provider.dart';
@@ -18,8 +21,10 @@ import 'package:airspothealth/features/device_settings/providers/device_data_dow
 import 'package:airspothealth/features/device_settings/providers/device_data_dump_provider.dart';
 import 'package:airspothealth/features/device_settings/providers/device_data_erase_provider.dart';
 import 'package:airspothealth/features/device_settings/providers/device_reset_sensor_provider.dart';
+import 'package:airspothealth/features/device_settings/providers/device_variant_provider.dart';
 import 'package:airspothealth/features/device_settings/providers/populate_fake_data_provider.dart';
 import 'package:airspothealth/features/device_settings/providers/recalibration_time_provider.dart';
+import 'package:airspothealth/features/device_settings/providers/sensor_configuration_provider.dart';
 import 'package:airspothealth/features/device_settings/widgets/device_ui_mode_widget.dart';
 import 'package:airspothealth/features/devices/providers/device_battery_level_provider.dart';
 import 'package:flutter/material.dart';
@@ -79,6 +84,8 @@ class BleDataService {
       ResponseCommand.ascData: parser.parseAscData,
       ResponseCommand.getMemoryDump: parser.parseMemoryDump,
       ResponseCommand.ascDayCount: (_) => parser.parseOneByte(data, 4),
+      ResponseCommand.getDeviceVariant: (_) => parser.parseOneByte(data, 4),
+      ResponseCommand.getSensorDetails: parser.parseSensorDetails,
     };
 
     final dynamic value = responseParsers[responseCommand]?.call(data);
@@ -166,6 +173,18 @@ class BleDataService {
       case ResponseCommand.ascDayCount:
         ref.read(deviceAscDayProvider(deviceId).notifier).setNextAscDate(value);
         break;
+      case ResponseCommand.getDeviceVariant:
+        ref
+            .read(deviceVariantProvider(deviceId).notifier)
+            .setDeviceVariant(DeviceVariant.fromValue(value));
+        break;
+      case ResponseCommand.getSensorDetails:
+        if (value is DeviceSensorConfigData) {
+          ref
+              .read(sensorConfigurationProvider(deviceId).notifier)
+              .updateSensorConfigData(value);
+        }
+        break;
       default:
         break;
     }
@@ -174,12 +193,41 @@ class BleDataService {
   }
 
   /// When parsing the timestamp from device, convert to local time
+  /// Properly handles Daylight Saving Time transitions
   static DateTime parseDeviceTimestamp(int timestamp) {
-    final localTimeStampFrom2000 =
-        DateTime(2000, 1, 1, 0, 0, 0).toLocal().millisecondsSinceEpoch;
+    // Since we added the timezone offset when sending the time,
+    // we need to subtract it when parsing to get the correct local time
+    final nowLocal = DateTime.now();
+    final timezoneOffsetSeconds = nowLocal.timeZoneOffset.inSeconds;
 
-    return DateTime.fromMillisecondsSinceEpoch(
-        (timestamp * 1000) + localTimeStampFrom2000);
+    // Subtract the timezone offset to get local time
+    final adjustedTimestamp = timestamp - timezoneOffsetSeconds;
+
+    // Convert directly from seconds since Unix epoch to DateTime
+    final DateTime dateTime =
+        DateTime.fromMillisecondsSinceEpoch(adjustedTimestamp * 1000);
+    debugPrint('Raw device timestamp (seconds): $timestamp');
+    debugPrint('Timezone offset (seconds): $timezoneOffsetSeconds');
+    debugPrint('Adjusted timestamp (seconds): $adjustedTimestamp');
+    debugPrint('Parsed local time: ${dateTime.toIso8601String()}');
+    return dateTime;
+  }
+
+  /// Debug utility to verify DST handling
+  /// Returns a map with information about the timestamp conversion
+  static Map<String, dynamic> debugDstHandling(int timestamp) {
+    final utcBase2000 = DateTime.utc(2000, 1, 1, 0, 0, 0);
+    final deviceTimeUtc = utcBase2000.add(Duration(seconds: timestamp));
+    final localTime = deviceTimeUtc.toLocal();
+
+    return {
+      'timestamp_seconds': timestamp,
+      'utc_time': deviceTimeUtc.toIso8601String(),
+      'local_time': localTime.toIso8601String(),
+      'is_dst':
+          localTime.timeZoneOffset.inHours > utcBase2000.timeZoneOffset.inHours,
+      'timezone_offset': localTime.timeZoneOffset.inHours,
+    };
   }
 }
 
@@ -261,47 +309,113 @@ class ResponseCommandParser {
   dynamic parseInitialData(List<int> data) {
     _updateDeviceSettings(
       (settings) {
-        final dndEnabled = data.length > 13 ? _parseBoolean(data, 13) : false;
-        final dndStartHour = data.length > 14 ? data[14] : 0;
-        final dndStartMinute = data.length > 15 ? data[15] : 0;
-        final dndEndHour = data.length > 16 ? data[16] : 0;
-        final dndEndMinute = data.length > 17 ? data[17] : 0;
-        final recalibrationTarget =
-            data.length > 18 ? _parseTwoBytesToInt(data, 18) : 426;
-        final graphMode = UIMode.fromValue(data[20]);
-        final graphMaxValue =
-            data.length > 21 ? _parseTwoBytesToInt(data, 21) : 1600;
-        final graphMinValue =
-            data.length > 23 ? _parseTwoBytesToInt(data, 23) : 0;
-        debugPrint('RECALIBRATION TARGET: $recalibrationTarget');
-        debugPrint('GRAPH MAX VALUE: $graphMaxValue');
-        debugPrint('GRAPH MIN VALUE: $graphMinValue');
-        debugPrint('UI MODE: $graphMode');
-        debugPrint('POWER MODE: ${PowerMode.fromValue(data[6])}');
+        final bool alarmEnabled = _parseBoolean(data, 4);
+        final bool vibrationEnabled = _parseBoolean(data, 5);
+        final PowerMode powerMode = PowerMode.fromValue(data[6]);
+        final DeviceThresholds thresholds = DeviceThresholds(
+          greenUpperLimit: _parseTwoBytesToInt(data, 7),
+          yellowUpperLimit: _parseTwoBytesToInt(data, 9),
+        );
+        final bool continuosScreenEnabled = _parseBoolean(data, 11);
+        final bool autoCalibration = _parseBoolean(data, 12);
+
+        final bool dndEnabled =
+            data.length > 13 ? _parseBoolean(data, 13) : false;
+        final int dndStartHour = data.length > 14 ? data[14] : 0;
+        final int dndStartMinute = data.length > 15 ? data[15] : 0;
+        final int dndEndHour = data.length > 16 ? data[16] : 0;
+        final int dndEndMinute = data.length > 17 ? data[17] : 0;
+
+        final int recalibrationTarget =
+            data.length > 19 ? _parseTwoBytesToInt(data, 18) : 426;
+        final UIMode uiMode =
+            data.length > 20 ? UIMode.fromValue(data[20]) : UIMode.graph;
+        final int graphMaxValue =
+            data.length > 22 ? _parseTwoBytesToInt(data, 21) : 1600;
+        final int graphMinValue =
+            data.length > 24 ? _parseTwoBytesToInt(data, 23) : 0;
+
+        bool finalScreenOnAlarm = true;
+        bool finalAlarmOnCo2Fall = false;
+        List<AlarmLevel> finalAlarmLevels = defaultAlarmLevels;
+        bool flightMode = false;
+
+        if (data.length >= 25 + 42) {
+          int offset = 25;
+          finalScreenOnAlarm = _parseBoolean(data, offset++);
+          finalAlarmOnCo2Fall = _parseBoolean(data, offset++);
+
+          List<AlarmLevel> parsedLevels = [];
+          for (int i = 0; i < 10; i++) {
+            if (offset + 3 < data.length) {
+              final co2MsbByte = data[offset++] & 0xFF;
+              final co2LsbByte = data[offset++] & 0xFF;
+              final co2Threshold = (co2MsbByte << 8) | co2LsbByte;
+              final repeatCount = data[offset++];
+              final enabled = _parseBoolean(data, offset++);
+
+              parsedLevels.add(AlarmLevel(
+                id: i,
+                co2Threshold: co2Threshold,
+                repeatCount: repeatCount,
+                enabled: enabled,
+              ));
+            } else {
+              parsedLevels.addAll(defaultAlarmLevels.sublist(i));
+              break;
+            }
+          }
+          finalAlarmLevels = parsedLevels;
+          debugPrint(
+              'InitialData: Successfully parsed advanced alarm settings from initial data.');
+        } else {
+          debugPrint(
+              'InitialData: Data too short for advanced alarm settings (length ${data.length}, needed >= ${25 + 42}). Using all default advanced alarm settings.');
+          debugPrint(
+              'InitialData: Remaining data after parsing other settings: ${data.sublist(25).map((e) => e.toRadixString(16)).join()}');
+        }
+
+        // check if the scaling is present in the data
+        // it is a 4 byte float value
+        if (data.length >= 25 + 42 + 4) {
+          final scaling = parseFloatFromBytes(data, 25 + 42);
+          debugPrint('InitialData: Scaling: $scaling');
+
+          settings = settings.copyWith(scaling: scaling);
+        }
+
+        // check if the flight mode is present in the data
+        if (data.length >= 25 + 42 + 4 + 1) {
+          flightMode = _parseBoolean(data, 25 + 42 + 4);
+          debugPrint('InitialData: Flight Mode: $flightMode');
+        }
+
+        debugPrint(
+            'InitialData Final Values -> ScreenOnAlarm: $finalScreenOnAlarm, AlarmOnCo2Fall: $finalAlarmOnCo2Fall');
 
         return settings.copyWith(
           deviceId: deviceId,
-          alarmEnabled: _parseBoolean(data, 4),
-          vibrationEnabled: _parseBoolean(data, 5),
-          powerMode: PowerMode.fromValue(data[6]),
-          thresholds: DeviceThresholds(
-            greenUpperLimit: _parseTwoBytesToInt(data, 7),
-            yellowUpperLimit: _parseTwoBytesToInt(data, 9),
-          ),
-          continuosScreenEnabled: _parseBoolean(data, 11),
-          autoCalibration: _parseBoolean(data, 12),
+          alarmEnabled: alarmEnabled,
+          vibrationEnabled: vibrationEnabled,
+          powerMode: powerMode,
+          thresholds: thresholds,
+          continuosScreenEnabled: continuosScreenEnabled,
+          autoCalibration: autoCalibration,
           dndEnabled: dndEnabled,
           dndStartTime: DateTime(0, 0, 0, dndStartHour, dndStartMinute),
           dndEndTime: DateTime(0, 0, 0, dndEndHour, dndEndMinute),
           recalibrationTarget: recalibrationTarget,
-          uiMode: graphMode,
+          uiMode: uiMode,
           graphMaxValue: graphMaxValue,
           graphMinValue: graphMinValue,
+          screenOnAlarm: finalScreenOnAlarm,
+          alarmOnCo2Fall: finalAlarmOnCo2Fall,
+          alarmLevels: finalAlarmLevels,
+          flightMode: flightMode,
         );
       },
     );
-
-    return data[13];
+    return true;
   }
 
   String parseAlias(List<int> data) {
@@ -370,6 +484,8 @@ class ResponseCommandParser {
       final timestamp = _byteArrayToInt(historyData, i, i + 3);
       final date = BleDataService.parseDeviceTimestamp(timestamp);
 
+      debugPrint('DATE: ${date.toIso8601String()}');
+
       // Extract the value (2 bytes)
       final highByte = historyData[i + 4] & 0xFF;
       final lowByte = historyData[i + 5] & 0xFF;
@@ -377,13 +493,21 @@ class ResponseCommandParser {
 
       /// Extract the type (1 byte)
       final type = historyData[i + 6];
+      final parsedType = DeviceDataType.fromByte(type).index;
+
+      debugPrint(
+          'TYPE: $parsedType, value: $value, date: ${date.toIso8601String()}');
 
       final deviceData0 = DeviceData(
         deviceId: deviceId,
         dateTime: date,
         value: // if value is > 63000 and less than 65535, then it is a negative value
-            value > 33000 && value <= 65535 ? value - 65536 : value,
-        type: DeviceDataType.fromByte(type).index,
+            (parsedType != DeviceDataType.flightMode.index &&
+                    value > 33000 &&
+                    value <= 65535)
+                ? value - 65536
+                : value,
+        type: parsedType,
       );
 
       deviceData.add(deviceData0);
@@ -559,6 +683,12 @@ class ResponseCommandParser {
     return String.fromCharCodes(contentArray);
   }
 
+  double parseFloatFromBytes(List<int> data, int startIndex) {
+    final bytes = data.sublist(startIndex, startIndex + 4);
+    final byteData = ByteData.sublistView(Uint8List.fromList(bytes));
+    return byteData.getFloat32(0, Endian.big); // Big-endian from C code
+  }
+
   void _updateDeviceSettings(DeviceSettings Function(DeviceSettings) update) {
     try {
       isarService.write((isar) {
@@ -578,6 +708,52 @@ class ResponseCommandParser {
       debugPrint(
           'Device settings: ${isarService.read((isar) => isar.deviceSettings.where().findAll())}');
     }
+  }
+
+  DeviceSensorConfigData parseSensorDetails(List<int> data) {
+    if (data.length < 21) {
+      // Basic check for minimum length
+      throw Exception(
+          'Invalid data length for SensorDetails. Expected at least 21 bytes, got ${data.length}');
+    }
+
+    int offset = 4; // Start of payload after ffaa3010
+
+    var rawTempOffset = (data[offset++] << 8) | data[offset++];
+    // Convert this to actual temperature using the formula:
+    // T_offset [°C] = word[0] * (175 / (2^16 - 1))
+    // word[0] is rawTempOffset (a 16-bit integer)
+    // (2^16 - 1) is 65535
+    final double actualTempOffset = rawTempOffset * (175.0 / 65535.0);
+
+    final altitude = (data[offset++] << 8) | data[offset++];
+    final ambientPressureMbar = (data[offset++] << 8) | data[offset++];
+    final ascEnabled = data[offset++] == 0x01;
+    final ascTarget = (data[offset++] << 8) | data[offset++];
+
+    final serialNoBytes = data.sublist(offset, offset + 6);
+    offset += 6;
+    final serialNumber = serialNoBytes
+        .map((b) => b.toRadixString(16).padLeft(2, '0'))
+        .join()
+        .toUpperCase();
+
+    final sensorVariantByte = data[offset++];
+    final sensorVariant =
+        "SCD4$sensorVariantByte"; // User's change incorporated
+
+    // Note: Checksum is at data[offset] or data[data.length-1]
+    // We are not verifying checksum here but it's good practice to do so.
+
+    return DeviceSensorConfigData(
+      temperatureOffset: actualTempOffset, // Use the converted double value
+      sensorAltitude: altitude,
+      ambientPressure: ambientPressureMbar,
+      ascEnabled: ascEnabled,
+      ascTarget: ascTarget,
+      serialNumber: serialNumber,
+      sensorVariant: sensorVariant,
+    );
   }
 }
 
@@ -617,11 +793,11 @@ enum ResponseCommand {
   getAlias(0x09),
   setAliasResult(0x0A),
   getCo2History(0x0C),
-  calibrateSensors(0x11),
+  calibrateSensors(0x0D),
   setContinuosDisplayResult(0x0E),
   firmwareVersion(0x13),
   recalibrationTime(0x0F),
-  recalibrationConfirm(0x0D),
+  recalibrationConfirm(0x1F),
   locateMyAirspot(0x10),
   dataEraseDone(0xFD),
   batteryLevel(0x20),
@@ -630,11 +806,15 @@ enum ResponseCommand {
   resetSensorResult(0x24),
   ascData(0x25),
   getMemoryDump(0x26),
-  ascDayCount(0x2A);
+  ascDayCount(0x2A),
+  getDeviceVariant(0x2B),
+  getAdvancedAlarmSettings(0x2F),
+  getSensorDetails(0x30);
 
   const ResponseCommand(this.value);
   final int value;
 
-  factory ResponseCommand.fromValue(int value) => ResponseCommand.values
-      .firstWhere((e) => e.value == value, orElse: () => throw 'Invalid value');
+  factory ResponseCommand.fromValue(int value) =>
+      ResponseCommand.values.firstWhere((e) => e.value == value,
+          orElse: () => throw 'Invalid value: $value');
 }

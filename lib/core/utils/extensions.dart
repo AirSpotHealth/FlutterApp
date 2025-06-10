@@ -111,8 +111,6 @@ extension DateTimeExtension on DateTime {
     final pattern =
         systemDateFormat.pattern!.replaceAll(RegExp(r'^/?y+|/y+$'), '');
 
-    debugPrint("SYSTEM DATE FORMAT: ${systemDateFormat.pattern}");
-    debugPrint("SYSTEM TIME FORMAT: ${systemTimeFormat.pattern}");
     return '${DateFormat(pattern).format(this)} ${systemTimeFormat.format(this)}';
   }
 

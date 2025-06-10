@@ -1,5 +1,4 @@
 import 'package:airspothealth/core/theme/app_colors.dart';
-import 'package:airspothealth/core/utils/app_utils.dart';
 import 'package:airspothealth/core/utils/extensions.dart';
 import 'package:airspothealth/core/widgets/button.dart';
 import 'package:airspothealth/features/device_settings/models/remote_version.dart';
@@ -56,10 +55,9 @@ class DeviceVersionUpdateWidget extends ConsumerWidget {
                     .fetchRemoteVersion(),
               ),
             ),
-            if (remoteVersion is AsyncData &&
-                remoteVersion.value != null &&
-                AppUtils.isVersionGreater(
-                    currentVersion, remoteVersion.value!.versionName)) ...[
+            if (remoteVersion.value
+                    ?.isVersionGreaterThanCurrentVersion(currentVersion) ??
+                false) ...[
               const SizedBox(width: 16),
               Button(
                 wrapWidth: true,

@@ -95,12 +95,18 @@ class DeviceData {
       return resetReasonMap[value] ?? 'Unknown';
     }
 
-    if (type == DeviceDataType.sensorAutoCalibration.index) {
+    if (type == DeviceDataType.sensorAutoCalibration.index ||
+        type == DeviceDataType.flightMode.index) {
       return value == 0 ? 'Disabled' : 'Enabled';
     }
 
     if (type == DeviceDataType.sensorError.index) {
       return sensorErrorMap[value] ?? value.toString();
+    }
+
+    if (type == DeviceDataType.scaling.index) {
+      final scaling = ((value * 1.5) / 65535.0) + 0.5;
+      return scaling.toStringAsFixed(4);
     }
 
     return value.toString();

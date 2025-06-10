@@ -1,4 +1,5 @@
 import 'package:airspothealth/core/utils/assets.dart';
+import 'package:airspothealth/core/utils/extensions.dart';
 import 'package:airspothealth/features/device_settings/providers/recalibration_time_provider.dart';
 import 'package:airspothealth/features/device_settings/widgets/calibration_target_widget.dart';
 import 'package:flutter/material.dart';
@@ -28,7 +29,7 @@ class ManualCalibrationWidget extends ConsumerWidget {
                 style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold)),
             subtitle: const Text(
               'To calibrate this AirSpot, place the device outdoors for at least 5 minutes, away from any people or CO2 sources, then tap the icon below. See full manual for details.',
-              style: TextStyle(fontSize: 12, color: Colors.grey),
+              style: TextStyle(fontSize: 12, color: Colors.black),
             ),
             contentPadding: EdgeInsets.zero,
           ),
@@ -39,19 +40,21 @@ class ManualCalibrationWidget extends ConsumerWidget {
                   .read(recalibrationTimeProvider(deviceId).notifier)
                   .startRecalibration();
             },
-            child: Align(
-              alignment: Alignment.center,
-              child: Container(
-                padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(
-                  color: Colors.grey.shade50,
-                  borderRadius: BorderRadius.circular(8),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  'Tap to start calibration',
+                  style: context.textTheme.bodyMedium?.weight500,
                 ),
-                child: Image.asset(
+                const SizedBox(height: 8),
+                Image.asset(
                   Assets.recalibrateImage,
-                  height: 120,
+                  height: 80,
+                  fit: BoxFit.cover,
                 ),
-              ),
+                const SizedBox(height: 12)
+              ],
             ),
           ),
           const SizedBox(height: 16),
