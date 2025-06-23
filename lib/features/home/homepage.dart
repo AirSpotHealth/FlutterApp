@@ -54,8 +54,10 @@ class _HomePageState extends ConsumerState<HomePage> {
     return Scaffold(
       appBar: AppBar(
         backgroundColor: AppColors.primaryColor,
-        title:
-            const Padding(padding: EdgeInsets.only(top: 12), child: AppLogo()),
+        title: const Padding(
+          padding: EdgeInsets.only(top: 12),
+          child: AppLogo(testEnabled: true),
+        ),
         centerTitle: true,
       ),
       body: ListView.separated(
