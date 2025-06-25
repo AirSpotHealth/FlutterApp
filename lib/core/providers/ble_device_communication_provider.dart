@@ -6,7 +6,9 @@ import 'package:airspothealth/core/models/device_data_type.dart';
 import 'package:airspothealth/core/models/device_settings.dart';
 import 'package:airspothealth/core/providers/ble_connected_devices_provider.dart';
 import 'package:airspothealth/core/providers/device_settings_provider.dart';
+import 'package:airspothealth/core/services/ble_communicator_service.dart';
 import 'package:airspothealth/core/services/ble_data_service.dart';
+import 'package:airspothealth/core/services/ble_device_communicator.dart';
 import 'package:airspothealth/core/services/data_logger_service.dart';
 import 'package:airspothealth/core/services/home_widget_service.dart';
 import 'package:airspothealth/core/services/isar_service.dart';
@@ -18,7 +20,6 @@ import 'package:airspothealth/features/app_setup/providers/dev_mode_provider.dar
 import 'package:airspothealth/features/device_graph/providers/ble_device_provider.dart';
 import 'package:airspothealth/features/devices/providers/device_battery_level_provider.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_blue_plus/flutter_blue_plus.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:home_widget/home_widget.dart';
@@ -30,8 +31,9 @@ final bleDeviceCommunicationProvider =
 );
 
 class _BleDeviceCommunicationNotifier extends FamilyNotifier<dynamic, String> {
-  BluetoothCharacteristic? _writeCharacteristic;
   final IsarService _isarService = IsarService();
+
+  late final BleDeviceCommunicator _communicator;
 
   BluetoothDevice? get device => ref
       .read(bleConnectedDevicesProvider)
@@ -47,6 +49,11 @@ class _BleDeviceCommunicationNotifier extends FamilyNotifier<dynamic, String> {
   @override
   dynamic build(String arg) {
     final dynamic lastValue = _getLastStoredValue(arg);
+
+    _communicator = BleCommunicatorService.instance.communicator(arg);
+    _notifySubscription?.cancel();
+    _notifySubscription =
+        _communicator.dataStream.listen(_handleNotificationData);
 
     ref.onDispose(() {
       _notifySubscription?.cancel();
@@ -68,85 +75,9 @@ class _BleDeviceCommunicationNotifier extends FamilyNotifier<dynamic, String> {
   }
 
   void setConnected() {
-    _resetCharacteristics();
-    _notifySubscription?.cancel();
-    _notifySubscription = null;
-    startListeningToNotifications();
-  }
-
-  void _resetCharacteristics() => _writeCharacteristic = null;
-
-  Future<void> startListeningToNotifications() async {
-    if (device == null || device!.isConnected == false) {
-      debugPrint('Device not found or not connected');
-      return;
-    }
-
-    try {
-      final BluetoothService? service =
-          await _findService(device!, Constants.serviceUuid);
-      if (service == null) {
-        debugPrint('Service not found');
-        return;
-      }
-
-      await _subscribeToCharacteristic(
-        service,
-        Constants.notifyUuid,
-      );
-
-      _writeCharacteristic = _findCharacteristic(service, Constants.writeUuid);
-
-      await _getInitialData();
-    } on PlatformException catch (e) {
-      debugPrint('Error starting notification stream platform: ${e.message}');
-
-      if ((e.message?.contains(Constants.serviceUuid.toLowerCase()) ?? false) &&
-          notifySubscriptionRetryCount < notifySubscriptionRetryMaxCount) {
-        // delay for 1 second before retrying
-        Future.delayed(const Duration(seconds: 1)).then((_) {
-          notifySubscriptionRetryCount++;
-          startListeningToNotifications();
-        });
-      }
-    } catch (e) {
-      debugPrint('Error starting notification stream: $e');
-    }
-  }
-
-  Future<BluetoothService?> _findService(
-      BluetoothDevice device, String serviceUuid) async {
-    final services = await device.discoverServices();
-    return services.firstWhereOrNull(
-        (service) => service.uuid.toString().toUpperCase() == serviceUuid);
-  }
-
-  BluetoothCharacteristic? _findCharacteristic(
-      BluetoothService service, String characteristicUuid) {
-    return service.characteristics.firstWhereOrNull(
-      (char) => char.uuid.toString().toUpperCase() == characteristicUuid,
-    );
-  }
-
-  Future<void> _subscribeToCharacteristic(
-      BluetoothService service, String notifyUuid) async {
-    final notifyCharacteristic = _findCharacteristic(service, notifyUuid);
-    if (notifyCharacteristic == null) {
-      debugPrint('Notify characteristic not found');
-      return;
-    }
-
-    await notifyCharacteristic.setNotifyValue(true);
-    final notificationStream = notifyCharacteristic.lastValueStream;
-
-    debugPrint(
-        'Subscribed to notifications: $deviceId, Was previousNotifySubscription: ${_notifySubscription != null}');
-
-    _notifySubscription?.cancel();
-    notifySubscriptionRetryCount = 0;
-
-    _notifySubscription = notificationStream.listen((data) {
-      _handleNotificationData(data);
+    _communicator.reset();
+    _communicator.initialize().then((_) {
+      _getInitialData();
     });
   }
 
@@ -289,29 +220,22 @@ class _BleDeviceCommunicationNotifier extends FamilyNotifier<dynamic, String> {
       return false;
     }
 
-    if (_writeCharacteristic == null) {
-      debugPrint('Write characteristic not found');
-      return false;
-    }
+    final bool success = await _communicator.sendCommand(data);
+    final DateTime dateTime = DateTime.now();
 
-    try {
-      await _writeCharacteristic!.write(data);
-      final DateTime dateTime = DateTime.now();
+    if (success) {
       debugPrint(
           'Current date time: ${LocalDateFormat.instance.systemDateFormat.format(dateTime)} ${LocalDateFormat.instance.systemTimeFormat.format(dateTime)}');
       _checkIfLogData(data, dateTime, sent: true, st: true);
-      debugPrint('Command sent: ${BleDataService.bytesToHexStr(data)}');
-      return true;
-    } catch (e) {
-      debugPrint('Error sending command: $e');
+    } else {
       DataLoggerService().logData(
         deviceId: device?.advName ?? deviceId,
         value: BleDataService.bytesToHexStr(data),
-        dateTime: DateTime.now(),
+        dateTime: dateTime,
         sent: true,
       );
-      return false;
     }
+    return success;
   }
 
   void _checkIfLogData(dynamic value, DateTime dateTime,

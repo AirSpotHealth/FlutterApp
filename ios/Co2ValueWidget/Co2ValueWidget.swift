@@ -12,12 +12,12 @@ import AppIntents
 struct Provider: TimelineProvider {
     // Provides a default view for the widget gallery
     func placeholder(in context: Context) -> SimpleEntry {
-        SimpleEntry(date: Date(), co2Value: "0426", powerMode: "3 min", batteryLevel: "100", isCharging: false, alarmEnabled: true, vibrationEnabled: false)
+        SimpleEntry(date: Date(), co2Value: "0426", powerMode: "3 min", batteryLevel: "100", isCharging: false, alarmEnabled: true, vibrationEnabled: false, deviceId: nil)
     }
 
     // Provides the view for a transient state, e.g., in the widget gallery
     func getSnapshot(in context: Context, completion: @escaping (SimpleEntry) -> ()) {
-        let entry = SimpleEntry(date: Date(), co2Value: "0426", powerMode: "3 min", batteryLevel: "100", isCharging: false, alarmEnabled: true, vibrationEnabled: false)
+        let entry = SimpleEntry(date: Date(), co2Value: "0426", powerMode: "3 min", batteryLevel: "100", isCharging: false, alarmEnabled: true, vibrationEnabled: false, deviceId: nil)
         completion(entry)
     }
 
@@ -32,6 +32,7 @@ struct Provider: TimelineProvider {
         let isChargingString = userDefaults?.string(forKey: "is_charging") ?? "false"
         let alarmEnabledString = userDefaults?.string(forKey: "alarm_enabled") ?? "false"
         let vibrationEnabledString = userDefaults?.string(forKey: "vibration_enabled") ?? "false"
+        let deviceId = userDefaults?.string(forKey: "device_id") ?? nil
         
         let isCharging = isChargingString == "true"
         let alarmEnabled = alarmEnabledString == "true"
@@ -44,7 +45,8 @@ struct Provider: TimelineProvider {
             batteryLevel: batteryLevel,
             isCharging: isCharging,
             alarmEnabled: alarmEnabled,
-            vibrationEnabled: vibrationEnabled
+            vibrationEnabled: vibrationEnabled,
+            deviceId: deviceId
         )
 
         // Create a timeline that refreshes every 15 minutes.
@@ -64,18 +66,9 @@ struct SimpleEntry: TimelineEntry {
     let isCharging: Bool
     let alarmEnabled: Bool
     let vibrationEnabled: Bool
+    let deviceId: String?
 }
 
-// The AppIntent to refresh the widget timeline (requires iOS 17+)
-struct RefreshWidgetIntent: AppIntent {
-    static var title: LocalizedStringResource = "Refresh Widget"
-
-    func perform() async throws -> some IntentResult {
-        // Reload the timeline of our widget
-        WidgetCenter.shared.reloadTimelines(ofKind: "Co2ValueWidget")
-        return .result()
-    }
-}
 
 // The SwiftUI view that displays the widget content
 struct Co2ValueWidgetEntryView : View {
@@ -151,7 +144,10 @@ struct Co2ValueWidgetEntryView : View {
             .cornerRadius(8)
             
             // Refresh Button
-            Button(intent: RefreshWidgetIntent()) {
+            Button(intent: BackgroundIntent(
+                url: URL(string: "airspothealthapp://refresh?deviceId=\(entry.deviceId ?? "")"),
+                appGroup: "group.com.airspot.lohas"
+            )) {
                 // a 4 x 4 circle dot with white background
                 ZStack {
                     Circle()
@@ -195,8 +191,8 @@ struct Co2ValueWidget: Widget {
 #Preview(as: .systemSmall) {
     Co2ValueWidget()
 } timeline: {
-    SimpleEntry(date: .now, co2Value: "426", powerMode: "3 min", batteryLevel: "100", isCharging: false, alarmEnabled: true, vibrationEnabled: false)
-    SimpleEntry(date: .now, co2Value: "950", powerMode: "Now", batteryLevel: "75", isCharging: false, alarmEnabled: true, vibrationEnabled: true)
-    SimpleEntry(date: .now, co2Value: "1550", powerMode: "1 min", batteryLevel: "20", isCharging: true, alarmEnabled: false, vibrationEnabled: false)
-    SimpleEntry(date: .now, co2Value: "900", powerMode: "5 sec", batteryLevel: "45", isCharging: false, alarmEnabled: true, vibrationEnabled: true)
+    SimpleEntry(date: .now, co2Value: "426", powerMode: "3 min", batteryLevel: "100", isCharging: false, alarmEnabled: true, vibrationEnabled: false, deviceId: nil)
+    SimpleEntry(date: .now, co2Value: "950", powerMode: "Now", batteryLevel: "75", isCharging: false, alarmEnabled: true, vibrationEnabled: true, deviceId: nil)
+    SimpleEntry(date: .now, co2Value: "1550", powerMode: "1 min", batteryLevel: "20", isCharging: true, alarmEnabled: false, vibrationEnabled: false, deviceId: nil)
+    SimpleEntry(date: .now, co2Value: "900", powerMode: "5 sec", batteryLevel: "45", isCharging: false, alarmEnabled: true, vibrationEnabled: true, deviceId: nil)
 }
