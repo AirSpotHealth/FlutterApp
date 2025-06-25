@@ -1,4 +1,5 @@
 import 'package:airspothealth/core/router/app_router.dart';
+import 'package:airspothealth/core/services/home_widget_service.dart';
 import 'package:airspothealth/core/services/isar_service.dart';
 import 'package:airspothealth/core/services/notification_service.dart';
 import 'package:airspothealth/core/services/prefs_service.dart';
@@ -29,11 +30,14 @@ void main() async {
 
   await NotificationService.initNotification();
 
+  // Initialize home widget
+  await HomeWidgetService().initialize();
+
   await _checkVersion();
 
   runApp(
-    const ProviderScope(
-      child: AirspotApp(),
+    ProviderScope(
+      child: const AirspotApp(),
     ),
   );
 }
