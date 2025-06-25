@@ -1,6 +1,8 @@
 import 'dart:async';
 
+import 'package:airspothealth/core/services/ble_communicator_service.dart';
 import 'package:airspothealth/core/utils/constants.dart';
+import 'package:airspothealth/core/utils/device_cmd_utils.dart';
 import 'package:flutter/material.dart';
 import 'package:home_widget/home_widget.dart';
 
@@ -40,10 +42,11 @@ Future<void> _backgroundCallback(Uri? uri) async {
     debugPrint('Device ID from widget refresh: $deviceId');
 
     if (deviceId != null && deviceId.isNotEmpty) {
-      // TODO: Send refresh command to the specific device
-      // You can implement the actual refresh logic here
-      // For example: BleDeviceCommunicationProvider.sendRefreshCommand(deviceId);
-      debugPrint('Sending refresh command to device: $deviceId');
+      BleCommunicatorService.instance
+          .communicator(deviceId)
+          .sendCommand(DeviceCmdUtils.getCO2());
+
+      debugPrint('Refresh command sent to device: $deviceId');
     } else {
       debugPrint('No device ID provided for refresh action');
     }
