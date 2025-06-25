@@ -1,4 +1,4 @@
-import 'package:airspothealth/main.dart';
+import 'package:airspothealth/core/utils/local_date_format.dart';
 import 'package:intl/intl.dart';
 
 class Constants {
@@ -41,7 +41,7 @@ class Constants {
       'https://airspothealth.com/a/blog/category/';
 
   static const String homeWidgetKey = 'airspot_home_widget';
-  static const String appGroupId = 'com.air.spot';
+  static const String appGroupId = 'group.com.airspot.lohas';
   static const String iOSWidgetName = 'Co2ValueWidget';
   static const String androidWidgetName = 'airspothealth.Co2ValueWidget';
 
@@ -122,8 +122,10 @@ class Constants {
 
   static String echartTimeFormat() {
     // Get system date and time format
-    String sDFormat = systemDateFormat.pattern ?? "d/M/y";
-    String sTFormat = systemTimeFormat.pattern ?? "h:mm a"; // Fallback if null
+    String sDFormat =
+        LocalDateFormat.instance.systemDateFormat.pattern ?? "d/M/y";
+    String sTFormat = LocalDateFormat.instance.systemTimeFormat.pattern ??
+        "h:mm a"; // Fallback if null
 
     // Mapping Date Format
     String formattedDate = sDFormat
