@@ -4,11 +4,11 @@
     android:initialKeyguardLayout="@layout/co2_value_widget"
     android:initialLayout="@layout/co2_value_widget"
     android:minWidth="110dp"
-    android:minHeight="40dp"
-    android:previewImage="@mipmap/launcher_icon"
+    android:minHeight="110dp"
+    android:previewImage="@drawable/widget_preview"
     android:previewLayout="@layout/co2_value_widget"
-    android:resizeMode="horizontal|vertical"
+    android:resizeMode="none"
     android:targetCellWidth="2"
-    android:targetCellHeight="1"
-    android:updatePeriodMillis="86400000"
-    android:widgetCategory="home_screen" />
+    android:targetCellHeight="2"
+    android:updatePeriodMillis="300000"
+    android:widgetCategory="home_screen|keyguard" />

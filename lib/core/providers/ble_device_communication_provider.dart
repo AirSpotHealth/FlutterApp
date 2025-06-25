@@ -8,17 +8,20 @@ import 'package:airspothealth/core/providers/ble_connected_devices_provider.dart
 import 'package:airspothealth/core/providers/device_settings_provider.dart';
 import 'package:airspothealth/core/services/ble_data_service.dart';
 import 'package:airspothealth/core/services/data_logger_service.dart';
+import 'package:airspothealth/core/services/home_widget_service.dart';
 import 'package:airspothealth/core/services/isar_service.dart';
 import 'package:airspothealth/core/utils/constants.dart';
 import 'package:airspothealth/core/utils/device_cmd_utils.dart';
 import 'package:airspothealth/core/utils/extensions.dart';
 import 'package:airspothealth/features/app_setup/providers/dev_mode_provider.dart';
 import 'package:airspothealth/features/device_graph/providers/ble_device_provider.dart';
+import 'package:airspothealth/features/devices/providers/device_battery_level_provider.dart';
 import 'package:airspothealth/main.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_blue_plus/flutter_blue_plus.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:home_widget/home_widget.dart';
 import 'package:isar/isar.dart';
 
 final bleDeviceCommunicationProvider =
@@ -157,9 +160,11 @@ class _BleDeviceCommunicationNotifier extends FamilyNotifier<dynamic, String> {
     final dynamic co2Data =
         BleDataService.parseResponseCommand(ref, device, data);
 
-    // _setHomeValue(value);
     if (co2Data is DeviceData) {
       state = co2Data.value == 0 ? null : co2Data.value;
+
+      // Update home widget with new CO2 value
+      setHomeValue(co2Data);
 
       if (co2Data.isLiveCo2) {
         _isarService.write((isar) {
@@ -193,14 +198,71 @@ class _BleDeviceCommunicationNotifier extends FamilyNotifier<dynamic, String> {
     //     ).ignore();
     //   }
     // }
+  }
 
-    // void _setHomeValue(dynamic value) {
-    //   HomeWidget.saveWidgetData(Constants.homeWidgetKey, value.toString());
-    //   HomeWidget.updateWidget(
-    //     iOSName: Constants.iOSWidgetName,
-    //     androidName: Constants.androidWidgetName,
-    //   );
-    // }
+  void setHomeValue(DeviceData co2Data) {
+    debugPrint(
+        'BLE: FRESH CO2 DATA RECEIVED: ${co2Data.value} - Updating widget with all data');
+
+    try {
+      // 1. We have the fresh CO2 value
+      final String co2Value = co2Data.value.toString();
+
+      // 2. Get device name
+      final String deviceName = device?.advName ?? 'AirSpot Device';
+
+      // 3. Get device settings (power mode, alarms, etc.)
+      String powerMode = 'Now';
+      bool alarmEnabled = false;
+      bool vibrationEnabled = false;
+
+      try {
+        final deviceSettings = ref.read(deviceSettingsProvider(deviceId));
+        powerMode = deviceSettings.powerMode.name;
+        alarmEnabled = deviceSettings.alarmEnabled;
+        vibrationEnabled = deviceSettings.vibrationEnabled;
+      } catch (e) {
+        debugPrint('BLE: Could not read device settings: $e');
+      }
+
+      // 4. Get battery info
+      String batteryLevel = '0';
+      bool isCharging = false;
+
+      try {
+        final batteryState = ref.read(deviceBatteryLevelProvider(deviceId));
+        batteryLevel = batteryState.level?.toString() ?? '0';
+        isCharging = batteryState.isCharging;
+      } catch (e) {
+        debugPrint('BLE: Could not read battery state: $e');
+      }
+
+      // 5. Create complete widget data
+      final widgetData = WidgetUpdateData(
+        deviceId: deviceId,
+        co2Value: co2Value,
+        deviceName: deviceName,
+        powerMode: powerMode,
+        batteryLevel: batteryLevel,
+        isCharging: isCharging,
+        alarmEnabled: alarmEnabled,
+        vibrationEnabled: vibrationEnabled,
+      );
+
+      // 6. Call service to update home widget with all data
+      debugPrint(
+          'BLE: Updating widget with: CO2=$co2Value, Device=$deviceName, PowerMode=$powerMode, Battery=$batteryLevel');
+      HomeWidgetService.instance.updateHomeWidget(data: widgetData);
+    } catch (e) {
+      debugPrint('BLE: Error gathering widget data: $e');
+      // Fallback to basic CO2 update
+      HomeWidget.saveWidgetData(
+          Constants.homeWidgetKey, co2Data.value.toString());
+      HomeWidget.updateWidget(
+        iOSName: Constants.iOSWidgetName,
+        androidName: Constants.androidWidgetName,
+      );
+    }
   }
 
   Future<void> _getInitialData() async {
