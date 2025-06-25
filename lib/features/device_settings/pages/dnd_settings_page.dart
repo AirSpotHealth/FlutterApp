@@ -2,8 +2,8 @@ import 'package:airspothealth/core/models/device_settings.dart';
 import 'package:airspothealth/core/providers/device_settings_provider.dart';
 import 'package:airspothealth/core/theme/app_colors.dart';
 import 'package:airspothealth/core/utils/extensions.dart';
+import 'package:airspothealth/core/utils/local_date_format.dart';
 import 'package:airspothealth/features/device_settings/widgets/device_settings_name_widget.dart';
-import 'package:airspothealth/main.dart';
 import 'package:bottom_picker/bottom_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -74,7 +74,8 @@ class DndSettingsPage extends ConsumerWidget {
   Widget _buildTimeTile(
       BuildContext context, WidgetRef ref, DeviceSettings deviceSettings,
       {required bool isStartTime}) {
-    final bool is12Hour = systemTimeFormat.pattern!.contains('a');
+    final bool is12Hour =
+        LocalDateFormat.instance.systemTimeFormat.pattern!.contains('a');
     final DateTime? time =
         isStartTime ? deviceSettings.dndStartTime : deviceSettings.dndEndTime;
 

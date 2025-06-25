@@ -4,11 +4,11 @@ import 'dart:math' as math;
 import 'package:airspothealth/core/models/device_data.dart';
 import 'package:airspothealth/core/models/device_settings.dart';
 import 'package:airspothealth/core/utils/constants.dart';
+import 'package:airspothealth/core/utils/local_date_format.dart';
 import 'package:airspothealth/core/widgets/airspot_chart/echart.dart';
 import 'package:airspothealth/features/device_graph/models/graph_data_duration.dart';
 import 'package:airspothealth/features/device_graph/models/graph_settings.dart';
 import 'package:airspothealth/features/device_graph/providers/graph_settings_provider.dart';
-import 'package:airspothealth/main.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -174,7 +174,8 @@ class _DataGraphWidgetState extends ConsumerState<DataGraphWidget> {
     // it should be the maximum value of the data and round it to nearest value of yAxesValues
     final yMax = _calculateYMax();
 
-    final is12Hour = systemTimeFormat.pattern!.contains('a');
+    final is12Hour =
+        LocalDateFormat.instance.systemTimeFormat.pattern!.contains('a');
 
     // Check if we're viewing today's data only by checking duration name
     final isToday = duration.name == 'today';
