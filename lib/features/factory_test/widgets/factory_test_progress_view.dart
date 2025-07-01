@@ -2,8 +2,8 @@ import 'package:airspothealth/features/factory_test/models/factory_test_models.d
 import 'package:flutter/material.dart';
 
 class FactoryTestProgressView extends StatelessWidget {
-  final FactoryTestPhase phase;
-  final FactoryTestConnectionState connectionState;
+  final DeviceFactoryTestPhase phase;
+  final DeviceFactoryTestConnectionState connectionState;
 
   const FactoryTestProgressView({
     super.key,
@@ -51,11 +51,11 @@ class FactoryTestProgressView extends StatelessWidget {
 
   String _getPhaseTitle() {
     switch (phase) {
-      case FactoryTestPhase.connecting:
+      case DeviceFactoryTestPhase.connecting:
         return 'Connecting to Device';
-      case FactoryTestPhase.enteringFactoryMode:
+      case DeviceFactoryTestPhase.enteringFactoryMode:
         return 'Entering Factory Mode';
-      case FactoryTestPhase.reconnecting:
+      case DeviceFactoryTestPhase.reconnecting:
         return 'Reconnecting to Device';
       default:
         return 'Processing...';
@@ -64,12 +64,12 @@ class FactoryTestProgressView extends StatelessWidget {
 
   String _getPhaseDescription() {
     switch (phase) {
-      case FactoryTestPhase.connecting:
+      case DeviceFactoryTestPhase.connecting:
         return 'Establishing Bluetooth connection with the selected device...';
-      case FactoryTestPhase.enteringFactoryMode:
+      case DeviceFactoryTestPhase.enteringFactoryMode:
         return 'Sending factory mode command. Device will restart in factory mode...';
-      case FactoryTestPhase.reconnecting:
-        return 'Device has restarted in factory mode. Reconnecting...';
+      case DeviceFactoryTestPhase.reconnecting:
+        return 'Device has restarted in factory mode. Waiting for automatic reconnection...';
       default:
         return 'Please wait while the operation completes...';
     }
@@ -93,7 +93,7 @@ class FactoryTestProgressView extends StatelessWidget {
         isActive: _isStepActive(2),
       ),
       _ProgressStep(
-        title: 'Reconnect',
+        title: 'Auto-Reconnect',
         isCompleted: _isStepCompleted(3),
         isActive: _isStepActive(3),
       ),
@@ -107,15 +107,18 @@ class FactoryTestProgressView extends StatelessWidget {
   bool _isStepCompleted(int stepIndex) {
     switch (stepIndex) {
       case 0: // Connect to Device
-        return connectionState != FactoryTestConnectionState.connecting;
+        return connectionState != DeviceFactoryTestConnectionState.connecting;
       case 1: // Enter Factory Mode
-        return phase != FactoryTestPhase.connecting &&
-            phase != FactoryTestPhase.enteringFactoryMode;
+        return phase != DeviceFactoryTestPhase.connecting &&
+            phase != DeviceFactoryTestPhase.enteringFactoryMode;
       case 2: // Device Restart
-        return connectionState == FactoryTestConnectionState.reconnecting ||
-            connectionState == FactoryTestConnectionState.factoryModeReady;
+        return connectionState ==
+                DeviceFactoryTestConnectionState.reconnecting ||
+            connectionState ==
+                DeviceFactoryTestConnectionState.factoryModeReady;
       case 3: // Reconnect
-        return connectionState == FactoryTestConnectionState.factoryModeReady;
+        return connectionState ==
+            DeviceFactoryTestConnectionState.factoryModeReady;
       default:
         return false;
     }
@@ -124,14 +127,15 @@ class FactoryTestProgressView extends StatelessWidget {
   bool _isStepActive(int stepIndex) {
     switch (stepIndex) {
       case 0: // Connect to Device
-        return connectionState == FactoryTestConnectionState.connecting;
+        return connectionState == DeviceFactoryTestConnectionState.connecting;
       case 1: // Enter Factory Mode
         return connectionState ==
-            FactoryTestConnectionState.enteringFactoryMode;
+            DeviceFactoryTestConnectionState.enteringFactoryMode;
       case 2: // Device Restart
-        return connectionState == FactoryTestConnectionState.deviceRestarting;
+        return connectionState ==
+            DeviceFactoryTestConnectionState.deviceRestarting;
       case 3: // Reconnect
-        return connectionState == FactoryTestConnectionState.reconnecting;
+        return connectionState == DeviceFactoryTestConnectionState.reconnecting;
       default:
         return false;
     }

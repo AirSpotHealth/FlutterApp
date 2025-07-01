@@ -1,32 +1,24 @@
 import 'package:airspothealth/core/theme/app_colors.dart';
 import 'package:airspothealth/core/utils/extensions.dart';
 import 'package:airspothealth/features/factory_test/models/factory_test_models.dart';
-import 'package:airspothealth/features/factory_test/providers/factory_test_provider.dart';
+import 'package:airspothealth/features/factory_test/providers/factory_test_devices_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-class DeviceSelectionTab extends ConsumerStatefulWidget {
-  const DeviceSelectionTab({super.key});
+class DeviceSelectionSheet extends ConsumerStatefulWidget {
+  const DeviceSelectionSheet({super.key});
 
   @override
-  ConsumerState<DeviceSelectionTab> createState() => _DeviceSelectionTabState();
+  ConsumerState<DeviceSelectionSheet> createState() =>
+      _DeviceSelectionSheetState();
 }
 
-class _DeviceSelectionTabState extends ConsumerState<DeviceSelectionTab> {
-  final TextEditingController _searchController = TextEditingController();
-  String _searchQuery = '';
-
-  @override
-  void dispose() {
-    _searchController.dispose();
-    super.dispose();
-  }
-
+class _DeviceSelectionSheetState extends ConsumerState<DeviceSelectionSheet> {
   Future<void> _handleRefresh() async {
-    final notifier = ref.read(factoryTestProvider.notifier);
+    final notifier = ref.read(factoryTestDevicesProvider.notifier);
 
     // Stop current scan if running
-    if (ref.read(factoryTestProvider).isScanning) {
+    if (ref.read(factoryTestDevicesProvider).isScanning) {
       notifier.stopScanning();
     }
 
@@ -36,7 +28,7 @@ class _DeviceSelectionTabState extends ConsumerState<DeviceSelectionTab> {
 
     // Auto-stop scanning after 30 seconds to prevent forever scanning
     Future.delayed(const Duration(seconds: 30), () {
-      if (mounted && ref.read(factoryTestProvider).isScanning) {
+      if (mounted && ref.read(factoryTestDevicesProvider).isScanning) {
         notifier.stopScanning();
       }
     });
@@ -44,33 +36,92 @@ class _DeviceSelectionTabState extends ConsumerState<DeviceSelectionTab> {
 
   @override
   Widget build(BuildContext context) {
-    final factoryTestState = ref.watch(factoryTestProvider);
-    final filteredDevices = _filterDevices(factoryTestState.availableDevices);
+    final factoryTestState = ref.watch(factoryTestDevicesProvider);
 
     return Container(
-      color: AppColors.backgroundSecondary,
-      child: RefreshIndicator(
-        onRefresh: _handleRefresh,
-        color: AppColors.primaryColor,
-        backgroundColor: AppColors.backgroundPrimary,
-        child: Column(
-          children: [
-            _buildSearchSection(factoryTestState),
-            Expanded(
-              child: filteredDevices.isEmpty
-                  ? _buildEmptyState(factoryTestState.isScanning)
-                  : _buildDeviceList(filteredDevices),
-            ),
-          ],
+      height: MediaQuery.of(context).size.height *
+          0.75, // Limit height to 75% of screen
+      decoration: const BoxDecoration(
+        color: AppColors.backgroundSecondary,
+        borderRadius: BorderRadius.only(
+          topLeft: Radius.circular(20),
+          topRight: Radius.circular(20),
         ),
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          // Drag handle
+          Container(
+            margin: const EdgeInsets.only(top: 12, bottom: 8),
+            width: 40,
+            height: 4,
+            decoration: BoxDecoration(
+              color: AppColors.textSecondary.withValues(alpha: 0.3),
+              borderRadius: BorderRadius.circular(2),
+            ),
+          ),
+
+          // Header
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+            child: Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    'Add Factory Test Device',
+                    style: context.textTheme.headlineSmall?.copyWith(
+                      fontWeight: FontWeight.bold,
+                      color: AppColors.textPrimary,
+                    ),
+                  ),
+                ),
+                IconButton(
+                  onPressed: () => Navigator.of(context).pop(),
+                  icon: Icon(
+                    Icons.close,
+                    color: AppColors.textSecondary,
+                  ),
+                  tooltip: 'Close',
+                ),
+              ],
+            ),
+          ),
+
+          // Content
+          Expanded(
+            child: RefreshIndicator(
+              onRefresh: _handleRefresh,
+              color: AppColors.primaryColor,
+              backgroundColor: AppColors.backgroundPrimary,
+              child: Column(
+                children: [
+                  _buildDevicesTitle(factoryTestState),
+                  Expanded(
+                    child: factoryTestState.scannedDevices.isEmpty
+                        ? _buildEmptyState(factoryTestState.isScanning)
+                        : _buildDeviceList(factoryTestState.scannedDevices),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }
 
-  Widget _buildSearchSection(FactoryTestState state) {
+  Widget _buildDevicesTitle(FactoryTestDevicesState state) {
+    // Calculate available devices (not already being tested)
+    final deviceState = ref.watch(factoryTestDevicesProvider);
+    final existingDeviceIds =
+        deviceState.devices.map((d) => d.deviceId).toSet();
+    final availableDevicesCount = state.scannedDevices
+        .where((device) => !existingDeviceIds.contains(device.deviceId))
+        .length;
+
     return Container(
-      color: AppColors.backgroundPrimary,
-      padding: const EdgeInsets.all(16.0),
+      margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
       child: Column(
         children: [
           // Search bar with scan controls
@@ -90,40 +141,14 @@ class _DeviceSelectionTabState extends ConsumerState<DeviceSelectionTab> {
             ),
             child: Row(
               children: [
-                Expanded(
-                  child: TextField(
-                    controller: _searchController,
-                    onChanged: (value) {
-                      setState(() {
-                        _searchQuery = value.toLowerCase();
-                      });
-                    },
-                    decoration: const InputDecoration(
-                      hintText: 'Search devices by name or ID...',
-                      hintStyle: TextStyle(
-                        color: AppColors.textSecondary,
-                        fontSize: 16,
-                      ),
-                      prefixIcon: Icon(
-                        Icons.search,
-                        color: AppColors.textSecondary,
-                      ),
-                      border: InputBorder.none,
-                      contentPadding: EdgeInsets.symmetric(
-                        horizontal: 16,
-                        vertical: 14,
-                      ),
-                    ),
-                  ),
-                ),
                 // Device count and scanning status
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 12),
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       Text(
-                        '${state.availableDevices.length}',
+                        '$availableDevicesCount available devices',
                         style: const TextStyle(
                           fontSize: 14,
                           fontWeight: FontWeight.w600,
@@ -150,6 +175,7 @@ class _DeviceSelectionTabState extends ConsumerState<DeviceSelectionTab> {
                     ],
                   ),
                 ),
+                const Spacer(),
                 // Manual scan toggle button
                 Container(
                   margin: const EdgeInsets.only(right: 8),
@@ -159,7 +185,9 @@ class _DeviceSelectionTabState extends ConsumerState<DeviceSelectionTab> {
                       borderRadius: BorderRadius.circular(20),
                       onTap: () {
                         if (state.isScanning) {
-                          ref.read(factoryTestProvider.notifier).stopScanning();
+                          ref
+                              .read(factoryTestDevicesProvider.notifier)
+                              .stopScanning();
                         } else {
                           _handleRefresh();
                         }
@@ -181,7 +209,7 @@ class _DeviceSelectionTabState extends ConsumerState<DeviceSelectionTab> {
             ),
           ),
           // Pull to refresh hint
-          if (!state.isScanning && state.availableDevices.isEmpty) ...[
+          if (!state.isScanning && state.scannedDevices.isEmpty) ...[
             const SizedBox(height: 8),
             Text(
               'Pull down to refresh or tap the refresh button',
@@ -200,39 +228,40 @@ class _DeviceSelectionTabState extends ConsumerState<DeviceSelectionTab> {
     if (isScanning) {
       return SingleChildScrollView(
         physics: const AlwaysScrollableScrollPhysics(),
-        child: SizedBox(
-          height: MediaQuery.of(context).size.height * 0.6,
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 60),
           child: const Center(
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 SizedBox(
-                  width: 32,
-                  height: 32,
+                  width: 40,
+                  height: 40,
                   child: CircularProgressIndicator(
                     color: AppColors.primaryColor,
                     strokeWidth: 3,
                   ),
                 ),
-                SizedBox(height: 16),
+                SizedBox(height: 24),
                 Text(
-                  'Searching for devices',
+                  'Searching for devices...',
                   style: TextStyle(
-                    fontSize: 16,
+                    fontSize: 18,
                     fontWeight: FontWeight.w600,
                     color: AppColors.textPrimary,
                   ),
                 ),
-                SizedBox(height: 4),
+                SizedBox(height: 8),
                 Text(
                   'Make sure devices are powered on and nearby',
                   textAlign: TextAlign.center,
                   style: TextStyle(
                     fontSize: 14,
                     color: AppColors.textSecondary,
+                    height: 1.4,
                   ),
                 ),
-                SizedBox(height: 16),
+                SizedBox(height: 20),
                 Text(
                   'Scanning will automatically stop after 30 seconds',
                   textAlign: TextAlign.center,
@@ -250,33 +279,34 @@ class _DeviceSelectionTabState extends ConsumerState<DeviceSelectionTab> {
 
     return SingleChildScrollView(
       physics: const AlwaysScrollableScrollPhysics(),
-      child: SizedBox(
-        height: MediaQuery.of(context).size.height * 0.6,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 60),
         child: const Center(
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               Icon(
-                Icons.bluetooth_disabled_outlined,
-                size: 48,
-                color: AppColors.neutralGrey,
+                Icons.bluetooth_disabled,
+                size: 64,
+                color: AppColors.textSecondary,
               ),
-              SizedBox(height: 16),
+              SizedBox(height: 24),
               Text(
                 'No devices found',
                 style: TextStyle(
-                  fontSize: 16,
+                  fontSize: 18,
                   fontWeight: FontWeight.w600,
                   color: AppColors.textPrimary,
                 ),
               ),
-              SizedBox(height: 4),
+              SizedBox(height: 8),
               Text(
-                'Pull down to refresh or tap the refresh button',
+                'Pull down to refresh or tap the refresh button to scan again',
                 textAlign: TextAlign.center,
                 style: TextStyle(
                   fontSize: 14,
                   color: AppColors.textSecondary,
+                  height: 1.4,
                 ),
               ),
             ],
@@ -286,14 +316,22 @@ class _DeviceSelectionTabState extends ConsumerState<DeviceSelectionTab> {
     );
   }
 
-  Widget _buildDeviceList(List<FactoryTestDevice> devices) {
+  Widget _buildDeviceList(List<FactoryTestDevice> scannedDevices) {
+    // Filter out devices that are already being tested
+    final deviceState = ref.watch(factoryTestDevicesProvider);
+    final existingDeviceIds =
+        deviceState.devices.map((d) => d.deviceId).toSet();
+    final availableDevices = scannedDevices
+        .where((device) => !existingDeviceIds.contains(device.deviceId))
+        .toList();
+
     return ListView.separated(
       physics: const AlwaysScrollableScrollPhysics(),
-      padding: const EdgeInsets.all(16),
-      itemCount: devices.length,
+      padding: const EdgeInsets.fromLTRB(20, 8, 20, 20),
+      itemCount: availableDevices.length,
       separatorBuilder: (context, index) => const SizedBox(height: 12),
       itemBuilder: (context, index) {
-        final device = devices[index];
+        final device = availableDevices[index];
         return _buildDeviceCard(device);
       },
     );
@@ -419,20 +457,11 @@ class _DeviceSelectionTabState extends ConsumerState<DeviceSelectionTab> {
     return AppColors.brandColorRed;
   }
 
-  List<FactoryTestDevice> _filterDevices(List<FactoryTestDevice> devices) {
-    if (_searchQuery.isEmpty) {
-      return devices;
-    }
-
-    return devices.where((device) {
-      return device.name.toLowerCase().contains(_searchQuery) ||
-          device.deviceId.toLowerCase().contains(_searchQuery);
-    }).toList();
-  }
-
   void _connectToDevice(FactoryTestDevice device) {
-    ref
-        .read(factoryTestProvider.notifier)
-        .connectToDeviceAndStartFactoryTest(device.deviceId);
+    // Add device to the devices list first
+    ref.read(factoryTestDevicesProvider.notifier).addDevice(device.deviceId);
+
+    // Don't automatically close the bottom sheet - let users start multiple tests
+    // Navigator.of(context).pop();
   }
 }

@@ -1,8 +1,7 @@
 import 'package:flutter_blue_plus/flutter_blue_plus.dart';
 
 /// Represents the overall state of factory testing
-enum FactoryTestPhase {
-  deviceSelection,
+enum DeviceFactoryTestPhase {
   connecting,
   enteringFactoryMode,
   reconnecting,
@@ -13,9 +12,8 @@ enum FactoryTestPhase {
 }
 
 /// Represents the connection state during factory testing
-enum FactoryTestConnectionState {
+enum DeviceFactoryTestConnectionState {
   idle,
-  scanning,
   connecting,
   connected,
   enteringFactoryMode,
@@ -27,7 +25,7 @@ enum FactoryTestConnectionState {
 }
 
 /// Represents the status of individual tests
-enum TestStatus { notStarted, running, pass, fail }
+enum DeviceTestStatus { notStarted, running, pass, fail }
 
 /// Represents a discovered device during scanning
 class FactoryTestDevice {
@@ -35,12 +33,14 @@ class FactoryTestDevice {
   final String name;
   final int rssi;
   final BluetoothDevice bluetoothDevice;
+  final DeviceTestStatus status;
 
   FactoryTestDevice({
     required this.deviceId,
     required this.name,
     required this.rssi,
     required this.bluetoothDevice,
+    this.status = DeviceTestStatus.notStarted,
   });
 
   @override
@@ -48,16 +48,29 @@ class FactoryTestDevice {
       identical(this, other) ||
       other is FactoryTestDevice &&
           runtimeType == other.runtimeType &&
-          deviceId == other.deviceId;
+          deviceId == other.deviceId &&
+          status == other.status;
 
   @override
   int get hashCode => deviceId.hashCode;
+
+  FactoryTestDevice copyWith({
+    DeviceTestStatus? status,
+  }) {
+    return FactoryTestDevice(
+      deviceId: deviceId,
+      name: name,
+      rssi: rssi,
+      bluetoothDevice: bluetoothDevice,
+      status: status ?? this.status,
+    );
+  }
 }
 
 /// Represents the result of an individual test
 class TestResult {
   final String testName;
-  final TestStatus status;
+  final DeviceTestStatus status;
   final String? comment;
   final dynamic value;
   final DateTime? timestamp;
@@ -74,7 +87,7 @@ class TestResult {
 
   TestResult copyWith({
     String? testName,
-    TestStatus? status,
+    DeviceTestStatus? status,
     String? comment,
     dynamic value,
     DateTime? timestamp,
@@ -121,7 +134,7 @@ class AutomaticTestsState {
   }
 
   int get passCount =>
-      tests.where((test) => test.status == TestStatus.pass).length;
+      tests.where((test) => test.status == DeviceTestStatus.pass).length;
   int get totalCount => tests.length;
   double get overallProgress => totalCount > 0 ? passCount / totalCount : 0.0;
 }
@@ -155,95 +168,101 @@ class ManualTestsState {
   }
 
   int get passCount =>
-      tests.where((test) => test.status == TestStatus.pass).length;
+      tests.where((test) => test.status == DeviceTestStatus.pass).length;
   int get totalCount => tests.length;
   bool get allTestsComplete =>
-      tests.every((test) => test.status != TestStatus.notStarted);
+      tests.every((test) => test.status != DeviceTestStatus.notStarted);
 }
 
 /// Represents the overall factory test state
-class FactoryTestState {
-  final FactoryTestPhase phase;
-  final FactoryTestConnectionState connectionState;
-  final String? selectedDeviceId;
+class DeviceFactoryTestState {
+  final DeviceFactoryTestPhase phase;
+  final DeviceFactoryTestConnectionState connectionState;
   final int? selectedDeviceVariant;
-  final List<FactoryTestDevice> availableDevices;
   final AutomaticTestsState automaticTests;
   final ManualTestsState manualTests;
   final String? error;
-  final bool isScanning;
-  final bool isSubmittingResults;
-  final bool resultsSubmitted;
-  final String? submissionError;
+  final FactoryTestDevice selectedDevice;
 
-  FactoryTestState({
+  DeviceFactoryTestState({
     required this.phase,
     required this.connectionState,
-    this.selectedDeviceId,
     this.selectedDeviceVariant,
-    required this.availableDevices,
     required this.automaticTests,
     required this.manualTests,
     this.error,
-    this.isScanning = false,
-    this.isSubmittingResults = false,
-    this.resultsSubmitted = false,
-    this.submissionError,
+    required this.selectedDevice,
   });
 
-  static FactoryTestState emptyState() {
-    return FactoryTestState(
-      phase: FactoryTestPhase.deviceSelection,
-      connectionState: FactoryTestConnectionState.idle,
-      availableDevices: [],
-      automaticTests: AutomaticTestsState(tests: []),
-      manualTests: ManualTestsState(tests: [], userConfirmations: {}),
+  static DeviceFactoryTestState emptyState(
+    FactoryTestDevice device,
+  ) {
+    return DeviceFactoryTestState(
+      phase: DeviceFactoryTestPhase.connecting,
+      connectionState: DeviceFactoryTestConnectionState.idle,
+      automaticTests: AutomaticTestsState(tests: initialAutomaticTests),
+      manualTests:
+          ManualTestsState(tests: initialManualTests, userConfirmations: {}),
       error: null,
-      isScanning: false,
-      isSubmittingResults: false,
-      resultsSubmitted: false,
-      submissionError: null,
+      selectedDevice: device,
     );
   }
 
-  FactoryTestState copyWith({
-    FactoryTestPhase? phase,
-    FactoryTestConnectionState? connectionState,
-    String? selectedDeviceId,
+  DeviceFactoryTestState copyWith({
+    DeviceFactoryTestPhase? phase,
+    DeviceFactoryTestConnectionState? connectionState,
     int? selectedDeviceVariant,
-    List<FactoryTestDevice>? availableDevices,
     AutomaticTestsState? automaticTests,
     ManualTestsState? manualTests,
     String? error,
-    bool? isScanning,
-    bool? isSubmittingResults,
-    bool? resultsSubmitted,
-    String? submissionError,
   }) {
-    return FactoryTestState(
+    return DeviceFactoryTestState(
       phase: phase ?? this.phase,
       connectionState: connectionState ?? this.connectionState,
-      selectedDeviceId: selectedDeviceId ?? this.selectedDeviceId,
+      selectedDevice: selectedDevice,
       selectedDeviceVariant:
           selectedDeviceVariant ?? this.selectedDeviceVariant,
-      availableDevices: availableDevices ?? this.availableDevices,
       automaticTests: automaticTests ?? this.automaticTests,
       manualTests: manualTests ?? this.manualTests,
       error: error ?? this.error,
-      isScanning: isScanning ?? this.isScanning,
-      isSubmittingResults: isSubmittingResults ?? this.isSubmittingResults,
-      resultsSubmitted: resultsSubmitted ?? this.resultsSubmitted,
-      submissionError: submissionError ?? this.submissionError,
     );
   }
 
   bool get canStartTests =>
-      phase == FactoryTestPhase.runningAutomaticTests &&
-      connectionState == FactoryTestConnectionState.factoryModeReady;
+      phase == DeviceFactoryTestPhase.runningAutomaticTests &&
+      connectionState == DeviceFactoryTestConnectionState.factoryModeReady;
 
   bool get canProceedToManualTests =>
       automaticTests.isComplete && automaticTests.error == null;
 
   bool get isTestingComplete =>
       automaticTests.isComplete && manualTests.isComplete;
+
+  bool get isOverallSuccess =>
+      automaticTests.passCount + manualTests.passCount ==
+      automaticTests.totalCount + manualTests.totalCount;
 }
+
+final initialAutomaticTests = [
+  TestResult(testName: 'Sensor Test', status: DeviceTestStatus.notStarted),
+  TestResult(testName: 'Memory Test', status: DeviceTestStatus.notStarted),
+  TestResult(
+      testName: 'Battery Voltage Test', status: DeviceTestStatus.notStarted),
+  TestResult(testName: 'LF Crystal Test', status: DeviceTestStatus.notStarted),
+  TestResult(
+      testName: 'LCD Controller Test', status: DeviceTestStatus.notStarted),
+];
+
+final initialManualTests = [
+  TestResult(testName: 'Charge Test', status: DeviceTestStatus.notStarted),
+  TestResult(testName: 'Screen Edge Test', status: DeviceTestStatus.notStarted),
+  TestResult(
+      testName: 'Screen Black Test', status: DeviceTestStatus.notStarted),
+  TestResult(
+      testName: 'Screen White Test', status: DeviceTestStatus.notStarted),
+  TestResult(testName: 'Button Test', status: DeviceTestStatus.notStarted),
+  TestResult(testName: 'Buzzer Test', status: DeviceTestStatus.notStarted),
+  TestResult(testName: 'Vibration Test', status: DeviceTestStatus.notStarted),
+  TestResult(testName: 'Case Check', status: DeviceTestStatus.notStarted),
+  TestResult(testName: 'LCD with OCA?', status: DeviceTestStatus.notStarted),
+];

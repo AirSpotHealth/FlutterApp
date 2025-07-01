@@ -16,7 +16,7 @@ import 'package:airspothealth/features/device_settings/pages/recalibrate_device_
 import 'package:airspothealth/features/device_settings/pages/time_settings_page.dart';
 import 'package:airspothealth/features/device_settings/widgets/sensor_configuration_page.dart';
 import 'package:airspothealth/features/devices/devices_page.dart';
-import 'package:airspothealth/features/factory_test/factory_test_page.dart';
+import 'package:airspothealth/features/factory_test/factory_test_wrapper.dart';
 import 'package:airspothealth/features/find_my_device/find_my_device_page.dart';
 import 'package:airspothealth/features/home/homepage.dart';
 import 'package:airspothealth/features/solutions/solutions_page.dart';
@@ -239,7 +239,7 @@ class AppRouter {
       GoRoute(
         name: RouteNames.factoryTest,
         path: RouteNames.factoryTest,
-        builder: (context, state) => const FactoryTestPage(),
+        builder: (context, state) => const FactoryTestWrapper(),
       ),
     ],
   );

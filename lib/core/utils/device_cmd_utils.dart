@@ -435,8 +435,9 @@ class DeviceCmdUtils {
     return _buildCommand([prefixHigh, prefixLow, 0xD1, 1, 1]);
   }
 
-  static Uint8List factoryTestEnd() {
-    return _buildCommand([prefixHigh, prefixLow, 0xDE, 1, 1]);
+  static Uint8List factoryTestEnd({bool putDeviceToSleep = false}) {
+    return _buildCommand(
+        [prefixHigh, prefixLow, 0xDE, 1, putDeviceToSleep ? 0 : 1]);
   }
 
   static Uint8List displayScreenTest(int testType) {

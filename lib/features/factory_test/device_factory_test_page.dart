@@ -3,20 +3,26 @@ import 'package:airspothealth/core/utils/extensions.dart';
 import 'package:airspothealth/features/factory_test/models/factory_test_models.dart';
 import 'package:airspothealth/features/factory_test/providers/factory_test_provider.dart';
 import 'package:airspothealth/features/factory_test/widgets/automatic_tests_tab.dart';
-import 'package:airspothealth/features/factory_test/widgets/device_selection_tab.dart';
 import 'package:airspothealth/features/factory_test/widgets/manual_tests_tab.dart';
 import 'package:airspothealth/features/factory_test/widgets/submit_results_tab.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-class FactoryTestPage extends ConsumerStatefulWidget {
-  const FactoryTestPage({super.key});
+class DeviceFactoryTestPage extends ConsumerStatefulWidget {
+  const DeviceFactoryTestPage({
+    super.key,
+    required this.deviceId,
+    this.showHeader = true,
+  });
+
+  final String deviceId;
+  final bool showHeader;
 
   @override
-  ConsumerState<FactoryTestPage> createState() => _FactoryTestPageState();
+  ConsumerState<DeviceFactoryTestPage> createState() => _FactoryTestPageState();
 }
 
-class _FactoryTestPageState extends ConsumerState<FactoryTestPage>
+class _FactoryTestPageState extends ConsumerState<DeviceFactoryTestPage>
     with TickerProviderStateMixin {
   late TabController _tabController;
   late PageController _pageController;
@@ -24,41 +30,37 @@ class _FactoryTestPageState extends ConsumerState<FactoryTestPage>
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 4, vsync: this);
+    _tabController = TabController(length: 3, vsync: this);
     _pageController = PageController();
-
-    // Auto-start scanning when page loads
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      ref.read(factoryTestProvider.notifier).startScanning();
-    });
   }
 
   @override
   void dispose() {
+    // Clean up controllers
     _tabController.dispose();
     _pageController.dispose();
     super.dispose();
   }
 
   /// Check if any tests are currently in progress
-  bool _isTestInProgress(FactoryTestState state) {
+  bool _isTestInProgress(DeviceFactoryTestState state) {
     // Check if automatic tests are running
     if (state.automaticTests.isRunning) return true;
 
     // Check if in connecting/factory mode setup phases
-    if (state.phase == FactoryTestPhase.connecting ||
-        state.phase == FactoryTestPhase.enteringFactoryMode ||
-        state.phase == FactoryTestPhase.reconnecting ||
-        state.phase == FactoryTestPhase.runningAutomaticTests ||
-        state.phase == FactoryTestPhase.runningManualTests) {
+    if (state.phase == DeviceFactoryTestPhase.connecting ||
+        state.phase == DeviceFactoryTestPhase.enteringFactoryMode ||
+        state.phase == DeviceFactoryTestPhase.reconnecting ||
+        state.phase == DeviceFactoryTestPhase.runningAutomaticTests ||
+        state.phase == DeviceFactoryTestPhase.runningManualTests) {
       return true;
     }
 
     // Check if any manual tests have been started (not in notStarted state)
     if (state.manualTests.tests.any((test) =>
-        test.status == TestStatus.running ||
-        test.status == TestStatus.pass ||
-        test.status == TestStatus.fail)) {
+        test.status == DeviceTestStatus.running ||
+        test.status == DeviceTestStatus.pass ||
+        test.status == DeviceTestStatus.fail)) {
       return true;
     }
 
@@ -67,7 +69,7 @@ class _FactoryTestPageState extends ConsumerState<FactoryTestPage>
 
   /// Handle back navigation with confirmation if tests are in progress
   Future<bool> _handleBackNavigation() async {
-    final factoryTestState = ref.read(factoryTestProvider);
+    final factoryTestState = ref.read(factoryTestProvider(widget.deviceId));
 
     if (_isTestInProgress(factoryTestState)) {
       return await _showExitConfirmationDialog() ?? false;
@@ -131,7 +133,10 @@ class _FactoryTestPageState extends ConsumerState<FactoryTestPage>
             onPressed: () async {
               Navigator.of(context).pop(true);
               // Send 0xDE command to end factory test mode and restart device in normal mode
-              await ref.read(factoryTestProvider.notifier).endFactoryTestMode();
+              final notifier =
+                  ref.read(factoryTestProvider(widget.deviceId).notifier);
+              await notifier.endFactoryTestMode();
+              notifier.dispose();
             },
             style: ElevatedButton.styleFrom(
               backgroundColor: AppColors.brandColorRed,
@@ -153,7 +158,7 @@ class _FactoryTestPageState extends ConsumerState<FactoryTestPage>
 
   @override
   Widget build(BuildContext context) {
-    final factoryTestState = ref.watch(factoryTestProvider);
+    final factoryTestState = ref.watch(factoryTestProvider(widget.deviceId));
 
     // Auto-update tab based on test progress
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -175,7 +180,10 @@ class _FactoryTestPageState extends ConsumerState<FactoryTestPage>
         backgroundColor: AppColors.backgroundSecondary,
         body: Column(
           children: [
-            _buildHeader(factoryTestState),
+            if (widget.showHeader) _buildHeader(factoryTestState),
+            // Only show status container during initial phases and errors
+            if (_shouldShowStatusContainer(factoryTestState))
+              _buildConnectionStatusContainer(factoryTestState),
             _buildTabCards(factoryTestState),
             Expanded(
               child: PageView(
@@ -193,11 +201,10 @@ class _FactoryTestPageState extends ConsumerState<FactoryTestPage>
                     _showTabRestrictedMessage(index);
                   }
                 },
-                children: const [
-                  DeviceSelectionTab(),
-                  AutomaticTestsTab(),
-                  ManualTestsTab(),
-                  SubmitResultsTab(),
+                children: [
+                  AutomaticTestsTab(deviceId: widget.deviceId),
+                  ManualTestsTab(deviceId: widget.deviceId),
+                  SubmitResultsTab(deviceId: widget.deviceId),
                 ],
               ),
             ),
@@ -207,18 +214,11 @@ class _FactoryTestPageState extends ConsumerState<FactoryTestPage>
     );
   }
 
-  Widget _buildHeader(FactoryTestState state) {
+  Widget _buildHeader(DeviceFactoryTestState state) {
     String deviceName = 'Select Device';
     String? sensorInfo;
 
-    if (state.selectedDeviceId != null) {
-      final device = state.availableDevices
-          .where((d) => d.deviceId == state.selectedDeviceId)
-          .firstOrNull;
-      if (device != null) {
-        deviceName = device.name;
-      }
-    }
+    deviceName = state.selectedDevice.name;
 
     // Add sensor variant info if detected
     if (state.selectedDeviceVariant != null) {
@@ -274,13 +274,6 @@ class _FactoryTestPageState extends ConsumerState<FactoryTestPage>
                   ],
                 ),
               ),
-              if (state.phase != FactoryTestPhase.deviceSelection)
-                IconButton(
-                  onPressed: () => _showResetDialog(context, ref),
-                  icon:
-                      const Icon(Icons.refresh, color: AppColors.textOnPrimary),
-                  tooltip: 'Reset Test',
-                ),
             ],
           ),
         ),
@@ -288,29 +281,153 @@ class _FactoryTestPageState extends ConsumerState<FactoryTestPage>
     );
   }
 
-  Widget _buildTabCards(FactoryTestState state) {
+  bool _shouldShowStatusContainer(DeviceFactoryTestState state) {
+    switch (state.phase) {
+      case DeviceFactoryTestPhase.connecting:
+      case DeviceFactoryTestPhase.enteringFactoryMode:
+      case DeviceFactoryTestPhase.reconnecting:
+      case DeviceFactoryTestPhase.error:
+        return true;
+      case DeviceFactoryTestPhase.runningAutomaticTests:
+      case DeviceFactoryTestPhase.runningManualTests:
+      case DeviceFactoryTestPhase.completed:
+        return false;
+    }
+  }
+
+  Widget _buildConnectionStatusContainer(DeviceFactoryTestState state) {
+    String statusText;
+    IconData statusIcon;
+    Color statusColor;
+    bool showProgress = false;
+
+    switch (state.phase) {
+      case DeviceFactoryTestPhase.connecting:
+        statusText = 'Connecting to device...';
+        statusIcon = Icons.bluetooth_searching;
+        statusColor = AppColors.primaryColor;
+        showProgress = true;
+        break;
+      case DeviceFactoryTestPhase.enteringFactoryMode:
+        statusText = 'Entering factory mode...';
+        statusIcon = Icons.settings;
+        statusColor = AppColors.primaryColor;
+        showProgress = true;
+        break;
+      case DeviceFactoryTestPhase.reconnecting:
+        statusText = 'Device restarting, waiting for reconnection...';
+        statusIcon = Icons.restart_alt;
+        statusColor = AppColors.primaryColor;
+        showProgress = true;
+        break;
+      case DeviceFactoryTestPhase.runningAutomaticTests:
+        statusText = 'Running automatic tests...';
+        statusIcon = Icons.science;
+        statusColor = AppColors.primaryColor;
+        showProgress = true;
+        break;
+      case DeviceFactoryTestPhase.runningManualTests:
+        statusText = 'Manual tests in progress';
+        statusIcon = Icons.touch_app;
+        statusColor = AppColors.primaryColor;
+        break;
+      case DeviceFactoryTestPhase.completed:
+        statusText = 'All tests completed successfully';
+        statusIcon = Icons.check_circle;
+        statusColor = AppColors.brandColorGreen;
+        break;
+      case DeviceFactoryTestPhase.error:
+        statusText = state.error ?? 'Unknown error occurred';
+        statusIcon = Icons.error;
+        statusColor = AppColors.brandColorRed;
+        break;
+    }
+
+    return AnimatedContainer(
+      duration: const Duration(milliseconds: 300),
+      height: state.phase == DeviceFactoryTestPhase.connecting ||
+              state.phase == DeviceFactoryTestPhase.enteringFactoryMode ||
+              state.phase == DeviceFactoryTestPhase.reconnecting ||
+              state.phase == DeviceFactoryTestPhase.error
+          ? 56
+          : 48,
+      child: Container(
+        margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        decoration: BoxDecoration(
+          color: statusColor.withValues(alpha: 0.1),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(
+            color: statusColor.withValues(alpha: 0.3),
+            width: 1,
+          ),
+        ),
+        child: Row(
+          children: [
+            if (showProgress) ...[
+              SizedBox(
+                width: 16,
+                height: 16,
+                child: CircularProgressIndicator(
+                  strokeWidth: 2,
+                  color: statusColor,
+                ),
+              ),
+            ] else ...[
+              Icon(
+                statusIcon,
+                color: statusColor,
+                size: 16,
+              ),
+            ],
+            const SizedBox(width: 12),
+            Expanded(
+              child: Text(
+                statusText,
+                style: context.textTheme.bodySmall?.copyWith(
+                  color: statusColor,
+                  fontWeight: FontWeight.w600,
+                  fontSize: 13,
+                ),
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
+            if (state.phase == DeviceFactoryTestPhase.error) ...[
+              const SizedBox(width: 8),
+              Icon(
+                Icons.warning,
+                color: statusColor,
+                size: 16,
+              ),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildTabCards(DeviceFactoryTestState state) {
     return Container(
       color: AppColors.backgroundSecondary,
       padding: const EdgeInsets.all(16.0),
       child: Row(
         children: [
           Expanded(
-              child: _buildStepperItem('Device\nSelection', 0, state,
+              child: _buildStepperItem('Automatic\nTests', 0, state,
                   isFirst: true)),
           _buildConnector(0, state),
-          Expanded(child: _buildStepperItem('Automatic\nTests', 1, state)),
+          Expanded(child: _buildStepperItem('Manual\nTests', 1, state)),
           _buildConnector(1, state),
-          Expanded(child: _buildStepperItem('Manual\nTests', 2, state)),
-          _buildConnector(2, state),
           Expanded(
               child:
-                  _buildStepperItem('Submit\nResults', 3, state, isLast: true)),
+                  _buildStepperItem('Submit\nResults', 2, state, isLast: true)),
         ],
       ),
     );
   }
 
-  Widget _buildConnector(int fromIndex, FactoryTestState state) {
+  Widget _buildConnector(int fromIndex, DeviceFactoryTestState state) {
     final isCompleted = _isTabCompleted(fromIndex, state);
     return Container(
       height: 2,
@@ -324,7 +441,8 @@ class _FactoryTestPageState extends ConsumerState<FactoryTestPage>
     );
   }
 
-  Widget _buildStepperItem(String title, int index, FactoryTestState state,
+  Widget _buildStepperItem(
+      String title, int index, DeviceFactoryTestState state,
       {bool isFirst = false, bool isLast = false}) {
     final isActive = _tabController.index == index;
     final isEnabled = _isTabEnabled(index, state);
@@ -388,17 +506,19 @@ class _FactoryTestPageState extends ConsumerState<FactoryTestPage>
 
     // Add progress subtitle for tests
     String subtitle = '';
-    if (index == 1 && state.selectedDeviceId != null) {
+    if (index == 0) {
       final completed = state.automaticTests.tests
-          .where(
-              (r) => r.status == TestStatus.pass || r.status == TestStatus.fail)
+          .where((r) =>
+              r.status == DeviceTestStatus.pass ||
+              r.status == DeviceTestStatus.fail)
           .length;
       final total = state.automaticTests.tests.length;
       if (total > 0) subtitle = '$completed/$total';
-    } else if (index == 2 && state.automaticTests.isComplete) {
+    } else if (index == 1 && state.automaticTests.isComplete) {
       final completed = state.manualTests.tests
-          .where(
-              (r) => r.status == TestStatus.pass || r.status == TestStatus.fail)
+          .where((r) =>
+              r.status == DeviceTestStatus.pass ||
+              r.status == DeviceTestStatus.fail)
           .length;
       final total = state.manualTests.tests.length;
       if (total > 0) subtitle = '$completed/$total';
@@ -472,87 +592,86 @@ class _FactoryTestPageState extends ConsumerState<FactoryTestPage>
     );
   }
 
-  bool _isTabEnabled(int index, FactoryTestState state) {
+  bool _isTabEnabled(int index, DeviceFactoryTestState state) {
     switch (index) {
-      case 0: // Device Selection - always enabled to allow changing devices
+      case 0: // Auto Tests - enabled if device connected
         return true;
-      case 1: // Auto Tests - enabled if device connected
-        return state.selectedDeviceId != null;
-      case 2: // Manual Tests - enabled if auto tests completed
+      case 1: // Manual Tests - enabled if auto tests completed
         return state.automaticTests.isComplete;
-      case 3: // Results - enabled if all tests completed
+      case 2: // Results - enabled if all tests completed
         return state.isTestingComplete;
       default:
         return false;
     }
   }
 
-  bool _isTabCompleted(int index, FactoryTestState state) {
+  bool _isTabCompleted(int index, DeviceFactoryTestState state) {
     switch (index) {
       case 0:
-        return state.selectedDeviceId != null;
-      case 1:
         return state.automaticTests.isComplete;
-      case 2:
+      case 1:
         return state.manualTests.isComplete;
-      case 3:
+      case 2:
         return state.isTestingComplete;
       default:
         return false;
     }
   }
 
-  bool _isTabRunning(int index, FactoryTestState state) {
+  bool _isTabRunning(int index, DeviceFactoryTestState state) {
     switch (index) {
       case 0:
-        return state.phase == FactoryTestPhase.connecting ||
-            state.phase == FactoryTestPhase.enteringFactoryMode ||
-            state.phase == FactoryTestPhase.reconnecting;
-      case 1:
-        return state.phase == FactoryTestPhase.runningAutomaticTests ||
+        return state.phase == DeviceFactoryTestPhase.runningAutomaticTests ||
             state.automaticTests.isRunning;
+      case 1:
+        return state.phase == DeviceFactoryTestPhase.runningManualTests;
       case 2:
-        return state.phase == FactoryTestPhase.runningManualTests;
-      case 3:
         return false;
       default:
         return false;
     }
   }
 
-  void _updateTabBasedOnProgress(FactoryTestState state) {
+  void _updateTabBasedOnProgress(DeviceFactoryTestState state) {
     int newIndex = _tabController.index;
 
+    debugPrint('_updateTabBasedOnProgress called with phase: ${state.phase}');
+    debugPrint('Current tab index: ${_tabController.index}');
+
     switch (state.phase) {
-      case FactoryTestPhase.connecting:
-      case FactoryTestPhase.enteringFactoryMode:
-      case FactoryTestPhase.reconnecting:
-      case FactoryTestPhase.runningAutomaticTests:
+      case DeviceFactoryTestPhase.connecting:
+      case DeviceFactoryTestPhase.enteringFactoryMode:
+      case DeviceFactoryTestPhase.reconnecting:
+      case DeviceFactoryTestPhase.runningAutomaticTests:
+        newIndex = 0;
+        break;
+      case DeviceFactoryTestPhase.runningManualTests:
         newIndex = 1;
         break;
-      case FactoryTestPhase.runningManualTests:
+      case DeviceFactoryTestPhase.completed:
         newIndex = 2;
         break;
-      case FactoryTestPhase.completed:
-        newIndex = 3;
-        break;
-      case FactoryTestPhase.deviceSelection:
-      case FactoryTestPhase.error:
+      case DeviceFactoryTestPhase.error:
         // Don't auto-change for these states
         break;
     }
 
+    debugPrint('Calculated new tab index: $newIndex');
+
     if (newIndex != _tabController.index && mounted) {
+      debugPrint('Switching to tab $newIndex');
       _tabController.animateTo(newIndex);
       _pageController.animateToPage(
         newIndex,
         duration: const Duration(milliseconds: 300),
         curve: Curves.easeInOut,
       );
+    } else {
+      debugPrint('No tab switch needed or widget not mounted');
     }
   }
 
-  void _onTabTapped(int index, FactoryTestState state) {
+  void _onTabTapped(int index, DeviceFactoryTestState state) {
     if (!_isTabEnabled(index, state)) {
       _showTabRestrictedMessage(index);
       return;
@@ -569,13 +688,13 @@ class _FactoryTestPageState extends ConsumerState<FactoryTestPage>
   void _showTabRestrictedMessage(int index) {
     String message;
     switch (index) {
-      case 1:
-        message = 'Please connect to a device first';
+      case 0:
+        message = 'Automatic tests are ready to run';
         break;
-      case 2:
+      case 1:
         message = 'Complete automatic tests first';
         break;
-      case 3:
+      case 2:
         message = 'Complete all tests first';
         break;
       default:
@@ -583,65 +702,5 @@ class _FactoryTestPageState extends ConsumerState<FactoryTestPage>
     }
 
     context.showSnackBar(message);
-  }
-
-  void _showResetDialog(BuildContext context, WidgetRef ref) {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        backgroundColor: AppColors.backgroundPrimary,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16),
-        ),
-        title: Text(
-          'Reset Factory Test',
-          style: context.textTheme.headlineSmall?.copyWith(
-            fontWeight: FontWeight.bold,
-            color: AppColors.textPrimary,
-          ),
-        ),
-        content: Text(
-          'Are you sure you want to reset the factory test? This will disconnect the device and start over.',
-          style: context.textTheme.bodyMedium?.copyWith(
-            color: AppColors.textPrimary,
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: Text(
-              'Cancel',
-              style: context.textTheme.bodyMedium?.copyWith(
-                color: AppColors.textSecondary,
-              ),
-            ),
-          ),
-          ElevatedButton(
-            onPressed: () {
-              Navigator.of(context).pop();
-              ref.read(factoryTestProvider.notifier).resetFactoryTest();
-              _tabController.animateTo(0);
-              _pageController.animateToPage(
-                0,
-                duration: const Duration(milliseconds: 300),
-                curve: Curves.easeInOut,
-              );
-            },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.brandColorRed,
-              foregroundColor: AppColors.textOnPrimary,
-              elevation: 0,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(8),
-              ),
-            ),
-            child: const Text(
-              'Reset',
-              style: TextStyle(fontWeight: FontWeight.w600),
-            ),
-          ),
-        ],
-      ),
-    );
   }
 }
