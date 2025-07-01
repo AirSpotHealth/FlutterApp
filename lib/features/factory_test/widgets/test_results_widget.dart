@@ -213,7 +213,7 @@ class TestResultsWidget extends ConsumerWidget {
     if (comment.contains('Auto-started after automatic tests completed') &&
         comment.contains('User confirmed')) {
       // For charge test, just show "User confirmed" without the auto-start part
-      return 'User confirmed';
+      return '- User confirmed';
     }
 
     // Keep other "User confirmed" comments as they are meaningful

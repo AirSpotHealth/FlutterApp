@@ -72,30 +72,6 @@ class ManualTestsTab extends ConsumerWidget {
               },
             ),
           ),
-
-          // Complete button
-          if (manualTests.isComplete)
-            Padding(
-              padding: const EdgeInsets.only(top: 16),
-              child: SizedBox(
-                width: double.infinity,
-                child: ElevatedButton(
-                  onPressed: () {
-                    // The provider will automatically transition to completed phase
-                    // when all tests are complete
-                  },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.green,
-                    foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(vertical: 16),
-                  ),
-                  child: const Text(
-                    'All Tests Complete!',
-                    style: TextStyle(fontSize: 16),
-                  ),
-                ),
-              ),
-            ),
         ],
       ),
     );

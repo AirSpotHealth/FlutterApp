@@ -1,6 +1,7 @@
 import 'package:airspothealth/core/utils/extensions.dart';
 import 'package:airspothealth/features/factory_test/models/factory_test_models.dart';
 import 'package:airspothealth/features/factory_test/providers/factory_test_provider.dart';
+import 'package:airspothealth/features/factory_test/providers/submission_provider.dart';
 import 'package:airspothealth/features/factory_test/providers/tester_name_provider.dart';
 import 'package:airspothealth/features/factory_test/widgets/submit_results_button.dart';
 import 'package:airspothealth/features/factory_test/widgets/test_results_widget.dart';
@@ -199,41 +200,50 @@ class _SubmitResultsTabState extends ConsumerState<SubmitResultsTab> {
           const SizedBox(height: 16),
 
           // Tested By Field
-          Text(
-            'Tested By',
-            style: context.textTheme.labelMedium?.copyWith(
-              fontWeight: FontWeight.w500,
-              color: Colors.grey.shade700,
-            ),
-          ),
-          const SizedBox(height: 6),
-          TextFormField(
-            controller: _testedByController,
-            onChanged: (value) {
-              // Save tester name as they type
-              ref.read(testerNameProvider.notifier).updateTesterName(value);
+          Consumer(
+            builder: (context, ref, child) {
+              final submissionState =
+                  ref.watch(submissionProvider(widget.deviceId));
+
+              return Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Tested By *',
+                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                          fontWeight: FontWeight.w600,
+                        ),
+                  ),
+                  const SizedBox(height: 8),
+                  TextFormField(
+                    initialValue: submissionState.testedBy,
+                    decoration: InputDecoration(
+                      hintText: 'Enter tester name (required)',
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      filled: true,
+                      fillColor: Colors.grey[50],
+                      errorText: submissionState.testedBy.trim().isEmpty &&
+                              submissionState.status == SubmissionStatus.error
+                          ? 'Tester name is required'
+                          : null,
+                    ),
+                    onChanged: (value) {
+                      ref
+                          .read(submissionProvider(widget.deviceId).notifier)
+                          .setTestedBy(value);
+                    },
+                    validator: (value) {
+                      if (value == null || value.trim().isEmpty) {
+                        return 'Tester name is required';
+                      }
+                      return null;
+                    },
+                  ),
+                ],
+              );
             },
-            decoration: InputDecoration(
-              hintText: 'Enter tester name',
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(8),
-                borderSide: BorderSide(color: Colors.grey.shade300),
-              ),
-              enabledBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(8),
-                borderSide: BorderSide(color: Colors.grey.shade300),
-              ),
-              focusedBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(8),
-                borderSide:
-                    const BorderSide(color: Color(0xFFFF8C00), width: 2),
-              ),
-              contentPadding:
-                  const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-              filled: true,
-              fillColor: Colors.grey.shade50,
-              isDense: true,
-            ),
           ),
           const SizedBox(height: 12),
 

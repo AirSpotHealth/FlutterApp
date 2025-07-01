@@ -42,6 +42,7 @@ class SubmitResultsButton extends ConsumerWidget {
             label: 'Submitting...',
             child: const Row(
               mainAxisAlignment: MainAxisAlignment.center,
+              mainAxisSize: MainAxisSize.min,
               children: [
                 SizedBox(
                   height: 16,
@@ -52,11 +53,14 @@ class SubmitResultsButton extends ConsumerWidget {
                   ),
                 ),
                 SizedBox(width: 12),
-                Text(
-                  'Submitting...',
-                  style: TextStyle(
-                    fontWeight: FontWeight.w600,
-                    fontSize: 16,
+                Flexible(
+                  child: Text(
+                    'Submitting...',
+                    style: TextStyle(
+                      fontWeight: FontWeight.w600,
+                      fontSize: 16,
+                    ),
+                    overflow: TextOverflow.ellipsis,
                   ),
                 ),
               ],
@@ -64,17 +68,21 @@ class SubmitResultsButton extends ConsumerWidget {
           ),
         SubmissionStatus.success => Button(
             onPressed: null,
-            label: 'Complete - Device in Sleep Mode',
+            label: 'Completed Successfully',
             child: const Row(
               mainAxisAlignment: MainAxisAlignment.center,
+              mainAxisSize: MainAxisSize.min,
               children: [
                 Icon(Icons.check_circle, size: 20),
                 SizedBox(width: 12),
-                Text(
-                  'Complete - Device in Sleep Mode',
-                  style: TextStyle(
-                    fontWeight: FontWeight.w600,
-                    fontSize: 16,
+                Flexible(
+                  child: Text(
+                    'Completed Successfully',
+                    style: TextStyle(
+                      fontWeight: FontWeight.w600,
+                      fontSize: 16,
+                    ),
+                    overflow: TextOverflow.ellipsis,
                   ),
                 ),
               ],
@@ -109,21 +117,27 @@ class SubmitResultsButton extends ConsumerWidget {
                 ),
                 const SizedBox(height: 12),
               ],
-              Button(
-                onPressed: () => ref
-                    .read(submissionProvider(deviceId).notifier)
-                    .startSubmission(),
-                label: 'Retry Submission',
+              SizedBox(
+                width: double.infinity,
+                child: Button(
+                  onPressed: () => ref
+                      .read(submissionProvider(deviceId).notifier)
+                      .startSubmission(),
+                  label: 'Retry Submission',
+                ),
               ),
             ],
           ),
-        _ => Button(
-            onPressed: () => ref
-                .read(submissionProvider(deviceId).notifier)
-                .startSubmission(),
-            label: submissionState.putDeviceToSleep
-                ? 'Submit & Put Device to Sleep'
-                : 'Submit & Restart Device',
+        _ => SizedBox(
+            width: double.infinity,
+            child: Button(
+              onPressed: () => ref
+                  .read(submissionProvider(deviceId).notifier)
+                  .startSubmission(),
+              label: submissionState.putDeviceToSleep
+                  ? 'Submit & Sleep Device'
+                  : 'Submit & Restart Device',
+            ),
           ),
       },
     ]);

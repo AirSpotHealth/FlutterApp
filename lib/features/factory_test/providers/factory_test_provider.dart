@@ -891,6 +891,9 @@ class FactoryTestNotifier
       // If all tests are complete, move to completed phase
       if (allComplete && state.automaticTests.isComplete) {
         state = state.copyWith(phase: DeviceFactoryTestPhase.completed);
+
+        // Notify the queue manager that this device is ready for submission
+        _notifyDeviceReadyToSubmit();
       }
 
       debugPrint(
@@ -941,25 +944,34 @@ class FactoryTestNotifier
 
   /// Retry automatic tests after timeout/failure
   Future<void> retryAutomaticTests() async {
-    // Reset automatic tests state
+    debugPrint('Retrying automatic tests...');
+
+    // Clear any existing timeout
+    _clearAutomaticTestTimeout();
+
+    // Reset automatic test states
+    final resetTests = state.automaticTests.tests.map((test) {
+      return test.copyWith(
+        status: DeviceTestStatus.notStarted,
+        comment: null,
+        value: null,
+        timestamp: null,
+        deviceResponseReceived: false,
+      );
+    }).toList();
+
     state = state.copyWith(
-      automaticTests: AutomaticTestsState(tests: initialAutomaticTests),
-      phase: DeviceFactoryTestPhase.connecting,
-      connectionState: DeviceFactoryTestConnectionState.connecting,
-      error: null,
+      automaticTests: state.automaticTests.copyWith(
+        tests: resetTests,
+        isRunning: false,
+        isComplete: false,
+        error: null,
+      ),
+      phase: DeviceFactoryTestPhase.runningAutomaticTests,
     );
 
-    // Find and reconnect to the device
-    try {
-      await _connectToDevice(state.selectedDevice.bluetoothDevice);
-    } catch (error) {
-      debugPrint('Retry connection error: $error');
-      state = state.copyWith(
-        phase: DeviceFactoryTestPhase.error,
-        connectionState: DeviceFactoryTestConnectionState.error,
-        error: 'Retry connection failed: $error',
-      );
-    }
+    // Restart automatic tests
+    await _startAutomaticTests();
   }
 
   /// Send 0xDE command to end factory test mode and restart device in normal mode
@@ -1035,6 +1047,37 @@ class FactoryTestNotifier
     _cleanup();
   }
 
+  /// Notify the devices provider that this device is ready to submit results
+  void _notifyDeviceReadyToSubmit() {
+    ref
+        .read(factoryTestDevicesProvider.notifier)
+        .markDeviceReadyToSubmit(state.selectedDevice.deviceId);
+
+    debugPrint(
+        'Device ${state.selectedDevice.deviceId} marked as ready to submit results');
+  }
+
+  /// Set error state and notify queue manager
+  void _setErrorState(
+    String error, {
+    DeviceFactoryTestConnectionState? connectionState,
+  }) {
+    state = state.copyWith(
+      phase: DeviceFactoryTestPhase.error,
+      connectionState:
+          connectionState ?? DeviceFactoryTestConnectionState.error,
+      error: error,
+    );
+
+    // Notify the queue manager that this device has an error
+    ref
+        .read(factoryTestDevicesProvider.notifier)
+        .markDeviceError(state.selectedDevice.deviceId, error);
+
+    debugPrint(
+        'Device ${state.selectedDevice.deviceId} marked as error: $error');
+  }
+
   /// Start timeout timer for automatic tests (1 minute)
   void _startAutomaticTestTimeout() {
     _clearAutomaticTestTimeout(); // Clear any existing timer
@@ -1078,15 +1121,49 @@ class FactoryTestNotifier
 
     debugPrint('Connection timed out after 30 seconds');
 
-    state = state.copyWith(
-      phase: DeviceFactoryTestPhase.error,
-      connectionState: DeviceFactoryTestConnectionState.error,
-      error:
-          'Connection timed out after 30 seconds. Please check that the device is powered on and nearby, then try again.',
-    );
+    // Try automatic reconnection once before giving up
+    if (state.phase == DeviceFactoryTestPhase.connecting) {
+      debugPrint('Attempting automatic reconnection...');
+      _attemptReconnection();
+    } else {
+      _setErrorState(
+        'Connection timed out after 30 seconds. Please check that the device is powered on and nearby, then try again.',
+      );
+      _cleanup();
+    }
+  }
 
-    // Clean up connection
-    _cleanup();
+  /// Attempt automatic reconnection for improved reliability
+  Future<void> _attemptReconnection() async {
+    try {
+      state = state.copyWith(
+        phase: DeviceFactoryTestPhase.reconnecting,
+        connectionState: DeviceFactoryTestConnectionState.reconnecting,
+        error: null,
+      );
+
+      debugPrint('Starting reconnection attempt...');
+
+      // Clean up existing connection first
+      if (_connectedDevice?.isConnected == true) {
+        await _connectedDevice?.disconnect();
+      }
+
+      // Wait a moment before reconnecting
+      await Future.delayed(const Duration(seconds: 2));
+
+      // Start new connection timeout for reconnection
+      _startConnectionTimeout();
+
+      // Attempt to reconnect
+      await _connectToDevice(state.selectedDevice.bluetoothDevice);
+    } catch (error) {
+      debugPrint('Reconnection failed: $error');
+      _clearConnectionTimeout();
+      _setErrorState(
+        'Connection failed after retry. Please ensure the device is powered on and nearby, then try again.',
+      );
+    }
   }
 
   /// Handle automatic test timeout (device connection likely lost)
@@ -1117,10 +1194,10 @@ class FactoryTestNotifier
         error:
             'Automatic tests failed - device connection lost after 1 minute. The device may have restarted due to an issue.',
       ),
-      phase: DeviceFactoryTestPhase.error,
-      connectionState: DeviceFactoryTestConnectionState.error,
-      error:
-          'Device connection lost during automatic tests. Please reconnect and try again.',
+    );
+
+    _setErrorState(
+      'Device connection lost during automatic tests. Please reconnect and try again.',
     );
 
     // Clean up connection

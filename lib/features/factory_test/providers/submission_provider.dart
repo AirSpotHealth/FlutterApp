@@ -1,6 +1,10 @@
+import 'dart:async';
+
 import 'package:airspothealth/core/services/network_service.dart';
+import 'package:airspothealth/features/factory_test/models/factory_test_models.dart';
 import 'package:airspothealth/features/factory_test/providers/factory_test_devices_provider.dart';
 import 'package:airspothealth/features/factory_test/providers/factory_test_provider.dart';
+import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -62,10 +66,19 @@ class SubmissionNotifier extends FamilyNotifier<SubmissionState, String> {
 
   Future<void> startSubmission() async {
     try {
-      state = state.copyWith(
-        status: SubmissionStatus.submitting,
-        errorMessage: null,
-      );
+      try {
+        state = state.copyWith(
+          status: SubmissionStatus.submitting,
+          errorMessage: null,
+        );
+      } catch (e) {
+        // Ignore widget lifecycle errors - this happens when widgets are disposed
+        // during async operations but it's safe to ignore
+        if (e.toString().contains('_ElementLifecycle.defunct')) {
+          return;
+        }
+        rethrow;
+      }
 
       await _submitTestResults();
 
@@ -75,7 +88,23 @@ class SubmissionNotifier extends FamilyNotifier<SubmissionState, String> {
 
       markSuccess();
 
-      ref.read(factoryTestDevicesProvider.notifier).removeDevice(deviceId);
+      // Mark device as completed in queue after successful submission
+      try {
+        ref
+            .read(factoryTestDevicesProvider.notifier)
+            .markDeviceCompleted(deviceId, success: true);
+      } catch (e) {
+        // Ignore widget lifecycle errors - this is safe during cleanup
+        if (!e.toString().contains('_ElementLifecycle.defunct')) {
+          rethrow;
+        }
+      }
+
+      // Clean up BT connection after successful completion
+      ref.read(factoryTestProvider(deviceId).notifier).dispose();
+
+      // Note: Device remains in queue as "completed" rather than being removed
+      // so testers can see submission was successful
     } catch (e) {
       markError(e.toString());
     }
@@ -88,6 +117,9 @@ class SubmissionNotifier extends FamilyNotifier<SubmissionState, String> {
 
       final deviceTestNotifier =
           ref.read(factoryTestProvider(deviceId).notifier);
+
+      // Validate test results before submission
+      _validateTestResults(deviceTestState);
 
       // Create automatic tests array
       final List<Map<String, dynamic>> automaticTests = [];
@@ -138,12 +170,8 @@ class SubmissionNotifier extends FamilyNotifier<SubmissionState, String> {
         headers['x-api-key'] = apiKey;
       }
 
-      // Submit to API with headers
-      final response = await NetworkService.instance.post(
-        '/device_tests',
-        payload,
-        headers: headers.isNotEmpty ? headers : null,
-      );
+      // Submit to API with headers and retry logic
+      final response = await _submitWithRetry(payload, headers);
 
       if (response.statusCode == 200 || response.statusCode == 201) {
         debugPrint('Factory test results submitted successfully');
@@ -158,36 +186,145 @@ class SubmissionNotifier extends FamilyNotifier<SubmissionState, String> {
     }
   }
 
+  /// Validate test results before submission to catch issues early
+  void _validateTestResults(DeviceFactoryTestState deviceTestState) {
+    // Check that all automatic tests have been completed
+    if (!deviceTestState.automaticTests.isComplete) {
+      throw Exception('Cannot submit: Automatic tests are not complete');
+    }
+
+    // Check that all manual tests have been completed
+    if (!deviceTestState.manualTests.isComplete) {
+      throw Exception('Cannot submit: Manual tests are not complete');
+    }
+
+    // Validate device ID format
+    if (deviceId.isEmpty || !RegExp(r'^[A-F0-9:]{17}$').hasMatch(deviceId)) {
+      throw Exception('Invalid device ID format: $deviceId');
+    }
+
+    // Validate tester name is provided
+    if (state.testedBy.trim().isEmpty) {
+      throw Exception('Tester name is required before submission');
+    }
+
+    debugPrint('Test results validation passed');
+  }
+
+  /// Submit to API with retry logic for network resilience
+  Future<Response> _submitWithRetry(
+    Map<String, dynamic> payload,
+    Map<String, String> headers,
+  ) async {
+    const maxRetries = 3;
+    const baseDelay = Duration(seconds: 2);
+
+    for (int attempt = 1; attempt <= maxRetries; attempt++) {
+      try {
+        debugPrint('Submission attempt $attempt of $maxRetries');
+
+        final response = await NetworkService.instance.post(
+          '/device_tests',
+          payload,
+          headers: headers.isNotEmpty ? headers : null,
+        );
+
+        return response;
+      } catch (e) {
+        debugPrint('Submission attempt $attempt failed: $e');
+
+        if (attempt == maxRetries) {
+          throw Exception('Failed to submit after $maxRetries attempts: $e');
+        }
+
+        // Exponential backoff delay
+        final delay = Duration(seconds: baseDelay.inSeconds * attempt);
+        debugPrint('Retrying in ${delay.inSeconds} seconds...');
+        await Future.delayed(delay);
+      }
+    }
+
+    throw Exception('Unexpected error in submission retry logic');
+  }
+
   void markSuccess() {
-    state = state.copyWith(
-      status: SubmissionStatus.success,
-      resultsSubmitted: true,
-      errorMessage: null,
-    );
+    try {
+      state = state.copyWith(
+        status: SubmissionStatus.success,
+        resultsSubmitted: true,
+        errorMessage: null,
+      );
+    } catch (e) {
+      // Ignore widget lifecycle errors - this happens when widgets are disposed
+      // during async operations but it's safe to ignore
+      if (!e.toString().contains('_ElementLifecycle.defunct')) {
+        rethrow;
+      }
+    }
   }
 
   void markError(String error) {
-    state = state.copyWith(
-      status: SubmissionStatus.error,
-      errorMessage: error,
-      resultsSubmitted: false,
-    );
+    try {
+      state = state.copyWith(
+        status: SubmissionStatus.error,
+        errorMessage: error,
+        resultsSubmitted: false,
+      );
+    } catch (e) {
+      // Ignore widget lifecycle errors - this happens when widgets are disposed
+      // during async operations but it's safe to ignore
+      if (!e.toString().contains('_ElementLifecycle.defunct')) {
+        rethrow;
+      }
+    }
   }
 
   void setPutDeviceToSleep(bool value) {
-    state = state.copyWith(putDeviceToSleep: value);
+    try {
+      state = state.copyWith(putDeviceToSleep: value);
+    } catch (e) {
+      // Ignore widget lifecycle errors - this happens when widgets are disposed
+      // during async operations but it's safe to ignore
+      if (!e.toString().contains('_ElementLifecycle.defunct')) {
+        rethrow;
+      }
+    }
   }
 
   void setTestedBy(String value) {
-    state = state.copyWith(testedBy: value);
+    try {
+      state = state.copyWith(testedBy: value);
+    } catch (e) {
+      // Ignore widget lifecycle errors - this happens when widgets are disposed
+      // during async operations but it's safe to ignore
+      if (!e.toString().contains('_ElementLifecycle.defunct')) {
+        rethrow;
+      }
+    }
   }
 
   void setComment(String value) {
-    state = state.copyWith(comment: value);
+    try {
+      state = state.copyWith(comment: value);
+    } catch (e) {
+      // Ignore widget lifecycle errors - this happens when widgets are disposed
+      // during async operations but it's safe to ignore
+      if (!e.toString().contains('_ElementLifecycle.defunct')) {
+        rethrow;
+      }
+    }
   }
 
   void reset() {
-    state = const SubmissionState();
+    try {
+      state = const SubmissionState();
+    } catch (e) {
+      // Ignore widget lifecycle errors - this happens when widgets are disposed
+      // during async operations but it's safe to ignore
+      if (!e.toString().contains('_ElementLifecycle.defunct')) {
+        rethrow;
+      }
+    }
   }
 
   /// Format test value with appropriate suffix based on test name

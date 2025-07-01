@@ -1,5 +1,14 @@
 import 'package:flutter_blue_plus/flutter_blue_plus.dart';
 
+/// Represents the queue status of a device in the factory test system
+enum DeviceQueueStatus {
+  queued, // Device is waiting to start
+  running, // Device is currently running tests (max 4 concurrent)
+  readyToSubmit, // Device has finished tests, ready for result submission
+  completed, // Device has finished all tests and results submitted
+  error, // Device encountered an error
+}
+
 /// Represents the overall state of factory testing
 enum DeviceFactoryTestPhase {
   connecting,
@@ -34,6 +43,11 @@ class FactoryTestDevice {
   final int rssi;
   final BluetoothDevice bluetoothDevice;
   final DeviceTestStatus status;
+  final DeviceQueueStatus queueStatus;
+  final DateTime? queuedAt;
+  final DateTime? startedAt;
+  final DateTime? completedAt;
+  final int queuePosition; // Position in queue (0-based)
 
   FactoryTestDevice({
     required this.deviceId,
@@ -41,6 +55,11 @@ class FactoryTestDevice {
     required this.rssi,
     required this.bluetoothDevice,
     this.status = DeviceTestStatus.notStarted,
+    this.queueStatus = DeviceQueueStatus.queued,
+    this.queuedAt,
+    this.startedAt,
+    this.completedAt,
+    this.queuePosition = 0,
   });
 
   @override
@@ -49,13 +68,19 @@ class FactoryTestDevice {
       other is FactoryTestDevice &&
           runtimeType == other.runtimeType &&
           deviceId == other.deviceId &&
-          status == other.status;
+          status == other.status &&
+          queueStatus == other.queueStatus;
 
   @override
   int get hashCode => deviceId.hashCode;
 
   FactoryTestDevice copyWith({
     DeviceTestStatus? status,
+    DeviceQueueStatus? queueStatus,
+    DateTime? queuedAt,
+    DateTime? startedAt,
+    DateTime? completedAt,
+    int? queuePosition,
   }) {
     return FactoryTestDevice(
       deviceId: deviceId,
@@ -63,7 +88,45 @@ class FactoryTestDevice {
       rssi: rssi,
       bluetoothDevice: bluetoothDevice,
       status: status ?? this.status,
+      queueStatus: queueStatus ?? this.queueStatus,
+      queuedAt: queuedAt ?? this.queuedAt,
+      startedAt: startedAt ?? this.startedAt,
+      completedAt: completedAt ?? this.completedAt,
+      queuePosition: queuePosition ?? this.queuePosition,
     );
+  }
+
+  /// Get display name without AirSpot prefix
+  String get displayName => name.replaceFirst('AirSpot-', '');
+
+  /// Check if device is currently running tests
+  bool get isRunning => queueStatus == DeviceQueueStatus.running;
+
+  /// Check if device is waiting in queue
+  bool get isQueued => queueStatus == DeviceQueueStatus.queued;
+
+  /// Check if device is ready to submit results
+  bool get isReadyToSubmit => queueStatus == DeviceQueueStatus.readyToSubmit;
+
+  /// Check if device has completed testing and submission
+  bool get isCompleted => queueStatus == DeviceQueueStatus.completed;
+
+  /// Check if device has an error
+  bool get hasError => queueStatus == DeviceQueueStatus.error;
+
+  /// Get time elapsed since device started testing
+  Duration? get runningTime {
+    if (startedAt == null) return null;
+    final endTime = completedAt ?? DateTime.now();
+    return endTime.difference(startedAt!);
+  }
+
+  /// Get estimated queue wait time (rough calculation)
+  String get estimatedWaitTime {
+    if (!isQueued) return '';
+    if (queuePosition == 0) return 'Starting soon';
+    if (queuePosition <= 3) return '< 5 minutes';
+    return '${(queuePosition * 2)} - ${(queuePosition * 3)} minutes';
   }
 }
 
