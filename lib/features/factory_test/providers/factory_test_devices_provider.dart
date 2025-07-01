@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:airspothealth/core/services/ble_service.dart';
 import 'package:airspothealth/features/factory_test/models/factory_test_models.dart';
 import 'package:airspothealth/features/factory_test/providers/factory_test_provider.dart';
+// ignore: depend_on_referenced_packages
 import 'package:collection/collection.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_blue_plus/flutter_blue_plus.dart';
