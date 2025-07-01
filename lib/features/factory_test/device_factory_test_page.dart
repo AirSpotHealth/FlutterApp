@@ -1,6 +1,7 @@
 import 'package:airspothealth/core/theme/app_colors.dart';
 import 'package:airspothealth/core/utils/extensions.dart';
 import 'package:airspothealth/features/factory_test/models/factory_test_models.dart';
+import 'package:airspothealth/features/factory_test/providers/factory_test_devices_provider.dart';
 import 'package:airspothealth/features/factory_test/providers/factory_test_provider.dart';
 import 'package:airspothealth/features/factory_test/widgets/automatic_tests_tab.dart';
 import 'package:airspothealth/features/factory_test/widgets/manual_tests_tab.dart';
@@ -83,81 +84,125 @@ class _FactoryTestPageState extends ConsumerState<DeviceFactoryTestPage>
     return showDialog<bool>(
       context: context,
       barrierDismissible: false,
-      builder: (context) => AlertDialog(
+      builder: (context) => Dialog(
         backgroundColor: AppColors.backgroundPrimary,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(16),
         ),
-        title: Row(
-          children: [
-            Icon(
-              Icons.warning_rounded,
-              color: AppColors.brandColorRed,
-              size: 24,
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Text(
-                'Exit Factory Test?',
-                style: context.textTheme.headlineSmall?.copyWith(
-                  fontWeight: FontWeight.bold,
-                  color: AppColors.textPrimary,
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(
+            maxWidth: 400,
+            maxHeight: 500,
+          ),
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.all(24),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Icon(
+                      Icons.warning_rounded,
+                      color: AppColors.brandColorRed,
+                      size: 24,
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Text(
+                        'Exit Factory Test?',
+                        style: context.textTheme.headlineSmall?.copyWith(
+                          fontWeight: FontWeight.bold,
+                          color: AppColors.textPrimary,
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
-              ),
+                const SizedBox(height: 16),
+                Text(
+                  'Tests are currently in progress. If you exit now:\n\n'
+                  '• All test data will be lost\n'
+                  '• The device will restart in normal mode\n'
+                  '• You will need to start the factory test process again\n\n'
+                  'Are you sure you want to continue?',
+                  style: context.textTheme.bodyMedium?.copyWith(
+                    color: AppColors.textPrimary,
+                    height: 1.4,
+                  ),
+                ),
+                const SizedBox(height: 24),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.end,
+                  children: [
+                    TextButton(
+                      onPressed: () => Navigator.of(context).pop(false),
+                      child: Text(
+                        'Stay',
+                        style: context.textTheme.bodyMedium?.copyWith(
+                          color: AppColors.textSecondary,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    ElevatedButton(
+                      onPressed: () async {
+                        Navigator.of(context).pop(true);
+                        // Send 0xDE command to end factory test mode and restart device in normal mode
+                        final notifier = ref.read(
+                            factoryTestProvider(widget.deviceId).notifier);
+                        await notifier.endFactoryTestMode();
+                        notifier.dispose();
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppColors.brandColorRed,
+                        foregroundColor: AppColors.textOnPrimary,
+                        elevation: 0,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                      ),
+                      child: const Text(
+                        'Exit & Restart Device',
+                        style: TextStyle(fontWeight: FontWeight.w600),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
             ),
-          ],
-        ),
-        content: Text(
-          'Tests are currently in progress. If you exit now:\n\n'
-          '• All test data will be lost\n'
-          '• The device will restart in normal mode\n'
-          '• You will need to start the factory test process again\n\n'
-          'Are you sure you want to continue?',
-          style: context.textTheme.bodyMedium?.copyWith(
-            color: AppColors.textPrimary,
-            height: 1.4,
           ),
         ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(false),
-            child: Text(
-              'Stay',
-              style: context.textTheme.bodyMedium?.copyWith(
-                color: AppColors.textSecondary,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-          ),
-          ElevatedButton(
-            onPressed: () async {
-              Navigator.of(context).pop(true);
-              // Send 0xDE command to end factory test mode and restart device in normal mode
-              final notifier =
-                  ref.read(factoryTestProvider(widget.deviceId).notifier);
-              await notifier.endFactoryTestMode();
-              notifier.dispose();
-            },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.brandColorRed,
-              foregroundColor: AppColors.textOnPrimary,
-              elevation: 0,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(8),
-              ),
-            ),
-            child: const Text(
-              'Exit & Restart Device',
-              style: TextStyle(fontWeight: FontWeight.w600),
-            ),
-          ),
-        ],
       ),
     );
   }
 
   @override
   Widget build(BuildContext context) {
+    final devicesState = ref.watch(factoryTestDevicesProvider);
+
+    // Find this device in the queue
+    final deviceInQueue = devicesState.devices.firstWhereOrNull(
+      (device) => device.deviceId == widget.deviceId,
+    );
+
+    if (deviceInQueue == null) {
+      return Center(
+        child: Text(
+          'Device not found in queue',
+          style: context.textTheme.bodyMedium?.copyWith(
+            color: AppColors.textPrimary,
+          ),
+        ),
+      );
+    }
+
+    // If device is still queued, show queue position screen
+    if (deviceInQueue.queueStatus == DeviceQueueStatus.queued) {
+      return _buildQueuePositionScreen(deviceInQueue);
+    }
+
     final factoryTestState = ref.watch(factoryTestProvider(widget.deviceId));
 
     // Auto-update tab based on test progress
@@ -214,9 +259,201 @@ class _FactoryTestPageState extends ConsumerState<DeviceFactoryTestPage>
     );
   }
 
+  /// Build queue position screen for devices waiting in queue
+  Widget _buildQueuePositionScreen(FactoryTestDevice device) {
+    return Scaffold(
+      backgroundColor: AppColors.backgroundSecondary,
+      body: Column(
+        children: [
+          if (widget.showHeader) _buildQueueHeader(device),
+          Expanded(
+            child: Center(
+              child: Container(
+                margin: const EdgeInsets.all(24),
+                padding: const EdgeInsets.all(32),
+                decoration: BoxDecoration(
+                  color: AppColors.backgroundPrimary,
+                  borderRadius: BorderRadius.circular(16),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.05),
+                      blurRadius: 10,
+                      offset: const Offset(0, 2),
+                    ),
+                  ],
+                ),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    // Queue icon
+                    Container(
+                      width: 80,
+                      height: 80,
+                      decoration: BoxDecoration(
+                        color: AppColors.primaryColor.withValues(alpha: 0.1),
+                        shape: BoxShape.circle,
+                      ),
+                      child: Icon(
+                        Icons.hourglass_empty,
+                        size: 40,
+                        color: AppColors.primaryColor,
+                      ),
+                    ),
+                    const SizedBox(height: 24),
+
+                    // Queue position
+                    Text(
+                      'Position in Queue',
+                      style: context.textTheme.titleLarge?.copyWith(
+                        color: AppColors.textPrimary,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 16, vertical: 8),
+                      decoration: BoxDecoration(
+                        color: AppColors.primaryColor.withValues(alpha: 0.1),
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      child: Text(
+                        '#${device.queuePosition + 1}',
+                        style: context.textTheme.headlineMedium?.copyWith(
+                          color: AppColors.primaryColor,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+
+                    // Estimated wait time
+                    if (device.estimatedWaitTime.isNotEmpty) ...[
+                      Text(
+                        'Estimated wait time',
+                        style: context.textTheme.bodyMedium?.copyWith(
+                          color: AppColors.textSecondary,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        device.estimatedWaitTime,
+                        style: context.textTheme.titleMedium?.copyWith(
+                          color: AppColors.textPrimary,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ],
+
+                    const SizedBox(height: 24),
+
+                    // Status message
+                    Container(
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        color: AppColors.backgroundSecondary,
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Column(
+                        children: [
+                          Icon(
+                            Icons.info_outline,
+                            size: 20,
+                            color: AppColors.textSecondary,
+                          ),
+                          const SizedBox(height: 8),
+                          Text(
+                            device.queuePosition == 0
+                                ? 'Your device will start testing soon!'
+                                : 'Please wait while other devices complete their tests.',
+                            textAlign: TextAlign.center,
+                            style: context.textTheme.bodyMedium?.copyWith(
+                              color: AppColors.textSecondary,
+                              height: 1.4,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// Build header for queue position screen
+  Widget _buildQueueHeader(FactoryTestDevice device) {
+    return Container(
+      decoration: const BoxDecoration(
+        color: AppColors.primaryColor,
+      ),
+      child: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Row(
+            children: [
+              IconButton(
+                onPressed: () => Navigator.of(context).pop(),
+                icon: const Icon(Icons.arrow_back,
+                    color: AppColors.textOnPrimary),
+              ),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Text(
+                          'Factory Test',
+                          style: context.textTheme.headlineSmall?.copyWith(
+                            color: AppColors.textOnPrimary,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 8, vertical: 4),
+                          decoration: BoxDecoration(
+                            color:
+                                AppColors.textOnPrimary.withValues(alpha: 0.2),
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: Text(
+                            'In Queue',
+                            style: context.textTheme.bodySmall?.copyWith(
+                              color: AppColors.textOnPrimary,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                    Text(
+                      device.displayName,
+                      style: context.textTheme.bodyMedium?.copyWith(
+                        color: AppColors.textOnPrimary,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
   Widget _buildHeader(DeviceFactoryTestState state) {
     String deviceName = 'Select Device';
     String? sensorInfo;
+    String currentStep = 'Step ${_tabController.index + 1}';
 
     deviceName = state.selectedDevice.name;
 
@@ -225,6 +462,10 @@ class _FactoryTestPageState extends ConsumerState<DeviceFactoryTestPage>
       final sensorType = state.selectedDeviceVariant == 0 ? 'SCD40' : 'SCD41';
       sensorInfo = 'Sensor: $sensorType';
     }
+
+    // Get current step name
+    final stepNames = ['Automatic Tests', 'Manual Tests', 'Submit Results'];
+    final currentStepName = stepNames[_tabController.index];
 
     return Container(
       decoration: const BoxDecoration(
@@ -250,12 +491,33 @@ class _FactoryTestPageState extends ConsumerState<DeviceFactoryTestPage>
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      'Factory Test',
-                      style: context.textTheme.headlineSmall?.copyWith(
-                        color: AppColors.textOnPrimary,
-                        fontWeight: FontWeight.bold,
-                      ),
+                    Row(
+                      children: [
+                        Text(
+                          'Factory Test',
+                          style: context.textTheme.headlineSmall?.copyWith(
+                            color: AppColors.textOnPrimary,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 8, vertical: 4),
+                          decoration: BoxDecoration(
+                            color:
+                                AppColors.textOnPrimary.withValues(alpha: 0.2),
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: Text(
+                            '$currentStep: $currentStepName',
+                            style: context.textTheme.bodySmall?.copyWith(
+                              color: AppColors.textOnPrimary,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
                     Text(
                       deviceName,
@@ -451,16 +713,23 @@ class _FactoryTestPageState extends ConsumerState<DeviceFactoryTestPage>
 
     Color circleColor;
     Color textColor;
+    Color backgroundColor;
     Widget centerWidget;
 
     if (isCompleted) {
       circleColor = AppColors.brandColorGreen;
       textColor = AppColors.brandColorGreen;
+      backgroundColor = isActive
+          ? AppColors.brandColorGreen.withValues(alpha: 0.1)
+          : Colors.transparent;
       centerWidget =
           const Icon(Icons.check, color: AppColors.textOnPrimary, size: 16);
     } else if (isRunning) {
       circleColor = AppColors.primaryColor;
       textColor = AppColors.primaryColor;
+      backgroundColor = isActive
+          ? AppColors.primaryColor.withValues(alpha: 0.1)
+          : Colors.transparent;
       centerWidget = SizedBox(
         width: 12,
         height: 12,
@@ -472,6 +741,7 @@ class _FactoryTestPageState extends ConsumerState<DeviceFactoryTestPage>
     } else if (isActive && isEnabled) {
       circleColor = AppColors.primaryColor;
       textColor = AppColors.primaryColor;
+      backgroundColor = AppColors.primaryColor.withValues(alpha: 0.1);
       centerWidget = Text(
         '${index + 1}',
         style: const TextStyle(
@@ -483,6 +753,7 @@ class _FactoryTestPageState extends ConsumerState<DeviceFactoryTestPage>
     } else if (isEnabled) {
       circleColor = AppColors.backgroundPrimary;
       textColor = AppColors.textPrimary;
+      backgroundColor = Colors.transparent;
       centerWidget = Text(
         '${index + 1}',
         style: TextStyle(
@@ -494,6 +765,7 @@ class _FactoryTestPageState extends ConsumerState<DeviceFactoryTestPage>
     } else {
       circleColor = AppColors.backgroundTertiary;
       textColor = AppColors.textDisabled;
+      backgroundColor = Colors.transparent;
       centerWidget = Text(
         '${index + 1}',
         style: TextStyle(
@@ -526,68 +798,80 @@ class _FactoryTestPageState extends ConsumerState<DeviceFactoryTestPage>
 
     return GestureDetector(
       onTap: isEnabled ? () => _onTabTapped(index, state) : null,
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          // Circle with number/icon
-          Container(
-            width: 32,
-            height: 32,
-            decoration: BoxDecoration(
-              color: circleColor,
-              shape: BoxShape.circle,
-              border: Border.all(
-                color: isEnabled ? circleColor : AppColors.borderSecondary,
-                width: isActive && !isCompleted && !isRunning ? 2 : 1,
-              ),
-              boxShadow: isActive
-                  ? [
-                      BoxShadow(
-                        color: circleColor.withValues(alpha: 0.3),
-                        blurRadius: 4,
-                        offset: const Offset(0, 2),
-                      ),
-                    ]
-                  : null,
-            ),
-            child: Center(child: centerWidget),
-          ),
-          const SizedBox(height: 8),
-
-          // Title
-          Text(
-            title,
-            textAlign: TextAlign.center,
-            style: TextStyle(
-              color: textColor,
-              fontWeight: isActive ? FontWeight.w700 : FontWeight.w500,
-              fontSize: 11,
-              height: 1.2,
-            ),
-            maxLines: 2,
-            overflow: TextOverflow.ellipsis,
-          ),
-
-          // Optional subtitle for progress
-          if (subtitle.isNotEmpty) ...[
-            const SizedBox(height: 4),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 12),
+        decoration: BoxDecoration(
+          color: backgroundColor,
+          borderRadius: BorderRadius.circular(12),
+          border: isActive
+              ? Border.all(color: circleColor.withValues(alpha: 0.3), width: 2)
+              : null,
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            // Circle with number/icon
             Container(
-              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+              width: 32,
+              height: 32,
               decoration: BoxDecoration(
-                color: textColor.withValues(alpha: 0.1),
-                borderRadius: BorderRadius.circular(8),
+                color: circleColor,
+                shape: BoxShape.circle,
+                border: Border.all(
+                  color: isActive && !isCompleted && !isRunning
+                      ? AppColors.textOnPrimary
+                      : circleColor,
+                  width: isActive && !isCompleted && !isRunning ? 2 : 1,
+                ),
+                boxShadow: isActive
+                    ? [
+                        BoxShadow(
+                          color: circleColor.withValues(alpha: 0.4),
+                          blurRadius: 8,
+                          offset: const Offset(0, 2),
+                        ),
+                      ]
+                    : null,
               ),
-              child: Text(
-                subtitle,
-                style: TextStyle(
-                  color: textColor,
-                  fontSize: 9,
-                  fontWeight: FontWeight.w600,
+              child: Center(child: centerWidget),
+            ),
+            const SizedBox(height: 8),
+
+            // Title
+            Text(
+              title,
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                color: textColor,
+                fontWeight: isActive ? FontWeight.w700 : FontWeight.w500,
+                fontSize: isActive ? 12 : 11,
+                height: 1.2,
+              ),
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+            ),
+
+            // Optional subtitle for progress
+            if (subtitle.isNotEmpty) ...[
+              const SizedBox(height: 4),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                decoration: BoxDecoration(
+                  color: textColor.withValues(alpha: 0.15),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Text(
+                  subtitle,
+                  style: TextStyle(
+                    color: textColor,
+                    fontSize: 9,
+                    fontWeight: FontWeight.w600,
+                  ),
                 ),
               ),
-            ),
+            ],
           ],
-        ],
+        ),
       ),
     );
   }
@@ -637,23 +921,35 @@ class _FactoryTestPageState extends ConsumerState<DeviceFactoryTestPage>
 
     debugPrint('_updateTabBasedOnProgress called with phase: ${state.phase}');
     debugPrint('Current tab index: ${_tabController.index}');
+    debugPrint('Auto tests complete: ${state.automaticTests.isComplete}');
+    debugPrint('Manual tests complete: ${state.manualTests.isComplete}');
+    debugPrint('All testing complete: ${state.isTestingComplete}');
 
-    switch (state.phase) {
-      case DeviceFactoryTestPhase.connecting:
-      case DeviceFactoryTestPhase.enteringFactoryMode:
-      case DeviceFactoryTestPhase.reconnecting:
-      case DeviceFactoryTestPhase.runningAutomaticTests:
-        newIndex = 0;
-        break;
-      case DeviceFactoryTestPhase.runningManualTests:
-        newIndex = 1;
-        break;
-      case DeviceFactoryTestPhase.completed:
-        newIndex = 2;
-        break;
-      case DeviceFactoryTestPhase.error:
-        // Don't auto-change for these states
-        break;
+    // Check if all tests are complete and should move to submit tab
+    if (state.isTestingComplete && _tabController.index < 2) {
+      newIndex = 2;
+    } else {
+      // Otherwise, use phase-based logic
+      switch (state.phase) {
+        case DeviceFactoryTestPhase.connecting:
+        case DeviceFactoryTestPhase.enteringFactoryMode:
+        case DeviceFactoryTestPhase.reconnecting:
+        case DeviceFactoryTestPhase.runningAutomaticTests:
+          newIndex = 0;
+          break;
+        case DeviceFactoryTestPhase.runningManualTests:
+          // Only switch to manual tests if we're not already on submit tab
+          if (_tabController.index < 1) {
+            newIndex = 1;
+          }
+          break;
+        case DeviceFactoryTestPhase.completed:
+          newIndex = 2;
+          break;
+        case DeviceFactoryTestPhase.error:
+          // Don't auto-change for these states
+          break;
+      }
     }
 
     debugPrint('Calculated new tab index: $newIndex');

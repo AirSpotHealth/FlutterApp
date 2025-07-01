@@ -204,6 +204,7 @@ class _SubmitResultsTabState extends ConsumerState<SubmitResultsTab> {
             builder: (context, ref, child) {
               final submissionState =
                   ref.watch(submissionProvider(widget.deviceId));
+              final globalTesterName = ref.watch(testerNameProvider);
 
               return Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -216,7 +217,7 @@ class _SubmitResultsTabState extends ConsumerState<SubmitResultsTab> {
                   ),
                   const SizedBox(height: 8),
                   TextFormField(
-                    initialValue: submissionState.testedBy,
+                    initialValue: globalTesterName,
                     decoration: InputDecoration(
                       hintText: 'Enter tester name (required)',
                       border: OutlineInputBorder(
@@ -224,7 +225,7 @@ class _SubmitResultsTabState extends ConsumerState<SubmitResultsTab> {
                       ),
                       filled: true,
                       fillColor: Colors.grey[50],
-                      errorText: submissionState.testedBy.trim().isEmpty &&
+                      errorText: globalTesterName.trim().isEmpty &&
                               submissionState.status == SubmissionStatus.error
                           ? 'Tester name is required'
                           : null,

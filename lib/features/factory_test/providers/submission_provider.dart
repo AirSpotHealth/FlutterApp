@@ -4,6 +4,7 @@ import 'package:airspothealth/core/services/network_service.dart';
 import 'package:airspothealth/features/factory_test/models/factory_test_models.dart';
 import 'package:airspothealth/features/factory_test/providers/factory_test_devices_provider.dart';
 import 'package:airspothealth/features/factory_test/providers/factory_test_provider.dart';
+import 'package:airspothealth/features/factory_test/providers/tester_name_provider.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -20,15 +21,13 @@ class SubmissionState {
   final String? errorMessage;
   final bool resultsSubmitted;
   final bool putDeviceToSleep;
-  final String testedBy;
   final String comment;
 
   const SubmissionState({
     this.status = SubmissionStatus.idle,
     this.errorMessage,
     this.resultsSubmitted = false,
-    this.putDeviceToSleep = false,
-    this.testedBy = '',
+    this.putDeviceToSleep = true,
     this.comment = '',
   });
 
@@ -37,7 +36,6 @@ class SubmissionState {
     String? errorMessage,
     bool? resultsSubmitted,
     bool? putDeviceToSleep,
-    String? testedBy,
     String? comment,
   }) {
     return SubmissionState(
@@ -45,7 +43,6 @@ class SubmissionState {
       errorMessage: errorMessage,
       resultsSubmitted: resultsSubmitted ?? this.resultsSubmitted,
       putDeviceToSleep: putDeviceToSleep ?? this.putDeviceToSleep,
-      testedBy: testedBy ?? this.testedBy,
       comment: comment ?? this.comment,
     );
   }
@@ -62,6 +59,14 @@ class SubmissionNotifier extends FamilyNotifier<SubmissionState, String> {
   @override
   SubmissionState build(String deviceId) {
     return const SubmissionState();
+  }
+
+  /// Get the current tester name from the global provider
+  String get testedBy => ref.read(testerNameProvider);
+
+  /// Set the tester name globally for all devices
+  Future<void> setTestedBy(String value) async {
+    await ref.read(testerNameProvider.notifier).updateTesterName(value);
   }
 
   Future<void> startSubmission() async {
@@ -151,7 +156,7 @@ class SubmissionNotifier extends FamilyNotifier<SubmissionState, String> {
       final payload = {
         'mac_address': deviceId,
         'device_id': deviceId,
-        'tested_by': state.testedBy,
+        'tested_by': testedBy,
         'status': deviceTestState.isOverallSuccess ? 'PASS' : 'FAIL',
         'comment': state.comment.trim().isEmpty ? null : state.comment.trim(),
         'sensor_variant': deviceTestState.selectedDeviceVariant ?? 0,
@@ -199,12 +204,12 @@ class SubmissionNotifier extends FamilyNotifier<SubmissionState, String> {
     }
 
     // Validate device ID format
-    if (deviceId.isEmpty || !RegExp(r'^[A-F0-9:]{17}$').hasMatch(deviceId)) {
+    if (deviceId.isEmpty) {
       throw Exception('Invalid device ID format: $deviceId');
     }
 
-    // Validate tester name is provided
-    if (state.testedBy.trim().isEmpty) {
+    // Validate tester name is provided from global provider
+    if (testedBy.trim().isEmpty) {
       throw Exception('Tester name is required before submission');
     }
 
@@ -282,18 +287,6 @@ class SubmissionNotifier extends FamilyNotifier<SubmissionState, String> {
   void setPutDeviceToSleep(bool value) {
     try {
       state = state.copyWith(putDeviceToSleep: value);
-    } catch (e) {
-      // Ignore widget lifecycle errors - this happens when widgets are disposed
-      // during async operations but it's safe to ignore
-      if (!e.toString().contains('_ElementLifecycle.defunct')) {
-        rethrow;
-      }
-    }
-  }
-
-  void setTestedBy(String value) {
-    try {
-      state = state.copyWith(testedBy: value);
     } catch (e) {
       // Ignore widget lifecycle errors - this happens when widgets are disposed
       // during async operations but it's safe to ignore
