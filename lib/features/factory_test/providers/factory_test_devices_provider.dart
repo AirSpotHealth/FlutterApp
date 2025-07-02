@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:airspothealth/core/services/ble_service.dart';
 import 'package:airspothealth/features/factory_test/models/factory_test_models.dart';
 import 'package:airspothealth/features/factory_test/providers/factory_test_provider.dart';
+import 'package:airspothealth/features/factory_test/providers/submission_provider.dart';
 // ignore: depend_on_referenced_packages
 import 'package:collection/collection.dart';
 import 'package:flutter/material.dart';
@@ -198,6 +199,9 @@ class FactoryTestDevicesNotifier
 
     // Reset the factory test for this device
     ref.read(factoryTestProvider(deviceId).notifier).resetFactoryTest();
+
+    ref.invalidate(factoryTestProvider(deviceId));
+    ref.invalidate(submissionProvider(deviceId));
 
     state = state.copyWith(
       devices:
