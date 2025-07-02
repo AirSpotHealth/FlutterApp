@@ -66,18 +66,30 @@ class _FactoryTestWrapperState extends ConsumerState<FactoryTestWrapper>
 
   void _updateTabController(int deviceCount) {
     if (_tabController.length != deviceCount) {
+      final currentIndex = _tabController.index;
       _tabController.dispose();
       _tabController = TabController(length: deviceCount, vsync: this);
 
-      // If we removed the currently selected tab, adjust the index
-      if (_tabController.length > 0 &&
-          _tabController.index >= _tabController.length) {
-        _tabController.index = _tabController.length - 1;
-        _pageController.animateToPage(
-          _tabController.index,
-          duration: const Duration(milliseconds: 300),
-          curve: Curves.easeInOut,
-        );
+      // Preserve the current selection if possible, otherwise go to the last available
+      if (deviceCount > 0) {
+        final newIndex =
+            currentIndex >= deviceCount ? deviceCount - 1 : currentIndex;
+
+        // Only animate if the index actually changed and we're not at index 0
+        if (newIndex != currentIndex && newIndex > 0) {
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            if (mounted) {
+              _tabController.index = newIndex;
+              _pageController.animateToPage(
+                newIndex,
+                duration: const Duration(milliseconds: 300),
+                curve: Curves.easeInOut,
+              );
+            }
+          });
+        } else {
+          _tabController.index = newIndex;
+        }
       }
     }
   }
@@ -132,9 +144,11 @@ class _FactoryTestWrapperState extends ConsumerState<FactoryTestWrapper>
     final devicesState = ref.watch(factoryTestDevicesProvider);
     final devices = devicesState.devices;
 
-    // Update tab controller when device count changes
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      _updateTabController(devices.length);
+    ref.listen<FactoryTestDevicesState>(factoryTestDevicesProvider,
+        (previous, current) {
+      if (mounted) {
+        _updateTabController(current.devices.length);
+      }
     });
 
     return PopScope(
@@ -191,6 +205,7 @@ class _FactoryTestWrapperState extends ConsumerState<FactoryTestWrapper>
                       itemBuilder: (context, index) {
                         if (index >= devices.length) return const SizedBox();
                         return DeviceFactoryTestPage(
+                          key: ValueKey(devices[index].deviceId),
                           deviceId: devices[index].deviceId,
                           showHeader: false,
                         );
@@ -198,13 +213,25 @@ class _FactoryTestWrapperState extends ConsumerState<FactoryTestWrapper>
                     ),
                   ),
                   // Bottom tabs
-                  DeviceTabsBar(
-                    devices: devices,
-                    tabController: _tabController,
-                    pageController: _pageController,
-                    onAddDevice: _showAddDeviceSheet,
-                    onRemoveDevice: _removeDevice,
-                    onShowDeviceOptions: _showDeviceOptionsDialog,
+                  ListenableBuilder(
+                    listenable: _tabController,
+                    builder: (context, child) => DeviceTabsBar(
+                      devices: devices,
+                      onTabItemTap: (index) {
+                        if (index < _tabController.length) {
+                          _tabController.animateTo(index);
+                          _pageController.animateToPage(
+                            index,
+                            duration: const Duration(milliseconds: 300),
+                            curve: Curves.easeInOut,
+                          );
+                        }
+                      },
+                      onAddDevice: _showAddDeviceSheet,
+                      onRemoveDevice: _removeDevice,
+                      onShowDeviceOptions: _showDeviceOptionsDialog,
+                      currentTab: _tabController.index,
+                    ),
                   ),
                 ],
               ),

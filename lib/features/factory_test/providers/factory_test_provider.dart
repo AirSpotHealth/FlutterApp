@@ -118,7 +118,8 @@ class FactoryTestNotifier
           } else if (connectionState == BluetoothConnectionState.disconnected) {
             // Only handle disconnection if we've moved past the initial connecting phase
             if (state.connectionState ==
-                DeviceFactoryTestConnectionState.connecting) {
+                    DeviceFactoryTestConnectionState.connecting ||
+                state.phase == DeviceFactoryTestPhase.connecting) {
               debugPrint(
                   'Ignoring disconnection event during initial connection phase');
               return;
@@ -137,20 +138,11 @@ class FactoryTestNotifier
         },
       );
 
-      // Give the connection a moment to establish
-      await Future.delayed(const Duration(milliseconds: 500));
+      // Give iOS a moment to establish connection - the connection state listener will handle the rest
+      await Future.delayed(const Duration(seconds: 1));
 
-      if (device.isConnected) {
-        debugPrint(
-            'Device connection verified - ensuring _onDeviceConnected is called');
-        debugPrint(
-            '_connectedDevice before manual call: ${_connectedDevice?.advName}');
-        // Call _onDeviceConnected to ensure setup happens (duplicate prevention is handled in the method)
-        await _onDeviceConnected();
-      } else {
-        debugPrint('Device not connected after connection attempt');
-        throw 'Device connection failed - device not connected after connection attempt';
-      }
+      debugPrint(
+          'Connection initiated - waiting for connection state listener to fire...');
     } catch (error) {
       debugPrint('BLE connection error: $error');
       state = state.copyWith(
@@ -1094,13 +1086,13 @@ class FactoryTestNotifier
     _automaticTestTimeoutTimer = null;
   }
 
-  /// Start connection timeout timer (30 seconds)
+  /// Start connection timeout timer (45 seconds to give iOS more time)
   void _startConnectionTimeout() {
     _clearConnectionTimeout(); // Clear any existing timer
 
-    _connectionTimeoutTimer = Timer(const Duration(seconds: 30), () {
+    _connectionTimeoutTimer = Timer(const Duration(seconds: 45), () {
       debugPrint(
-          'Connection timeout - 30 seconds elapsed without successful connection');
+          'Connection timeout - 45 seconds elapsed without successful connection');
       _handleConnectionTimeout();
     });
   }

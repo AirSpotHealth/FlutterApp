@@ -203,12 +203,16 @@ class _FactoryTestPageState extends ConsumerState<DeviceFactoryTestPage>
       return _buildQueuePositionScreen(deviceInQueue);
     }
 
-    final factoryTestState = ref.watch(factoryTestProvider(widget.deviceId));
+    ref.listen<DeviceFactoryTestState>(
+      factoryTestProvider(widget.deviceId),
+      (previous, current) {
+        if (mounted) {
+          _updateTabBasedOnProgress(current);
+        }
+      },
+    );
 
-    // Auto-update tab based on test progress
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      _updateTabBasedOnProgress(factoryTestState);
-    });
+    final factoryTestState = ref.watch(factoryTestProvider(widget.deviceId));
 
     return PopScope(
       canPop: false,
@@ -917,16 +921,23 @@ class _FactoryTestPageState extends ConsumerState<DeviceFactoryTestPage>
   }
 
   void _updateTabBasedOnProgress(DeviceFactoryTestState state) {
-    int newIndex = _tabController.index;
+    if (!mounted) return;
 
-    debugPrint('_updateTabBasedOnProgress called with phase: ${state.phase}');
-    debugPrint('Current tab index: ${_tabController.index}');
-    debugPrint('Auto tests complete: ${state.automaticTests.isComplete}');
-    debugPrint('Manual tests complete: ${state.manualTests.isComplete}');
-    debugPrint('All testing complete: ${state.isTestingComplete}');
+    final currentIndex = _tabController.index;
+    int newIndex = currentIndex;
+
+    debugPrint(
+        '[${widget.deviceId}] _updateTabBasedOnProgress called with phase: ${state.phase}');
+    debugPrint('[${widget.deviceId}] Current tab index: $currentIndex');
+    debugPrint(
+        '[${widget.deviceId}] Auto tests complete: ${state.automaticTests.isComplete}');
+    debugPrint(
+        '[${widget.deviceId}] Manual tests complete: ${state.manualTests.isComplete}');
+    debugPrint(
+        '[${widget.deviceId}] All testing complete: ${state.isTestingComplete}');
 
     // Check if all tests are complete and should move to submit tab
-    if (state.isTestingComplete && _tabController.index < 2) {
+    if (state.isTestingComplete && currentIndex < 2) {
       newIndex = 2;
     } else {
       // Otherwise, use phase-based logic
@@ -935,11 +946,15 @@ class _FactoryTestPageState extends ConsumerState<DeviceFactoryTestPage>
         case DeviceFactoryTestPhase.enteringFactoryMode:
         case DeviceFactoryTestPhase.reconnecting:
         case DeviceFactoryTestPhase.runningAutomaticTests:
-          newIndex = 0;
+          // Only move to auto tests if we're not already on a later tab
+          if (currentIndex == 0 ||
+              (!state.automaticTests.isComplete && currentIndex > 0)) {
+            newIndex = 0;
+          }
           break;
         case DeviceFactoryTestPhase.runningManualTests:
-          // Only switch to manual tests if we're not already on submit tab
-          if (_tabController.index < 1) {
+          // Only switch to manual tests if automatic tests are complete and we're not on submit tab
+          if (state.automaticTests.isComplete && currentIndex < 2) {
             newIndex = 1;
           }
           break;
@@ -947,15 +962,16 @@ class _FactoryTestPageState extends ConsumerState<DeviceFactoryTestPage>
           newIndex = 2;
           break;
         case DeviceFactoryTestPhase.error:
-          // Don't auto-change for these states
+          // Don't auto-change for error states
           break;
       }
     }
 
-    debugPrint('Calculated new tab index: $newIndex');
+    debugPrint('[${widget.deviceId}] Calculated new tab index: $newIndex');
 
-    if (newIndex != _tabController.index && mounted) {
-      debugPrint('Switching to tab $newIndex');
+    // Only change tabs if necessary and if the tab is enabled
+    if (newIndex != currentIndex && _isTabEnabled(newIndex, state) && mounted) {
+      debugPrint('[${widget.deviceId}] Switching to tab $newIndex');
       _tabController.animateTo(newIndex);
       _pageController.animateToPage(
         newIndex,
@@ -963,7 +979,8 @@ class _FactoryTestPageState extends ConsumerState<DeviceFactoryTestPage>
         curve: Curves.easeInOut,
       );
     } else {
-      debugPrint('No tab switch needed or widget not mounted');
+      debugPrint(
+          '[${widget.deviceId}] No tab switch needed - current: $currentIndex, calculated: $newIndex, enabled: ${_isTabEnabled(newIndex, state)}');
     }
   }
 

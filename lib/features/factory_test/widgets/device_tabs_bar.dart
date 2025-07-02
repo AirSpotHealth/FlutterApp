@@ -7,19 +7,19 @@ class DeviceTabsBar extends StatelessWidget {
   const DeviceTabsBar({
     super.key,
     required this.devices,
-    required this.tabController,
-    required this.pageController,
+    required this.onTabItemTap,
     required this.onAddDevice,
     required this.onRemoveDevice,
     required this.onShowDeviceOptions,
+    required this.currentTab,
   });
 
   final List<FactoryTestDevice> devices;
-  final TabController tabController;
-  final PageController pageController;
+  final Function(int index) onTabItemTap;
   final VoidCallback onAddDevice;
   final Function(String deviceId) onRemoveDevice;
   final Function(FactoryTestDevice device) onShowDeviceOptions;
+  final int currentTab;
 
   @override
   Widget build(BuildContext context) {
@@ -43,48 +43,32 @@ class DeviceTabsBar extends StatelessWidget {
             children: [
               // Tabs with ListenableBuilder to listen to tab changes
               Expanded(
-                child: ListenableBuilder(
-                  listenable: tabController,
-                  builder: (context, child) {
-                    return ListView.builder(
-                      scrollDirection: Axis.horizontal,
-                      padding: const EdgeInsets.symmetric(horizontal: 4),
-                      itemCount: devices.length,
-                      itemBuilder: (context, index) {
-                        final device = devices[index];
-                        final isActive = tabController.length > 0 &&
-                            index < tabController.length &&
-                            tabController.index == index;
+                child: ListView.builder(
+                  scrollDirection: Axis.horizontal,
+                  padding: const EdgeInsets.symmetric(horizontal: 4),
+                  itemCount: devices.length,
+                  itemBuilder: (context, index) {
+                    final device = devices[index];
+                    final isActive = currentTab == index;
 
-                        return ConstrainedBox(
-                          constraints: const BoxConstraints(
-                            maxWidth: 120,
-                            minWidth: 80,
-                          ),
-                          child: DeviceTabItem(
-                            device: device,
-                            isActive: isActive,
-                            onTap: () {
-                              if (index < tabController.length) {
-                                tabController.animateTo(index);
-                                pageController.animateToPage(
-                                  index,
-                                  duration: const Duration(milliseconds: 300),
-                                  curve: Curves.easeInOut,
-                                );
-                              }
-                            },
-                            onClose: () {
-                              // if it is complete or in queue don't show the dialog just remove it
-                              if (device.isCompleted || device.isQueued) {
-                                onRemoveDevice(device.deviceId);
-                                return;
-                              }
-                              onShowDeviceOptions(device);
-                            },
-                          ),
-                        );
-                      },
+                    return ConstrainedBox(
+                      constraints: const BoxConstraints(
+                        maxWidth: 120,
+                        minWidth: 80,
+                      ),
+                      child: DeviceTabItem(
+                        device: device,
+                        isActive: isActive,
+                        onTap: () => onTabItemTap(index),
+                        onClose: () {
+                          // if it is complete or in queue don't show the dialog just remove it
+                          if (device.isCompleted || device.isQueued) {
+                            onRemoveDevice(device.deviceId);
+                            return;
+                          }
+                          onShowDeviceOptions(device);
+                        },
+                      ),
                     );
                   },
                 ),
