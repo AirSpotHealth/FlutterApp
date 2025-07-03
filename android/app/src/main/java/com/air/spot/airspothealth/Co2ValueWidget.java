@@ -61,13 +61,13 @@ public class Co2ValueWidget extends AppWidgetProvider {
 
         // Set alarm/sound mode icon based on state
         boolean alarmEnabledBool = Boolean.parseBoolean(alarmEnabled);
-        int soundModeDrawable = alarmEnabledBool ? R.drawable.sound_mode_icon_on : R.drawable.sound_mode_icon_off;
+        int soundModeDrawable = alarmEnabledBool ? R.drawable.alarm_on : R.drawable.alarm_off;
         views.setImageViewResource(R.id.sound_mode, soundModeDrawable);
         views.setViewVisibility(R.id.sound_mode, View.VISIBLE);
 
         // Set vibration mode icon based on state
         boolean vibrationEnabledBool = Boolean.parseBoolean(vibrationEnabled);
-        int vibrationModeDrawable = vibrationEnabledBool ? R.drawable.vibration_mode_icon_on : R.drawable.vibration_mode_icon_off;
+        int vibrationModeDrawable = vibrationEnabledBool ? R.drawable.vibrate_on : R.drawable.vibrate_off;
         views.setImageViewResource(R.id.vibration_mode, vibrationModeDrawable);
         views.setViewVisibility(R.id.vibration_mode, View.VISIBLE);
 

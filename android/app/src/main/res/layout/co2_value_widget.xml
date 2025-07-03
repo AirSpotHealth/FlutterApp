@@ -49,20 +49,20 @@
             <!-- Sound Mode Icon -->
             <ImageView
                 android:id="@+id/sound_mode"
-                android:layout_width="6dp"
-                android:layout_height="6dp"
+                android:layout_width="16dp"
+                android:layout_height="16dp"
                 android:layout_gravity="center_vertical"
                 android:layout_marginEnd="4dp"
-                android:background="@drawable/sound_mode_icon_off" />
+                android:background="@drawable/alarm_off" />
 
             <!-- Vibration Mode Icon -->
             <ImageView
                 android:id="@+id/vibration_mode"
-                android:layout_width="6dp"
-                android:layout_height="6dp"
+                android:layout_width="16dp"
+                android:layout_height="16dp"
                 android:layout_gravity="center_vertical"
                 android:layout_marginEnd="4dp"
-                android:background="@drawable/vibration_mode_icon_off" />
+                android:background="@drawable/vibrate_off" />
 
             <!-- Battery Percentage -->
             <TextView
@@ -72,7 +72,7 @@
                 android:alpha="0.8"
                 android:gravity="end"
                 android:layout_weight="1"
-                android:text="100%"
+                android:text="-%"
                 android:textColor="#FFFFFF"
                 android:textSize="12sp" />
 
@@ -86,7 +86,7 @@
             android:layout_height="wrap_content"
             android:layout_marginBottom="4dp"
             android:fontFamily="sans-serif-condensed"
-            android:text="0426"
+            android:text="----"
             android:textAlignment="center"
             android:textColor="#4CAF50"
             android:textSize="40sp"
@@ -107,7 +107,7 @@
                 android:layout_height="wrap_content"
                 android:layout_marginEnd="12dp"
                 android:alpha="0.8"
-                android:text="3 min"
+                android:text="---"
                 android:textColor="#FFFFFF"
                 android:textSize="12sp" />
 
