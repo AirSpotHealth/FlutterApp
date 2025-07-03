@@ -41,7 +41,6 @@ class _BleDeviceCommunicationNotifier extends FamilyNotifier<dynamic, String> {
 
   String get deviceId => arg;
 
-  static const notifySubscriptionRetryMaxCount = 3;
   int notifySubscriptionRetryCount = 0;
 
   StreamSubscription<List<int>>? _notifySubscription;
@@ -103,32 +102,6 @@ class _BleDeviceCommunicationNotifier extends FamilyNotifier<dynamic, String> {
         });
       }
     }
-
-    // void _checkAndShowNotification(DeviceSettings? deviceSettings, value) {
-    //   if (deviceSettings == null) return;
-
-    //   if (deviceSettings.co2HighAlertEnabled &&
-    //       value > deviceSettings.yellowUpperLimit) {
-    //     NotificationService.showNotification(
-    //       title:
-    //           'Alert! ${Constants.co2Text} > ${deviceSettings.yellowUpperLimit} ppm',
-    //       body: 'Now $value ppm',
-    //       suffixIcon: value > state
-    //           ? 'asset://assets/images/trending-up.png'
-    //           : 'asset://assets/images/trending-down.png',
-    //     ).ignore();
-    //   } else if (deviceSettings.co2MedAlertEnabled &&
-    //       value > deviceSettings.greenUpperLimit) {
-    //     NotificationService.showNotification(
-    //       title:
-    //           'Alert! ${Constants.co2Text} > ${deviceSettings.greenUpperLimit} ppm',
-    //       body: 'Now $value ppm',
-    //       suffixIcon: value > state
-    //           ? 'asset://assets/images/trending-up.png'
-    //           : 'asset://assets/images/trending-down.png',
-    //     ).ignore();
-    //   }
-    // }
   }
 
   void setHomeValue(DeviceData co2Data) {
