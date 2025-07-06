@@ -177,12 +177,13 @@ class _BleDeviceCommunicationNotifier extends FamilyNotifier<dynamic, String> {
     } catch (e) {
       debugPrint('BLE: Error gathering widget data: $e');
       // Fallback to basic CO2 update
-      HomeWidget.saveWidgetData(
-          Constants.homeWidgetKey, co2Data.value.toString());
-      HomeWidget.updateWidget(
-        iOSName: Constants.iOSWidgetName,
-        androidName: Constants.androidWidgetName,
-      );
+      if (Platform.isAndroid) {
+        HomeWidget.saveWidgetData(Constants.homeWidgetKey, '----');
+        HomeWidget.updateWidget(
+          iOSName: Constants.iOSWidgetName,
+          androidName: Constants.androidWidgetName,
+        );
+      }
     }
   }
 
