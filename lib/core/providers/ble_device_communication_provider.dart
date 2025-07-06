@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:io';
 
 import 'package:airspothealth/core/models/ble_device.dart';
 import 'package:airspothealth/core/models/device_data.dart';
@@ -143,32 +144,36 @@ class _BleDeviceCommunicationNotifier extends FamilyNotifier<dynamic, String> {
         debugPrint('BLE: Could not read battery state: $e');
       }
 
-      // 5. Create complete widget data
-      final widgetData = WidgetUpdateData(
-        deviceId: deviceId,
-        co2Value: co2Value,
-        deviceName: deviceName,
-        powerMode: powerMode,
-        batteryLevel: batteryLevel,
-        isCharging: isCharging,
-        alarmEnabled: alarmEnabled,
-        vibrationEnabled: vibrationEnabled,
-      );
+      if (Platform.isAndroid) {
+        // 5. Create complete widget data
+        final widgetData = WidgetUpdateData(
+          deviceId: deviceId,
+          co2Value: co2Value,
+          deviceName: deviceName,
+          powerMode: powerMode,
+          batteryLevel: batteryLevel,
+          isCharging: isCharging,
+          alarmEnabled: alarmEnabled,
+          vibrationEnabled: vibrationEnabled,
+        );
 
-      // 6. Call service to update home widget with all data
-      debugPrint(
-          'BLE: Updating widget with: CO2=$co2Value, Device=$deviceName, PowerMode=$powerMode, Battery=$batteryLevel');
-      HomeWidgetService.instance.updateHomeWidget(data: widgetData);
+        // 6. Call service to update home widget with all data
+        debugPrint(
+            'BLE: Updating widget with: CO2=$co2Value, Device=$deviceName, PowerMode=$powerMode, Battery=$batteryLevel');
+        HomeWidgetService.instance.updateHomeWidget(data: widgetData);
+      }
 
-      // 7. Call service to update live activity with all data
-      LiveActivityService().updateLiveActivity(
-          data: LiveActivityModel(
-        co2Value: int.parse(co2Value),
-        powerMode: powerMode,
-        batteryLevel: int.parse(batteryLevel),
-        alarmEnabled: alarmEnabled,
-        vibrationEnabled: vibrationEnabled,
-      ));
+      if (Platform.isIOS) {
+        // 7. Call service to update live activity with all data
+        LiveActivityService().updateLiveActivity(
+            data: LiveActivityModel(
+          co2Value: int.parse(co2Value),
+          powerMode: powerMode,
+          batteryLevel: int.parse(batteryLevel),
+          alarmEnabled: alarmEnabled,
+          vibrationEnabled: vibrationEnabled,
+        ));
+      }
     } catch (e) {
       debugPrint('BLE: Error gathering widget data: $e');
       // Fallback to basic CO2 update
