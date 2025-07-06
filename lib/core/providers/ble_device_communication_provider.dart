@@ -4,6 +4,7 @@ import 'package:airspothealth/core/models/ble_device.dart';
 import 'package:airspothealth/core/models/device_data.dart';
 import 'package:airspothealth/core/models/device_data_type.dart';
 import 'package:airspothealth/core/models/device_settings.dart';
+import 'package:airspothealth/core/models/live_activity_model.dart';
 import 'package:airspothealth/core/providers/ble_connected_devices_provider.dart';
 import 'package:airspothealth/core/providers/device_settings_provider.dart';
 import 'package:airspothealth/core/services/ble_communicator_service.dart';
@@ -12,6 +13,7 @@ import 'package:airspothealth/core/services/ble_device_communicator.dart';
 import 'package:airspothealth/core/services/data_logger_service.dart';
 import 'package:airspothealth/core/services/home_widget_service.dart';
 import 'package:airspothealth/core/services/isar_service.dart';
+import 'package:airspothealth/core/services/live_activity_service.dart';
 import 'package:airspothealth/core/utils/constants.dart';
 import 'package:airspothealth/core/utils/device_cmd_utils.dart';
 import 'package:airspothealth/core/utils/extensions.dart';
@@ -157,6 +159,16 @@ class _BleDeviceCommunicationNotifier extends FamilyNotifier<dynamic, String> {
       debugPrint(
           'BLE: Updating widget with: CO2=$co2Value, Device=$deviceName, PowerMode=$powerMode, Battery=$batteryLevel');
       HomeWidgetService.instance.updateHomeWidget(data: widgetData);
+
+      // 7. Call service to update live activity with all data
+      LiveActivityService().updateLiveActivity(
+          data: LiveActivityModel(
+        co2Value: int.parse(co2Value),
+        powerMode: powerMode,
+        batteryLevel: int.parse(batteryLevel),
+        alarmEnabled: alarmEnabled,
+        vibrationEnabled: vibrationEnabled,
+      ));
     } catch (e) {
       debugPrint('BLE: Error gathering widget data: $e');
       // Fallback to basic CO2 update
