@@ -5,7 +5,11 @@ import android.appwidget.AppWidgetManager;
 import android.appwidget.AppWidgetProvider;
 import android.content.Context;
 import android.content.Intent;
+import android.graphics.Bitmap;
+import android.graphics.Canvas;
 import android.graphics.Color;
+import android.graphics.Paint;
+import android.graphics.RectF;
 import android.net.Uri;
 import android.os.Bundle;
 import android.util.Log;
@@ -15,6 +19,12 @@ import android.widget.RemoteViews;
 import java.util.Calendar;
 import java.util.Locale;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.List;
+
+import org.json.JSONObject;
+import org.json.JSONArray;
+import org.json.JSONException;
 
 import es.antonborri.home_widget.HomeWidgetBackgroundIntent;
 import es.antonborri.home_widget.HomeWidgetPlugin;
@@ -25,6 +35,7 @@ import es.antonborri.home_widget.HomeWidgetPlugin;
 public class Co2ValueWidget extends AppWidgetProvider {
 
     private static final String TAG = "Co2ValueWidget";
+    private static final String WIDGET_DATA_KEY = "widget_data_json";
 
     static void updateAppWidget(Context context, AppWidgetManager appWidgetManager, int appWidgetId) {
         Log.d(TAG, "Updating widget: " + appWidgetId);
@@ -32,52 +43,87 @@ public class Co2ValueWidget extends AppWidgetProvider {
         // Use the single 2x3 layout
         RemoteViews views = new RemoteViews(context.getPackageName(), R.layout.co2_value_widget);
         
-        // Get widget data
-        String co2Value = HomeWidgetPlugin.Companion.getData(context).getString("airspot_home_widget", "----");
-        String lastUpdatedString = HomeWidgetPlugin.Companion.getData(context).getString("last_updated", "");
-        String deviceId = HomeWidgetPlugin.Companion.getData(context).getString("device_id", "");
-        String powerMode = HomeWidgetPlugin.Companion.getData(context).getString("power_mode", "Now");
-        String batteryLevel = HomeWidgetPlugin.Companion.getData(context).getString("battery_level", "0");
-        String isCharging = HomeWidgetPlugin.Companion.getData(context).getString("is_charging", "false");
-        String alarmEnabled = HomeWidgetPlugin.Companion.getData(context).getString("alarm_enabled", "false");
-        String vibrationEnabled = HomeWidgetPlugin.Companion.getData(context).getString("vibration_enabled", "false");
-
-        // Set CO2 value and color
-        views.setTextViewText(R.id.co2_value, co2Value);
-        int color = getColorForCO2Value(co2Value);
-        views.setTextColor(R.id.co2_value, color);
-
-        // Set power mode (in place of time display)
-        views.setTextViewText(R.id.time_display, powerMode);
-
-        // Set battery level
-        int batteryLevelInt = 0;
         try {
-            batteryLevelInt = Integer.parseInt(batteryLevel);
-        } catch (NumberFormatException e) {
-            batteryLevelInt = 0;
+            // Get the single JSON payload
+            String widgetDataJson = HomeWidgetPlugin.Companion.getData(context).getString(WIDGET_DATA_KEY, "{}");
+            JSONObject widgetData = new JSONObject(widgetDataJson);
+            
+            // Extract all values from JSON with fallbacks
+            String co2Value = widgetData.optString("co2_value", "----");
+            String deviceId = widgetData.optString("device_id", "");
+            String deviceName = widgetData.optString("device_name", "No Device");
+            String powerMode = widgetData.optString("power_mode", "Now");
+            String batteryLevel = widgetData.optString("battery_level", "0");
+            boolean isCharging = widgetData.optBoolean("is_charging", false);
+            boolean alarmEnabled = widgetData.optBoolean("alarm_enabled", false);
+            boolean vibrationEnabled = widgetData.optBoolean("vibration_enabled", false);
+            
+            // Graph data
+            JSONArray co2HistoryArray = widgetData.optJSONArray("co2_history");
+            List<Integer> co2History = parseJsonArrayToIntList(co2HistoryArray);
+            int greenUpperLimit = widgetData.optInt("green_upper_limit", 800);
+            int yellowUpperLimit = widgetData.optInt("yellow_upper_limit", 1000);
+            int graphMaxValue = widgetData.optInt("graph_max_value", 1600);
+            int graphMinValue = widgetData.optInt("graph_min_value", 0);
+            
+            Log.d(TAG, "Parsed widget data: CO2=" + co2Value + ", Device=" + deviceName + 
+                      ", History=" + co2History.size() + " values, Thresholds=" + greenUpperLimit + "/" + yellowUpperLimit);
+
+            // Set CO2 value and dynamic color based on device thresholds
+            views.setTextViewText(R.id.co2_value, co2Value);
+            int color = getColorForCO2Value(co2Value, greenUpperLimit, yellowUpperLimit);
+            views.setTextColor(R.id.co2_value, color);
+
+            // Set power mode (in place of time display)
+            views.setTextViewText(R.id.power_mode, powerMode);
+
+            // Set battery level
+            int batteryLevelInt = 0;
+            try {
+                batteryLevelInt = Integer.parseInt(batteryLevel);
+            } catch (NumberFormatException ignored) {
+            }
+            views.setTextViewText(R.id.battery_percentage, batteryLevelInt + "%");
+
+            // Set alarm/sound mode icon based on state
+            int soundModeDrawable = alarmEnabled ? R.drawable.alarm_on : R.drawable.alarm_off;
+            views.setImageViewResource(R.id.sound_mode, soundModeDrawable);
+            views.setViewVisibility(R.id.sound_mode, View.VISIBLE);
+
+            // Set vibration mode icon based on state
+            int vibrationModeDrawable = vibrationEnabled ? R.drawable.vibrate_on : R.drawable.vibrate_off;
+            views.setImageViewResource(R.id.vibration_mode, vibrationModeDrawable);
+            views.setViewVisibility(R.id.vibration_mode, View.VISIBLE);
+
+            // Create and setup dynamic graph
+            setupDynamicCo2Graph(context, views, co2History, greenUpperLimit, yellowUpperLimit, 
+                                 graphMaxValue, graphMinValue);
+
+            // Set up refresh button with device ID
+            setupRefreshButton(context, views, appWidgetId, deviceId);
+
+            Log.d(TAG, "Widget updated successfully with JSON data");
+
+        } catch (JSONException e) {
+            Log.e(TAG, "Error parsing widget JSON data: " + e.getMessage());
         }
-        views.setTextViewText(R.id.battery_percentage, batteryLevelInt + "%");
-
-        // Set alarm/sound mode icon based on state
-        boolean alarmEnabledBool = Boolean.parseBoolean(alarmEnabled);
-        int soundModeDrawable = alarmEnabledBool ? R.drawable.alarm_on : R.drawable.alarm_off;
-        views.setImageViewResource(R.id.sound_mode, soundModeDrawable);
-        views.setViewVisibility(R.id.sound_mode, View.VISIBLE);
-
-        // Set vibration mode icon based on state
-        boolean vibrationEnabledBool = Boolean.parseBoolean(vibrationEnabled);
-        int vibrationModeDrawable = vibrationEnabledBool ? R.drawable.vibrate_on : R.drawable.vibrate_off;
-        views.setImageViewResource(R.id.vibration_mode, vibrationModeDrawable);
-        views.setViewVisibility(R.id.vibration_mode, View.VISIBLE);
-
-        // Set up refresh button with device ID
-        setupRefreshButton(context, views, appWidgetId, deviceId);
 
         // Update the widget
         appWidgetManager.updateAppWidget(appWidgetId, views);
-        Log.d(TAG, "Widget updated with CO2: " + co2Value + ", DeviceID: " + deviceId + ", PowerMode: " + powerMode + 
-              ", Battery: " + batteryLevel + "%, Alarm: " + alarmEnabled + ", Vibration: " + vibrationEnabled);
+    }
+
+    private static List<Integer> parseJsonArrayToIntList(JSONArray jsonArray) {
+        List<Integer> intList = new ArrayList<>();
+        if (jsonArray != null) {
+            for (int i = 0; i < jsonArray.length(); i++) {
+                try {
+                    intList.add(jsonArray.getInt(i));
+                } catch (JSONException e) {
+                    Log.w(TAG, "Error parsing CO2 history value at index " + i + ": " + e.getMessage());
+                }
+            }
+        }
+        return intList;
     }
 
     private static void setupRefreshButton(Context context, RemoteViews views, int appWidgetId, String deviceId) {
@@ -97,16 +143,140 @@ public class Co2ValueWidget extends AppWidgetProvider {
         Log.d(TAG, "Refresh button setup with URI: " + uriString);
     }
 
+    private static void setupDynamicCo2Graph(Context context, RemoteViews views, List<Integer> co2History, 
+                                             int greenUpperLimit, int yellowUpperLimit,
+                                             int graphMaxValue, int graphMinValue) {
+        try {
+            // Generate dynamic graph bitmap (just like iOS SwiftUI approach)
+            Bitmap graphBitmap = generateCo2GraphBitmap(co2History, greenUpperLimit, yellowUpperLimit, 
+                                                       graphMaxValue, graphMinValue, context);
+            
+            // Set the generated bitmap to the ImageView
+            views.setImageViewBitmap(R.id.co2_graph, graphBitmap);
+            Log.d(TAG, "Dynamic graph bitmap generated and set with " + co2History.size() + " values");
+
+        } catch (Exception e) {
+            Log.e(TAG, "Error setting up dynamic CO2 graph: " + e.getMessage());
+        }
+    }
+    
+    private static Bitmap generateCo2GraphBitmap(List<Integer> co2History, int greenUpperLimit, 
+                                                int yellowUpperLimit, int graphMaxValue, int graphMinValue, 
+                                                Context context) {
+        // Always generate graph even if no data - will show grey bars only
+        
+        // Graph dimensions (similar to iOS 70dp height)
+        float density = context.getResources().getDisplayMetrics().density;
+        int width = (int)(300 * density);  // Flexible width
+        int height = (int)(60 * density); // 60dp height
+        int padding = (int)(8 * density); // 8dp padding
+        
+        Bitmap bitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888);
+        Canvas canvas = new Canvas(bitmap);
+        
+        // Background (matching graph_background.xml)
+        Paint backgroundPaint = new Paint();
+        backgroundPaint.setColor(Color.parseColor("#1A000000"));
+        backgroundPaint.setAntiAlias(true);
+        RectF backgroundRect = new RectF(0, 0, width, height);
+        canvas.drawRoundRect(backgroundRect, 8 * density, 8 * density, backgroundPaint);
+        
+        // Calculate available drawing area
+        float drawableWidth = width - (2 * padding);
+        float drawableHeight = height - (2 * padding);
+        
+        // Handle null or empty history
+        if (co2History == null) {
+            co2History = new ArrayList<>();
+        }
+        
+        // Limit to reasonable number of bars for readability
+        int maxBars = Math.min(40, co2History.size()); // Show up to 40 bars like iOS
+        int startIndex = Math.max(0, co2History.size() - maxBars);
+        
+        // Calculate bar width and spacing for 40 bars (just like iOS)
+        float barSpacing = 2 * density; // 2dp spacing
+        float barWidth = (drawableWidth - (barSpacing * (40 - 1))) / 40;
+        
+        // Always draw 40 grey background bars (full scale) - just like iOS
+        Paint greyBarPaint = new Paint();
+        greyBarPaint.setColor(Color.parseColor("#40808080")); // Semi-transparent grey
+        greyBarPaint.setAntiAlias(true);
+        
+        for (int i = 0; i < 40; i++) {
+            float barLeft = padding + (i * (barWidth + barSpacing));
+            // Full height grey bar
+            float barRight = barLeft + barWidth;
+            float barBottom = height - padding;
+            
+            // Draw full-height grey background bar
+            RectF greyBarRect = new RectF(barLeft, (float) padding, barRight, barBottom);
+            canvas.drawRoundRect(greyBarRect, 2 * density, 2 * density, greyBarPaint);
+        }
+        
+        // Draw colored overlay bars for actual CO2 values (like iOS foreground bars)
+        Paint coloredBarPaint = new Paint();
+        coloredBarPaint.setAntiAlias(true);
+        
+        for (int i = 0; i < maxBars; i++) {
+            int co2Value = co2History.get(startIndex + i);
+            
+            // Calculate normalized height (same logic as iOS)
+            float heightRatio = (float)(co2Value - graphMinValue) / (graphMaxValue - graphMinValue);
+            heightRatio = Math.max(0.05f, Math.min(1.0f, heightRatio)); // Clamp between 5% and 100%
+            
+            float barHeight = drawableHeight * heightRatio;
+            
+            // Calculate bar position (align with grey bars)
+            int barIndex = (40 - maxBars) + i; // Position from right like iOS (latest data rightmost)
+            float barLeft = padding + (barIndex * (barWidth + barSpacing));
+            float barTop = height - padding - barHeight; // Draw from bottom
+            float barRight = barLeft + barWidth;
+            float barBottom = height - padding;
+            
+            // Set bar color based on dynamic thresholds (same as iOS)
+            int barColor = getDynamicColorForCO2Value(co2Value, greenUpperLimit, yellowUpperLimit);
+            coloredBarPaint.setColor(barColor);
+            
+            // Draw the colored overlay bar with rounded corners
+            RectF coloredBarRect = new RectF(barLeft, barTop, barRight, barBottom);
+            canvas.drawRoundRect(coloredBarRect, 2 * density, 2 * density, coloredBarPaint);
+        }
+        
+        if (maxBars > 0) {
+            Log.d(TAG, "Generated graph bitmap: " + width + "x" + height + "px with 40 grey bars + " + maxBars + " colored overlays");
+        } else {
+            Log.d(TAG, "Generated graph bitmap: " + width + "x" + height + "px with 40 grey bars (no data)");
+        }
+        return bitmap;
+    }
+    
+    private static int getDynamicColorForCO2Value(int co2Value, int greenUpperLimit, int yellowUpperLimit) {
+        // Dynamic color logic - exactly like iOS co2Color(for:green:yellow:)
+        if (co2Value <= greenUpperLimit) {
+            return Color.parseColor("#4CAF50"); // Green
+        } else if (co2Value <= yellowUpperLimit) {
+            return Color.parseColor("#FF9800"); // Orange  
+        } else {
+            return Color.parseColor("#F44336"); // Red
+        }
+    }
+    
+    // Legacy method with hardcoded thresholds (kept for compatibility)
     private static int getColorForCO2Value(String co2ValueStr) {
         try {
             int co2Value = Integer.parseInt(co2ValueStr);
-            if (co2Value < 800) {
-                return Color.parseColor("#4CAF50"); // Green
-            } else if (co2Value < 1000) {
-                return Color.parseColor("#FF9800"); // Orange
-            } else {
-                return Color.parseColor("#F44336"); // Red
-            }
+            return getDynamicColorForCO2Value(co2Value, 800, 1000); // Use defaults
+        } catch (NumberFormatException e) {
+            return Color.parseColor("#4CAF50"); // Default green for invalid values
+        }
+    }
+    
+    // Dynamic method with custom thresholds (same as iOS)
+    private static int getColorForCO2Value(String co2ValueStr, int greenUpperLimit, int yellowUpperLimit) {
+        try {
+            int co2Value = Integer.parseInt(co2ValueStr);
+            return getDynamicColorForCO2Value(co2Value, greenUpperLimit, yellowUpperLimit);
         } catch (NumberFormatException e) {
             return Color.parseColor("#4CAF50"); // Default green for invalid values
         }

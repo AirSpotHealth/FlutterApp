@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:convert';
 
 import 'package:airspothealth/core/services/ble_communicator_service.dart';
 import 'package:airspothealth/core/utils/constants.dart';
@@ -16,6 +17,11 @@ class WidgetUpdateData {
   final bool isCharging;
   final bool alarmEnabled;
   final bool vibrationEnabled;
+  final List<int> co2History;
+  final int greenUpperLimit;
+  final int yellowUpperLimit;
+  final int graphMaxValue;
+  final int graphMinValue;
 
   WidgetUpdateData({
     required this.deviceId,
@@ -26,7 +32,48 @@ class WidgetUpdateData {
     required this.isCharging,
     required this.alarmEnabled,
     required this.vibrationEnabled,
+    required this.co2History,
+    required this.greenUpperLimit,
+    required this.yellowUpperLimit,
+    required this.graphMaxValue,
+    required this.graphMinValue,
   });
+
+  /// Convert to JSON map for efficient storage
+  Map<String, dynamic> toJson() => {
+        'device_id': deviceId,
+        'co2_value': co2Value,
+        'device_name': deviceName,
+        'power_mode': powerMode,
+        'battery_level': batteryLevel,
+        'is_charging': isCharging,
+        'alarm_enabled': alarmEnabled,
+        'vibration_enabled': vibrationEnabled,
+        'co2_history': co2History,
+        'green_upper_limit': greenUpperLimit,
+        'yellow_upper_limit': yellowUpperLimit,
+        'graph_max_value': graphMaxValue,
+        'graph_min_value': graphMinValue,
+        'last_updated': DateTime.now().millisecondsSinceEpoch,
+      };
+
+  /// Create default/empty widget data
+  static Map<String, dynamic> getDefaultData() => {
+        'device_id': '',
+        'co2_value': '----',
+        'device_name': 'No Device',
+        'power_mode': 'Now',
+        'battery_level': '0',
+        'is_charging': false,
+        'alarm_enabled': false,
+        'vibration_enabled': false,
+        'co2_history': <int>[],
+        'green_upper_limit': 800,
+        'yellow_upper_limit': 1000,
+        'graph_max_value': 1600,
+        'graph_min_value': 0,
+        'last_updated': DateTime.now().millisecondsSinceEpoch,
+      };
 }
 
 @pragma("vm:entry-point")
@@ -61,9 +108,10 @@ class HomeWidgetService {
 
   static HomeWidgetService get instance => _instance;
 
+  static const String _widgetDataKey = 'widget_data_json';
+
   Future<void> initialize() async {
     await HomeWidget.setAppGroupId(Constants.appGroupId);
-
     HomeWidget.registerInteractivityCallback(_backgroundCallback);
   }
 
@@ -71,49 +119,41 @@ class HomeWidgetService {
   /// This is designed to be called from anywhere, including background isolates.
   Future<void> updateHomeWidget({WidgetUpdateData? data}) async {
     try {
-      if (data == null) {
-        // No data provided - show default state
-        await HomeWidget.saveWidgetData(Constants.homeWidgetKey, '----');
-        await HomeWidget.saveWidgetData('device_id', '');
-        await HomeWidget.saveWidgetData('device_name', 'No Device');
-        await HomeWidget.saveWidgetData('power_mode', 'Now');
-        await HomeWidget.saveWidgetData('battery_level', '0');
-        await HomeWidget.saveWidgetData('is_charging', 'false');
-        await HomeWidget.saveWidgetData('alarm_enabled', 'false');
-        await HomeWidget.saveWidgetData('vibration_enabled', 'false');
-      } else {
-        // Save all widget data from provided values
-        await HomeWidget.saveWidgetData(Constants.homeWidgetKey, data.co2Value);
-        await HomeWidget.saveWidgetData('device_id', data.deviceId);
-        await HomeWidget.saveWidgetData('device_name', data.deviceName);
-        await HomeWidget.saveWidgetData('power_mode', data.powerMode);
-        await HomeWidget.saveWidgetData('battery_level', data.batteryLevel);
-        await HomeWidget.saveWidgetData(
-            'is_charging', data.isCharging.toString());
-        await HomeWidget.saveWidgetData(
-            'alarm_enabled', data.alarmEnabled.toString());
-        await HomeWidget.saveWidgetData(
-            'vibration_enabled', data.vibrationEnabled.toString());
+      Map<String, dynamic> widgetData;
 
-        debugPrint('Home widget updated successfully with values:');
-        debugPrint('Device ID: ${data.deviceId}');
-        debugPrint('CO2 Value: ${data.co2Value}');
-        debugPrint('Device Name: ${data.deviceName}');
+      if (data == null) {
+        // No data provided - use default state
+        widgetData = WidgetUpdateData.getDefaultData();
+        debugPrint('Home widget updated with default/empty data');
+      } else {
+        // Convert provided data to JSON map
+        widgetData = data.toJson();
+        debugPrint('Home widget updated with live data:');
+        debugPrint('Device: ${data.deviceName} (${data.deviceId})');
+        debugPrint('CO2: ${data.co2Value} ppm');
         debugPrint('Power Mode: ${data.powerMode}');
-        debugPrint('Battery Level: ${data.batteryLevel}');
-        debugPrint('Is Charging: ${data.isCharging}');
-        debugPrint('Alarm Enabled: ${data.alarmEnabled}');
-        debugPrint('Vibration Enabled: ${data.vibrationEnabled}');
+        debugPrint('Battery: ${data.batteryLevel}%');
+        debugPrint('History: ${data.co2History.length} values');
+        debugPrint(
+            'Thresholds: Green≤${data.greenUpperLimit}, Yellow≤${data.yellowUpperLimit}');
+        debugPrint('Graph Range: ${data.graphMinValue}-${data.graphMaxValue}');
       }
 
+      // Save all data as single JSON string - much more efficient!
+      await HomeWidget.saveWidgetData(_widgetDataKey, jsonEncode(widgetData));
+
+      // Also save legacy CO2 value for backward compatibility
       await HomeWidget.saveWidgetData(
-          'last_updated', DateTime.now().millisecondsSinceEpoch.toString());
+          Constants.homeWidgetKey, widgetData['co2_value']);
 
       // Trigger widget update
       await HomeWidget.updateWidget(
         iOSName: Constants.iOSWidgetName,
         androidName: Constants.androidWidgetName,
       );
+
+      debugPrint(
+          'Widget data saved as single JSON payload (${jsonEncode(widgetData).length} chars)');
     } catch (e, stackTrace) {
       debugPrint('Error updating home widget: $e\n$stackTrace');
     }

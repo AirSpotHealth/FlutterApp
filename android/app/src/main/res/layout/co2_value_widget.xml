@@ -7,7 +7,7 @@
     android:gravity="center"
     android:orientation="vertical"
     android:paddingHorizontal="10dp"
-    android:paddingVertical="6dp">
+    android:paddingTop="2dp">
 
     <LinearLayout
         android:layout_width="wrap_content"
@@ -19,7 +19,7 @@
             android:layout_gravity="center_horizontal"
             android:text="AIR"
             android:textColor="#FFFFFF"
-            android:textSize="18sp"
+            android:textSize="14sp"
             android:textStyle="bold" />
 
         <TextView
@@ -28,7 +28,7 @@
             android:layout_gravity="center_horizontal"
             android:text="SPOT"
             android:textColor="#FFFFFF"
-            android:textSize="18sp" />
+            android:textSize="14sp" />
 
     </LinearLayout>
 
@@ -39,18 +39,20 @@
         android:background="@drawable/widget_background_light"
         android:gravity="center_horizontal"
         android:orientation="vertical"
-        android:padding="6dp">
+       >
 
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
+            android:paddingHorizontal="8dp"
+            android:paddingTop="2dp"
             android:layout_gravity="center_horizontal">
 
             <!-- Sound Mode Icon -->
             <ImageView
                 android:id="@+id/sound_mode"
-                android:layout_width="16dp"
-                android:layout_height="16dp"
+                android:layout_width="10dp"
+                android:layout_height="10dp"
                 android:layout_gravity="center_vertical"
                 android:layout_marginEnd="4dp"
                 android:background="@drawable/alarm_off" />
@@ -58,8 +60,8 @@
             <!-- Vibration Mode Icon -->
             <ImageView
                 android:id="@+id/vibration_mode"
-                android:layout_width="16dp"
-                android:layout_height="16dp"
+                android:layout_width="10dp"
+                android:layout_height="10dp"
                 android:layout_gravity="center_vertical"
                 android:layout_marginEnd="4dp"
                 android:background="@drawable/vibrate_off" />
@@ -69,12 +71,12 @@
                 android:id="@+id/battery_percentage"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
+                android:layout_weight="1"
                 android:alpha="0.8"
                 android:gravity="end"
-                android:layout_weight="1"
                 android:text="-%"
                 android:textColor="#FFFFFF"
-                android:textSize="12sp" />
+                android:textSize="10sp" />
 
 
         </LinearLayout>
@@ -84,43 +86,49 @@
             android:id="@+id/co2_value"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginBottom="4dp"
             android:fontFamily="sans-serif-condensed"
             android:text="----"
             android:textAlignment="center"
             android:textColor="#4CAF50"
-            android:textSize="40sp"
+            android:textSize="32sp"
             android:textStyle="bold" />
 
-        <!-- Time and Unit Container -->
-        <LinearLayout
-            android:layout_width="wrap_content"
+        <RelativeLayout
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginBottom="8dp"
-            android:gravity="center"
+            android:paddingHorizontal="6dp"
             android:orientation="horizontal">
 
-            <!-- Time Display -->
+            <!-- Power Mode -->
             <TextView
-                android:id="@+id/time_display"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginEnd="12dp"
-                android:alpha="0.8"
-                android:text="---"
-                android:textColor="#FFFFFF"
-                android:textSize="12sp" />
-
-            <!-- CO2 Unit -->
-            <TextView
+                android:id="@+id/power_mode"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:alpha="0.8"
-                android:text="CO₂ppm"
+                android:text="3 Min"
                 android:textColor="#FFFFFF"
-                android:textSize="12sp" />
+                android:textSize="8sp" />
 
-        </LinearLayout>
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:alpha="0.8"
+                android:text="CO₂ ppm"
+                android:layout_centerHorizontal="true"
+                android:textColor="#FFFFFF"
+                android:textSize="8sp" />
+
+        </RelativeLayout>
+
+
+        <!-- CO2 Graph -->
+        <ImageView
+            android:id="@+id/co2_graph"
+            android:layout_width="match_parent"
+            android:paddingHorizontal="2dp"
+            android:layout_height="60dp"
+            android:scaleType="fitXY" />
 
     </LinearLayout>
 
@@ -129,10 +137,10 @@
         android:id="@+id/refresh_button"
         android:layout_width="36dp"
         android:layout_height="36dp"
-        android:layout_marginTop="4dp"
+        android:layout_marginTop="2dp"
         android:background="@drawable/refresh_button_dark"
         android:contentDescription="Refresh CO₂ Value"
-        android:padding="6dp"
+        android:padding="2dp"
         android:scaleType="fitCenter"
         android:tint="#FFFFFF" />
 

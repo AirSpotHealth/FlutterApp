@@ -143,7 +143,23 @@ class _BleDeviceCommunicationNotifier extends FamilyNotifier<dynamic, String> {
       }
 
       if (Platform.isAndroid) {
-        // 5. Create complete widget data
+        // 5. Get last 39 co2 readings from database + current value (same as iOS)
+        final historicalData = _isarService.read<List<int>>((isar) {
+          final co2Data = isar.deviceDatas
+              .where()
+              .deviceIdEqualTo(deviceId)
+              .typeEqualTo(DeviceDataType.co2.index)
+              .sortByDateTimeDesc()
+              .findAll()
+              .take(39)
+              .toList();
+          return co2Data.map((e) => e.value).toList().reversed.toList();
+        });
+
+        // 6. Ensure current value is included as the latest value
+        final co2History = [...historicalData, int.parse(co2Value)];
+
+        // 7. Create complete widget data with graph information
         final widgetData = WidgetUpdateData(
           deviceId: deviceId,
           co2Value: co2Value,
@@ -153,11 +169,18 @@ class _BleDeviceCommunicationNotifier extends FamilyNotifier<dynamic, String> {
           isCharging: isCharging,
           alarmEnabled: alarmEnabled,
           vibrationEnabled: vibrationEnabled,
+          co2History: co2History,
+          greenUpperLimit: deviceSettings?.thresholds.greenUpperLimit ??
+              Constants.defaultGreenUpperLimit,
+          yellowUpperLimit: deviceSettings?.thresholds.yellowUpperLimit ??
+              Constants.defaultYellowUpperLimit,
+          graphMaxValue: deviceSettings?.graphMaxValue ?? 1600,
+          graphMinValue: deviceSettings?.graphMinValue ?? 0,
         );
 
-        // 6. Call service to update home widget with all data
+        // 8. Call service to update home widget with all data
         debugPrint(
-            'BLE: Updating widget with: CO2=$co2Value, Device=$deviceName, PowerMode=$powerMode, Battery=$batteryLevel');
+            'BLE: Updating widget with: CO2=$co2Value, Device=$deviceName, PowerMode=$powerMode, Battery=$batteryLevel, History=${co2History.length} values');
         HomeWidgetService.instance.updateHomeWidget(data: widgetData);
       }
 
