@@ -153,7 +153,7 @@ class _FactoryTestWrapperState extends ConsumerState<FactoryTestWrapper>
 
     return PopScope(
       onPopInvokedWithResult: (didPop, result) {
-        if (didPop) {
+        if (didPop && mounted && ref.context.mounted) {
           _showExitFactoryTestDialog();
           return;
         }

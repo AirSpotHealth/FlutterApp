@@ -1,18 +1,15 @@
 import 'package:airspothealth/core/router/app_router.dart';
+import 'package:airspothealth/core/services/home_widget_service.dart';
 import 'package:airspothealth/core/services/isar_service.dart';
 import 'package:airspothealth/core/services/notification_service.dart';
 import 'package:airspothealth/core/services/prefs_service.dart';
 import 'package:airspothealth/core/theme/app_theme.dart';
+import 'package:airspothealth/core/utils/local_date_format.dart';
 import 'package:airspothealth/core/utils/storage_keys.dart';
 import 'package:airspothealth/features/home/widgets/services_banner.dart';
-import 'package:flutter/material.dart';
+import 'package:flutter/material.dart' hide DateUtils;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:intl/intl.dart';
 import 'package:package_info_plus/package_info_plus.dart';
-import 'package:system_date_time_format/system_date_time_format.dart';
-
-late final DateFormat systemDateFormat;
-late final DateFormat systemTimeFormat;
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -20,20 +17,16 @@ void main() async {
   await [
     IsarService().initialize(),
     PrefsService().initialize(),
+    LocalDateFormat().initialize(),
+    NotificationService.initNotification(),
+    HomeWidgetService().initialize(),
   ].wait;
-
-  systemDateFormat =
-      DateFormat(await SystemDateTimeFormat().getDatePattern() ?? 'yyyy-MM-dd');
-  systemTimeFormat =
-      DateFormat(await SystemDateTimeFormat().getTimePattern() ?? 'HH:mm:ss');
-
-  await NotificationService.initNotification();
 
   await _checkVersion();
 
   runApp(
-    const ProviderScope(
-      child: AirspotApp(),
+    ProviderScope(
+      child: const AirspotApp(),
     ),
   );
 }

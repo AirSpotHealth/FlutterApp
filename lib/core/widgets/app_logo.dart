@@ -9,9 +9,12 @@ class AppLogo extends StatefulWidget {
   const AppLogo({
     super.key,
     this.width = 100,
+    this.testEnabled = false,
   });
 
   final double width;
+
+  final bool testEnabled;
 
   @override
   State<AppLogo> createState() => _AppLogoState();
@@ -54,38 +57,19 @@ class _AppLogoState extends State<AppLogo> {
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: _onLogoTap,
-      child: Stack(
-        children: [
-          Image.asset(
-            Assets.logo,
-            width: widget.width,
-          ),
-          // Show tap count indicator when tapping
-          if (_tapCount > 0)
-            Positioned(
-              top: 0,
-              right: 0,
-              child: Container(
-                padding: const EdgeInsets.all(4),
-                decoration: const BoxDecoration(
-                  color: Colors.red,
-                  shape: BoxShape.circle,
-                ),
-                child: Text(
-                  '$_tapCount/5',
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 10,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ),
-            ),
-        ],
-      ),
+    final child = Image.asset(
+      Assets.logo,
+      width: widget.width,
     );
+
+    if (widget.testEnabled) {
+      return GestureDetector(
+        onTap: _onLogoTap,
+        child: child,
+      );
+    }
+
+    return child;
   }
 }
 

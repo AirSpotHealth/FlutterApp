@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:airspothealth/core/models/ble_device.dart';
 import 'package:airspothealth/core/models/device_data.dart';
 import 'package:airspothealth/core/models/device_settings.dart';
@@ -26,6 +28,7 @@ import 'package:airspothealth/features/device_settings/widgets/erase_device_reco
 import 'package:airspothealth/features/device_settings/widgets/factory_reset_widget.dart';
 import 'package:airspothealth/features/device_settings/widgets/flight_mode_widget.dart';
 import 'package:airspothealth/features/device_settings/widgets/forget_device_widget.dart';
+import 'package:airspothealth/features/device_settings/widgets/live_activity_setting_widget.dart';
 import 'package:airspothealth/features/device_settings/widgets/populate_fake_data_widget.dart';
 import 'package:airspothealth/features/device_settings/widgets/power_off_device_widget.dart';
 import 'package:airspothealth/features/device_settings/widgets/sensor_error_widget.dart';
@@ -108,6 +111,7 @@ class DeviceSettingsPage extends ConsumerWidget {
           AlarmSettingWidget(deviceId: deviceId),
           VibrateSettingWidget(deviceId: deviceId),
           AutoConnectSettingWidget(deviceId: deviceId),
+          if (Platform.isIOS) LiveActivitySettingWidget(deviceId: deviceId),
           _buildTimeSettingWidget(ref),
           PowerModeSettingWidget(deviceId: deviceId),
           ..._buildSettingsList(ref),
