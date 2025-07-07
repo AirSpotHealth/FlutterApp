@@ -270,4 +270,9 @@ extension LiveActivityWidgetAttributes.ContentState {
      }
 }
 
-// Preview removed to avoid build issues - test directly from the app
+// #Preview("Notification", as: .content, using: LiveActivityWidgetAttributes.preview) {
+//    LiveActivityWidgetLiveActivity()
+// } contentStates: {
+//     LiveActivityWidgetAttributes.ContentState.sampleData
+//     LiveActivityWidgetAttributes.ContentState.lowBatteryData
+// }
