@@ -33,7 +33,7 @@ class LiveActivityService {
         'endLiveActivity',
       );
     } on PlatformException catch (e) {
-      debugPrint("Failed to start live activity: '${e.message}'.");
+      debugPrint("Failed to end live activity: '${e.message}'.");
     }
   }
 }

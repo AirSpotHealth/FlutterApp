@@ -142,23 +142,23 @@ class _BleDeviceCommunicationNotifier extends FamilyNotifier<dynamic, String> {
         debugPrint('BLE: Could not read battery state: $e');
       }
 
+      // 5. Get last 39 co2 readings from database + current value (same as iOS)
+      final historicalData = _isarService.read<List<int>>((isar) {
+        final co2Data = isar.deviceDatas
+            .where()
+            .deviceIdEqualTo(deviceId)
+            .typeEqualTo(DeviceDataType.co2.index)
+            .sortByDateTimeDesc()
+            .findAll()
+            .take(39)
+            .toList();
+        return co2Data.map((e) => e.value).toList().reversed.toList();
+      });
+
+      // 6. Ensure current value is included as the latest value
+      final co2History = [...historicalData, int.parse(co2Value)];
+
       if (Platform.isAndroid) {
-        // 5. Get last 39 co2 readings from database + current value (same as iOS)
-        final historicalData = _isarService.read<List<int>>((isar) {
-          final co2Data = isar.deviceDatas
-              .where()
-              .deviceIdEqualTo(deviceId)
-              .typeEqualTo(DeviceDataType.co2.index)
-              .sortByDateTimeDesc()
-              .findAll()
-              .take(39)
-              .toList();
-          return co2Data.map((e) => e.value).toList().reversed.toList();
-        });
-
-        // 6. Ensure current value is included as the latest value
-        final co2History = [...historicalData, int.parse(co2Value)];
-
         // 7. Create complete widget data with graph information
         final widgetData = WidgetUpdateData(
           deviceId: deviceId,
@@ -184,23 +184,7 @@ class _BleDeviceCommunicationNotifier extends FamilyNotifier<dynamic, String> {
         HomeWidgetService.instance.updateHomeWidget(data: widgetData);
       }
 
-      if (Platform.isIOS) {
-        // 7. Get last 39 co2 readings from database + current value
-        final historicalData = _isarService.read<List<int>>((isar) {
-          final co2Data = isar.deviceDatas
-              .where()
-              .deviceIdEqualTo(deviceId)
-              .typeEqualTo(DeviceDataType.co2.index)
-              .sortByDateTimeDesc()
-              .findAll()
-              .take(39)
-              .toList();
-          return co2Data.map((e) => e.value).toList().reversed.toList();
-        });
-
-        // 8. Ensure current value is included as the latest value
-        final co2History = [...historicalData, int.parse(co2Value)];
-
+      if (Platform.isIOS && deviceSettings?.showLiveActivity == true) {
         // 9. Call service to update live activity with all data
         LiveActivityService().updateLiveActivity(
             data: LiveActivityModel(

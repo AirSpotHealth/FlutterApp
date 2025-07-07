@@ -86,6 +86,9 @@ class DeviceSettings {
   /// Flight mode
   final bool flightMode;
 
+  /// Show Live Activity
+  final bool showLiveActivity;
+
   const DeviceSettings({
     required this.alarmEnabled,
     required this.vibrationEnabled,
@@ -112,6 +115,7 @@ class DeviceSettings {
     this.alarmLevels = defaultAlarmLevels,
     this.scaling = 1.0,
     this.flightMode = false,
+    this.showLiveActivity = false,
   });
 
   DeviceSettings.empty({required this.deviceId})
@@ -138,7 +142,8 @@ class DeviceSettings {
         alarmOnCo2Fall = false,
         alarmLevels = defaultAlarmLevels,
         scaling = 1.0,
-        flightMode = false;
+        flightMode = false,
+        showLiveActivity = false;
 
   DeviceSettings copyWith({
     bool? alarmEnabled,
@@ -167,6 +172,7 @@ class DeviceSettings {
     List<AlarmLevel>? alarmLevels,
     double? scaling,
     bool? flightMode,
+    bool? showLiveActivity,
   }) {
     return DeviceSettings(
       alarmEnabled: alarmEnabled ?? this.alarmEnabled,
@@ -196,6 +202,7 @@ class DeviceSettings {
       alarmLevels: alarmLevels ?? this.alarmLevels,
       scaling: scaling ?? this.scaling,
       flightMode: flightMode ?? this.flightMode,
+      showLiveActivity: showLiveActivity ?? this.showLiveActivity,
     );
   }
 
@@ -307,6 +314,7 @@ class DeviceSettings {
       'graphMinValue': graphMinValue,
       'scaling': scaling,
       'flightMode': flightMode,
+      'showLiveActivity': showLiveActivity,
     };
   }
 
@@ -339,7 +347,8 @@ class DeviceSettings {
         other.alarmLevels == alarmLevels &&
         other.graphMinValue == graphMinValue &&
         other.scaling == scaling &&
-        other.flightMode == flightMode;
+        other.flightMode == flightMode &&
+        other.showLiveActivity == showLiveActivity;
   }
 
   @override
@@ -368,11 +377,12 @@ class DeviceSettings {
       alarmLevels.hashCode ^
       graphMinValue.hashCode ^
       scaling.hashCode ^
-      flightMode.hashCode;
+      flightMode.hashCode ^
+      showLiveActivity.hashCode;
 
   @override
   String toString() {
-    return 'DeviceSettings(alarmEnabled: $alarmEnabled, vibrationEnabled: $vibrationEnabled, powerMode: $powerMode, continuosScreenEnabled: $continuosScreenEnabled, thresholds: $thresholds, deviceId: $deviceId, co2MedAlertEnabled: $co2MedAlertEnabled, co2HighAlertEnabled: $co2HighAlertEnabled, autoSyncTime: $autoSyncTime, autoCalibration: $autoCalibration, autoConnect: $autoConnect, logData: $logData, dndEnabled: $dndEnabled, dndStartTime: $dndStartTime, dndEndTime: $dndEndTime, recalibrationTarget: $recalibrationTarget, graphMaxValue: $graphMaxValue, uiMode: $uiMode, showRebreathePercentage: $showRebreathePercentage, graphMinValue: $graphMinValue, screenOnAlarm: $screenOnAlarm, alarmOnCo2Fall: $alarmOnCo2Fall, alarmLevels: $alarmLevels, scaling: $scaling, flightMode: $flightMode)';
+    return 'DeviceSettings(alarmEnabled: $alarmEnabled, vibrationEnabled: $vibrationEnabled, powerMode: $powerMode, continuosScreenEnabled: $continuosScreenEnabled, thresholds: $thresholds, deviceId: $deviceId, co2MedAlertEnabled: $co2MedAlertEnabled, co2HighAlertEnabled: $co2HighAlertEnabled, autoSyncTime: $autoSyncTime, autoCalibration: $autoCalibration, autoConnect: $autoConnect, logData: $logData, dndEnabled: $dndEnabled, dndStartTime: $dndStartTime, dndEndTime: $dndEndTime, recalibrationTarget: $recalibrationTarget, graphMaxValue: $graphMaxValue, uiMode: $uiMode, showRebreathePercentage: $showRebreathePercentage, graphMinValue: $graphMinValue, screenOnAlarm: $screenOnAlarm, alarmOnCo2Fall: $alarmOnCo2Fall, alarmLevels: $alarmLevels, scaling: $scaling, flightMode: $flightMode, showLiveActivity: $showLiveActivity)';
   }
 }
 
