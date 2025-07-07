@@ -119,18 +119,16 @@ class _BleDeviceCommunicationNotifier extends FamilyNotifier<dynamic, String> {
       final String deviceName = device?.advName ?? 'AirSpot Device';
 
       // 3. Get device settings (power mode, alarms, etc.)
-      String powerMode = 'Now';
-      bool alarmEnabled = false;
-      bool vibrationEnabled = false;
-
+      DeviceSettings? deviceSettings;
       try {
-        final deviceSettings = ref.read(deviceSettingsProvider(deviceId));
-        powerMode = deviceSettings.powerMode.name;
-        alarmEnabled = deviceSettings.alarmEnabled;
-        vibrationEnabled = deviceSettings.vibrationEnabled;
+        deviceSettings = ref.read(deviceSettingsProvider(deviceId));
       } catch (e) {
         debugPrint('BLE: Could not read device settings: $e');
       }
+
+      final String powerMode = deviceSettings?.powerMode.name ?? 'Now';
+      final bool alarmEnabled = deviceSettings?.alarmEnabled ?? false;
+      final bool vibrationEnabled = deviceSettings?.vibrationEnabled ?? false;
 
       // 4. Get battery info
       String batteryLevel = '0';
@@ -164,7 +162,23 @@ class _BleDeviceCommunicationNotifier extends FamilyNotifier<dynamic, String> {
       }
 
       if (Platform.isIOS) {
-        // 7. Call service to update live activity with all data
+        // 7. Get last 39 co2 readings from database + current value
+        final historicalData = _isarService.read<List<int>>((isar) {
+          final co2Data = isar.deviceDatas
+              .where()
+              .deviceIdEqualTo(deviceId)
+              .typeEqualTo(DeviceDataType.co2.index)
+              .sortByDateTimeDesc()
+              .findAll()
+              .take(39)
+              .toList();
+          return co2Data.map((e) => e.value).toList().reversed.toList();
+        });
+
+        // 8. Ensure current value is included as the latest value
+        final co2History = [...historicalData, int.parse(co2Value)];
+
+        // 9. Call service to update live activity with all data
         LiveActivityService().updateLiveActivity(
             data: LiveActivityModel(
           co2Value: int.parse(co2Value),
@@ -172,6 +186,13 @@ class _BleDeviceCommunicationNotifier extends FamilyNotifier<dynamic, String> {
           batteryLevel: int.parse(batteryLevel),
           alarmEnabled: alarmEnabled,
           vibrationEnabled: vibrationEnabled,
+          co2History: co2History,
+          greenUpperLimit: deviceSettings?.thresholds.greenUpperLimit ??
+              Constants.defaultGreenUpperLimit,
+          yellowUpperLimit: deviceSettings?.thresholds.yellowUpperLimit ??
+              Constants.defaultYellowUpperLimit,
+          graphMaxValue: deviceSettings?.graphMaxValue ?? 1600,
+          graphMinValue: deviceSettings?.graphMinValue ?? 0,
         ));
       }
     } catch (e) {
@@ -193,11 +214,11 @@ class _BleDeviceCommunicationNotifier extends FamilyNotifier<dynamic, String> {
 
     final commands = [
       if (deviceSettings?.autoSyncTime == true) DeviceCmdUtils.setTime(),
+      DeviceCmdUtils.getBatteryLevel(),
       DeviceCmdUtils.getCO2(),
       DeviceCmdUtils.getInitialData(),
       DeviceCmdUtils.getFirmVersion(),
       DeviceCmdUtils.getAlias(),
-      DeviceCmdUtils.getBatteryLevel(),
     ];
 
     for (final command in commands) {

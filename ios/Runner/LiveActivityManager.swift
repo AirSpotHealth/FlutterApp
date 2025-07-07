@@ -22,6 +22,11 @@ class LiveActivityManager {
                 batteryLevel: info["batteryLevel"] as? Int ?? 0,
                 alarmEnabled: info["alarmEnabled"] as? Bool ?? false,
                 vibrationEnabled: info["vibrationEnabled"] as? Bool ?? false,
+                co2History: info["co2History"] as? [Int] ?? [],
+                greenUpperLimit: info["greenUpperLimit"] as? Int ?? 800,
+                yellowUpperLimit: info["yellowUpperLimit"] as? Int ?? 1000,
+                graphMaxValue: info["graphMaxValue"] as? Int ?? 1600,
+                graphMinValue: info["graphMinValue"] as? Int ?? 0,
                 lastUpdated: Date()
             )
             Task {
@@ -52,6 +57,11 @@ class LiveActivityManager {
                 batteryLevel: info["batteryLevel"] as? Int ?? 0,
                 alarmEnabled: info["alarmEnabled"] as? Bool ?? false,
                 vibrationEnabled: info["vibrationEnabled"] as? Bool ?? false,
+                co2History: info["co2History"] as? [Int] ?? [],
+                greenUpperLimit: info["greenUpperLimit"] as? Int ?? 800,
+                yellowUpperLimit: info["yellowUpperLimit"] as? Int ?? 1000,
+                graphMaxValue: info["graphMaxValue"] as? Int ?? 1600,
+                graphMinValue: info["graphMinValue"] as? Int ?? 0,
                 lastUpdated: Date()
             )
             Task {

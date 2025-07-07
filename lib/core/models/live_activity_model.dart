@@ -4,6 +4,11 @@ class LiveActivityModel {
   final int batteryLevel;
   final bool alarmEnabled;
   final bool vibrationEnabled;
+  final List<int> co2History;
+  final int greenUpperLimit;
+  final int yellowUpperLimit;
+  final int graphMaxValue;
+  final int graphMinValue;
 
   LiveActivityModel({
     required this.co2Value,
@@ -11,6 +16,11 @@ class LiveActivityModel {
     required this.batteryLevel,
     required this.alarmEnabled,
     required this.vibrationEnabled,
+    required this.co2History,
+    required this.greenUpperLimit,
+    required this.yellowUpperLimit,
+    required this.graphMaxValue,
+    required this.graphMinValue,
   });
 
   Map<String, dynamic> toJson() {
@@ -20,6 +30,11 @@ class LiveActivityModel {
       'batteryLevel': batteryLevel,
       'alarmEnabled': alarmEnabled,
       'vibrationEnabled': vibrationEnabled,
+      'co2History': co2History,
+      'greenUpperLimit': greenUpperLimit,
+      'yellowUpperLimit': yellowUpperLimit,
+      'graphMaxValue': graphMaxValue,
+      'graphMinValue': graphMinValue,
     };
   }
 }
