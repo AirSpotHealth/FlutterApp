@@ -5,11 +5,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 class ManualTestsTab extends ConsumerWidget {
-  const ManualTestsTab({super.key});
+  const ManualTestsTab({super.key, required this.deviceId});
+
+  final String deviceId;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final factoryTestState = ref.watch(factoryTestProvider);
+    final factoryTestState = ref.watch(factoryTestProvider(deviceId));
     final manualTests = factoryTestState.manualTests;
 
     if (!factoryTestState.automaticTests.isComplete) {
@@ -70,30 +72,6 @@ class ManualTestsTab extends ConsumerWidget {
               },
             ),
           ),
-
-          // Complete button
-          if (manualTests.isComplete)
-            Padding(
-              padding: const EdgeInsets.only(top: 16),
-              child: SizedBox(
-                width: double.infinity,
-                child: ElevatedButton(
-                  onPressed: () {
-                    // The provider will automatically transition to completed phase
-                    // when all tests are complete
-                  },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.green,
-                    foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(vertical: 16),
-                  ),
-                  child: const Text(
-                    'All Tests Complete!',
-                    style: TextStyle(fontSize: 16),
-                  ),
-                ),
-              ),
-            ),
         ],
       ),
     );
@@ -143,8 +121,8 @@ class ManualTestsTab extends ConsumerWidget {
             ),
 
             // Test controls
-            if (test.status != TestStatus.pass &&
-                test.status != TestStatus.fail) ...[
+            if (test.status != DeviceTestStatus.pass &&
+                test.status != DeviceTestStatus.fail) ...[
               const SizedBox(height: 10),
               _buildTestControls(
                   context, ref, test, isChargeTest, needsManualStart),
@@ -169,7 +147,7 @@ class ManualTestsTab extends ConsumerWidget {
 
     // Other tests: Need manual start first
     if (needsManualStart) {
-      if (test.status == TestStatus.notStarted) {
+      if (test.status == DeviceTestStatus.notStarted) {
         return _buildStartButton(ref, test);
       } else {
         return _buildPassFailButtons(context, ref, test);
@@ -202,7 +180,7 @@ class ManualTestsTab extends ConsumerWidget {
         Expanded(
           child: ElevatedButton.icon(
             onPressed: () => ref
-                .read(factoryTestProvider.notifier)
+                .read(factoryTestProvider(deviceId).notifier)
                 .updateUserConfirmation(test.testName, true),
             icon: const Icon(Icons.check, size: 16),
             label: const Text('Pass'),
@@ -231,24 +209,26 @@ class ManualTestsTab extends ConsumerWidget {
   }
 
   void _startTest(WidgetRef ref, String testName) {
+    final notifier = ref.read(factoryTestProvider(deviceId).notifier);
+
     switch (testName) {
       case 'Screen Edge Test':
-        ref.read(factoryTestProvider.notifier).startScreenEdgeTest();
+        notifier.startScreenEdgeTest();
         break;
       case 'Screen Black Test':
-        ref.read(factoryTestProvider.notifier).startScreenBlackTest();
+        notifier.startScreenBlackTest();
         break;
       case 'Screen White Test':
-        ref.read(factoryTestProvider.notifier).startScreenWhiteTest();
+        notifier.startScreenWhiteTest();
         break;
       case 'Button Test':
-        ref.read(factoryTestProvider.notifier).startButtonTest();
+        notifier.startButtonTest();
         break;
       case 'Buzzer Test':
-        ref.read(factoryTestProvider.notifier).startBuzzerTest();
+        notifier.startBuzzerTest();
         break;
       case 'Vibration Test':
-        ref.read(factoryTestProvider.notifier).startVibrationTest();
+        notifier.startVibrationTest();
         break;
     }
   }
@@ -270,7 +250,7 @@ class ManualTestsTab extends ConsumerWidget {
             onPressed: () {
               Navigator.of(context).pop();
               ref
-                  .read(factoryTestProvider.notifier)
+                  .read(factoryTestProvider(deviceId).notifier)
                   .updateUserConfirmation(test.testName, false);
             },
             style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
@@ -307,15 +287,15 @@ class ManualTestsTab extends ConsumerWidget {
     }
   }
 
-  Widget _buildStatusIcon(TestStatus status) {
+  Widget _buildStatusIcon(DeviceTestStatus status) {
     switch (status) {
-      case TestStatus.notStarted:
+      case DeviceTestStatus.notStarted:
         return const Icon(
           Icons.radio_button_unchecked,
           color: Colors.grey,
           size: 22,
         );
-      case TestStatus.running:
+      case DeviceTestStatus.running:
         return const SizedBox(
           width: 22,
           height: 22,
@@ -324,13 +304,13 @@ class ManualTestsTab extends ConsumerWidget {
             valueColor: AlwaysStoppedAnimation<Color>(Colors.orange),
           ),
         );
-      case TestStatus.pass:
+      case DeviceTestStatus.pass:
         return const Icon(
           Icons.check_circle,
           color: Colors.green,
           size: 22,
         );
-      case TestStatus.fail:
+      case DeviceTestStatus.fail:
         return const Icon(
           Icons.error,
           color: Colors.red,
@@ -339,9 +319,9 @@ class ManualTestsTab extends ConsumerWidget {
     }
   }
 
-  Widget _buildStatusText(TestStatus status) {
+  Widget _buildStatusText(DeviceTestStatus status) {
     switch (status) {
-      case TestStatus.notStarted:
+      case DeviceTestStatus.notStarted:
         return const Text(
           'Pending',
           style: TextStyle(
@@ -350,7 +330,7 @@ class ManualTestsTab extends ConsumerWidget {
             fontSize: 12,
           ),
         );
-      case TestStatus.running:
+      case DeviceTestStatus.running:
         return const Text(
           'Running...',
           style: TextStyle(
@@ -359,7 +339,7 @@ class ManualTestsTab extends ConsumerWidget {
             fontSize: 12,
           ),
         );
-      case TestStatus.pass:
+      case DeviceTestStatus.pass:
         return const Text(
           'PASS',
           style: TextStyle(
@@ -368,7 +348,7 @@ class ManualTestsTab extends ConsumerWidget {
             fontSize: 12,
           ),
         );
-      case TestStatus.fail:
+      case DeviceTestStatus.fail:
         return const Text(
           'FAIL',
           style: TextStyle(

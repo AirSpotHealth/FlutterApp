@@ -1,177 +1,84 @@
 import 'dart:async';
 
 import 'package:airspothealth/core/services/ble_service.dart';
-import 'package:airspothealth/core/services/network_service.dart';
 import 'package:airspothealth/core/utils/constants.dart';
 import 'package:airspothealth/core/utils/device_cmd_utils.dart';
 import 'package:airspothealth/features/factory_test/models/factory_test_commands.dart';
 import 'package:airspothealth/features/factory_test/models/factory_test_models.dart';
+import 'package:airspothealth/features/factory_test/providers/factory_test_devices_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_blue_plus/flutter_blue_plus.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-final factoryTestProvider =
-    NotifierProvider.autoDispose<FactoryTestNotifier, FactoryTestState>(
+final factoryTestProvider = NotifierProvider.family<FactoryTestNotifier,
+    DeviceFactoryTestState, String>(
   FactoryTestNotifier.new,
 );
 
-class FactoryTestNotifier extends AutoDisposeNotifier<FactoryTestState> {
+class FactoryTestNotifier
+    extends FamilyNotifier<DeviceFactoryTestState, String> {
   final BLEService _bleService = BLEService.instance;
 
   BluetoothDevice? _connectedDevice;
   BluetoothCharacteristic? _writeCharacteristic;
   BluetoothCharacteristic? _notifyCharacteristic;
 
-  StreamSubscription<List<BluetoothDevice>>? _scanSubscription;
   StreamSubscription<BluetoothConnectionState>? _connectionSubscription;
   StreamSubscription<List<int>>? _notificationSubscription;
 
-  Timer? _reconnectionTimer;
   Timer? _commandTimeoutTimer;
   Timer? _automaticTestTimeoutTimer;
-  Timer? _scanTimeoutTimer;
+  Timer? _connectionTimeoutTimer;
 
   // Command queue for reliable execution
   final List<FactoryTestCommand> _commandQueue = [];
   bool _isProcessingCommand = false;
+  bool _isEndingFactoryMode = false;
 
   @override
-  FactoryTestState build() {
-    ref.onDispose(() {
-      _cleanup();
-    });
-
-    return FactoryTestState(
-      phase: FactoryTestPhase.deviceSelection,
-      connectionState: FactoryTestConnectionState.idle,
-      availableDevices: [],
-      automaticTests:
-          AutomaticTestsState(tests: _createInitialAutomaticTests()),
-      manualTests: ManualTestsState(
-        tests: _createInitialManualTests(),
-        userConfirmations: {},
-      ),
+  DeviceFactoryTestState build(String deviceId) {
+    return DeviceFactoryTestState.emptyState(
+      ref.read(factoryTestDevicesProvider).devices.firstWhere(
+            (device) => device.deviceId == deviceId,
+          ),
     );
   }
 
-  /// Initialize automatic tests list
-  List<TestResult> _createInitialAutomaticTests() {
-    return [
-      TestResult(testName: 'Sensor Test', status: TestStatus.notStarted),
-      TestResult(testName: 'Memory Test', status: TestStatus.notStarted),
-      TestResult(
-          testName: 'Battery Voltage Test', status: TestStatus.notStarted),
-      TestResult(testName: 'LF Crystal Test', status: TestStatus.notStarted),
-      TestResult(
-          testName: 'LCD Controller Test', status: TestStatus.notStarted),
-    ];
-  }
-
-  /// Initialize manual tests list
-  List<TestResult> _createInitialManualTests() {
-    return [
-      TestResult(testName: 'Charge Test', status: TestStatus.notStarted),
-      TestResult(testName: 'Screen Edge Test', status: TestStatus.notStarted),
-      TestResult(testName: 'Screen Black Test', status: TestStatus.notStarted),
-      TestResult(testName: 'Screen White Test', status: TestStatus.notStarted),
-      TestResult(testName: 'Button Test', status: TestStatus.notStarted),
-      TestResult(testName: 'Buzzer Test', status: TestStatus.notStarted),
-      TestResult(testName: 'Vibration Test', status: TestStatus.notStarted),
-      TestResult(testName: 'Case Check', status: TestStatus.notStarted),
-      TestResult(testName: 'LCD with OCA?', status: TestStatus.notStarted),
-    ];
-  }
-
-  /// Start device scanning
-  void startScanning() {
-    if (state.isScanning) return;
-
-    // Clear any existing scan timeout
-    _scanTimeoutTimer?.cancel();
-
-    state = state.copyWith(
-      isScanning: true,
-      connectionState: FactoryTestConnectionState.scanning,
-      error: null, // Clear any previous errors
-    );
-
-    _bleService.startScan();
-
-    // Use scan results with ScanResult to get RSSI
-    FlutterBluePlus.scanResults.listen(
-      (scanResults) {
-        final factoryTestDevices = scanResults
-            .where((scanResult) =>
-                scanResult.device.advName.startsWith('AirSpot-'))
-            .map((scanResult) => FactoryTestDevice(
-                  deviceId: scanResult.device.remoteId.str,
-                  name: scanResult.device.advName,
-                  rssi: scanResult.rssi,
-                  bluetoothDevice: scanResult.device,
-                ))
-            .toList();
-
-        // Sort by RSSI (strongest signal first)
-        factoryTestDevices.sort((a, b) => b.rssi.compareTo(a.rssi));
-
-        state = state.copyWith(availableDevices: factoryTestDevices);
-      },
-      onError: (error) {
-        debugPrint('Scan error: $error');
-        state = state.copyWith(
-          isScanning: false,
-          error: 'Scan error: $error',
-        );
-        _scanTimeoutTimer?.cancel();
-      },
-    );
-
-    // Auto-stop scanning after 30 seconds to prevent forever scanning
-    _scanTimeoutTimer = Timer(const Duration(seconds: 30), () {
-      if (state.isScanning) {
-        debugPrint('Auto-stopping scan after 30 seconds timeout');
-        stopScanning();
-      }
-    });
-  }
-
-  /// Stop device scanning
-  void stopScanning() {
-    if (!state.isScanning) return;
-
-    _bleService.stopScan();
-    _scanSubscription?.cancel();
-    _scanTimeoutTimer?.cancel();
-
-    state = state.copyWith(
-      isScanning: false,
-      connectionState: FactoryTestConnectionState.idle,
-    );
+  /// Manual cleanup method - call this when done with factory testing
+  void dispose() {
+    _cleanup();
   }
 
   /// Connect to selected device and start factory test flow
-  Future<void> connectToDeviceAndStartFactoryTest(String deviceId) async {
-    final device = state.availableDevices.firstWhere(
-        (d) => d.deviceId == deviceId,
-        orElse: () => throw 'Device not found');
+  Future<void> connectToDeviceAndStartFactoryTest() async {
+    debugPrint('=== STARTING FACTORY TEST CONNECTION FLOW ===');
+    debugPrint('Selected device: ${state.selectedDevice.name}');
 
-    stopScanning();
+    // Clear any existing timeout
+    _clearConnectionTimeout();
 
     state = state.copyWith(
-      selectedDeviceId: deviceId,
-      phase: FactoryTestPhase.connecting,
-      connectionState: FactoryTestConnectionState.connecting,
+      phase: DeviceFactoryTestPhase.connecting,
+      connectionState: DeviceFactoryTestConnectionState.connecting,
       error: null,
     );
+    debugPrint('Updated state to connecting phase');
+
+    // Start connection timeout (30 seconds)
+    _startConnectionTimeout();
 
     try {
-      await _connectToDevice(device.bluetoothDevice);
+      debugPrint('Calling _connectToDevice...');
+      await _connectToDevice(state.selectedDevice.bluetoothDevice);
+      debugPrint('_connectToDevice completed successfully');
       // Don't call _enterFactoryMode here - it will be called from _onDeviceConnected
     } catch (error) {
+      debugPrint('=== CONNECTION ERROR ===');
       debugPrint('Connection error: $error');
+      _clearConnectionTimeout();
       state = state.copyWith(
-        phase: FactoryTestPhase.error,
-        connectionState: FactoryTestConnectionState.error,
+        phase: DeviceFactoryTestPhase.error,
+        connectionState: DeviceFactoryTestConnectionState.error,
         error: 'Connection failed: $error',
       );
     }
@@ -179,70 +86,216 @@ class FactoryTestNotifier extends AutoDisposeNotifier<FactoryTestState> {
 
   /// Connect to the Bluetooth device
   Future<void> _connectToDevice(BluetoothDevice device) async {
+    debugPrint('=== STARTING CONNECTION TO DEVICE ===');
+    debugPrint('Device: ${device.advName} (${device.remoteId})');
+
     _connectedDevice = device;
+    debugPrint('Set _connectedDevice to: ${_connectedDevice?.advName}');
 
-    // Listen to connection state changes
-    _connectionSubscription = device.connectionState.listen(
-      (connectionState) {
-        debugPrint('Connection state: $connectionState');
+    try {
+      // Start the BLE connection first
+      debugPrint('Starting BLE connection...');
+      await _bleService.connect(device);
+      debugPrint('BLE connection initiated');
+      debugPrint(
+          '_connectedDevice after BLE connect: ${_connectedDevice?.advName}');
 
-        if (connectionState == BluetoothConnectionState.connected) {
-          _onDeviceConnected();
-        } else if (connectionState == BluetoothConnectionState.disconnected) {
-          _onDeviceDisconnected();
-        }
-      },
-    );
+      // Now set up the connection state listener
+      _connectionSubscription = device.connectionState.listen(
+        (connectionState) {
+          debugPrint('Connection state changed: $connectionState');
+          debugPrint(
+              '_connectedDevice in listener: ${_connectedDevice?.advName}');
 
-    // Connect to device
-    await _bleService.connect(device);
+          if (connectionState == BluetoothConnectionState.connected) {
+            if (state.phase == DeviceFactoryTestPhase.enteringFactoryMode) {
+              debugPrint('Ignoring connection during factory mode entry phase');
+              return;
+            }
+            debugPrint(
+                'Device connected successfully, calling _onDeviceConnected');
+            _onDeviceConnected();
+          } else if (connectionState == BluetoothConnectionState.disconnected) {
+            // Only handle disconnection if we've moved past the initial connecting phase
+            if (state.connectionState ==
+                    DeviceFactoryTestConnectionState.connecting ||
+                state.phase == DeviceFactoryTestPhase.connecting) {
+              debugPrint(
+                  'Ignoring disconnection event during initial connection phase');
+              return;
+            }
+            debugPrint('Device disconnected, calling _onDeviceDisconnected');
+            _onDeviceDisconnected();
+          }
+        },
+        onError: (error) {
+          debugPrint('Connection state listener error: $error');
+          state = state.copyWith(
+            phase: DeviceFactoryTestPhase.error,
+            connectionState: DeviceFactoryTestConnectionState.error,
+            error: 'Connection state error: $error',
+          );
+        },
+      );
+
+      // Give iOS a moment to establish connection - the connection state listener will handle the rest
+      await Future.delayed(const Duration(seconds: 1));
+
+      debugPrint(
+          'Connection initiated - waiting for connection state listener to fire...');
+    } catch (error) {
+      debugPrint('BLE connection error: $error');
+      state = state.copyWith(
+        phase: DeviceFactoryTestPhase.error,
+        connectionState: DeviceFactoryTestConnectionState.error,
+        error: 'BLE connection failed: $error',
+      );
+      rethrow;
+    }
   }
 
   /// Handle successful device connection
   Future<void> _onDeviceConnected() async {
+    debugPrint('=== DEVICE CONNECTED - STARTING SETUP ===');
+
+    // Prevent duplicate calls
+    if (state.connectionState == DeviceFactoryTestConnectionState.connected) {
+      debugPrint('Device already connected, skipping duplicate setup');
+      return;
+    }
+
+    // Clear connection timeout since we're now connected
+    _clearConnectionTimeout();
+
     try {
+      // Check if device is still available - if not, try to get it from the connection subscription
+      if (_connectedDevice == null) {
+        debugPrint(
+            'ERROR: _connectedDevice is null, trying to get device from state');
+        _connectedDevice = state.selectedDevice.bluetoothDevice;
+
+        if (_connectedDevice == null) {
+          debugPrint('ERROR: Could not recover device reference');
+          throw 'Could not recover device reference';
+        }
+        debugPrint('Recovered device reference: ${_connectedDevice!.advName}');
+      }
+
+      debugPrint('Checking if device is still connected...');
+      if (!_connectedDevice!.isConnected) {
+        debugPrint('ERROR: Device is no longer connected');
+        throw 'Device is no longer connected';
+      }
+      debugPrint('Device connection verified');
+
       state = state.copyWith(
-        connectionState: FactoryTestConnectionState.connected,
+        connectionState: DeviceFactoryTestConnectionState.connected,
       );
+      debugPrint('Updated connection state to connected');
 
       // Discover services and characteristics
+      debugPrint('Starting service discovery...');
       final services = await _connectedDevice!.discoverServices();
+      debugPrint('Services discovered: ${services.length} services found');
 
-      final service = services.firstWhere(
-        (s) => s.uuid.toString().toUpperCase() == Constants.serviceUuid,
-        orElse: () => throw 'Service not found',
-      );
+      try {
+        debugPrint('Checking Constants.serviceUuid: ${Constants.serviceUuid}');
 
-      _writeCharacteristic = service.characteristics.firstWhere(
-        (c) => c.uuid.toString().toUpperCase() == Constants.writeUuid,
-        orElse: () => throw 'Write characteristic not found',
-      );
+        for (final service in services) {
+          debugPrint('Service UUID: ${service.uuid}');
+        }
 
-      _notifyCharacteristic = service.characteristics.firstWhere(
-        (c) => c.uuid.toString().toUpperCase() == Constants.notifyUuid,
-        orElse: () => throw 'Notify characteristic not found',
-      );
+        final service = services.firstWhere(
+          (s) => s.uuid.toString().toUpperCase() == Constants.serviceUuid,
+          orElse: () =>
+              throw 'Service not found - looking for ${Constants.serviceUuid}',
+        );
+        debugPrint('Target service found: ${service.uuid}');
+
+        debugPrint('Checking service.characteristics...');
+        if (service.characteristics.isEmpty) {
+          debugPrint('ERROR: Service has no characteristics');
+          throw 'Service has no characteristics';
+        }
+
+        debugPrint('Looking for characteristics...');
+        for (final char in service.characteristics) {
+          debugPrint('Characteristic UUID: ${char.uuid}');
+        }
+
+        debugPrint('Looking for write characteristic: ${Constants.writeUuid}');
+        _writeCharacteristic = service.characteristics.firstWhere(
+          (c) => c.uuid.toString().toUpperCase() == Constants.writeUuid,
+          orElse: () =>
+              throw 'Write characteristic not found - looking for ${Constants.writeUuid}',
+        );
+        debugPrint('Write characteristic found: ${_writeCharacteristic!.uuid}');
+
+        debugPrint(
+            'Looking for notify characteristic: ${Constants.notifyUuid}');
+        _notifyCharacteristic = service.characteristics.firstWhere(
+          (c) => c.uuid.toString().toUpperCase() == Constants.notifyUuid,
+          orElse: () =>
+              throw 'Notify characteristic not found - looking for ${Constants.notifyUuid}',
+        );
+        debugPrint(
+            'Notify characteristic found: ${_notifyCharacteristic!.uuid}');
+      } catch (serviceError) {
+        debugPrint('ERROR in service/characteristic discovery: $serviceError');
+        rethrow;
+      }
 
       // Setup notifications
-      await _notifyCharacteristic!.setNotifyValue(true);
-      _notificationSubscription = _notifyCharacteristic!.onValueReceived.listen(
-        _handleNotification,
-        onError: (error) {
-          debugPrint('Notification error: $error');
-        },
-      );
+      try {
+        debugPrint('Setting up notifications...');
+        debugPrint('Notify characteristic is: $_notifyCharacteristic');
+
+        if (_notifyCharacteristic == null) {
+          throw 'Notify characteristic is null';
+        }
+
+        debugPrint('Calling setNotifyValue(true)...');
+        await _notifyCharacteristic!.setNotifyValue(true);
+        debugPrint('setNotifyValue completed');
+
+        debugPrint('Setting up notification listener...');
+        _notificationSubscription =
+            _notifyCharacteristic!.onValueReceived.listen(
+          _handleNotification,
+          onError: (error) {
+            debugPrint('Notification error: $error');
+          },
+        );
+        debugPrint('Notifications setup complete');
+      } catch (notificationError) {
+        debugPrint('ERROR in notification setup: $notificationError');
+        rethrow;
+      }
 
       debugPrint('Device connected and characteristics setup complete');
 
-      // If we're in the initial connection phase, proceed to enter factory mode
-      if (state.phase == FactoryTestPhase.connecting) {
+      // Handle different connection scenarios
+      if (state.phase == DeviceFactoryTestPhase.connecting) {
+        debugPrint('Initial connection - proceeding to enter factory mode...');
         await _enterFactoryMode();
+      } else if (state.phase == DeviceFactoryTestPhase.reconnecting) {
+        debugPrint(
+            'Device auto-reconnected after factory mode - starting automatic tests...');
+        state = state.copyWith(
+          connectionState: DeviceFactoryTestConnectionState.factoryModeReady,
+          phase: DeviceFactoryTestPhase.runningAutomaticTests,
+        );
+        debugPrint('Updated phase to runningAutomaticTests');
+        await _startAutomaticTests();
+      } else {
+        debugPrint('Connection in unexpected phase: ${state.phase}');
       }
     } catch (error) {
+      debugPrint('=== ERROR DURING DEVICE SETUP ===');
       debugPrint('Error setting up device: $error');
       state = state.copyWith(
-        phase: FactoryTestPhase.error,
-        connectionState: FactoryTestConnectionState.error,
+        phase: DeviceFactoryTestPhase.error,
+        connectionState: DeviceFactoryTestConnectionState.error,
         error: 'Device setup failed: $error',
       );
     }
@@ -250,18 +303,27 @@ class FactoryTestNotifier extends AutoDisposeNotifier<FactoryTestState> {
 
   /// Handle device disconnection
   void _onDeviceDisconnected() {
-    debugPrint('Device disconnected');
+    debugPrint('Device disconnected - Current state: ${state.phase}');
 
-    if (state.connectionState ==
-        FactoryTestConnectionState.enteringFactoryMode) {
-      // Expected disconnection during factory mode entry
+    if (_isEndingFactoryMode) {
+      // Expected disconnection when ending factory test mode - device will restart in normal mode
+      debugPrint(
+          'Expected disconnection during factory test end - device restarting in normal mode');
+      _isEndingFactoryMode = false;
+      // Don't update state or show error - this is expected behavior
+
+      _cleanup();
+      return;
+    } else if (state.connectionState ==
+        DeviceFactoryTestConnectionState.enteringFactoryMode) {
+      // Expected disconnection during factory mode entry - device will auto-reconnect
+      debugPrint(
+          'Expected disconnection during factory mode entry - waiting for auto-reconnect');
       state = state.copyWith(
-        connectionState: FactoryTestConnectionState.deviceRestarting,
+        connectionState: DeviceFactoryTestConnectionState.deviceRestarting,
+        phase: DeviceFactoryTestPhase.reconnecting,
       );
-
-      // Wait for device restart and try to reconnect
-      _startReconnectionProcess();
-    } else if (state.phase == FactoryTestPhase.runningAutomaticTests &&
+    } else if (state.phase == DeviceFactoryTestPhase.runningAutomaticTests &&
         state.automaticTests.isRunning) {
       // Unexpected disconnection during automatic tests
       debugPrint(
@@ -270,84 +332,44 @@ class FactoryTestNotifier extends AutoDisposeNotifier<FactoryTestState> {
       _handleAutomaticTestTimeout(); // Handle as timeout since connection is lost
     } else {
       // Other unexpected disconnection
+      debugPrint('Unexpected disconnection in phase: ${state.phase}');
       state = state.copyWith(
-        connectionState: FactoryTestConnectionState.disconnected,
+        connectionState: DeviceFactoryTestConnectionState.disconnected,
         error: 'Device unexpectedly disconnected',
       );
     }
   }
 
-  /// Start reconnection process after device restart
-  void _startReconnectionProcess() {
-    state = state.copyWith(
-      connectionState: FactoryTestConnectionState.reconnecting,
-    );
-
-    // Wait a bit for device to restart
-    _reconnectionTimer = Timer(const Duration(seconds: 2), () {
-      _attemptReconnection();
-    });
-  }
-
-  /// Attempt to reconnect to the device
-  void _attemptReconnection() async {
-    if (_connectedDevice == null) return;
-
-    try {
-      debugPrint('Attempting to reconnect...');
-
-      // Try to reconnect
-      await _bleService.connect(_connectedDevice!);
-
-      // Wait for connection state to update
-      await Future.delayed(const Duration(seconds: 1));
-
-      if (_connectedDevice!.isConnected) {
-        debugPrint('Reconnection successful');
-        state = state.copyWith(
-          connectionState: FactoryTestConnectionState.factoryModeReady,
-          phase: FactoryTestPhase.runningAutomaticTests,
-        );
-
-        // Start automatic tests
-        await _startAutomaticTests();
-      } else {
-        throw 'Reconnection failed';
-      }
-    } catch (error) {
-      debugPrint('Reconnection error: $error');
-
-      // Retry reconnection up to 3 times
-      state = state.copyWith(
-        error: 'Reconnection attempt failed: $error',
-      );
-
-      // TODO: Add retry logic with exponential backoff
-    }
-  }
-
   /// Enter factory test mode
   Future<void> _enterFactoryMode() async {
+    debugPrint('=== ENTERING FACTORY MODE ===');
+
     state = state.copyWith(
-      phase: FactoryTestPhase.enteringFactoryMode,
-      connectionState: FactoryTestConnectionState.enteringFactoryMode,
+      phase: DeviceFactoryTestPhase.enteringFactoryMode,
+      connectionState: DeviceFactoryTestConnectionState.enteringFactoryMode,
     );
+    debugPrint('Updated state to enteringFactoryMode phase');
 
     try {
+      debugPrint('Creating factory mode command...');
       final command = FactoryTestCommand(
         type: FactoryTestCommandType.enterFactoryMode,
         command: DeviceCmdUtils.enterFactoryTestMode(),
         timeout: const Duration(seconds: 5),
       );
+      debugPrint('Command created: ${command.command}');
 
+      debugPrint('Executing factory mode command...');
       await _executeCommand(command);
 
-      debugPrint('Factory mode command sent, waiting for device restart...');
+      debugPrint(
+          'Factory mode command sent successfully, waiting for device restart...');
     } catch (error) {
+      debugPrint('=== FACTORY MODE ERROR ===');
       debugPrint('Error entering factory mode: $error');
       state = state.copyWith(
-        phase: FactoryTestPhase.error,
-        connectionState: FactoryTestConnectionState.error,
+        phase: DeviceFactoryTestPhase.error,
+        connectionState: DeviceFactoryTestConnectionState.error,
         error: 'Failed to enter factory mode: $error',
       );
     }
@@ -355,6 +377,9 @@ class FactoryTestNotifier extends AutoDisposeNotifier<FactoryTestState> {
 
   /// Start automatic tests
   Future<void> _startAutomaticTests() async {
+    debugPrint('=== STARTING AUTOMATIC TESTS ===');
+    debugPrint('Current phase before starting tests: ${state.phase}');
+
     try {
       final command = FactoryTestCommand(
         type: FactoryTestCommandType.startAutomaticTests,
@@ -362,24 +387,31 @@ class FactoryTestNotifier extends AutoDisposeNotifier<FactoryTestState> {
         timeout: const Duration(seconds: 30),
       );
 
+      debugPrint('Sending automatic tests command...');
       await _executeCommand(command);
 
       // Update test state to running
       final updatedTests = state.automaticTests.tests
-          .map((test) => test.copyWith(status: TestStatus.running))
+          .map((test) => test.copyWith(status: DeviceTestStatus.running))
           .toList();
 
+      debugPrint('Updating state with running tests...');
       state = state.copyWith(
+        phase: DeviceFactoryTestPhase
+            .runningAutomaticTests, // Ensure phase is correct
         automaticTests: state.automaticTests.copyWith(
           tests: updatedTests,
           isRunning: true,
         ),
       );
 
+      debugPrint(
+          'State updated - Phase: ${state.phase}, Tests running: ${state.automaticTests.isRunning}');
+
       // Start timeout timer for automatic tests (1 minute)
       _startAutomaticTestTimeout();
 
-      debugPrint('Automatic tests started');
+      debugPrint('Automatic tests started successfully');
     } catch (error) {
       debugPrint('Error starting automatic tests: $error');
       state = state.copyWith(
@@ -485,17 +517,7 @@ class FactoryTestNotifier extends AutoDisposeNotifier<FactoryTestState> {
   /// Handle factory mode stopped from device
   void _handleFactoryModeStopped(List<int> data) {
     debugPrint('Factory mode stopped from device');
-    state = FactoryTestState(
-      phase: FactoryTestPhase.deviceSelection,
-      connectionState: FactoryTestConnectionState.idle,
-      availableDevices: [],
-      automaticTests:
-          AutomaticTestsState(tests: _createInitialAutomaticTests()),
-      manualTests: ManualTestsState(
-        tests: _createInitialManualTests(),
-        userConfirmations: {},
-      ),
-    );
+    state = DeviceFactoryTestState.emptyState(state.selectedDevice);
 
     _cleanup();
   }
@@ -522,8 +544,9 @@ class FactoryTestNotifier extends AutoDisposeNotifier<FactoryTestState> {
     final updatedTests = state.automaticTests.tests.map((test) {
       if (test.testName == testName) {
         return test.copyWith(
-          status:
-              result['status'] == 'Pass' ? TestStatus.pass : TestStatus.fail,
+          status: result['status'] == 'Pass'
+              ? DeviceTestStatus.pass
+              : DeviceTestStatus.fail,
           comment: result['comment'] as String?,
           value: result['value'],
           timestamp: DateTime.now(),
@@ -534,7 +557,8 @@ class FactoryTestNotifier extends AutoDisposeNotifier<FactoryTestState> {
     }).toList();
 
     final allComplete = updatedTests.every((test) =>
-        test.status == TestStatus.pass || test.status == TestStatus.fail);
+        test.status == DeviceTestStatus.pass ||
+        test.status == DeviceTestStatus.fail);
 
     state = state.copyWith(
       automaticTests: state.automaticTests.copyWith(
@@ -547,7 +571,7 @@ class FactoryTestNotifier extends AutoDisposeNotifier<FactoryTestState> {
     // If all automatic tests are complete, clear timeout and move to manual tests
     if (allComplete) {
       _clearAutomaticTestTimeout();
-      state = state.copyWith(phase: FactoryTestPhase.runningManualTests);
+      state = state.copyWith(phase: DeviceFactoryTestPhase.runningManualTests);
 
       // Auto-start charge test (it's automatically available after automatic tests)
       _autoStartChargeTest();
@@ -626,9 +650,9 @@ class FactoryTestNotifier extends AutoDisposeNotifier<FactoryTestState> {
     final updatedTests = state.manualTests.tests.map((test) {
       if (test.testName == 'Charge Test') {
         // Only auto-start if the test hasn't been completed yet
-        if (test.status == TestStatus.notStarted) {
+        if (test.status == DeviceTestStatus.notStarted) {
           return test.copyWith(
-            status: TestStatus.running,
+            status: DeviceTestStatus.running,
             comment: 'Auto-started after automatic tests completed',
             timestamp: DateTime.now(),
             deviceResponseReceived: true, // Charge test is auto-available
@@ -650,7 +674,7 @@ class FactoryTestNotifier extends AutoDisposeNotifier<FactoryTestState> {
   // Manual test control methods using new robust protocol
   Future<void> startChargeTest() async {
     try {
-      await _updateTestStatus('Charge Test', TestStatus.running);
+      await _updateTestStatus('Charge Test', DeviceTestStatus.running);
 
       final command = FactoryTestCommand(
         type: FactoryTestCommandType.startManualTest,
@@ -663,13 +687,13 @@ class FactoryTestNotifier extends AutoDisposeNotifier<FactoryTestState> {
     } catch (error) {
       debugPrint('Error starting charge test: $error');
       await _updateTestStatus(
-          'Charge Test', TestStatus.fail, 'Failed to start test: $error');
+          'Charge Test', DeviceTestStatus.fail, 'Failed to start test: $error');
     }
   }
 
   Future<void> startScreenEdgeTest() async {
     try {
-      await _updateTestStatus('Screen Edge Test', TestStatus.running);
+      await _updateTestStatus('Screen Edge Test', DeviceTestStatus.running);
 
       final command = FactoryTestCommand(
         type: FactoryTestCommandType.startManualTest,
@@ -681,14 +705,14 @@ class FactoryTestNotifier extends AutoDisposeNotifier<FactoryTestState> {
       debugPrint('Screen edge test command sent successfully');
     } catch (error) {
       debugPrint('Error starting screen edge test: $error');
-      await _updateTestStatus(
-          'Screen Edge Test', TestStatus.fail, 'Failed to start test: $error');
+      await _updateTestStatus('Screen Edge Test', DeviceTestStatus.fail,
+          'Failed to start test: $error');
     }
   }
 
   Future<void> startScreenBlackTest() async {
     try {
-      await _updateTestStatus('Screen Black Test', TestStatus.running);
+      await _updateTestStatus('Screen Black Test', DeviceTestStatus.running);
 
       final command = FactoryTestCommand(
         type: FactoryTestCommandType.startManualTest,
@@ -700,14 +724,14 @@ class FactoryTestNotifier extends AutoDisposeNotifier<FactoryTestState> {
       debugPrint('Screen black test command sent successfully');
     } catch (error) {
       debugPrint('Error starting screen black test: $error');
-      await _updateTestStatus(
-          'Screen Black Test', TestStatus.fail, 'Failed to start test: $error');
+      await _updateTestStatus('Screen Black Test', DeviceTestStatus.fail,
+          'Failed to start test: $error');
     }
   }
 
   Future<void> startScreenWhiteTest() async {
     try {
-      await _updateTestStatus('Screen White Test', TestStatus.running);
+      await _updateTestStatus('Screen White Test', DeviceTestStatus.running);
 
       final command = FactoryTestCommand(
         type: FactoryTestCommandType.startManualTest,
@@ -719,14 +743,14 @@ class FactoryTestNotifier extends AutoDisposeNotifier<FactoryTestState> {
       debugPrint('Screen white test command sent successfully');
     } catch (error) {
       debugPrint('Error starting screen white test: $error');
-      await _updateTestStatus(
-          'Screen White Test', TestStatus.fail, 'Failed to start test: $error');
+      await _updateTestStatus('Screen White Test', DeviceTestStatus.fail,
+          'Failed to start test: $error');
     }
   }
 
   Future<void> startButtonTest() async {
     try {
-      await _updateTestStatus('Button Test', TestStatus.running);
+      await _updateTestStatus('Button Test', DeviceTestStatus.running);
 
       final command = FactoryTestCommand(
         type: FactoryTestCommandType.startManualTest,
@@ -739,13 +763,13 @@ class FactoryTestNotifier extends AutoDisposeNotifier<FactoryTestState> {
     } catch (error) {
       debugPrint('Error starting button test: $error');
       await _updateTestStatus(
-          'Button Test', TestStatus.fail, 'Failed to start test: $error');
+          'Button Test', DeviceTestStatus.fail, 'Failed to start test: $error');
     }
   }
 
   Future<void> startBuzzerTest() async {
     try {
-      await _updateTestStatus('Buzzer Test', TestStatus.running);
+      await _updateTestStatus('Buzzer Test', DeviceTestStatus.running);
 
       final command = FactoryTestCommand(
         type: FactoryTestCommandType.startManualTest,
@@ -758,13 +782,13 @@ class FactoryTestNotifier extends AutoDisposeNotifier<FactoryTestState> {
     } catch (error) {
       debugPrint('Error starting buzzer test: $error');
       await _updateTestStatus(
-          'Buzzer Test', TestStatus.fail, 'Failed to start test: $error');
+          'Buzzer Test', DeviceTestStatus.fail, 'Failed to start test: $error');
     }
   }
 
   Future<void> startVibrationTest() async {
     try {
-      await _updateTestStatus('Vibration Test', TestStatus.running);
+      await _updateTestStatus('Vibration Test', DeviceTestStatus.running);
 
       final command = FactoryTestCommand(
         type: FactoryTestCommandType.startManualTest,
@@ -776,24 +800,26 @@ class FactoryTestNotifier extends AutoDisposeNotifier<FactoryTestState> {
       debugPrint('Vibration test command sent successfully');
     } catch (error) {
       debugPrint('Error starting vibration test: $error');
-      await _updateTestStatus(
-          'Vibration Test', TestStatus.fail, 'Failed to start test: $error');
+      await _updateTestStatus('Vibration Test', DeviceTestStatus.fail,
+          'Failed to start test: $error');
     }
   }
 
   /// Helper method to update test status
-  Future<void> _updateTestStatus(String testName, TestStatus status,
+  Future<void> _updateTestStatus(String testName, DeviceTestStatus status,
       [String? comment]) async {
     final updatedTests = state.manualTests.tests.map((test) {
       if (test.testName == testName) {
         return test.copyWith(
           status: status,
           comment: comment ?? test.comment,
-          timestamp:
-              status != TestStatus.notStarted ? DateTime.now() : test.timestamp,
+          timestamp: status != DeviceTestStatus.notStarted
+              ? DateTime.now()
+              : test.timestamp,
           // Device doesn't acknowledge start commands, so we assume they're received
-          deviceResponseReceived:
-              status == TestStatus.running ? true : test.deviceResponseReceived,
+          deviceResponseReceived: status == DeviceTestStatus.running
+              ? true
+              : test.deviceResponseReceived,
         );
       }
       return test;
@@ -832,7 +858,7 @@ class FactoryTestNotifier extends AutoDisposeNotifier<FactoryTestState> {
       final updatedTests = state.manualTests.tests.map((test) {
         if (test.testName == testName) {
           return test.copyWith(
-            status: confirmed ? TestStatus.pass : TestStatus.fail,
+            status: confirmed ? DeviceTestStatus.pass : DeviceTestStatus.fail,
             comment: confirmed
                 ? '${test.comment ?? ''} - User confirmed'
                 : '${test.comment ?? ''} - User marked as failed',
@@ -843,7 +869,8 @@ class FactoryTestNotifier extends AutoDisposeNotifier<FactoryTestState> {
       }).toList();
 
       final allComplete = updatedTests.every((test) =>
-          test.status == TestStatus.pass || test.status == TestStatus.fail);
+          test.status == DeviceTestStatus.pass ||
+          test.status == DeviceTestStatus.fail);
 
       state = state.copyWith(
         manualTests: state.manualTests.copyWith(
@@ -855,7 +882,10 @@ class FactoryTestNotifier extends AutoDisposeNotifier<FactoryTestState> {
 
       // If all tests are complete, move to completed phase
       if (allComplete && state.automaticTests.isComplete) {
-        state = state.copyWith(phase: FactoryTestPhase.completed);
+        state = state.copyWith(phase: DeviceFactoryTestPhase.completed);
+
+        // Notify the queue manager that this device is ready for submission
+        _notifyDeviceReadyToSubmit();
       }
 
       debugPrint(
@@ -870,7 +900,7 @@ class FactoryTestNotifier extends AutoDisposeNotifier<FactoryTestState> {
       final updatedTests = state.manualTests.tests.map((test) {
         if (test.testName == testName) {
           return test.copyWith(
-            status: confirmed ? TestStatus.pass : TestStatus.fail,
+            status: confirmed ? DeviceTestStatus.pass : DeviceTestStatus.fail,
             comment:
                 '${test.comment ?? ''} - ${confirmed ? "User confirmed" : "User marked as failed"} (device command failed)',
             timestamp: DateTime.now(),
@@ -906,178 +936,71 @@ class FactoryTestNotifier extends AutoDisposeNotifier<FactoryTestState> {
 
   /// Retry automatic tests after timeout/failure
   Future<void> retryAutomaticTests() async {
-    if (state.selectedDeviceId == null) return;
+    debugPrint('Retrying automatic tests...');
 
-    // Reset automatic tests state
-    state = state.copyWith(
-      automaticTests:
-          AutomaticTestsState(tests: _createInitialAutomaticTests()),
-      phase: FactoryTestPhase.connecting,
-      connectionState: FactoryTestConnectionState.connecting,
-      error: null,
-    );
+    // Clear any existing timeout
+    _clearAutomaticTestTimeout();
 
-    // Find and reconnect to the device
-    final device = state.availableDevices.firstWhere(
-      (d) => d.deviceId == state.selectedDeviceId,
-      orElse: () => throw 'Device not found',
-    );
-
-    try {
-      await _connectToDevice(device.bluetoothDevice);
-    } catch (error) {
-      debugPrint('Retry connection error: $error');
-      state = state.copyWith(
-        phase: FactoryTestPhase.error,
-        connectionState: FactoryTestConnectionState.error,
-        error: 'Retry connection failed: $error',
+    // Reset automatic test states
+    final resetTests = state.automaticTests.tests.map((test) {
+      return test.copyWith(
+        status: DeviceTestStatus.notStarted,
+        comment: null,
+        value: null,
+        timestamp: null,
+        deviceResponseReceived: false,
       );
-    }
+    }).toList();
+
+    state = state.copyWith(
+      automaticTests: state.automaticTests.copyWith(
+        tests: resetTests,
+        isRunning: false,
+        isComplete: false,
+        error: null,
+      ),
+      phase: DeviceFactoryTestPhase.runningAutomaticTests,
+    );
+
+    // Restart automatic tests
+    await _startAutomaticTests();
   }
 
   /// Send 0xDE command to end factory test mode and restart device in normal mode
-  Future<void> endFactoryTestMode() async {
+  Future<void> endFactoryTestMode({bool putDeviceToSleep = false}) async {
     try {
       debugPrint('Sending 0xDE command to end factory test mode');
 
-      // Send the factory test end command (0xDE)
-      final command = FactoryTestCommand(
-        type: FactoryTestCommandType.endFactoryTest,
-        command: DeviceCmdUtils.factoryTestEnd(),
-        timeout: const Duration(seconds: 5),
-        maxRetries: 1, // Only try once since device will restart
-      );
+      // Set flag to indicate we're ending factory mode (expected disconnection)
+      _isEndingFactoryMode = true;
 
-      await _executeCommand(command);
+      // Send the factory test end command (0xDE) directly without retry logic
+      if (_writeCharacteristic == null) {
+        debugPrint('ERROR: Write characteristic not available');
+        throw 'Write characteristic not available';
+      }
 
-      // Clean up after sending command
+      final commandBytes =
+          DeviceCmdUtils.factoryTestEnd(putDeviceToSleep: putDeviceToSleep);
+
+      try {
+        await _writeCharacteristic!.write(commandBytes);
+        debugPrint('Factory test end command sent successfully');
+      } catch (error) {
+        debugPrint(
+            'Expected error sending factory test end command (device disconnecting): $error');
+        // This is expected - device will disconnect immediately after receiving this command
+      }
+
+      // Clean up after sending command (device will disconnect)
       _cleanup();
 
-      debugPrint('Factory test end command sent successfully');
+      debugPrint('Factory test end sequence completed');
     } catch (error) {
-      debugPrint('Error sending factory test end command: $error');
+      debugPrint('Error in factory test end sequence: $error');
+      _isEndingFactoryMode = false;
       // Clean up even if command fails
       _cleanup();
-    }
-  }
-
-  /// Submit factory test results to the API
-  Future<void> submitTestResults({
-    required String macAddress,
-    required String deviceId,
-    required String testedBy,
-    required String status,
-    String? comment,
-    int sensorVariant = 0,
-    String deviceType = 'as1',
-  }) async {
-    // Set submitting state
-    state = state.copyWith(
-      isSubmittingResults: true,
-      submissionError: null,
-      resultsSubmitted: false,
-    );
-
-    try {
-      // Create automatic tests array
-      final List<Map<String, dynamic>> automaticTests = [];
-      for (final test in state.automaticTests.tests) {
-        automaticTests.add({
-          'status': test.status.name == 'pass' ? 'Pass' : 'Fail',
-          'value': _formatTestValue(test.testName, test.value),
-          'testName': test.testName,
-        });
-      }
-
-      // Create manual tests array
-      final List<Map<String, dynamic>> manualTests = [];
-      for (final test in state.manualTests.tests) {
-        manualTests.add({
-          'status': test.status.name == 'pass' ? 'Pass' : 'Fail',
-          'value': _formatTestValue(test.testName, test.value),
-          'testName': test.testName,
-        });
-      }
-
-      // Structure test_details as an object with automaticTests and manualTests
-      final Map<String, dynamic> testDetails = {
-        'automaticTests': automaticTests,
-        'manualTests': manualTests,
-      };
-
-      // Prepare API payload according to the new structure
-      final payload = {
-        'mac_address': macAddress,
-        'device_id': deviceId,
-        'tested_by': testedBy,
-        'status': status,
-        'comment': comment?.isEmpty == true ? null : comment,
-        'sensor_variant': sensorVariant,
-        'device_type': deviceType,
-        'test_details': testDetails,
-      };
-
-      debugPrint('Submitting factory test results: ${payload.toString()}');
-
-      // Get API key from environment
-      const apiKey = String.fromEnvironment('API_KEY');
-
-      // Prepare headers
-      final headers = <String, String>{};
-      if (apiKey.isNotEmpty) {
-        headers['x-api-key'] = apiKey;
-      }
-
-      // Submit to API with headers
-      final response = await NetworkService.instance.post(
-        '/device_tests',
-        payload,
-        headers: headers.isNotEmpty ? headers : null,
-      );
-
-      if (response.statusCode == 200 || response.statusCode == 201) {
-        debugPrint('Factory test results submitted successfully');
-
-        // Send 0xDE command to end factory test mode and restart device
-        debugPrint(
-            'Sending 0xDE command to end factory test mode after successful submission');
-        try {
-          await endFactoryTestMode();
-          debugPrint('Factory test mode ended successfully after submission');
-        } catch (commandError) {
-          debugPrint(
-              'Warning: Failed to send end factory test command after submission: $commandError');
-          // Don't fail the submission if the command fails, just log it
-        }
-
-        state = state.copyWith(
-          isSubmittingResults: false,
-          resultsSubmitted: true,
-          submissionError: null,
-        );
-      } else {
-        final errorMessage = response.data != null
-            ? 'Server error: ${response.data}'
-            : 'Server responded with status ${response.statusCode}';
-        throw Exception(errorMessage);
-      }
-    } catch (e) {
-      debugPrint('Factory test submission error: $e');
-      String errorMessage = 'Submission failed';
-      if (e.toString().contains('DioException')) {
-        errorMessage =
-            'Network error: Please check your internet connection ${e.toString()}';
-      } else if (e.toString().contains('Server error')) {
-        errorMessage = e.toString().replaceFirst('Exception: ', '');
-      } else {
-        errorMessage = 'Submission failed: ${e.toString()}';
-      }
-
-      state = state.copyWith(
-        isSubmittingResults: false,
-        resultsSubmitted: false,
-        submissionError: errorMessage,
-      );
     }
   }
 
@@ -1106,101 +1029,45 @@ class FactoryTestNotifier extends AutoDisposeNotifier<FactoryTestState> {
     return 'as1'; // Default device type
   }
 
-  /// Format test value with appropriate suffix based on test name
-  dynamic _formatTestValue(String testName, dynamic value) {
-    if (value == null) return null;
-
-    switch (testName) {
-      case 'Sensor Test':
-        return '$value ppm';
-      case 'Battery Voltage Test':
-        return '${value}mV';
-      case 'LF Crystal Test':
-        return '$value kHz';
-      case 'Memory Test':
-      case 'LCD Controller Test':
-      case 'Charge Test':
-      case 'Screen Edge Test':
-      case 'Screen Black Test':
-      case 'Screen White Test':
-      case 'Button Test':
-      case 'Buzzer Test':
-      case 'Vibration Test':
-      case 'Case Check':
-      case 'LCD with OCA?':
-        return null; // These tests typically don't have numeric values
-      default:
-        return value; // Return raw value for unknown tests
-    }
-  }
-
-  /// Export factory test results in the specified format
-  Map<String, dynamic> exportTestResults({
-    required String macAddress,
-    required String deviceId,
-    required String testedBy,
-    required String status,
-    String? comment,
-    int sensorVariant = 0,
-    String deviceType = 'as1',
-  }) {
-    // Create automatic tests array
-    final List<Map<String, dynamic>> automaticTests = [];
-    for (final test in state.automaticTests.tests) {
-      automaticTests.add({
-        'status': test.status.name == 'pass' ? 'Pass' : 'Fail',
-        'value': _formatTestValue(test.testName, test.value),
-        'testName': test.testName,
-      });
-    }
-
-    // Create manual tests array
-    final List<Map<String, dynamic>> manualTests = [];
-    for (final test in state.manualTests.tests) {
-      manualTests.add({
-        'status': test.status.name == 'pass' ? 'Pass' : 'Fail',
-        'value': _formatTestValue(test.testName, test.value),
-        'testName': test.testName,
-      });
-    }
-
-    // Structure test_details as an object with automaticTests and manualTests
-    final Map<String, dynamic> testDetails = {
-      'automaticTests': automaticTests,
-      'manualTests': manualTests,
-    };
-
-    // Prepare export payload according to the specified structure
-    final exportData = {
-      'mac_address': macAddress,
-      'device_id': deviceId,
-      'tested_by': testedBy,
-      'status': status,
-      'comment': comment?.isEmpty == true ? null : comment,
-      'sensor_variant': sensorVariant,
-      'device_type': deviceType,
-      'test_details': testDetails,
-    };
-
-    return exportData;
-  }
-
   /// Reset factory test to start over
   void resetFactoryTest() {
     _clearAutomaticTestTimeout(); // Clear timeout before cleanup
     _cleanup();
 
-    state = FactoryTestState(
-      phase: FactoryTestPhase.deviceSelection,
-      connectionState: FactoryTestConnectionState.idle,
-      availableDevices: [],
-      automaticTests:
-          AutomaticTestsState(tests: _createInitialAutomaticTests()),
-      manualTests: ManualTestsState(
-        tests: _createInitialManualTests(),
-        userConfirmations: {},
-      ),
+    state = DeviceFactoryTestState.emptyState(state.selectedDevice);
+
+    _cleanup();
+  }
+
+  /// Notify the devices provider that this device is ready to submit results
+  void _notifyDeviceReadyToSubmit() {
+    ref
+        .read(factoryTestDevicesProvider.notifier)
+        .markDeviceReadyToSubmit(state.selectedDevice.deviceId);
+
+    debugPrint(
+        'Device ${state.selectedDevice.deviceId} marked as ready to submit results');
+  }
+
+  /// Set error state and notify queue manager
+  void _setErrorState(
+    String error, {
+    DeviceFactoryTestConnectionState? connectionState,
+  }) {
+    state = state.copyWith(
+      phase: DeviceFactoryTestPhase.error,
+      connectionState:
+          connectionState ?? DeviceFactoryTestConnectionState.error,
+      error: error,
     );
+
+    // Notify the queue manager that this device has an error
+    ref
+        .read(factoryTestDevicesProvider.notifier)
+        .markDeviceError(state.selectedDevice.deviceId, error);
+
+    debugPrint(
+        'Device ${state.selectedDevice.deviceId} marked as error: $error');
   }
 
   /// Start timeout timer for automatic tests (1 minute)
@@ -1219,6 +1086,78 @@ class FactoryTestNotifier extends AutoDisposeNotifier<FactoryTestState> {
     _automaticTestTimeoutTimer = null;
   }
 
+  /// Start connection timeout timer (45 seconds to give iOS more time)
+  void _startConnectionTimeout() {
+    _clearConnectionTimeout(); // Clear any existing timer
+
+    _connectionTimeoutTimer = Timer(const Duration(seconds: 45), () {
+      debugPrint(
+          'Connection timeout - 45 seconds elapsed without successful connection');
+      _handleConnectionTimeout();
+    });
+  }
+
+  /// Clear connection timeout timer
+  void _clearConnectionTimeout() {
+    _connectionTimeoutTimer?.cancel();
+    _connectionTimeoutTimer = null;
+  }
+
+  /// Handle connection timeout
+  void _handleConnectionTimeout() {
+    if (state.phase != DeviceFactoryTestPhase.connecting &&
+        state.phase != DeviceFactoryTestPhase.enteringFactoryMode &&
+        state.phase != DeviceFactoryTestPhase.reconnecting) {
+      return; // Already connected/completed, ignore timeout
+    }
+
+    debugPrint('Connection timed out after 30 seconds');
+
+    // Try automatic reconnection once before giving up
+    if (state.phase == DeviceFactoryTestPhase.connecting) {
+      debugPrint('Attempting automatic reconnection...');
+      _attemptReconnection();
+    } else {
+      _setErrorState(
+        'Connection timed out after 30 seconds. Please check that the device is powered on and nearby, then try again.',
+      );
+      _cleanup();
+    }
+  }
+
+  /// Attempt automatic reconnection for improved reliability
+  Future<void> _attemptReconnection() async {
+    try {
+      state = state.copyWith(
+        phase: DeviceFactoryTestPhase.reconnecting,
+        connectionState: DeviceFactoryTestConnectionState.reconnecting,
+        error: null,
+      );
+
+      debugPrint('Starting reconnection attempt...');
+
+      // Clean up existing connection first
+      if (_connectedDevice?.isConnected == true) {
+        await _connectedDevice?.disconnect();
+      }
+
+      // Wait a moment before reconnecting
+      await Future.delayed(const Duration(seconds: 2));
+
+      // Start new connection timeout for reconnection
+      _startConnectionTimeout();
+
+      // Attempt to reconnect
+      await _connectToDevice(state.selectedDevice.bluetoothDevice);
+    } catch (error) {
+      debugPrint('Reconnection failed: $error');
+      _clearConnectionTimeout();
+      _setErrorState(
+        'Connection failed after retry. Please ensure the device is powered on and nearby, then try again.',
+      );
+    }
+  }
+
   /// Handle automatic test timeout (device connection likely lost)
   void _handleAutomaticTestTimeout() {
     if (state.automaticTests.isComplete) return; // Already completed, ignore
@@ -1228,10 +1167,10 @@ class FactoryTestNotifier extends AutoDisposeNotifier<FactoryTestState> {
 
     // Mark all running tests as failed due to timeout
     final updatedTests = state.automaticTests.tests.map((test) {
-      if (test.status == TestStatus.running ||
-          test.status == TestStatus.notStarted) {
+      if (test.status == DeviceTestStatus.running ||
+          test.status == DeviceTestStatus.notStarted) {
         return test.copyWith(
-          status: TestStatus.fail,
+          status: DeviceTestStatus.fail,
           comment: 'Test failed - device connection lost',
           timestamp: DateTime.now(),
         );
@@ -1247,10 +1186,10 @@ class FactoryTestNotifier extends AutoDisposeNotifier<FactoryTestState> {
         error:
             'Automatic tests failed - device connection lost after 1 minute. The device may have restarted due to an issue.',
       ),
-      phase: FactoryTestPhase.error,
-      connectionState: FactoryTestConnectionState.error,
-      error:
-          'Device connection lost during automatic tests. Please reconnect and try again.',
+    );
+
+    _setErrorState(
+      'Device connection lost during automatic tests. Please reconnect and try again.',
     );
 
     // Clean up connection
@@ -1259,22 +1198,27 @@ class FactoryTestNotifier extends AutoDisposeNotifier<FactoryTestState> {
 
   /// Cleanup resources
   void _cleanup() {
-    _scanSubscription?.cancel();
+    debugPrint('=== CLEANUP CALLED ===');
+    debugPrint('Current _connectedDevice: ${_connectedDevice?.advName}');
+
     _connectionSubscription?.cancel();
     _notificationSubscription?.cancel();
-    _reconnectionTimer?.cancel();
     _commandTimeoutTimer?.cancel();
     _automaticTestTimeoutTimer?.cancel();
-    _scanTimeoutTimer?.cancel();
+    _connectionTimeoutTimer?.cancel();
 
     if (_connectedDevice?.isConnected == true) {
+      debugPrint('Disconnecting device: ${_connectedDevice?.advName}');
       _connectedDevice?.disconnect();
     }
 
+    debugPrint('Setting _connectedDevice to null');
     _connectedDevice = null;
     _writeCharacteristic = null;
     _notifyCharacteristic = null;
     _commandQueue.clear();
     _isProcessingCommand = false;
+    _isEndingFactoryMode = false;
+    debugPrint('Cleanup completed');
   }
 }

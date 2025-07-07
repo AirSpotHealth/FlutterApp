@@ -2,26 +2,69 @@ import 'package:airspothealth/core/theme/app_colors.dart';
 import 'package:airspothealth/core/utils/extensions.dart';
 import 'package:airspothealth/features/factory_test/models/factory_test_models.dart';
 import 'package:airspothealth/features/factory_test/providers/factory_test_provider.dart';
-import 'package:airspothealth/features/factory_test/widgets/factory_test_progress_view.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 class AutomaticTestsTab extends ConsumerWidget {
-  const AutomaticTestsTab({super.key});
+  const AutomaticTestsTab({super.key, required this.deviceId});
+
+  final String deviceId;
+
+  String _getConnectionStatusText(DeviceFactoryTestPhase phase) {
+    switch (phase) {
+      case DeviceFactoryTestPhase.connecting:
+        return 'Connecting to device...';
+      case DeviceFactoryTestPhase.enteringFactoryMode:
+        return 'Entering factory mode...';
+      case DeviceFactoryTestPhase.reconnecting:
+        return 'Device restarting, waiting for reconnection...';
+      default:
+        return 'Preparing device...';
+    }
+  }
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final factoryTestState = ref.watch(factoryTestProvider);
+    final factoryTestState = ref.watch(factoryTestProvider(deviceId));
 
-    // Show progress view during connection phases
-    if (factoryTestState.phase == FactoryTestPhase.connecting ||
-        factoryTestState.phase == FactoryTestPhase.enteringFactoryMode ||
-        factoryTestState.phase == FactoryTestPhase.reconnecting) {
-      return FactoryTestProgressView(
-        phase: factoryTestState.phase,
-        connectionState: factoryTestState.connectionState,
+    debugPrint('AutomaticTestsTab build - phase: ${factoryTestState.phase}');
+    debugPrint(
+        'AutomaticTestsTab build - connectionState: ${factoryTestState.connectionState}');
+
+    // Show progress view only during initial connection phases (not during tests)
+    if (factoryTestState.phase == DeviceFactoryTestPhase.connecting ||
+        factoryTestState.phase == DeviceFactoryTestPhase.enteringFactoryMode ||
+        factoryTestState.phase == DeviceFactoryTestPhase.reconnecting) {
+      debugPrint(
+          'AutomaticTestsTab showing progress view for phase: ${factoryTestState.phase}');
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            const CircularProgressIndicator(),
+            const SizedBox(height: 16),
+            Text(
+              _getConnectionStatusText(factoryTestState.phase),
+              style: context.textTheme.bodyMedium?.copyWith(
+                color: AppColors.textSecondary,
+              ),
+            ),
+          ],
+        ),
       );
     }
+
+    // Show error state with retry option
+    if (factoryTestState.phase == DeviceFactoryTestPhase.error) {
+      debugPrint('AutomaticTestsTab showing error state');
+      return _buildErrorStateWithRetry(context, ref, factoryTestState);
+    }
+
+    debugPrint('AutomaticTestsTab showing test results view');
+    debugPrint(
+        'Automatic tests running: ${factoryTestState.automaticTests.isRunning}');
+    debugPrint(
+        'Automatic tests complete: ${factoryTestState.automaticTests.isComplete}');
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -126,7 +169,7 @@ class AutomaticTestsTab extends ConsumerWidget {
                 ElevatedButton.icon(
                   onPressed: () {
                     ref
-                        .read(factoryTestProvider.notifier)
+                        .read(factoryTestProvider(deviceId).notifier)
                         .retryAutomaticTests();
                   },
                   icon: const Icon(Icons.refresh, size: 18),
@@ -150,8 +193,63 @@ class AutomaticTestsTab extends ConsumerWidget {
     );
   }
 
+  Widget _buildErrorStateWithRetry(
+      BuildContext context, WidgetRef ref, DeviceFactoryTestState state) {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(24.0),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              Icons.error_outline,
+              size: 64,
+              color: AppColors.brandColorRed,
+            ),
+            const SizedBox(height: 24),
+            Text(
+              'Connection Failed',
+              style: context.textTheme.headlineSmall?.copyWith(
+                fontWeight: FontWeight.bold,
+                color: AppColors.brandColorRed,
+              ),
+            ),
+            const SizedBox(height: 12),
+            Text(
+              state.error ?? 'Unknown error occurred',
+              style: context.textTheme.bodyMedium?.copyWith(
+                color: AppColors.textSecondary,
+              ),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 32),
+            ElevatedButton.icon(
+              onPressed: () {
+                ref
+                    .read(factoryTestProvider(deviceId).notifier)
+                    .connectToDeviceAndStartFactoryTest();
+              },
+              icon: const Icon(Icons.refresh, size: 20),
+              label: const Text('Retry Connection'),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.primaryColor,
+                foregroundColor: AppColors.textOnPrimary,
+                elevation: 0,
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   Widget _buildTestResults(
-      BuildContext context, WidgetRef ref, FactoryTestState state) {
+      BuildContext context, WidgetRef ref, DeviceFactoryTestState state) {
     return Container(
       padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
       child: ListView.separated(
@@ -171,22 +269,22 @@ class AutomaticTestsTab extends ConsumerWidget {
     String statusText;
 
     switch (test.status) {
-      case TestStatus.notStarted:
+      case DeviceTestStatus.notStarted:
         icon = Icons.schedule_outlined;
         iconColor = AppColors.neutralGrey;
         statusText = 'Pending';
         break;
-      case TestStatus.running:
+      case DeviceTestStatus.running:
         icon = Icons.autorenew;
         iconColor = AppColors.primaryColor;
         statusText = 'Running';
         break;
-      case TestStatus.pass:
+      case DeviceTestStatus.pass:
         icon = Icons.check_circle;
         iconColor = AppColors.brandColorGreen;
         statusText = 'Passed';
         break;
-      case TestStatus.fail:
+      case DeviceTestStatus.fail:
         icon = Icons.cancel;
         iconColor = AppColors.brandColorRed;
         statusText = 'Failed';

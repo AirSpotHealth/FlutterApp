@@ -56,6 +56,45 @@ class _AppLogoState extends State<AppLogo> {
   }
 
   @override
+  State<AppLogo> createState() => _AppLogoState();
+}
+
+class _AppLogoState extends State<AppLogo> {
+  int _tapCount = 0;
+  Timer? _resetTimer;
+
+  void _onLogoTap() {
+    _tapCount++;
+    _resetTimer?.cancel();
+
+    if (_tapCount >= 5) {
+      _showFactoryTestPinDialog();
+      _tapCount = 0;
+    } else {
+      // Reset tap count after 3 seconds if not enough taps
+      _resetTimer = Timer(const Duration(seconds: 3), () {
+        if (mounted) {
+          setState(() => _tapCount = 0);
+        }
+      });
+    }
+  }
+
+  void _showFactoryTestPinDialog() {
+    showDialog(
+      context: context,
+      barrierDismissible: false, // Force user to enter PIN or cancel
+      builder: (context) => _FactoryTestPinDialog(),
+    );
+  }
+
+  @override
+  void dispose() {
+    _resetTimer?.cancel();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     final child = Image.asset(
       Assets.logo,
