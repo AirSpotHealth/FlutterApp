@@ -10,9 +10,9 @@ class _BleScanResultsNotifier
     extends AutoDisposeNotifier<(bool, List<BluetoothDevice>)> {
   final BLEService _bleService = BLEService.instance;
 
-  get devices => state.$2;
+  List<BluetoothDevice> get devices => state.$2;
 
-  get isScanning => state.$1;
+  bool get isScanning => state.$1;
 
   @override
   (bool, List<BluetoothDevice>) build() {

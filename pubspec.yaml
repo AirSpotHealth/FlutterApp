@@ -2,7 +2,7 @@ name: airspothealth
 description: App for Airspot Health
 publish_to: none # Remove this line if you wish to publish to pub.dev
 
-version: 3.5.0+110
+version: 3.5.3+113
 
 environment:
   sdk: ^3.5.3
@@ -12,7 +12,7 @@ dependencies:
     sdk: flutter
 
   cupertino_icons: ^1.0.8
-  go_router: ^15.1.2
+  go_router: ^15.1.3
   flutter_riverpod: ^2.6.1
   permission_handler: ^12.0.0+1
   flutter_blue_plus: ^1.35.5
@@ -28,16 +28,16 @@ dependencies:
   shimmer: ^3.0.0
   package_info_plus: ^8.3.0
   file_saver: ^0.2.14
-  new_version_plus: ^0.1.0
+  new_version_plus: ^0.1.1
   # awesome_notifications_core: ^0.10.1
   flutter_local_notifications: ^19.2.1
   # awesome_notifications: ^0.10.1
   font_awesome_flutter: ^10.8.0
   animated_icon: ^0.0.9
-  geolocator: ^14.0.0
+  geolocator: ^14.0.1
   share_plus: ^11.0.0
   system_date_time_format: ^1.2.2
-  bottom_picker: ^3.2.0
+  bottom_picker: ^3.2.1
   isar:
     version: ^4.0.3
     hosted: https://pub.isar-community.dev
@@ -50,7 +50,7 @@ dev_dependencies:
   flutter_test:
     sdk: flutter
   flutter_launcher_icons: ^0.14.3
-  flutter_lints: ^5.0.0
+  flutter_lints: ^6.0.0
   build_runner: ^2.4.15
 
 flutter:

@@ -82,7 +82,7 @@ class DeviceMockWidget extends ConsumerWidget {
     );
   }
 
-  Align _buildCo2Value(co2Value) {
+  Align _buildCo2Value(dynamic co2Value) {
     return Align(
       alignment: Alignment.center,
       child: Text(
@@ -178,7 +178,7 @@ class DeviceMockWidget extends ConsumerWidget {
     );
   }
 
-  Align _buildActiveIndicator(co2Value, DeviceSettings deviceSettings) {
+  Align _buildActiveIndicator(dynamic co2Value, DeviceSettings deviceSettings) {
     return Align(
       alignment: (co2Value ?? 0) < deviceSettings.greenUpperLimit
           ? Alignment.topLeft
