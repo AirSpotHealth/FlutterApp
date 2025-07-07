@@ -207,6 +207,7 @@ class _BleDeviceCommunicationNotifier extends FamilyNotifier<dynamic, String> {
           co2Value: int.parse(co2Value),
           powerMode: powerMode,
           batteryLevel: int.parse(batteryLevel),
+          isCharging: isCharging,
           alarmEnabled: alarmEnabled,
           vibrationEnabled: vibrationEnabled,
           co2History: co2History,

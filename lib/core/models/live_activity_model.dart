@@ -2,6 +2,7 @@ class LiveActivityModel {
   final int co2Value;
   final String powerMode;
   final int batteryLevel;
+  final bool isCharging;
   final bool alarmEnabled;
   final bool vibrationEnabled;
   final List<int> co2History;
@@ -14,6 +15,7 @@ class LiveActivityModel {
     required this.co2Value,
     required this.powerMode,
     required this.batteryLevel,
+    required this.isCharging,
     required this.alarmEnabled,
     required this.vibrationEnabled,
     required this.co2History,
@@ -28,6 +30,7 @@ class LiveActivityModel {
       'co2Value': co2Value,
       'powerMode': powerMode,
       'batteryLevel': batteryLevel,
+      'isCharging': isCharging,
       'alarmEnabled': alarmEnabled,
       'vibrationEnabled': vibrationEnabled,
       'co2History': co2History,

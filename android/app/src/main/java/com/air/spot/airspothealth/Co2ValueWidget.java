@@ -77,13 +77,16 @@ public class Co2ValueWidget extends AppWidgetProvider {
             // Set power mode (in place of time display)
             views.setTextViewText(R.id.power_mode, powerMode);
 
-            // Set battery level
+            // Set battery level and charging status
             int batteryLevelInt = 0;
             try {
                 batteryLevelInt = Integer.parseInt(batteryLevel);
             } catch (NumberFormatException ignored) {
             }
-            views.setTextViewText(R.id.battery_percentage, batteryLevelInt + "%");
+            
+            // Check if device is charging (already parsed above)
+            String batteryText = isCharging ? "CHG" : batteryLevelInt + "%";
+            views.setTextViewText(R.id.battery_percentage, batteryText);
 
             // Set alarm/sound mode icon based on state
             int soundModeDrawable = alarmEnabled ? R.drawable.alarm_on : R.drawable.alarm_off;

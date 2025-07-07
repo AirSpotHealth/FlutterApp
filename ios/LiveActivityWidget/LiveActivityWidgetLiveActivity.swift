@@ -18,6 +18,8 @@ struct LiveActivityWidgetAttributes: ActivityAttributes {
         var powerMode: String
         // Battery Level
         var batteryLevel: Int
+        // Is Charging
+        var isCharging: Bool
         // Alarm Enabled
         var alarmEnabled: Bool
         // Vibration Enabled
@@ -126,15 +128,15 @@ struct LiveActivityWidgetLiveActivity: Widget {
                     // Status Section
                     VStack(alignment: .trailing, spacing: 8) {
                         HStack(spacing: 12) {
-                            // Battery
-                            HStack(spacing: 4) {
-                                Image(systemName: batteryIcon(for: context.state.batteryLevel))
-                                    .foregroundColor(batteryColor(for: context.state.batteryLevel))
-                                    .font(.system(size: 14, weight: .medium))
-                                Text("\(context.state.batteryLevel)%")
-                                    .font(.system(size: 12, weight: .medium))
-                                    .foregroundColor(.secondary)
-                            }
+                                                    // Battery
+                        HStack(spacing: 4) {
+                            Image(systemName: batteryIcon(for: context.state.batteryLevel, isCharging: context.state.isCharging))
+                                .foregroundColor(batteryColor(for: context.state.batteryLevel, isCharging: context.state.isCharging))
+                                .font(.system(size: 14, weight: .medium))
+                            Text(batteryText(for: context.state.batteryLevel, isCharging: context.state.isCharging))
+                                .font(.system(size: 12, weight: .medium))
+                                .foregroundColor(.secondary)
+                        }
                             
                             // Power Mode
                             HStack(spacing: 4) {
@@ -218,10 +220,10 @@ struct LiveActivityWidgetLiveActivity: Widget {
                 DynamicIslandExpandedRegion(.trailing) {
                     VStack(alignment: .trailing, spacing: 6) {
                         HStack(spacing: 4) {
-                            Image(systemName: batteryIcon(for: context.state.batteryLevel))
-                                .foregroundColor(batteryColor(for: context.state.batteryLevel))
+                            Image(systemName: batteryIcon(for: context.state.batteryLevel, isCharging: context.state.isCharging))
+                                .foregroundColor(batteryColor(for: context.state.batteryLevel, isCharging: context.state.isCharging))
                                 .font(.system(size: 14, weight: .medium))
-                            Text("\(context.state.batteryLevel)%")
+                            Text(batteryText(for: context.state.batteryLevel, isCharging: context.state.isCharging))
                                 .font(.system(size: 12, weight: .medium))
                                 .foregroundColor(.secondary)
                         }
@@ -275,10 +277,10 @@ struct LiveActivityWidgetLiveActivity: Widget {
                 }
             } compactTrailing: {
                 HStack(spacing: 4) {
-                    Image(systemName: batteryIcon(for: context.state.batteryLevel))
-                        .foregroundColor(batteryColor(for: context.state.batteryLevel))
+                    Image(systemName: batteryIcon(for: context.state.batteryLevel, isCharging: context.state.isCharging))
+                        .foregroundColor(batteryColor(for: context.state.batteryLevel, isCharging: context.state.isCharging))
                         .font(.system(size: 12, weight: .medium))
-                    Text("\(context.state.batteryLevel)%")
+                    Text(batteryText(for: context.state.batteryLevel, isCharging: context.state.isCharging))
                         .font(.system(size: 12, weight: .medium))
                         .foregroundColor(.secondary)
                 }
@@ -301,7 +303,11 @@ struct LiveActivityWidgetLiveActivity: Widget {
         }
     }
     
-    private func batteryColor(for level: Int) -> Color {
+    private func batteryColor(for level: Int, isCharging: Bool) -> Color {
+        if isCharging {
+            return .green // Always green when charging
+        }
+        
         switch level {
         case 0...20:
             return .red
@@ -312,18 +318,43 @@ struct LiveActivityWidgetLiveActivity: Widget {
         }
     }
     
-    private func batteryIcon(for level: Int) -> String {
-        switch level {
-        case 0...10:
-            return "battery.0percent"
-        case 11...25:
-            return "battery.25percent"
-        case 26...50:
-            return "battery.50percent"
-        case 51...75:
-            return "battery.75percent"
-        default:
-            return "battery.100percent"
+    private func batteryIcon(for level: Int, isCharging: Bool) -> String {
+        if isCharging {
+            // Use charging icons
+            switch level {
+            case 0...10:
+                return "battery.0percent.bolt"
+            case 11...25:
+                return "battery.25percent.bolt"
+            case 26...50:
+                return "battery.50percent.bolt"
+            case 51...75:
+                return "battery.75percent.bolt"
+            default:
+                return "battery.100percent.bolt"
+            }
+        } else {
+            // Use regular battery icons
+            switch level {
+            case 0...10:
+                return "battery.0percent"
+            case 11...25:
+                return "battery.25percent"
+            case 26...50:
+                return "battery.50percent"
+            case 51...75:
+                return "battery.75percent"
+            default:
+                return "battery.100percent"
+            }
+        }
+    }
+    
+    private func batteryText(for level: Int, isCharging: Bool) -> String {
+        if isCharging {
+            return "CHG"
+        } else {
+            return "\(level)%"
         }
     }
 }
@@ -336,11 +367,11 @@ extension LiveActivityWidgetAttributes {
 
 extension LiveActivityWidgetAttributes.ContentState {
     fileprivate static var sampleData: LiveActivityWidgetAttributes.ContentState {
-        LiveActivityWidgetAttributes.ContentState(co2Value: 450, powerMode: "3 Min", batteryLevel: 85, alarmEnabled: true, vibrationEnabled: true, co2History: [400, 420, 450, 480, 500], greenUpperLimit: 400, yellowUpperLimit: 800, graphMaxValue: 1600, graphMinValue: 0, lastUpdated: Date())
+        LiveActivityWidgetAttributes.ContentState(co2Value: 450, powerMode: "3 Min", batteryLevel: 85, isCharging: false, alarmEnabled: true, vibrationEnabled: true, co2History: [400, 420, 450, 480, 500], greenUpperLimit: 400, yellowUpperLimit: 800, graphMaxValue: 1600, graphMinValue: 0, lastUpdated: Date())
      }
      
      fileprivate static var lowBatteryData: LiveActivityWidgetAttributes.ContentState {
-         LiveActivityWidgetAttributes.ContentState(co2Value: 1200, powerMode: "1 Min", batteryLevel: 25, alarmEnabled: false, vibrationEnabled: true, co2History: [1000, 1100, 1200, 1250, 1300], greenUpperLimit: 1000, yellowUpperLimit: 1100, graphMaxValue: 1600, graphMinValue: 0, lastUpdated: Date())
+         LiveActivityWidgetAttributes.ContentState(co2Value: 1200, powerMode: "1 Min", batteryLevel: 25, isCharging: true, alarmEnabled: false, vibrationEnabled: true, co2History: [1000, 1100, 1200, 1250, 1300], greenUpperLimit: 1000, yellowUpperLimit: 1100, graphMaxValue: 1600, graphMinValue: 0, lastUpdated: Date())
      }
 }
 
