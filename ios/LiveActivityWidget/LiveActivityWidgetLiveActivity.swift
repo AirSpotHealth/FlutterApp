@@ -109,7 +109,7 @@ struct LiveActivityWidgetLiveActivity: Widget {
                     // CO2 Value Section
                     VStack(alignment: .leading, spacing: 4) {
                         Text("AIRSPOT")
-                            .foregroundColor(.primary)
+                            .foregroundColor(.white)
                             .font(.system(size: 16, weight: .medium))
                         
                         HStack(alignment: .bottom, spacing: 2) {
@@ -118,7 +118,7 @@ struct LiveActivityWidgetLiveActivity: Widget {
                                 .foregroundColor(co2Color(for: context.state.co2Value, green: context.state.greenUpperLimit, yellow: context.state.yellowUpperLimit))
                             Text("CO₂ ppm")
                                 .font(.system(size: 12, weight: .medium))
-                                .foregroundColor(.secondary)
+                                .foregroundColor(.white)
                                 .offset(y: -2)
                         }
                     }
@@ -135,7 +135,7 @@ struct LiveActivityWidgetLiveActivity: Widget {
                                 .font(.system(size: 14, weight: .medium))
                             Text(batteryText(for: context.state.batteryLevel, isCharging: context.state.isCharging))
                                 .font(.system(size: 12, weight: .medium))
-                                .foregroundColor(.secondary)
+                                .foregroundColor(.white)
                         }
                             
                             // Power Mode
@@ -145,7 +145,7 @@ struct LiveActivityWidgetLiveActivity: Widget {
                                     .font(.system(size: 14, weight: .medium))
                                 Text(context.state.powerMode)
                                     .font(.system(size: 12, weight: .medium))
-                                    .foregroundColor(.secondary)
+                                    .foregroundColor(.white)
                             }
                         }
                         
@@ -157,7 +157,7 @@ struct LiveActivityWidgetLiveActivity: Widget {
                                     .font(.system(size: 12, weight: .medium))
                                 Text("Alarm")
                                     .font(.system(size: 10, weight: .medium))
-                                    .foregroundColor(.secondary)
+                                    .foregroundColor(.white)
                             }
                             
                             HStack(spacing: 4) {
@@ -166,7 +166,7 @@ struct LiveActivityWidgetLiveActivity: Widget {
                                     .font(.system(size: 12, weight: .medium))
                                 Text("Vibration")
                                     .font(.system(size: 10, weight: .medium))
-                                    .foregroundColor(.secondary)
+                                    .foregroundColor(.white)
                             }
                         }
                     }
@@ -211,7 +211,7 @@ struct LiveActivityWidgetLiveActivity: Widget {
                                 .foregroundColor(co2Color(for: context.state.co2Value, green: context.state.greenUpperLimit, yellow: context.state.yellowUpperLimit))
                             Text("CO₂ ppm")
                                 .font(.system(size: 10, weight: .medium))
-                                .foregroundColor(.secondary)
+                                .foregroundColor(.white)
                                 .offset(y: -2)
                         }
                     }
@@ -225,7 +225,7 @@ struct LiveActivityWidgetLiveActivity: Widget {
                                 .font(.system(size: 14, weight: .medium))
                             Text(batteryText(for: context.state.batteryLevel, isCharging: context.state.isCharging))
                                 .font(.system(size: 12, weight: .medium))
-                                .foregroundColor(.secondary)
+                                .foregroundColor(.white)
                         }
                         
                         HStack(spacing: 4) {
@@ -234,7 +234,7 @@ struct LiveActivityWidgetLiveActivity: Widget {
                                 .font(.system(size: 12, weight: .medium))
                             Text(context.state.powerMode)
                                 .font(.system(size: 10, weight: .medium))
-                                .foregroundColor(.secondary)
+                                .foregroundColor(.white)
                         }
                     }
                 }
@@ -247,7 +247,7 @@ struct LiveActivityWidgetLiveActivity: Widget {
                                 .font(.system(size: 12, weight: .medium))
                             Text("Alarm")
                                 .font(.system(size: 10, weight: .medium))
-                                .foregroundColor(.secondary)
+                                .foregroundColor(.white)
                         }
                         
                         HStack(spacing: 6) {
@@ -256,14 +256,14 @@ struct LiveActivityWidgetLiveActivity: Widget {
                                 .font(.system(size: 12, weight: .medium))
                             Text("Vibration")
                                 .font(.system(size: 10, weight: .medium))
-                                .foregroundColor(.secondary)
+                                .foregroundColor(.white)
                         }
                         
                         Spacer()
                         
                         Text("Updated \(context.state.lastUpdated.formatted(date: .omitted, time: .shortened))")
                             .font(.system(size: 9, weight: .medium))
-                            .foregroundColor(.secondary)
+                            .foregroundColor(.white)
                     }
                 }
             } compactLeading: {
@@ -282,7 +282,7 @@ struct LiveActivityWidgetLiveActivity: Widget {
                         .font(.system(size: 12, weight: .medium))
                     Text(batteryText(for: context.state.batteryLevel, isCharging: context.state.isCharging))
                         .font(.system(size: 12, weight: .medium))
-                        .foregroundColor(.secondary)
+                        .foregroundColor(.white)
                 }
             } minimal: {
                 Text("AS")

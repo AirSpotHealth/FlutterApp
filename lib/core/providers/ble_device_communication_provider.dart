@@ -186,6 +186,21 @@ class _BleDeviceCommunicationNotifier extends FamilyNotifier<dynamic, String> {
 
       if (Platform.isIOS && deviceSettings?.showLiveActivity == true) {
         // 9. Call service to update live activity with all data
+        debugPrint('BLE: Updating live activity with CO2=$co2Value');
+
+        // For debugging: Check if user dismissed it this session
+        LiveActivityService()
+            .wasUserDismissedThisSession()
+            .then((wasDismissed) {
+          if (wasDismissed) {
+            debugPrint(
+                'BLE: Live activity was dismissed by user this session - update will be blocked');
+          } else {
+            debugPrint(
+                'BLE: Live activity proceeding with update - no user dismissal detected');
+          }
+        });
+
         LiveActivityService().updateLiveActivity(
             data: LiveActivityModel(
           co2Value: int.parse(co2Value),
@@ -202,6 +217,11 @@ class _BleDeviceCommunicationNotifier extends FamilyNotifier<dynamic, String> {
           graphMaxValue: deviceSettings?.graphMaxValue ?? 1600,
           graphMinValue: deviceSettings?.graphMinValue ?? 0,
         ));
+      } else if (Platform.isIOS && deviceSettings?.showLiveActivity == false) {
+        // If live activity is disabled, make sure to end any active activity
+        debugPrint(
+            'BLE: Live activity setting is disabled - ending any active activity');
+        LiveActivityService().endLiveActivity();
       }
     } catch (e) {
       debugPrint('BLE: Error gathering widget data: $e');

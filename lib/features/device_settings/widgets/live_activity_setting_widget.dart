@@ -1,6 +1,8 @@
+import 'package:airspothealth/core/providers/ble_device_communication_provider.dart';
 import 'package:airspothealth/core/providers/device_settings_provider.dart';
 import 'package:airspothealth/core/services/live_activity_service.dart';
 import 'package:airspothealth/core/utils/assets.dart';
+import 'package:airspothealth/core/utils/device_cmd_utils.dart';
 import 'package:airspothealth/features/device_settings/models/setting_item.dart';
 import 'package:airspothealth/features/device_settings/widgets/setting_item_widget.dart';
 import 'package:flutter/material.dart';
@@ -31,7 +33,15 @@ class LiveActivitySettingWidget extends ConsumerWidget {
                         showLiveActivity: !deviceSettings.showLiveActivity),
                   );
 
-              if (!value) {
+              if (value) {
+                // User toggled ON - start the live activity
+                // Trigger a fresh data update which will start the live activity
+                ref
+                    .read(bleDeviceCommunicationProvider(deviceId).notifier)
+                    .sendCommand(DeviceCmdUtils
+                        .getCO2()); // Get CO2 command to trigger live activity update
+              } else {
+                // User toggled OFF - end the live activity
                 LiveActivityService().endLiveActivity();
               }
             },

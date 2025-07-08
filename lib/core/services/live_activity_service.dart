@@ -23,7 +23,7 @@ class LiveActivityService {
         data.toJson(),
       );
     } on PlatformException catch (e) {
-      debugPrint("Failed to start live activity: '${e.message}'.");
+      debugPrint("Failed to update live activity: '${e.message}'.");
     }
   }
 
@@ -34,6 +34,35 @@ class LiveActivityService {
       );
     } on PlatformException catch (e) {
       debugPrint("Failed to end live activity: '${e.message}'.");
+    }
+  }
+
+  Future<bool> isLiveActivityActive() async {
+    try {
+      final bool isActive = await platform.invokeMethod('isLiveActivityActive');
+      return isActive;
+    } on PlatformException catch (e) {
+      debugPrint("Failed to check live activity status: '${e.message}'.");
+      return false;
+    }
+  }
+
+  Future<void> resetDismissalState() async {
+    try {
+      await platform.invokeMethod('resetDismissalState');
+    } on PlatformException catch (e) {
+      debugPrint("Failed to reset dismissal state: '${e.message}'.");
+    }
+  }
+
+  Future<bool> wasUserDismissedThisSession() async {
+    try {
+      final bool wasDismissed =
+          await platform.invokeMethod('wasUserDismissedThisSession');
+      return wasDismissed;
+    } on PlatformException catch (e) {
+      debugPrint("Failed to check user dismissal state: '${e.message}'.");
+      return false;
     }
   }
 }
