@@ -47,12 +47,69 @@ struct LiveActivityWidgetAttributes: ActivityAttributes {
         // Graph Range
         var graphMaxValue: Int
         var graphMinValue: Int
+        // Refresh State
+        var isRefreshing: Bool
         // Last Updated
         var lastUpdated: Date
     }
 }
 
 import Charts
+
+// CO2 Value component with blink animation
+struct Co2ValueView: View {
+    let co2Value: Int
+    let greenUpperLimit: Int
+    let yellowUpperLimit: Int
+    let isRefreshing: Bool
+    let fontSize: CGFloat
+    
+    @State private var isAnimating: Bool = false
+    
+    private func co2Color(for value: Int) -> Color {
+        if value <= greenUpperLimit {
+            return .green
+        } else if value <= yellowUpperLimit {
+            return .orange
+        } else {
+            return .red
+        }
+    }
+    
+    var body: some View {
+        Text("\(co2Value)")
+            .font(.system(size: fontSize, weight: .bold, design: .rounded))
+            .foregroundColor(co2Color(for: co2Value))
+            .opacity(isRefreshing ? (isAnimating ? 0.3 : 1.0) : 1.0)
+            .animation(
+                isRefreshing ? 
+                    .easeInOut(duration: 0.5).repeatForever(autoreverses: true) : 
+                    .easeInOut(duration: 0.2),
+                value: isAnimating
+            )
+            .onChange(of: isRefreshing) { refreshing in
+                if refreshing {
+                    startBlinkAnimation()
+                } else {
+                    stopBlinkAnimation()
+                }
+            }
+            .onAppear {
+                if isRefreshing {
+                    startBlinkAnimation()
+                }
+            }
+    }
+    
+    private func startBlinkAnimation() {
+        guard !isAnimating else { return }
+        isAnimating = true
+    }
+    
+    private func stopBlinkAnimation() {
+        isAnimating = false
+    }
+}
 
 struct Co2GraphView: View {
     let co2History: [Int]
@@ -123,8 +180,10 @@ struct CompactRefreshButton: View {
                 ZStack {
                     // Dark circular background - lighter shade for visibility
                     Circle()
+                        .strokeBorder(.white.opacity(0.8), lineWidth: 1)
                         .fill(.secondary.opacity(0.3))
                         .frame(width: size, height: size)
+                        .shadow(color: .secondary.opacity(0.2), radius: 1, x: 0, y: 0)
                     
                     // Small white circle in center - scales with button size
                     Circle()
@@ -160,9 +219,13 @@ struct LiveActivityWidgetLiveActivity: Widget {
                         }
                         
                         HStack(alignment: .bottom, spacing: 2) {
-                            Text("\(context.state.co2Value)")
-                                .font(.system(size: 24, weight: .bold, design: .rounded))
-                                .foregroundColor(co2Color(for: context.state.co2Value, green: context.state.greenUpperLimit, yellow: context.state.yellowUpperLimit))
+                            Co2ValueView(
+                                co2Value: context.state.co2Value,
+                                greenUpperLimit: context.state.greenUpperLimit,
+                                yellowUpperLimit: context.state.yellowUpperLimit,
+                                isRefreshing: context.state.isRefreshing,
+                                fontSize: 24
+                            )
                             Text("CO₂ ppm")
                                 .font(.system(size: 12, weight: .medium))
                                 .foregroundColor(.white)
@@ -173,7 +236,7 @@ struct LiveActivityWidgetLiveActivity: Widget {
                     Spacer()
                     
                     // Center refresh button
-                    CompactRefreshButton(size: 32)
+                    CompactRefreshButton(size: context.state.isRefreshing ? 32 : 36)
                     
                     Spacer()
                     
@@ -264,9 +327,13 @@ struct LiveActivityWidgetLiveActivity: Widget {
                         }
                         
                         HStack(alignment: .bottom, spacing: 2) {
-                            Text("\(context.state.co2Value)")
-                                .font(.system(size: 20, weight: .bold, design: .rounded))
-                                .foregroundColor(co2Color(for: context.state.co2Value, green: context.state.greenUpperLimit, yellow: context.state.yellowUpperLimit))
+                            Co2ValueView(
+                                co2Value: context.state.co2Value,
+                                greenUpperLimit: context.state.greenUpperLimit,
+                                yellowUpperLimit: context.state.yellowUpperLimit,
+                                isRefreshing: context.state.isRefreshing,
+                                fontSize: 20
+                            )
                             Text("CO₂ ppm")
                                 .font(.system(size: 10, weight: .medium))
                                 .foregroundColor(.white)
@@ -331,9 +398,13 @@ struct LiveActivityWidgetLiveActivity: Widget {
                     Text("AS")
                         .foregroundColor(co2Color(for: context.state.co2Value, green: context.state.greenUpperLimit, yellow: context.state.yellowUpperLimit))
                         .font(.system(size: 10, weight: .bold))
-                    Text("\(context.state.co2Value)")
-                        .font(.system(size: 12, weight: .bold, design: .rounded))
-                        .foregroundColor(co2Color(for: context.state.co2Value, green: context.state.greenUpperLimit, yellow: context.state.yellowUpperLimit))
+                    Co2ValueView(
+                        co2Value: context.state.co2Value,
+                        greenUpperLimit: context.state.greenUpperLimit,
+                        yellowUpperLimit: context.state.yellowUpperLimit,
+                        isRefreshing: context.state.isRefreshing,
+                        fontSize: 12
+                    )
                 }
             } compactTrailing: {
                 HStack(spacing: 4) {
@@ -427,11 +498,11 @@ extension LiveActivityWidgetAttributes {
 
 extension LiveActivityWidgetAttributes.ContentState {
     fileprivate static var sampleData: LiveActivityWidgetAttributes.ContentState {
-        LiveActivityWidgetAttributes.ContentState(co2Value: 450, powerMode: "3 Min", batteryLevel: 85, isCharging: false, alarmEnabled: true, vibrationEnabled: true, co2History: [400, 420, 450, 480, 500], greenUpperLimit: 400, yellowUpperLimit: 800, graphMaxValue: 1600, graphMinValue: 0, lastUpdated: Date())
+        LiveActivityWidgetAttributes.ContentState(co2Value: 450, powerMode: "3 Min", batteryLevel: 85, isCharging: false, alarmEnabled: true, vibrationEnabled: true, co2History: [400, 420, 450, 480, 500], greenUpperLimit: 400, yellowUpperLimit: 800, graphMaxValue: 1600, graphMinValue: 0, isRefreshing: false, lastUpdated: Date())
      }
      
      fileprivate static var lowBatteryData: LiveActivityWidgetAttributes.ContentState {
-         LiveActivityWidgetAttributes.ContentState(co2Value: 1200, powerMode: "1 Min", batteryLevel: 25, isCharging: true, alarmEnabled: false, vibrationEnabled: true, co2History: [1000, 1100, 1200, 1250, 1300], greenUpperLimit: 1000, yellowUpperLimit: 1100, graphMaxValue: 1600, graphMinValue: 0, lastUpdated: Date())
+         LiveActivityWidgetAttributes.ContentState(co2Value: 1200, powerMode: "1 Min", batteryLevel: 25, isCharging: true, alarmEnabled: false, vibrationEnabled: true, co2History: [1000, 1100, 1200, 1250, 1300], greenUpperLimit: 1000, yellowUpperLimit: 1100, graphMaxValue: 1600, graphMinValue: 0, isRefreshing: false, lastUpdated: Date())
      }
 }
 

@@ -55,6 +55,10 @@ import ActivityKit
         case "wasUserDismissedThisSession":
             result(liveActivityManager.wasUserDismissedThisSession())
             break
+        case "startRefreshState":
+            liveActivityManager.startRefreshState()
+            result(true)
+            break
         default:
             result(FlutterMethodNotImplemented)
         }
@@ -74,6 +78,9 @@ import ActivityKit
 
   @objc func handleRefreshNotification() {
       print("🔄 Live Activity refresh via LiveActivityIntent (iOS 17+)")
+      // Start the refresh state immediately to show blink animation
+      liveActivityManager?.startRefreshState()
+      // Also notify Flutter for any additional refresh logic
       liveActivityChannel?.invokeMethod("onRefreshRequested", arguments: nil)
   }
    

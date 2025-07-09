@@ -13,6 +13,11 @@ class LiveActivityManager {
     private var liveActivity: Activity<LiveActivityWidgetAttributes>? = nil
     private var userDismissedInCurrentSession = false
     private var activityMonitorTask: Task<Void, Never>?
+    
+    // Refresh state management
+    private var isRefreshing = false
+    private var refreshTimer: Timer?
+    private var lastValidState: [String: Any]?
        
     init() {
         // Reset dismissal state on fresh app launch
@@ -22,6 +27,7 @@ class LiveActivityManager {
     
     deinit {
         activityMonitorTask?.cancel()
+        refreshTimer?.invalidate()
     }
     
     private func startActivityMonitoring() {
@@ -51,6 +57,42 @@ class LiveActivityManager {
             liveActivity = nil
         }
     }
+    
+    private func createContentState(from data: [String: Any]?, isRefreshing: Bool = false) -> LiveActivityWidgetAttributes.ContentState {
+        guard let info = data else {
+            return LiveActivityWidgetAttributes.ContentState(
+                co2Value: 0,
+                powerMode: "3 Min",
+                batteryLevel: 0,
+                isCharging: false,
+                alarmEnabled: false,
+                vibrationEnabled: false,
+                co2History: [],
+                greenUpperLimit: 800,
+                yellowUpperLimit: 1000,
+                graphMaxValue: 1600,
+                graphMinValue: 0,
+                isRefreshing: isRefreshing,
+                lastUpdated: Date()
+            )
+        }
+        
+        return LiveActivityWidgetAttributes.ContentState(
+            co2Value: info["co2Value"] as? Int ?? 0,
+            powerMode: info["powerMode"] as? String ?? "3 Min",
+            batteryLevel: info["batteryLevel"] as? Int ?? 0,
+            isCharging: info["isCharging"] as? Bool ?? false,
+            alarmEnabled: info["alarmEnabled"] as? Bool ?? false,
+            vibrationEnabled: info["vibrationEnabled"] as? Bool ?? false,
+            co2History: info["co2History"] as? [Int] ?? [],
+            greenUpperLimit: info["greenUpperLimit"] as? Int ?? 800,
+            yellowUpperLimit: info["yellowUpperLimit"] as? Int ?? 1000,
+            graphMaxValue: info["graphMaxValue"] as? Int ?? 1600,
+            graphMinValue: info["graphMinValue"] as? Int ?? 0,
+            isRefreshing: isRefreshing,
+            lastUpdated: Date()
+        )
+    }
    
     func startLiveActivity(data: [String: Any]?) {
         // Check if user dismissed it manually this session
@@ -68,34 +110,23 @@ class LiveActivityManager {
             return
         }
         
+        // Store the data for potential refresh scenarios
+        lastValidState = data
+        
         let attributes = LiveActivityWidgetAttributes()
-        if let info = data {
-            let state = LiveActivityWidgetAttributes.ContentState(
-                co2Value: info["co2Value"] as? Int ?? 0,
-                powerMode: info["powerMode"] as? String ?? "3 Min",
-                batteryLevel: info["batteryLevel"] as? Int ?? 0,
-                isCharging: info["isCharging"] as? Bool ?? false,
-                alarmEnabled: info["alarmEnabled"] as? Bool ?? false,
-                vibrationEnabled: info["vibrationEnabled"] as? Bool ?? false,
-                co2History: info["co2History"] as? [Int] ?? [],
-                greenUpperLimit: info["greenUpperLimit"] as? Int ?? 800,
-                yellowUpperLimit: info["yellowUpperLimit"] as? Int ?? 1000,
-                graphMaxValue: info["graphMaxValue"] as? Int ?? 1600,
-                graphMinValue: info["graphMinValue"] as? Int ?? 0,
-                lastUpdated: Date()
-            )
-            Task {
-                do {
-                    liveActivity = try Activity<LiveActivityWidgetAttributes>.request(
-                        attributes: attributes,
-                        content: .init(state: state, staleDate: nil),
-                        pushType: .none
-                    )
-                    print("Live Activity started successfully")
-                } catch {
-                    print("Error starting Live Activity: \(error)")
-                    liveActivity = nil
-                }
+        let state = createContentState(from: data)
+        
+        Task {
+            do {
+                liveActivity = try Activity<LiveActivityWidgetAttributes>.request(
+                    attributes: attributes,
+                    content: .init(state: state, staleDate: nil),
+                    pushType: .none
+                )
+                print("Live Activity started successfully")
+            } catch {
+                print("Error starting Live Activity: \(error)")
+                liveActivity = nil
             }
         }
     }
@@ -116,31 +147,77 @@ class LiveActivityManager {
             startLiveActivity(data: data)
             return
         }
-
-        if let info = data {
-            let updatedState = LiveActivityWidgetAttributes.ContentState(
-                co2Value: info["co2Value"] as? Int ?? 0,
-                powerMode: info["powerMode"] as? String ?? "3 Min",
-                batteryLevel: info["batteryLevel"] as? Int ?? 0,
-                isCharging: info["isCharging"] as? Bool ?? false,
-                alarmEnabled: info["alarmEnabled"] as? Bool ?? false,
-                vibrationEnabled: info["vibrationEnabled"] as? Bool ?? false,
-                co2History: info["co2History"] as? [Int] ?? [],
-                greenUpperLimit: info["greenUpperLimit"] as? Int ?? 800,
-                yellowUpperLimit: info["yellowUpperLimit"] as? Int ?? 1000,
-                graphMaxValue: info["graphMaxValue"] as? Int ?? 1600,
-                graphMinValue: info["graphMinValue"] as? Int ?? 0,
-                lastUpdated: Date()
-            )
-            Task {
-                do {
-                    await liveActivity?.update(using: updatedState)
-                    print("Live Activity updated successfully")
-                } catch {
-                    print("Error updating Live Activity: \(error)")
-                    // If update fails, the activity might be stale, clean it up
-                    liveActivity = nil
-                }
+        
+        // Stop refresh state and timer if new data arrives
+        if isRefreshing {
+            stopRefreshState()
+        }
+        
+        // Store the new valid data
+        lastValidState = data
+        
+        let updatedState = createContentState(from: data)
+        
+        Task {
+            do {
+                await liveActivity?.update(using: updatedState)
+                print("Live Activity updated successfully")
+            } catch {
+                print("Error updating Live Activity: \(error)")
+                // If update fails, the activity might be stale, clean it up
+                liveActivity = nil
+            }
+        }
+    }
+    
+    func startRefreshState() {
+        // Only start refresh if we have an active activity and valid last state
+        guard isActivityActive(), let lastState = lastValidState, isRefreshing == false else {
+            print("Cannot start refresh: no active activity or no last valid state or already refreshing")
+            return
+        }
+        
+        print("Starting refresh state with blink animation")
+        isRefreshing = true
+        
+        // Update the live activity with refresh state
+        let refreshState = createContentState(from: lastState, isRefreshing: true)
+        
+        Task {
+            do {
+                await liveActivity?.update(using: refreshState)
+                print("Live Activity updated with refresh state")
+            } catch {
+                print("Error updating Live Activity with refresh state: \(error)")
+            }
+        }
+        
+        // Start 6-second timeout timer
+        refreshTimer?.invalidate()
+        refreshTimer = Timer.scheduledTimer(withTimeInterval: 6.0, repeats: false) { [weak self] _ in
+            self?.stopRefreshState()
+        }
+    }
+    
+    private func stopRefreshState() {
+        guard isRefreshing else { return }
+        
+        print("Stopping refresh state")
+        isRefreshing = false
+        refreshTimer?.invalidate()
+        refreshTimer = nil
+        
+        // Update the live activity to stop the refresh state
+        guard let lastState = lastValidState else { return }
+        
+        let normalState = createContentState(from: lastState, isRefreshing: false)
+        
+        Task {
+            do {
+                await liveActivity?.update(using: normalState)
+                print("Live Activity updated to normal state after refresh")
+            } catch {
+                print("Error updating Live Activity to normal state: \(error)")
             }
         }
     }
@@ -149,6 +226,9 @@ class LiveActivityManager {
         // This is app-initiated dismissal (user toggled setting OFF)
         // Reset the user dismissal flag since this is intentional
         userDismissedInCurrentSession = false
+        
+        // Clean up refresh state
+        stopRefreshState()
         
         if !isActivityActive() {
             print("No active Live Activity to end")
