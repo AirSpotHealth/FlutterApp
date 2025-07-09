@@ -1,10 +1,11 @@
 import 'dart:async';
 import 'dart:convert';
 
-import 'package:airspothealth/core/services/ble_communicator_service.dart';
+import 'package:airspothealth/core/services/ble_device_communicator.dart';
 import 'package:airspothealth/core/utils/constants.dart';
 import 'package:airspothealth/core/utils/device_cmd_utils.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_blue_plus/flutter_blue_plus.dart';
 import 'package:home_widget/home_widget.dart';
 
 /// Data class for widget update parameters
@@ -89,11 +90,39 @@ Future<void> _backgroundCallback(Uri? uri) async {
     debugPrint('Device ID from widget refresh: $deviceId');
 
     if (deviceId != null && deviceId.isNotEmpty) {
-      BleCommunicatorService.instance
-          .communicator(deviceId)
-          .sendCommand(DeviceCmdUtils.getCO2());
+      try {
+        // Import flutter_blue_plus at the top of file if not already imported
+        // Check if device is actually connected using FlutterBluePlus directly
+        final connectedDevices = FlutterBluePlus.connectedDevices;
+        final targetDevice = connectedDevices.firstWhere(
+          (device) => device.remoteId.str == deviceId,
+          orElse: () =>
+              throw Exception('Device not found in connected devices'),
+        );
 
-      debugPrint('Refresh command sent to device: $deviceId');
+        debugPrint(
+            'Found connected device: ${targetDevice.advName} (${targetDevice.remoteId})');
+
+        // Create a fresh communicator and send command directly
+        final communicator = BleDeviceCommunicator(deviceId: deviceId);
+        await communicator.initialize();
+
+        final success =
+            await communicator.sendCommand(DeviceCmdUtils.refreshCO2());
+
+        if (success) {
+          debugPrint('Widget refresh command sent successfully to $deviceId');
+        } else {
+          debugPrint('Failed to send widget refresh command to $deviceId');
+        }
+
+        communicator.dispose();
+      } catch (e) {
+        debugPrint('Error in widget refresh: $e');
+        // Fallback: Try with the service instance approach anyway
+        debugPrint('Attempting fallback approach...');
+        HomeWidgetService.instance._triggerDeviceRefresh(deviceId);
+      }
     } else {
       debugPrint('No device ID provided for refresh action');
     }
@@ -110,9 +139,42 @@ class HomeWidgetService {
 
   static const String _widgetDataKey = 'widget_data_json';
 
+  // Map of device callbacks for widget refresh requests (similar to Live Activity service)
+  final Map<String, VoidCallback> _deviceRefreshCallbacks = {};
+
   Future<void> initialize() async {
     await HomeWidget.setAppGroupId(Constants.appGroupId);
     HomeWidget.registerInteractivityCallback(_backgroundCallback);
+  }
+
+  /// Set the callback for widget refresh requests for a specific device
+  void setDeviceRefreshCallback(String deviceId, VoidCallback callback) {
+    _deviceRefreshCallbacks[deviceId] = callback;
+    debugPrint('Widget refresh callback set for device: $deviceId');
+  }
+
+  /// Clear the refresh callback for a specific device
+  void clearDeviceRefreshCallback(String deviceId) {
+    _deviceRefreshCallbacks.remove(deviceId);
+    debugPrint('Widget refresh callback cleared for device: $deviceId');
+  }
+
+  /// Internal method to trigger device refresh from background callback
+  void _triggerDeviceRefresh(String deviceId) {
+    if (_deviceRefreshCallbacks.containsKey(deviceId)) {
+      debugPrint('Executing widget refresh callback for device: $deviceId');
+      _deviceRefreshCallbacks[deviceId]?.call();
+    } else {
+      debugPrint('No widget refresh callback found for device: $deviceId');
+      // Fallback: try all registered callbacks
+      if (_deviceRefreshCallbacks.isNotEmpty) {
+        debugPrint(
+            'Triggering all registered widget refresh callbacks (${_deviceRefreshCallbacks.length} devices)');
+        for (final callback in _deviceRefreshCallbacks.values) {
+          callback.call();
+        }
+      }
+    }
   }
 
   /// Top-level function to update the home widget with actual values.

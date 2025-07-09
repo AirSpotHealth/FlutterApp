@@ -57,13 +57,23 @@ class _BleDeviceCommunicationNotifier extends FamilyNotifier<dynamic, String> {
     _notifySubscription =
         _communicator.dataStream.listen(_handleNotificationData);
 
-    // Set up Live Activity refresh callback
-    _setupLiveActivityRefreshCallback();
+    if (Platform.isIOS) {
+      _setupLiveActivityRefreshCallback();
+    }
+
+    if (Platform.isAndroid) {
+      _setupWidgetRefreshCallback();
+    }
 
     ref.onDispose(() {
       _notifySubscription?.cancel();
-      // Clear refresh callback when this provider is disposed
-      LiveActivityService().clearDeviceRefreshCallback(deviceId);
+      // Clear refresh callbacks when this provider is disposed
+      if (Platform.isIOS) {
+        LiveActivityService().clearDeviceRefreshCallback(deviceId);
+      }
+      if (Platform.isAndroid) {
+        HomeWidgetService.instance.clearDeviceRefreshCallback(deviceId);
+      }
     });
     return lastValue;
   }
@@ -78,6 +88,32 @@ class _BleDeviceCommunicationNotifier extends FamilyNotifier<dynamic, String> {
   void _handleLiveActivityRefresh() {
     // Request fresh CO2 data from the device
     debugPrint('Requesting fresh CO2 data for Live Activity refresh');
+
+    if (device == null || device!.isConnected == false) {
+      debugPrint('Device not connected, cannot refresh CO2 data');
+      return;
+    }
+
+    // Send CO2 request command to get fresh data
+    sendCommand(DeviceCmdUtils.refreshCO2()).then((success) {
+      if (success) {
+        debugPrint('CO2 refresh command sent successfully');
+      } else {
+        debugPrint('Failed to send CO2 refresh command');
+      }
+    });
+  }
+
+  void _setupWidgetRefreshCallback() {
+    HomeWidgetService.instance.setDeviceRefreshCallback(deviceId, () {
+      debugPrint('Widget refresh triggered for device: $deviceId');
+      _handleWidgetRefresh();
+    });
+  }
+
+  void _handleWidgetRefresh() {
+    // Request fresh CO2 data from the device
+    debugPrint('Requesting fresh CO2 data for Widget refresh');
 
     if (device == null || device!.isConnected == false) {
       debugPrint('Device not connected, cannot refresh CO2 data');
