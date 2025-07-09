@@ -6,6 +6,7 @@ import ActivityKit
 @objc class AppDelegate: FlutterAppDelegate {
   let channelName : String = "liveActivityChannel"
   var liveActivityManager: LiveActivityManager?
+  var liveActivityChannel: FlutterMethodChannel?
 
   override func application(
     _ application: UIApplication,
@@ -14,9 +15,18 @@ import ActivityKit
 
     // Live Activity Channel
     let controller : FlutterViewController = window?.rootViewController as! FlutterViewController
-    let liveActivityChannel = FlutterMethodChannel(name: channelName, binaryMessenger: controller.binaryMessenger) 
+    liveActivityChannel = FlutterMethodChannel(name: channelName, binaryMessenger: controller.binaryMessenger) 
     liveActivityManager = LiveActivityManager()
-    liveActivityChannel.setMethodCallHandler { [weak self] (call: FlutterMethodCall, result: @escaping FlutterResult) in
+    
+    // Set up notification listener for iOS 17+ LiveActivityIntent refresh requests
+    NotificationCenter.default.addObserver(
+        self,
+        selector: #selector(handleRefreshNotification),
+        name: Notification.Name("RefreshDataRequested"),
+        object: nil
+    )
+    
+    liveActivityChannel?.setMethodCallHandler { [weak self] (call: FlutterMethodCall, result: @escaping FlutterResult) in
         guard let liveActivityManager = self?.liveActivityManager else {
             result(FlutterError(code: "MANAGER_NOT_INITIALIZED", message: "LiveActivityManager not initialized", details: nil))
             return
@@ -47,17 +57,27 @@ import ActivityKit
             break
         default:
             result(FlutterMethodNotImplemented)
-        }}
+        }
+    }
       
-        GeneratedPluginRegistrant.register(with: self)
-        return super.application(application, didFinishLaunchingWithOptions: launchOptions)
-    }
+    GeneratedPluginRegistrant.register(with: self)
+    return super.application(application, didFinishLaunchingWithOptions: launchOptions)
+  }
     
-    // Reset dismissal state when app comes to foreground
-    override func applicationWillEnterForeground(_ application: UIApplication) {
-        super.applicationWillEnterForeground(application)
-        // Reset dismissal state when app comes back to foreground
-        // This allows live activity to start again after app was backgrounded/closed
-        liveActivityManager?.resetDismissalState()
-    }
+  // Reset dismissal state when app comes to foreground
+  override func applicationWillEnterForeground(_ application: UIApplication) {
+      super.applicationWillEnterForeground(application)
+      // Reset dismissal state when app comes back to foreground
+      // This allows live activity to start again after app was backgrounded/closed
+      liveActivityManager?.resetDismissalState()
+  }
+
+  @objc func handleRefreshNotification() {
+      print("🔄 Live Activity refresh via LiveActivityIntent (iOS 17+)")
+      liveActivityChannel?.invokeMethod("onRefreshRequested", arguments: nil)
+  }
+   
+   deinit {
+       NotificationCenter.default.removeObserver(self)
+   }
 }

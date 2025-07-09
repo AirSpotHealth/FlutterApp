@@ -9,6 +9,21 @@ import ActivityKit
 import WidgetKit
 import SwiftUI
 import Charts
+import AppIntents
+
+// LiveActivityIntent for Live Activity buttons (iOS 17+ only)
+@available(iOS 17.0, *)
+struct RefreshDataIntent: LiveActivityIntent {
+    static var title: LocalizedStringResource = "Refresh CO2 Data"
+    static var description = IntentDescription("Refreshes the current CO2 reading from the device")
+    
+    func perform() async throws -> some IntentResult {
+        print("Live Activity refresh via LiveActivityIntent (iOS 17+)")
+        // Send notification to main app to refresh data
+        NotificationCenter.default.post(name: Notification.Name("RefreshDataRequested"), object: nil)
+        return .result()
+    }
+}
 
 struct LiveActivityWidgetAttributes: ActivityAttributes {
     public struct ContentState: Codable, Hashable {
@@ -98,6 +113,32 @@ struct Co2GraphView: View {
     }
 }
 
+// Refresh button with configurable size (iOS 17+ only)
+struct CompactRefreshButton: View {
+    let size: CGFloat
+    
+    var body: some View {
+        if #available(iOS 17.0, *) {
+            Button(intent: RefreshDataIntent()) {
+                ZStack {
+                    // Dark circular background - lighter shade for visibility
+                    Circle()
+                        .fill(.secondary.opacity(0.3))
+                        .frame(width: size, height: size)
+                    
+                    // Small white circle in center - scales with button size
+                    Circle()
+                        .fill(.white)
+                        .frame(width: size * 0.2, height: size * 0.2)
+                }
+            }
+            .buttonStyle(.plain)
+        } else {
+            // No refresh button on iOS 16.x - LiveActivityIntent not available
+            EmptyView()
+        }
+    }
+}
 
 struct LiveActivityWidgetLiveActivity: Widget {
     var body: some WidgetConfiguration {
@@ -105,12 +146,18 @@ struct LiveActivityWidgetLiveActivity: Widget {
             // Lock screen/banner UI goes here
             VStack(spacing: 16) {
                 // Top section with CO2 value and status
-                HStack(spacing: 16) {
-                    // CO2 Value Section
+                HStack {
+                    // CO2 Value Section - Natural width
                     VStack(alignment: .leading, spacing: 4) {
-                        Text("AIRSPOT")
-                            .foregroundColor(.white)
-                            .font(.system(size: 16, weight: .medium))
+                        // Updated logo text with different font weights
+                        HStack(spacing: 0) {
+                            Text("AIR")
+                                .foregroundColor(.white)
+                                .font(.system(size: 16, weight: .semibold))
+                            Text("SPOT")
+                                .foregroundColor(.white)
+                                .font(.system(size: 16, weight: .light))
+                        }
                         
                         HStack(alignment: .bottom, spacing: 2) {
                             Text("\(context.state.co2Value)")
@@ -125,21 +172,26 @@ struct LiveActivityWidgetLiveActivity: Widget {
                     
                     Spacer()
                     
-                    // Status Section
+                    // Center refresh button
+                    CompactRefreshButton(size: 32)
+                    
+                    Spacer()
+                    
+                    // Status Section - Natural width
                     VStack(alignment: .trailing, spacing: 8) {
-                        HStack(spacing: 12) {
-                                                    // Battery
-                        HStack(spacing: 4) {
-                            Image(systemName: batteryIcon(for: context.state.batteryLevel, isCharging: context.state.isCharging))
-                                .foregroundColor(batteryColor(for: context.state.batteryLevel, isCharging: context.state.isCharging))
-                                .font(.system(size: 14, weight: .medium))
-                            Text(batteryText(for: context.state.batteryLevel, isCharging: context.state.isCharging))
-                                .font(.system(size: 12, weight: .medium))
-                                .foregroundColor(.white)
-                        }
+                        HStack(spacing: 10) {
+                            // Battery
+                            HStack(spacing: 3) {
+                                Image(systemName: batteryIcon(for: context.state.batteryLevel, isCharging: context.state.isCharging))
+                                    .foregroundColor(batteryColor(for: context.state.batteryLevel, isCharging: context.state.isCharging))
+                                    .font(.system(size: 14, weight: .medium))
+                                Text(batteryText(for: context.state.batteryLevel, isCharging: context.state.isCharging))
+                                    .font(.system(size: 12, weight: .medium))
+                                    .foregroundColor(.white)
+                            }
                             
                             // Power Mode
-                            HStack(spacing: 4) {
+                            HStack(spacing: 3) {
                                 Image(systemName: "timer")
                                     .foregroundColor(.blue)
                                     .font(.system(size: 14, weight: .medium))
@@ -150,8 +202,8 @@ struct LiveActivityWidgetLiveActivity: Widget {
                         }
                         
                         // Alarm & Vibration Status
-                        HStack(spacing: 12) {
-                            HStack(spacing: 4) {
+                        HStack(spacing: 10) {
+                            HStack(spacing: 3) {
                                 Image(systemName: context.state.alarmEnabled ? "bell.fill" : "bell.slash.fill")
                                     .foregroundColor(context.state.alarmEnabled ? .blue : .gray)
                                     .font(.system(size: 12, weight: .medium))
@@ -160,7 +212,7 @@ struct LiveActivityWidgetLiveActivity: Widget {
                                     .foregroundColor(.white)
                             }
                             
-                            HStack(spacing: 4) {
+                            HStack(spacing: 3) {
                                 Image(systemName: context.state.vibrationEnabled ? "iphone.radiowaves.left.and.right" : "iphone.slash")
                                     .foregroundColor(context.state.vibrationEnabled ? .blue : .gray)
                                     .font(.system(size: 12, weight: .medium))
@@ -183,7 +235,7 @@ struct LiveActivityWidgetLiveActivity: Widget {
                     )
                 }
             }
-            .padding(.horizontal, 20)
+            .padding(.horizontal, 16)
             .padding(.vertical, 16)
             .background(
                 RoundedRectangle(cornerRadius: 16)
@@ -201,9 +253,15 @@ struct LiveActivityWidgetLiveActivity: Widget {
                 // Expanded UI goes here
                 DynamicIslandExpandedRegion(.leading) {
                     VStack(alignment: .leading, spacing: 4) {
-                        Text("AIRSPOT")
-                            .foregroundColor(.primary)
-                            .font(.system(size: 16, weight: .medium))
+                        // Updated logo text for Dynamic Island
+                        HStack(spacing: 0) {
+                            Text("AIR")
+                                .foregroundColor(.primary)
+                                .font(.system(size: 16, weight: .semibold))
+                            Text("SPOT")
+                                .foregroundColor(.primary)
+                                .font(.system(size: 16, weight: .light))
+                        }
                         
                         HStack(alignment: .bottom, spacing: 2) {
                             Text("\(context.state.co2Value)")
@@ -219,6 +277,8 @@ struct LiveActivityWidgetLiveActivity: Widget {
                 
                 DynamicIslandExpandedRegion(.trailing) {
                     VStack(alignment: .trailing, spacing: 6) {
+                        CompactRefreshButton(size: 24)
+                        
                         HStack(spacing: 4) {
                             Image(systemName: batteryIcon(for: context.state.batteryLevel, isCharging: context.state.isCharging))
                                 .foregroundColor(batteryColor(for: context.state.batteryLevel, isCharging: context.state.isCharging))

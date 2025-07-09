@@ -57,10 +57,41 @@ class _BleDeviceCommunicationNotifier extends FamilyNotifier<dynamic, String> {
     _notifySubscription =
         _communicator.dataStream.listen(_handleNotificationData);
 
+    // Set up Live Activity refresh callback
+    _setupLiveActivityRefreshCallback();
+
     ref.onDispose(() {
       _notifySubscription?.cancel();
+      // Clear refresh callback when this provider is disposed
+      LiveActivityService().clearDeviceRefreshCallback(deviceId);
     });
     return lastValue;
+  }
+
+  void _setupLiveActivityRefreshCallback() {
+    LiveActivityService().setDeviceRefreshCallback(deviceId, () {
+      debugPrint('Live Activity refresh triggered for device: $deviceId');
+      _handleLiveActivityRefresh();
+    });
+  }
+
+  void _handleLiveActivityRefresh() {
+    // Request fresh CO2 data from the device
+    debugPrint('Requesting fresh CO2 data for Live Activity refresh');
+
+    if (device == null || device!.isConnected == false) {
+      debugPrint('Device not connected, cannot refresh CO2 data');
+      return;
+    }
+
+    // Send CO2 request command to get fresh data
+    sendCommand(DeviceCmdUtils.refreshCO2()).then((success) {
+      if (success) {
+        debugPrint('CO2 refresh command sent successfully');
+      } else {
+        debugPrint('Failed to send CO2 refresh command');
+      }
+    });
   }
 
   dynamic _getLastStoredValue(String deviceId) {
@@ -202,21 +233,22 @@ class _BleDeviceCommunicationNotifier extends FamilyNotifier<dynamic, String> {
         });
 
         LiveActivityService().updateLiveActivity(
+            deviceId: deviceId,
             data: LiveActivityModel(
-          co2Value: int.parse(co2Value),
-          powerMode: powerMode,
-          batteryLevel: int.parse(batteryLevel),
-          isCharging: isCharging,
-          alarmEnabled: alarmEnabled,
-          vibrationEnabled: vibrationEnabled,
-          co2History: co2History,
-          greenUpperLimit: deviceSettings?.thresholds.greenUpperLimit ??
-              Constants.defaultGreenUpperLimit,
-          yellowUpperLimit: deviceSettings?.thresholds.yellowUpperLimit ??
-              Constants.defaultYellowUpperLimit,
-          graphMaxValue: deviceSettings?.graphMaxValue ?? 1600,
-          graphMinValue: deviceSettings?.graphMinValue ?? 0,
-        ));
+              co2Value: int.parse(co2Value),
+              powerMode: powerMode,
+              batteryLevel: int.parse(batteryLevel),
+              isCharging: isCharging,
+              alarmEnabled: alarmEnabled,
+              vibrationEnabled: vibrationEnabled,
+              co2History: co2History,
+              greenUpperLimit: deviceSettings?.thresholds.greenUpperLimit ??
+                  Constants.defaultGreenUpperLimit,
+              yellowUpperLimit: deviceSettings?.thresholds.yellowUpperLimit ??
+                  Constants.defaultYellowUpperLimit,
+              graphMaxValue: deviceSettings?.graphMaxValue ?? 1600,
+              graphMinValue: deviceSettings?.graphMinValue ?? 0,
+            ));
       } else if (Platform.isIOS && deviceSettings?.showLiveActivity == false) {
         // If live activity is disabled, make sure to end any active activity
         debugPrint(
