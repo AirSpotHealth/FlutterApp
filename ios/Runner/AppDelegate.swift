@@ -25,6 +25,14 @@ import ActivityKit
         name: Notification.Name("RefreshDataRequested"),
         object: nil
     )
+
+    // Setup notification listener for map click
+    NotificationCenter.default.addObserver(
+        self,
+        selector: #selector(handleMapClick),
+        name: Notification.Name("MapClicked"),
+        object: nil
+    )
     
     liveActivityChannel?.setMethodCallHandler { [weak self] (call: FlutterMethodCall, result: @escaping FlutterResult) in
         guard let liveActivityManager = self?.liveActivityManager else {
@@ -82,6 +90,12 @@ import ActivityKit
       liveActivityManager?.startRefreshState()
       // Also notify Flutter for any additional refresh logic
       liveActivityChannel?.invokeMethod("onRefreshRequested", arguments: nil)
+  }
+
+  @objc func handleMapClick() {
+      print("🔄 Map clicked")
+      // Open the map in the browser
+      UIApplication.shared.open(URL(string: "https://airspot.ushahidi.io/")!)
   }
    
    deinit {

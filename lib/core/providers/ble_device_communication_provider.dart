@@ -271,6 +271,7 @@ class _BleDeviceCommunicationNotifier extends FamilyNotifier<dynamic, String> {
         LiveActivityService().updateLiveActivity(
             deviceId: deviceId,
             data: LiveActivityModel(
+              deviceId: deviceId,
               co2Value: int.parse(co2Value),
               powerMode: powerMode,
               batteryLevel: int.parse(batteryLevel),

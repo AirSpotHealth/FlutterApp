@@ -6,27 +6,51 @@
 //
 
 import ActivityKit
-import WidgetKit
-import SwiftUI
-import Charts
 import AppIntents
+import Charts
+import SwiftUI
+import WidgetKit
 
 // LiveActivityIntent for Live Activity buttons (iOS 17+ only)
 @available(iOS 17.0, *)
 struct RefreshDataIntent: LiveActivityIntent {
     static var title: LocalizedStringResource = "Refresh CO2 Data"
-    static var description = IntentDescription("Refreshes the current CO2 reading from the device")
-    
+    static var description = IntentDescription(
+        "Refreshes the current CO2 reading from the device"
+    )
+
     func perform() async throws -> some IntentResult {
         print("Live Activity refresh via LiveActivityIntent (iOS 17+)")
         // Send notification to main app to refresh data
-        NotificationCenter.default.post(name: Notification.Name("RefreshDataRequested"), object: nil)
+        NotificationCenter.default.post(
+            name: Notification.Name("RefreshDataRequested"),
+            object: nil
+        )
+        return .result()
+    }
+}
+
+// Map Intent for Map click (iOS 17+ only)
+@available(iOS 17.0, *)
+struct MapIntent: LiveActivityIntent {
+    static var title: LocalizedStringResource = "Open Map"
+    static var description = IntentDescription("Opens the map in the browser")
+
+    func perform() async throws -> some IntentResult {
+        print("Live Activity map via LiveActivityIntent (iOS 17+)")
+        // Send notification to main app to open map
+        NotificationCenter.default.post(
+            name: Notification.Name("MapClicked"),
+            object: nil
+        )
         return .result()
     }
 }
 
 struct LiveActivityWidgetAttributes: ActivityAttributes {
     public struct ContentState: Codable, Hashable {
+        // Device ID
+        var deviceId: String
         // CO2 Value
         var co2Value: Int
         // Power Mode
@@ -54,8 +78,6 @@ struct LiveActivityWidgetAttributes: ActivityAttributes {
     }
 }
 
-import Charts
-
 // CO2 Value component with blink animation
 struct Co2ValueView: View {
     let co2Value: Int
@@ -63,9 +85,9 @@ struct Co2ValueView: View {
     let yellowUpperLimit: Int
     let isRefreshing: Bool
     let fontSize: CGFloat
-    
+
     @State private var isAnimating: Bool = false
-    
+
     private func co2Color(for value: Int) -> Color {
         if value <= greenUpperLimit {
             return .green
@@ -75,16 +97,17 @@ struct Co2ValueView: View {
             return .red
         }
     }
-    
+
     var body: some View {
         Text("\(co2Value)")
             .font(.system(size: fontSize, weight: .bold, design: .rounded))
             .foregroundColor(co2Color(for: co2Value))
             .opacity(isRefreshing ? (isAnimating ? 0.3 : 1.0) : 1.0)
             .animation(
-                isRefreshing ? 
-                    .easeInOut(duration: 0.5).repeatForever(autoreverses: true) : 
-                    .easeInOut(duration: 0.2),
+                isRefreshing
+                    ? .easeInOut(duration: 0.5).repeatForever(
+                        autoreverses: true
+                    ) : .easeInOut(duration: 0.2),
                 value: isAnimating
             )
             .onChange(of: isRefreshing) { refreshing in
@@ -100,12 +123,12 @@ struct Co2ValueView: View {
                 }
             }
     }
-    
+
     private func startBlinkAnimation() {
         guard !isAnimating else { return }
         isAnimating = true
     }
-    
+
     private func stopBlinkAnimation() {
         isAnimating = false
     }
@@ -127,7 +150,7 @@ struct Co2GraphView: View {
             return .red
         }
     }
-    
+
     private func normalizedHeight(for value: Int) -> CGFloat {
         let range = graphMaxValue - graphMinValue
         let normalizedValue = max(0, min(value - graphMinValue, range))
@@ -139,14 +162,14 @@ struct Co2GraphView: View {
             ForEach(0..<co2History.count, id: \.self) { index in
                 let value = co2History[index]
                 let heightRatio = normalizedHeight(for: value)
-                
+
                 GeometryReader { geometry in
                     let maxHeight = geometry.size.height
                     let barHeight = maxHeight * heightRatio
-                    
+
                     VStack(spacing: 0) {
                         Spacer()
-                        
+
                         // Colored bar representing the actual value
                         RoundedRectangle(cornerRadius: 1)
                             .fill(co2Color(for: value))
@@ -173,7 +196,7 @@ struct Co2GraphView: View {
 // Refresh button with configurable size (iOS 17+ only)
 struct CompactRefreshButton: View {
     let size: CGFloat
-    
+
     var body: some View {
         if #available(iOS 17.0, *) {
             Button(intent: RefreshDataIntent()) {
@@ -183,8 +206,13 @@ struct CompactRefreshButton: View {
                         .strokeBorder(.white.opacity(0.8), lineWidth: 1)
                         .fill(.secondary.opacity(0.3))
                         .frame(width: size, height: size)
-                        .shadow(color: .secondary.opacity(0.2), radius: 1, x: 0, y: 0)
-                    
+                        .shadow(
+                            color: .secondary.opacity(0.2),
+                            radius: 1,
+                            x: 0,
+                            y: 0
+                        )
+
                     // Small white circle in center - scales with button size
                     Circle()
                         .fill(.white)
@@ -201,92 +229,151 @@ struct CompactRefreshButton: View {
 
 struct LiveActivityWidgetLiveActivity: Widget {
     var body: some WidgetConfiguration {
-        ActivityConfiguration(for: LiveActivityWidgetAttributes.self) { context in
+        ActivityConfiguration(for: LiveActivityWidgetAttributes.self) {
+            context in
             // Lock screen/banner UI goes here
             VStack(spacing: 16) {
                 // Top section with CO2 value and status
                 HStack {
+                    if #available(iOS 17.0, *) {
+                        // Map Icon (left)
+                        Button(intent: MapIntent()) {
+                            Image("ic_map")
+                                .resizable()
+                                .aspectRatio(contentMode: .fit)
+                                .frame(width: 28, height: 28)
+                        }
+                        .buttonStyle(.plain)
+                    }
+
                     // CO2 Value Section - Natural width
-                    VStack(alignment: .leading, spacing: 4) {
+                    VStack(alignment: .center, spacing: 2) {
                         // Updated logo text with different font weights
                         HStack(spacing: 0) {
                             Text("AIR")
                                 .foregroundColor(.white)
-                                .font(.system(size: 16, weight: .semibold))
+                                .font(.system(size: 14, weight: .semibold))
                             Text("SPOT")
                                 .foregroundColor(.white)
-                                .font(.system(size: 16, weight: .light))
+                                .font(.system(size: 14, weight: .light))
                         }
-                        
                         HStack(alignment: .bottom, spacing: 2) {
                             Co2ValueView(
                                 co2Value: context.state.co2Value,
                                 greenUpperLimit: context.state.greenUpperLimit,
-                                yellowUpperLimit: context.state.yellowUpperLimit,
+                                yellowUpperLimit: context.state
+                                    .yellowUpperLimit,
                                 isRefreshing: context.state.isRefreshing,
                                 fontSize: 24
                             )
                             Text("CO₂ ppm")
-                                .font(.system(size: 12, weight: .medium))
+                                .font(.system(size: 10, weight: .medium))
                                 .foregroundColor(.white)
-                                .offset(y: -2)
+                                .offset(y: -4)
                         }
-                    }
-                    
+                    }.padding(.leading, 4)
+
                     Spacer()
-                    
+
                     // Center refresh button
-                    CompactRefreshButton(size: context.state.isRefreshing ? 32 : 36)
-                    
+                    CompactRefreshButton(
+                        size: context.state.isRefreshing ? 32 : 36
+                    )
+
                     Spacer()
-                    
-                    // Status Section - Natural width
-                    VStack(alignment: .trailing, spacing: 8) {
-                        HStack(spacing: 10) {
-                            // Battery
-                            HStack(spacing: 3) {
-                                Image(systemName: batteryIcon(for: context.state.batteryLevel, isCharging: context.state.isCharging))
-                                    .foregroundColor(batteryColor(for: context.state.batteryLevel, isCharging: context.state.isCharging))
+
+                    HStack {
+
+                        // Status Section - Equal width rows
+                        VStack(alignment: .trailing, spacing: 8) {
+                            HStack(alignment: .top, spacing: 6) {
+                                // Battery
+                                HStack(spacing: 3) {
+                                    Image(
+                                        systemName: batteryIcon(
+                                            for: context.state.batteryLevel,
+                                            isCharging: context.state.isCharging
+                                        )
+                                    )
+                                    .foregroundColor(
+                                        batteryColor(
+                                            for: context.state.batteryLevel,
+                                            isCharging: context.state.isCharging
+                                        )
+                                    )
                                     .font(.system(size: 14, weight: .medium))
-                                Text(batteryText(for: context.state.batteryLevel, isCharging: context.state.isCharging))
-                                    .font(.system(size: 12, weight: .medium))
-                                    .foregroundColor(.white)
-                            }
-                            
-                            // Power Mode
-                            HStack(spacing: 3) {
-                                Image(systemName: "timer")
-                                    .foregroundColor(.blue)
-                                    .font(.system(size: 14, weight: .medium))
-                                Text(context.state.powerMode)
-                                    .font(.system(size: 12, weight: .medium))
-                                    .foregroundColor(.white)
-                            }
-                        }
-                        
-                        // Alarm & Vibration Status
-                        HStack(spacing: 10) {
-                            HStack(spacing: 3) {
-                                Image(systemName: context.state.alarmEnabled ? "bell.fill" : "bell.slash.fill")
-                                    .foregroundColor(context.state.alarmEnabled ? .blue : .gray)
-                                    .font(.system(size: 12, weight: .medium))
-                                Text("Alarm")
+                                    Text(
+                                        batteryText(
+                                            for: context.state.batteryLevel,
+                                            isCharging: context.state.isCharging
+                                        )
+                                    )
                                     .font(.system(size: 10, weight: .medium))
                                     .foregroundColor(.white)
+                                }
+                                // Alarm Icon
+                                Image(
+                                    systemName: context.state.alarmEnabled
+                                        ? "bell.fill" : "bell.slash.fill"
+                                )
+                                .foregroundColor(
+                                    context.state.alarmEnabled ? .blue : .gray
+                                )
+                                .font(.system(size: 12, weight: .medium))
+
+                                Spacer()
                             }
-                            
-                            HStack(spacing: 3) {
-                                Image(systemName: context.state.vibrationEnabled ? "iphone.radiowaves.left.and.right" : "iphone.slash")
-                                    .foregroundColor(context.state.vibrationEnabled ? .blue : .gray)
-                                    .font(.system(size: 12, weight: .medium))
-                                Text("Vibration")
-                                    .font(.system(size: 10, weight: .medium))
-                                    .foregroundColor(.white)
+
+                            // Alarm & Vibration Status
+                            HStack(alignment: .top, spacing: 6) {
+                                // Power Mode
+                                HStack(spacing: 3) {
+                                    Image(systemName: "timer")
+                                        .foregroundColor(.blue)
+                                        .font(
+                                            .system(size: 14, weight: .medium)
+                                        )
+                                    Text(context.state.powerMode)
+                                        .font(
+                                            .system(size: 12, weight: .medium)
+                                        )
+                                        .foregroundColor(.white)
+                                }
+
+                                // Vibration Icon
+                                Image(
+                                    systemName: context.state.vibrationEnabled
+                                        ? "iphone.radiowaves.left.and.right"
+                                        : "iphone.slash"
+                                )
+                                .foregroundColor(
+                                    context.state.vibrationEnabled
+                                        ? .blue : .gray
+                                )
+                                .font(.system(size: 12, weight: .medium))
+
+                                Spacer()
                             }
                         }
+
+                        // Graph Icon (right)
+                        Link(
+                            destination: URL(
+                                string:
+                                    "airspothealth://deviceGraph?deviceId=\(context.state.deviceId)"
+                            )!
+                        ) {
+                            Image("ic_graph")
+                                .resizable()
+                                .aspectRatio(contentMode: .fit)
+                                .frame(width: 28, height: 28)
+                        }
+                        .buttonStyle(.plain)
+
                     }
+
                 }
-                
+
                 // Graph Section
                 if !context.state.co2History.isEmpty {
                     Co2GraphView(
@@ -325,12 +412,13 @@ struct LiveActivityWidgetLiveActivity: Widget {
                                 .foregroundColor(.primary)
                                 .font(.system(size: 16, weight: .light))
                         }
-                        
+
                         HStack(alignment: .bottom, spacing: 2) {
                             Co2ValueView(
                                 co2Value: context.state.co2Value,
                                 greenUpperLimit: context.state.greenUpperLimit,
-                                yellowUpperLimit: context.state.yellowUpperLimit,
+                                yellowUpperLimit: context.state
+                                    .yellowUpperLimit,
                                 isRefreshing: context.state.isRefreshing,
                                 fontSize: 20
                             )
@@ -341,20 +429,35 @@ struct LiveActivityWidgetLiveActivity: Widget {
                         }
                     }
                 }
-                
+
                 DynamicIslandExpandedRegion(.trailing) {
                     VStack(alignment: .trailing, spacing: 6) {
                         CompactRefreshButton(size: 24)
-                        
+
                         HStack(spacing: 4) {
-                            Image(systemName: batteryIcon(for: context.state.batteryLevel, isCharging: context.state.isCharging))
-                                .foregroundColor(batteryColor(for: context.state.batteryLevel, isCharging: context.state.isCharging))
-                                .font(.system(size: 14, weight: .medium))
-                            Text(batteryText(for: context.state.batteryLevel, isCharging: context.state.isCharging))
-                                .font(.system(size: 12, weight: .medium))
-                                .foregroundColor(.white)
+                            Image(
+                                systemName: batteryIcon(
+                                    for: context.state.batteryLevel,
+                                    isCharging: context.state.isCharging
+                                )
+                            )
+                            .foregroundColor(
+                                batteryColor(
+                                    for: context.state.batteryLevel,
+                                    isCharging: context.state.isCharging
+                                )
+                            )
+                            .font(.system(size: 14, weight: .medium))
+                            Text(
+                                batteryText(
+                                    for: context.state.batteryLevel,
+                                    isCharging: context.state.isCharging
+                                )
+                            )
+                            .font(.system(size: 12, weight: .medium))
+                            .foregroundColor(.white)
                         }
-                        
+
                         HStack(spacing: 4) {
                             Image(systemName: "timer")
                                 .foregroundColor(.blue)
@@ -365,38 +468,57 @@ struct LiveActivityWidgetLiveActivity: Widget {
                         }
                     }
                 }
-                
+
                 DynamicIslandExpandedRegion(.bottom) {
                     HStack(spacing: 16) {
                         HStack(spacing: 6) {
-                            Image(systemName: context.state.alarmEnabled ? "bell.fill" : "bell.slash.fill")
-                                .foregroundColor(context.state.alarmEnabled ? .blue : .gray)
-                                .font(.system(size: 12, weight: .medium))
+                            Image(
+                                systemName: context.state.alarmEnabled
+                                    ? "bell.fill" : "bell.slash.fill"
+                            )
+                            .foregroundColor(
+                                context.state.alarmEnabled ? .blue : .gray
+                            )
+                            .font(.system(size: 12, weight: .medium))
                             Text("Alarm")
                                 .font(.system(size: 10, weight: .medium))
                                 .foregroundColor(.white)
                         }
-                        
+
                         HStack(spacing: 6) {
-                            Image(systemName: context.state.vibrationEnabled ? "iphone.radiowaves.left.and.right" : "iphone.slash")
-                                .foregroundColor(context.state.vibrationEnabled ? .blue : .gray)
-                                .font(.system(size: 12, weight: .medium))
+                            Image(
+                                systemName: context.state.vibrationEnabled
+                                    ? "iphone.radiowaves.left.and.right"
+                                    : "iphone.slash"
+                            )
+                            .foregroundColor(
+                                context.state.vibrationEnabled ? .blue : .gray
+                            )
+                            .font(.system(size: 12, weight: .medium))
                             Text("Vibration")
                                 .font(.system(size: 10, weight: .medium))
                                 .foregroundColor(.white)
                         }
-                        
+
                         Spacer()
-                        
-                        Text("Updated \(context.state.lastUpdated.formatted(date: .omitted, time: .shortened))")
-                            .font(.system(size: 9, weight: .medium))
-                            .foregroundColor(.white)
+
+                        Text(
+                            "Updated \(context.state.lastUpdated.formatted(date: .omitted, time: .shortened))"
+                        )
+                        .font(.system(size: 9, weight: .medium))
+                        .foregroundColor(.white)
                     }
                 }
             } compactLeading: {
                 HStack(spacing: 4) {
                     Text("AS")
-                        .foregroundColor(co2Color(for: context.state.co2Value, green: context.state.greenUpperLimit, yellow: context.state.yellowUpperLimit))
+                        .foregroundColor(
+                            co2Color(
+                                for: context.state.co2Value,
+                                green: context.state.greenUpperLimit,
+                                yellow: context.state.yellowUpperLimit
+                            )
+                        )
                         .font(.system(size: 10, weight: .bold))
                     Co2ValueView(
                         co2Value: context.state.co2Value,
@@ -408,21 +530,42 @@ struct LiveActivityWidgetLiveActivity: Widget {
                 }
             } compactTrailing: {
                 HStack(spacing: 4) {
-                    Image(systemName: batteryIcon(for: context.state.batteryLevel, isCharging: context.state.isCharging))
-                        .foregroundColor(batteryColor(for: context.state.batteryLevel, isCharging: context.state.isCharging))
-                        .font(.system(size: 12, weight: .medium))
-                    Text(batteryText(for: context.state.batteryLevel, isCharging: context.state.isCharging))
-                        .font(.system(size: 12, weight: .medium))
-                        .foregroundColor(.white)
+                    Image(
+                        systemName: batteryIcon(
+                            for: context.state.batteryLevel,
+                            isCharging: context.state.isCharging
+                        )
+                    )
+                    .foregroundColor(
+                        batteryColor(
+                            for: context.state.batteryLevel,
+                            isCharging: context.state.isCharging
+                        )
+                    )
+                    .font(.system(size: 12, weight: .medium))
+                    Text(
+                        batteryText(
+                            for: context.state.batteryLevel,
+                            isCharging: context.state.isCharging
+                        )
+                    )
+                    .font(.system(size: 12, weight: .medium))
+                    .foregroundColor(.white)
                 }
             } minimal: {
                 Text("AS")
-                    .foregroundColor(co2Color(for: context.state.co2Value, green: context.state.greenUpperLimit, yellow: context.state.yellowUpperLimit))
+                    .foregroundColor(
+                        co2Color(
+                            for: context.state.co2Value,
+                            green: context.state.greenUpperLimit,
+                            yellow: context.state.yellowUpperLimit
+                        )
+                    )
                     .font(.system(size: 10, weight: .bold))
             }
         }
     }
-    
+
     // Helper functions for dynamic colors and icons
     private func co2Color(for value: Int, green: Int, yellow: Int) -> Color {
         if value <= green {
@@ -433,12 +576,12 @@ struct LiveActivityWidgetLiveActivity: Widget {
             return .red
         }
     }
-    
+
     private func batteryColor(for level: Int, isCharging: Bool) -> Color {
         if isCharging {
-            return .green // Always green when charging
+            return .green  // Always green when charging
         }
-        
+
         switch level {
         case 0...20:
             return .red
@@ -448,7 +591,7 @@ struct LiveActivityWidgetLiveActivity: Widget {
             return .green
         }
     }
-    
+
     private func batteryIcon(for level: Int, isCharging: Bool) -> String {
         if isCharging {
             // Use charging icons
@@ -480,7 +623,7 @@ struct LiveActivityWidgetLiveActivity: Widget {
             }
         }
     }
-    
+
     private func batteryText(for level: Int, isCharging: Bool) -> String {
         if isCharging {
             return "CHG"
@@ -497,18 +640,51 @@ extension LiveActivityWidgetAttributes {
 }
 
 extension LiveActivityWidgetAttributes.ContentState {
-    fileprivate static var sampleData: LiveActivityWidgetAttributes.ContentState {
-        LiveActivityWidgetAttributes.ContentState(co2Value: 450, powerMode: "3 Min", batteryLevel: 85, isCharging: false, alarmEnabled: true, vibrationEnabled: true, co2History: [400, 420, 450, 480, 500], greenUpperLimit: 400, yellowUpperLimit: 800, graphMaxValue: 1600, graphMinValue: 0, isRefreshing: false, lastUpdated: Date())
-     }
-     
-     fileprivate static var lowBatteryData: LiveActivityWidgetAttributes.ContentState {
-         LiveActivityWidgetAttributes.ContentState(co2Value: 1200, powerMode: "1 Min", batteryLevel: 25, isCharging: true, alarmEnabled: false, vibrationEnabled: true, co2History: [1000, 1100, 1200, 1250, 1300], greenUpperLimit: 1000, yellowUpperLimit: 1100, graphMaxValue: 1600, graphMinValue: 0, isRefreshing: false, lastUpdated: Date())
-     }
+    fileprivate static var sampleData: LiveActivityWidgetAttributes.ContentState
+    {
+        LiveActivityWidgetAttributes.ContentState(
+            deviceId: "1234567890",
+            co2Value: 450,
+            powerMode: "3 Min",
+            batteryLevel: 85,
+            isCharging: false,
+            alarmEnabled: true,
+            vibrationEnabled: true,
+            co2History: [400, 420, 450, 480, 500],
+            greenUpperLimit: 400,
+            yellowUpperLimit: 800,
+            graphMaxValue: 1600,
+            graphMinValue: 0,
+            isRefreshing: false,
+            lastUpdated: Date()
+        )
+    }
+
+    fileprivate static var lowBatteryData:
+        LiveActivityWidgetAttributes.ContentState
+    {
+        LiveActivityWidgetAttributes.ContentState(
+            deviceId: "1234567890",
+            co2Value: 1200,
+            powerMode: "1 Min",
+            batteryLevel: 25,
+            isCharging: true,
+            alarmEnabled: false,
+            vibrationEnabled: true,
+            co2History: [1000, 1100, 1200, 1250, 1300],
+            greenUpperLimit: 1000,
+            yellowUpperLimit: 1100,
+            graphMaxValue: 1600,
+            graphMinValue: 0,
+            isRefreshing: false,
+            lastUpdated: Date()
+        )
+    }
 }
 
-//#Preview("Notification", as: .content, using: LiveActivityWidgetAttributes.preview) {
-//   LiveActivityWidgetLiveActivity()
-//} contentStates: {
-//    LiveActivityWidgetAttributes.ContentState.sampleData
-//    LiveActivityWidgetAttributes.ContentState.lowBatteryData
-//}
+// #Preview("Notification", as: .content, using: LiveActivityWidgetAttributes.preview) {
+//    LiveActivityWidgetLiveActivity()
+// } contentStates: {
+//     LiveActivityWidgetAttributes.ContentState.sampleData
+//     LiveActivityWidgetAttributes.ContentState.lowBatteryData
+// }

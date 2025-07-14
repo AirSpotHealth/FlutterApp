@@ -61,6 +61,7 @@ class LiveActivityManager {
     private func createContentState(from data: [String: Any]?, isRefreshing: Bool = false) -> LiveActivityWidgetAttributes.ContentState {
         guard let info = data else {
             return LiveActivityWidgetAttributes.ContentState(
+                deviceId: "1234567890",
                 co2Value: 0,
                 powerMode: "3 Min",
                 batteryLevel: 0,
@@ -78,6 +79,7 @@ class LiveActivityManager {
         }
         
         return LiveActivityWidgetAttributes.ContentState(
+            deviceId: info["deviceId"] as? String ?? "1234567890",
             co2Value: info["co2Value"] as? Int ?? 0,
             powerMode: info["powerMode"] as? String ?? "3 Min",
             batteryLevel: info["batteryLevel"] as? Int ?? 0,

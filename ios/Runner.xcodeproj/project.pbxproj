@@ -15,6 +15,7 @@
 		6A7B48842E1AA83900C79DBD /* LiveActivityWidgetExtension.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = 6A7B48752E1AA83900C79DBD /* LiveActivityWidgetExtension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		6A7B48AB2E1AB46000C79DBD /* LiveActivityManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6A7B48AA2E1AB46000C79DBD /* LiveActivityManager.swift */; };
 		6A7B48AC2E1AB46000C79DBD /* LiveActivityManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6A7B48AA2E1AB46000C79DBD /* LiveActivityManager.swift */; };
+		6ABF42CE2E2536E600F0D06A /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 97C146FD1CF9000F007C117D /* Assets.xcassets */; };
 		6ECFB7176C6B40FEA3D71044 /* Pods_Runner.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 744FE088450B2DBA346AC2D0 /* Pods_Runner.framework */; };
 		74858FAF1ED2DC5600515810 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 74858FAE1ED2DC5600515810 /* AppDelegate.swift */; };
 		97C146FC1CF9000F007C117D /* Main.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 97C146FA1CF9000F007C117D /* Main.storyboard */; };
@@ -363,6 +364,7 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				6ABF42CE2E2536E600F0D06A /* Assets.xcassets in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
