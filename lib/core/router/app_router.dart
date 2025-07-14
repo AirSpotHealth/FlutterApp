@@ -29,6 +29,21 @@ class AppRouter {
   static final router = GoRouter(
     navigatorKey: navigatorKey,
     initialLocation: RouteNames.home,
+    debugLogDiagnostics: true,
+    redirect: (context, state) {
+      debugPrint('Redirecting to: ${state.uri}');
+      final uri = Uri.parse(state.uri.toString());
+
+      // Redirect malformed paths missing "/devices"
+      if (uri.pathSegments.length == 2 &&
+          uri.pathSegments[1] == 'graph' &&
+          !uri.pathSegments.contains('devices')) {
+        final deviceId = uri.pathSegments[0];
+        return '/devices/$deviceId/graph';
+      }
+
+      return null; // No redirect
+    },
     routes: [
       // Route for HomePage
       GoRoute(

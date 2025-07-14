@@ -158,38 +158,38 @@ struct Co2GraphView: View {
     }
 
     var body: some View {
-        HStack(spacing: 2) {
-            ForEach(0..<co2History.count, id: \.self) { index in
-                let value = co2History[index]
-                let heightRatio = normalizedHeight(for: value)
-
-                GeometryReader { geometry in
-                    let maxHeight = geometry.size.height
+        GeometryReader { geometry in
+            let maxHeight = geometry.size.height
+            HStack(alignment: .bottom, spacing: 2) {
+                ForEach(0..<co2History.count, id: \.self) { index in
+                    let value = co2History[index]
+                    let heightRatio = normalizedHeight(for: value)
                     let barHeight = maxHeight * heightRatio
 
-                    VStack(spacing: 0) {
-                        Spacer()
-
-                        // Colored bar representing the actual value
+                    VStack {
+                        Spacer(minLength: 0)
                         RoundedRectangle(cornerRadius: 1)
                             .fill(co2Color(for: value))
                             .frame(height: barHeight)
                     }
+                    .frame(width: 6)  // or whatever width you want for each bar
                     .background(
-                        // Grey background representing the full scale
                         RoundedRectangle(cornerRadius: 1)
-                            .fill(.gray.opacity(0.3))
+                            .fill(Color.gray.opacity(0.3))
+                            .frame(height: maxHeight)
                     )
                 }
             }
+            .frame(height: maxHeight)
+            .padding(.horizontal, 6)
+            .padding(.vertical, 4)
+            .background(
+                RoundedRectangle(cornerRadius: 8)
+                    .fill(Color.black.opacity(0.1))
+            )
         }
-        .frame(height: 70)
-        .padding(.horizontal, 6)
-        .padding(.vertical, 4)
-        .background(
-            RoundedRectangle(cornerRadius: 8)
-                .fill(.black.opacity(0.1))
-        )
+        .frame(height: 70)  // or your desired height
+
     }
 }
 
@@ -241,7 +241,7 @@ struct LiveActivityWidgetLiveActivity: Widget {
                             Image("ic_map")
                                 .resizable()
                                 .aspectRatio(contentMode: .fit)
-                                .frame(width: 28, height: 28)
+                                .frame(width: 32, height: 32)
                         }
                         .buttonStyle(.plain)
                     }
@@ -278,7 +278,8 @@ struct LiveActivityWidgetLiveActivity: Widget {
                     // Center refresh button
                     CompactRefreshButton(
                         size: context.state.isRefreshing ? 32 : 36
-                    )
+                    ).padding(.trailing, 6)
+                        .padding(.leading, 6)
 
                     Spacer()
 
@@ -301,7 +302,7 @@ struct LiveActivityWidgetLiveActivity: Widget {
                                             isCharging: context.state.isCharging
                                         )
                                     )
-                                    .font(.system(size: 14, weight: .medium))
+                                    .font(.system(size: 12, weight: .medium))
                                     Text(
                                         batteryText(
                                             for: context.state.batteryLevel,
@@ -320,9 +321,8 @@ struct LiveActivityWidgetLiveActivity: Widget {
                                     context.state.alarmEnabled ? .blue : .gray
                                 )
                                 .font(.system(size: 12, weight: .medium))
-
-                                Spacer()
                             }
+                            .frame(maxWidth: .infinity, alignment: .leading)
 
                             // Alarm & Vibration Status
                             HStack(alignment: .top, spacing: 6) {
@@ -331,11 +331,11 @@ struct LiveActivityWidgetLiveActivity: Widget {
                                     Image(systemName: "timer")
                                         .foregroundColor(.blue)
                                         .font(
-                                            .system(size: 14, weight: .medium)
+                                            .system(size: 12, weight: .medium)
                                         )
                                     Text(context.state.powerMode)
                                         .font(
-                                            .system(size: 12, weight: .medium)
+                                            .system(size: 10, weight: .medium)
                                         )
                                         .foregroundColor(.white)
                                 }
@@ -351,16 +351,14 @@ struct LiveActivityWidgetLiveActivity: Widget {
                                         ? .blue : .gray
                                 )
                                 .font(.system(size: 12, weight: .medium))
-
-                                Spacer()
                             }
+                            .frame(maxWidth: .infinity, alignment: .leading)
                         }
 
                         // Graph Icon (right)
                         Link(
                             destination: URL(
-                                string:
-                                    "airspothealth://deviceGraph?deviceId=\(context.state.deviceId)"
+                                string: "airspothealth://devices/\(context.state.deviceId)/graph"
                             )!
                         ) {
                             Image("ic_graph")

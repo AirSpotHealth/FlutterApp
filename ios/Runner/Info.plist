@@ -67,16 +67,20 @@
 	<true/>
 	<key>NSSupportsLiveActivitiesFrequentUpdates</key>
 	<true/>
+	<key>FlutterDeepLinkingEnabled</key>
+	<true/>
 	<key>CFBundleURLTypes</key>
-	<array>
-		<dict>
-			<key>CFBundleURLName</key>
-			<string>com.air.spot.airspothealth</string>
-			<key>CFBundleURLSchemes</key>
-			<array>
-				<string>airspot</string>
-			</array>
-		</dict>
-	</array>
+    <array>
+        <dict>
+            <key>CFBundleTypeRole</key>
+            <string>Editor</string>
+            <key>CFBundleURLName</key>
+            <string>com.air.spot.airspothealth</string>
+            <key>CFBundleURLSchemes</key>
+            <array>
+                <string>airspothealth</string>
+            </array>
+        </dict>
+    </array>
 </dict>
 </plist>
