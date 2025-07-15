@@ -335,27 +335,40 @@ class _DataGraphWidgetState extends ConsumerState<DataGraphWidget> {
   series: [
     {
       name: 'CO₂',
-      type: 'line',
-      data: ${jsonEncode(seriesData)},
-      ${settings.showAreaFill ? 'areaStyle: { opacity: 0.2 },' : ''}
-      smooth: true,
-      showSymbol: false,
-      symbolSize: 8,
-      lineStyle: {
-        width: 1
+    type: ${settings.showAreaFill ? "'bar'" : "'line'"},
+    data: ${jsonEncode(seriesData)},
+    ${settings.showAreaFill ? '''
+    barWidth: 2,
+    itemStyle: {
+      color: function(params) {
+        var value = params.value[1];
+        if (value <= $greenThreshold) return '#63A103';
+        if (value <= $amberThreshold) return '#FE9A23';
+        return '#D9001B';
       },
-      markLine: ${settings.showMarkLines ? '''
-        {
-          symbol: ['none', 'none'],
-          label: { show: false },
-          silent: true,
-          animation: false,
-          data: [
-            { yAxis: $greenThreshold, lineStyle: { color: '#FE9A23', type: 'dashed' } },
-            { yAxis: $amberThreshold, lineStyle: { color: '#D9001B', type: 'dashed' } }
-          ]
-        }
-      ''' : 'null'},
+      opacity: 0.4
+    },
+    silent: false,
+    ''' : '''
+    smooth: true,
+    showSymbol: false,
+    symbolSize: 8,
+    lineStyle: {
+      width: 1
+    },'''}
+
+    markLine: ${settings.showMarkLines && !settings.showAreaFill ? '''
+      {
+        symbol: ['none', 'none'],
+        label: { show: false },
+        silent: true,
+        animation: false,
+        data: [
+          { yAxis: $greenThreshold, lineStyle: { color: '#FE9A23', type: 'dashed' } },
+          { yAxis: $amberThreshold, lineStyle: { color: '#D9001B', type: 'dashed' } }
+        ]
+      }
+    ''' : 'null'}
     }${settings.showRebreathePercentage ? ''',
     {
       name: 'Rebreathed Air',
