@@ -232,144 +232,148 @@ struct LiveActivityWidgetLiveActivity: Widget {
         ActivityConfiguration(for: LiveActivityWidgetAttributes.self) {
             context in
             // Lock screen/banner UI goes here
-            VStack(spacing: 16) {
+            VStack(spacing: 8) {
                 // Top section with CO2 value and status
-                HStack {
-                    if #available(iOS 17.0, *) {
-                        // Map Icon (left)
-                        Button(intent: MapIntent()) {
-                            Image("ic_map")
-                                .resizable()
-                                .aspectRatio(contentMode: .fit)
-                                .frame(width: 32, height: 32)
-                        }
-                        .buttonStyle(.plain)
-                    }
-
-                    // CO2 Value Section - Natural width
-                    VStack(alignment: .center, spacing: 2) {
-                        // Updated logo text with different font weights
-                        HStack(spacing: 0) {
-                            Text("AIR")
-                                .foregroundColor(.white)
-                                .font(.system(size: 14, weight: .semibold))
-                            Text("SPOT")
-                                .foregroundColor(.white)
-                                .font(.system(size: 14, weight: .light))
-                        }
-                        HStack(alignment: .bottom, spacing: 2) {
-                            Co2ValueView(
-                                co2Value: context.state.co2Value,
-                                greenUpperLimit: context.state.greenUpperLimit,
-                                yellowUpperLimit: context.state
-                                    .yellowUpperLimit,
-                                isRefreshing: context.state.isRefreshing,
-                                fontSize: 24
-                            )
-                            Text("CO₂ ppm")
-                                .font(.system(size: 10, weight: .medium))
-                                .foregroundColor(.white)
-                                .offset(y: -4)
-                        }
-                    }.padding(.leading, 4)
-
-                    Spacer()
-
-                    // Center refresh button
+                ZStack {
+                    // Center refresh button – visually centered
                     CompactRefreshButton(
                         size: context.state.isRefreshing ? 32 : 36
-                    ).padding(.trailing, 6)
-                        .padding(.leading, 6)
+                    )
 
-                    Spacer()
-
+                    // Full width HStack to layout left and right sections
                     HStack {
+                        // Left Section (Map + CO2)
+                        HStack(spacing: 6) {
+                            if #available(iOS 17.0, *) {
+                                Button(intent: MapIntent()) {
+                                    Image("ic_map")
+                                        .resizable()
+                                        .aspectRatio(contentMode: .fit)
+                                        .frame(width: 32, height: 32)
+                                }
+                                .buttonStyle(.plain)
+                            }
 
-                        // Status Section - Equal width rows
-                        VStack(alignment: .trailing, spacing: 8) {
-                            HStack(alignment: .top, spacing: 6) {
-                                // Battery
-                                HStack(spacing: 3) {
-                                    Image(
-                                        systemName: batteryIcon(
-                                            for: context.state.batteryLevel,
-                                            isCharging: context.state.isCharging
-                                        )
-                                    )
-                                    .foregroundColor(
-                                        batteryColor(
-                                            for: context.state.batteryLevel,
-                                            isCharging: context.state.isCharging
-                                        )
-                                    )
-                                    .font(.system(size: 12, weight: .medium))
-                                    Text(
-                                        batteryText(
-                                            for: context.state.batteryLevel,
-                                            isCharging: context.state.isCharging
-                                        )
-                                    )
+                            VStack(alignment: .center, spacing: 2) {
+                                Co2ValueView(
+                                    co2Value: context.state.co2Value,
+                                    greenUpperLimit: context.state
+                                        .greenUpperLimit,
+                                    yellowUpperLimit: context.state
+                                        .yellowUpperLimit,
+                                    isRefreshing: context.state.isRefreshing,
+                                    fontSize: 24
+                                )
+                                Text("CO₂ ppm")
                                     .font(.system(size: 10, weight: .medium))
                                     .foregroundColor(.white)
-                                }
-                                // Alarm Icon
-                                Image(
-                                    systemName: context.state.alarmEnabled
-                                        ? "bell.fill" : "bell.slash.fill"
-                                )
-                                .foregroundColor(
-                                    context.state.alarmEnabled ? .blue : .gray
-                                )
-                                .font(.system(size: 12, weight: .medium))
+                                    .offset(y: -4)
                             }
-                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .padding(.leading, 4)
+                        }
+                        .frame(maxWidth: .infinity, alignment: .leading)
 
-                            // Alarm & Vibration Status
-                            HStack(alignment: .top, spacing: 6) {
-                                // Power Mode
-                                HStack(spacing: 3) {
-                                    Image(systemName: "timer")
-                                        .foregroundColor(.blue)
+                        // Right Section (Status + Graph icon)
+                        HStack(spacing: 6) {
+                            VStack(alignment: .trailing, spacing: 6) {
+                                HStack(alignment: .top, spacing: 6) {
+                                    HStack(spacing: 3) {
+                                        Image(
+                                            systemName: batteryIcon(
+                                                for: context.state.batteryLevel,
+                                                isCharging: context.state
+                                                    .isCharging
+                                            )
+                                        )
+                                        .foregroundColor(
+                                            batteryColor(
+                                                for: context.state.batteryLevel,
+                                                isCharging: context.state
+                                                    .isCharging
+                                            )
+                                        )
                                         .font(
                                             .system(size: 12, weight: .medium)
                                         )
-                                    Text(context.state.powerMode)
+                                        Text(
+                                            batteryText(
+                                                for: context.state.batteryLevel,
+                                                isCharging: context.state
+                                                    .isCharging
+                                            )
+                                        )
                                         .font(
                                             .system(size: 10, weight: .medium)
                                         )
                                         .foregroundColor(.white)
+                                    }
+                                    Image(
+                                        systemName: context.state.alarmEnabled
+                                            ? "bell.fill" : "bell.slash.fill"
+                                    )
+                                    .foregroundColor(
+                                        context.state.alarmEnabled
+                                            ? .blue : .gray
+                                    )
+                                    .font(.system(size: 12, weight: .medium))
                                 }
+                                .frame(
+                                    maxWidth: .infinity,
+                                    alignment: .trailing,
+                                ).padding(.trailing, 4)
 
-                                // Vibration Icon
-                                Image(
-                                    systemName: context.state.vibrationEnabled
-                                        ? "iphone.radiowaves.left.and.right"
-                                        : "iphone.slash"
+                                HStack(alignment: .top, spacing: 6) {
+                                    HStack(spacing: 3) {
+                                        Image(systemName: "timer")
+                                            .foregroundColor(.blue)
+                                            .font(
+                                                .system(
+                                                    size: 12,
+                                                    weight: .medium
+                                                )
+                                            )
+                                        Text(context.state.powerMode)
+                                            .font(
+                                                .system(
+                                                    size: 10,
+                                                    weight: .medium
+                                                )
+                                            )
+                                            .foregroundColor(.white)
+                                    }
+                                    Image(
+                                        systemName: context.state
+                                            .vibrationEnabled
+                                            ? "iphone.radiowaves.left.and.right"
+                                            : "iphone.slash"
+                                    )
+                                    .foregroundColor(
+                                        context.state.vibrationEnabled
+                                            ? .blue : .gray
+                                    )
+                                    .font(.system(size: 12, weight: .medium))
+                                }
+                                .frame(
+                                    maxWidth: .infinity,
+                                    alignment: .trailing
                                 )
-                                .foregroundColor(
-                                    context.state.vibrationEnabled
-                                        ? .blue : .gray
-                                )
-                                .font(.system(size: 12, weight: .medium))
+                            }.padding()
+
+                            Link(
+                                destination: URL(
+                                    string:
+                                        "airspothealth://devices/\(context.state.deviceId)/graph"
+                                )!
+                            ) {
+                                Image("ic_graph")
+                                    .resizable()
+                                    .aspectRatio(contentMode: .fit)
+                                    .frame(width: 28, height: 28)
                             }
-                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .buttonStyle(.plain)
                         }
-
-                        // Graph Icon (right)
-                        Link(
-                            destination: URL(
-                                string: "airspothealth://devices/\(context.state.deviceId)/graph"
-                            )!
-                        ) {
-                            Image("ic_graph")
-                                .resizable()
-                                .aspectRatio(contentMode: .fit)
-                                .frame(width: 28, height: 28)
-                        }
-                        .buttonStyle(.plain)
-
+                        .frame(maxWidth: .infinity, alignment: .trailing)
                     }
-
                 }
 
                 // Graph Section
@@ -648,9 +652,16 @@ extension LiveActivityWidgetAttributes.ContentState {
             isCharging: false,
             alarmEnabled: true,
             vibrationEnabled: true,
-            co2History: [400, 420, 450, 480, 500],
-            greenUpperLimit: 400,
-            yellowUpperLimit: 800,
+            co2History: [
+                400, 420, 450, 480, 500, 520, 540, 560, 580, 600, 620, 640, 660,
+                680, 700, 720, 740, 760, 780, 800, 820, 840, 860, 880, 900, 920,
+                940, 960, 980, 1000, 1020, 1040, 1060, 1080, 1100, 1120, 1140,
+                1160, 1180, 1200, 1220, 1240, 1260, 1280, 1300, 1320, 1340,
+                1360, 1380, 1400, 1420, 1440, 1460, 1480, 1500, 1520, 1540,
+                1560,
+            ],
+            greenUpperLimit: 800,
+            yellowUpperLimit: 1000,
             graphMaxValue: 1600,
             graphMinValue: 0,
             isRefreshing: false,
@@ -680,9 +691,14 @@ extension LiveActivityWidgetAttributes.ContentState {
     }
 }
 
-// #Preview("Notification", as: .content, using: LiveActivityWidgetAttributes.preview) {
-//    LiveActivityWidgetLiveActivity()
-// } contentStates: {
-//     LiveActivityWidgetAttributes.ContentState.sampleData
-//     LiveActivityWidgetAttributes.ContentState.lowBatteryData
-// }
+@available(iOS 17.0, *)
+#Preview(
+    "Notification",
+    as: .content,
+    using: LiveActivityWidgetAttributes.preview
+) {
+    LiveActivityWidgetLiveActivity()
+} contentStates: {
+    LiveActivityWidgetAttributes.ContentState.sampleData
+    LiveActivityWidgetAttributes.ContentState.lowBatteryData
+}
