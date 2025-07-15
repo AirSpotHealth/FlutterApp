@@ -6,7 +6,7 @@ class GraphSettings {
 
   const GraphSettings({
     this.showZoomSlider = false,
-    this.showAreaFill = true,
+    this.showAreaFill = false,
     this.showMarkLines = true,
     this.showRebreathePercentage = false,
   });
