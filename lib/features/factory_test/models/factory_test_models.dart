@@ -327,5 +327,4 @@ final initialManualTests = [
   TestResult(testName: 'Buzzer Test', status: DeviceTestStatus.notStarted),
   TestResult(testName: 'Vibration Test', status: DeviceTestStatus.notStarted),
   TestResult(testName: 'Case Check', status: DeviceTestStatus.notStarted),
-  TestResult(testName: 'LCD with OCA?', status: DeviceTestStatus.notStarted),
 ];

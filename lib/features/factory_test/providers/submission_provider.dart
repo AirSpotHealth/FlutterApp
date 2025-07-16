@@ -341,8 +341,6 @@ class SubmissionNotifier extends FamilyNotifier<SubmissionState, String> {
       case 'Buzzer Test':
       case 'Vibration Test':
       case 'Case Check':
-      case 'LCD with OCA?':
-        return null; // These tests typically don't have numeric values
       default:
         return value; // Return raw value for unknown tests
     }
