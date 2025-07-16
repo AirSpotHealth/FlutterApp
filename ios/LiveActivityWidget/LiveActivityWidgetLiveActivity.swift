@@ -254,6 +254,7 @@ struct LiveActivityWidgetLiveActivity: Widget {
                                 .buttonStyle(.plain)
                             }
 
+
                             VStack(alignment: .center, spacing: 2) {
                                 Co2ValueView(
                                     co2Value: context.state.co2Value,
@@ -269,7 +270,7 @@ struct LiveActivityWidgetLiveActivity: Widget {
                                     .foregroundColor(.white)
                                     .offset(y: -4)
                             }
-                            .padding(.leading, 4)
+                            .padding(.leading, 28)
                         }
                         .frame(maxWidth: .infinity, alignment: .leading)
 
