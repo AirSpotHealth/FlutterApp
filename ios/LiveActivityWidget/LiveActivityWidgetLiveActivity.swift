@@ -227,6 +227,7 @@ struct CompactRefreshButton: View {
     }
 }
 
+@available(iOS 16.2, *)
 struct LiveActivityWidgetLiveActivity: Widget {
     var body: some WidgetConfiguration {
         ActivityConfiguration(for: LiveActivityWidgetAttributes.self) {

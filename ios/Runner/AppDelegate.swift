@@ -5,7 +5,8 @@ import ActivityKit
 @main
 @objc class AppDelegate: FlutterAppDelegate {
   let channelName : String = "liveActivityChannel"
-  var liveActivityManager: LiveActivityManager?
+  var liveActivityManager: Any?
+
   var liveActivityChannel: FlutterMethodChannel?
 
   override func application(
@@ -16,7 +17,9 @@ import ActivityKit
     // Live Activity Channel
     let controller : FlutterViewController = window?.rootViewController as! FlutterViewController
     liveActivityChannel = FlutterMethodChannel(name: channelName, binaryMessenger: controller.binaryMessenger) 
-    liveActivityManager = LiveActivityManager()
+    if #available(iOS 16.2, *) {
+      liveActivityManager = LiveActivityManager()
+    }
     
     // Set up notification listener for iOS 17+ LiveActivityIntent refresh requests
     NotificationCenter.default.addObserver(
@@ -35,8 +38,8 @@ import ActivityKit
     )
     
     liveActivityChannel?.setMethodCallHandler { [weak self] (call: FlutterMethodCall, result: @escaping FlutterResult) in
-        guard let liveActivityManager = self?.liveActivityManager else {
-            result(FlutterError(code: "MANAGER_NOT_INITIALIZED", message: "LiveActivityManager not initialized", details: nil))
+        guard #available(iOS 16.2, *), let liveActivityManager = self?.liveActivityManager as? LiveActivityManager else {
+            result(FlutterError(code: "MANAGER_NOT_INITIALIZED", message: "LiveActivityManager not initialized or not supported on this iOS version", details: nil))
             return
         }
         
@@ -79,15 +82,19 @@ import ActivityKit
   // Reset dismissal state when app comes to foreground
   override func applicationWillEnterForeground(_ application: UIApplication) {
       super.applicationWillEnterForeground(application)
-      // Reset dismissal state when app comes back to foreground
-      // This allows live activity to start again after app was backgrounded/closed
-      liveActivityManager?.resetDismissalState()
+      if #available(iOS 16.2, *), let liveActivityManager = liveActivityManager as? LiveActivityManager {
+        // Reset dismissal state when app comes back to foreground
+        // This allows live activity to start again after app was backgrounded/closed
+        liveActivityManager.resetDismissalState()
+      }
   }
 
   @objc func handleRefreshNotification() {
       print("🔄 Live Activity refresh via LiveActivityIntent (iOS 17+)")
-      // Start the refresh state immediately to show blink animation
-      liveActivityManager?.startRefreshState()
+      if #available(iOS 16.2, *), let liveActivityManager = liveActivityManager as? LiveActivityManager {
+        // Start the refresh state immediately to show blink animation
+        liveActivityManager.startRefreshState()
+      }
       // Also notify Flutter for any additional refresh logic
       liveActivityChannel?.invokeMethod("onRefreshRequested", arguments: nil)
   }
