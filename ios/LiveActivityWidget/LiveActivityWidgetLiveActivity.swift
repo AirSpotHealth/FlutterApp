@@ -6,12 +6,17 @@
 //
 
 import ActivityKit
-import AppIntents
 import Charts
 import SwiftUI
 import WidgetKit
 
+// AppIntents is only available in iOS 16.0+
+#if canImport(AppIntents)
+import AppIntents
+#endif
+
 // LiveActivityIntent for Live Activity buttons (iOS 17+ only)
+#if canImport(AppIntents)
 @available(iOS 17.0, *)
 struct RefreshDataIntent: LiveActivityIntent {
     static var title: LocalizedStringResource = "Refresh CO2 Data"
@@ -46,6 +51,7 @@ struct MapIntent: LiveActivityIntent {
         return .result()
     }
 }
+#endif
 
 struct LiveActivityWidgetAttributes: ActivityAttributes {
     public struct ContentState: Codable, Hashable {
@@ -198,6 +204,7 @@ struct CompactRefreshButton: View {
     let size: CGFloat
 
     var body: some View {
+        #if canImport(AppIntents)
         if #available(iOS 17.0, *) {
             Button(intent: RefreshDataIntent()) {
                 ZStack {
@@ -224,6 +231,10 @@ struct CompactRefreshButton: View {
             // No refresh button on iOS 16.x - LiveActivityIntent not available
             EmptyView()
         }
+        #else
+        // No refresh button - AppIntents not available
+        EmptyView()
+        #endif
     }
 }
 
@@ -245,6 +256,7 @@ struct LiveActivityWidgetLiveActivity: Widget {
                     HStack {
                         // Left Section (Map + CO2)
                         HStack(spacing: 6) {
+                            #if canImport(AppIntents)
                             if #available(iOS 17.0, *) {
                                 Button(intent: MapIntent()) {
                                     Image("ic_map")
@@ -254,6 +266,7 @@ struct LiveActivityWidgetLiveActivity: Widget {
                                 }
                                 .buttonStyle(.plain)
                             }
+                            #endif
 
 
                             VStack(alignment: .center, spacing: 2) {

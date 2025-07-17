@@ -6,10 +6,61 @@
 //
 
 import Foundation
+// ActivityKit is only available in iOS 16.1+
+#if canImport(ActivityKit)
 import ActivityKit
+#endif
 
+// AppIntents is only available in iOS 16.0+
+#if canImport(AppIntents)
+import AppIntents
+#endif
+
+// Base protocol for Live Activity management
+protocol LiveActivityManagerProtocol {
+    func startLiveActivity(data: [String: Any]?)
+    func updateLiveActivity(data: [String: Any]?)
+    func startRefreshState()
+    func endLiveActivity()
+    func resetDismissalState()
+    func isLiveActivityActive() -> Bool
+    func wasUserDismissedThisSession() -> Bool
+}
+
+// Implementation for iOS 15.0 where Live Activities are not available
+class LiveActivityManagerStub: LiveActivityManagerProtocol {
+    func startLiveActivity(data: [String: Any]?) {
+        print("Live Activities not available on iOS 15.0")
+    }
+    
+    func updateLiveActivity(data: [String: Any]?) {
+        print("Live Activities not available on iOS 15.0")
+    }
+    
+    func startRefreshState() {
+        print("Live Activities not available on iOS 15.0")
+    }
+    
+    func endLiveActivity() {
+        print("Live Activities not available on iOS 15.0")
+    }
+    
+    func resetDismissalState() {
+        print("Live Activities not available on iOS 15.0")
+    }
+    
+    func isLiveActivityActive() -> Bool {
+        return false
+    }
+    
+    func wasUserDismissedThisSession() -> Bool {
+        return false
+    }
+}
+
+#if canImport(ActivityKit)
 @available(iOS 16.2, *)
-class LiveActivityManager {
+class LiveActivityManager: LiveActivityManagerProtocol {
     private var liveActivity: Activity<LiveActivityWidgetAttributes>? = nil
     private var userDismissedInCurrentSession = false
     private var activityMonitorTask: Task<Void, Never>?
@@ -264,5 +315,19 @@ class LiveActivityManager {
     
     func wasUserDismissedThisSession() -> Bool {
         return userDismissedInCurrentSession
+    }
+}
+#endif
+
+// Factory function to create the appropriate manager based on iOS version
+func createLiveActivityManager() -> LiveActivityManagerProtocol {
+    if #available(iOS 16.2, *) {
+        #if canImport(ActivityKit)
+        return LiveActivityManager()
+        #else
+        return LiveActivityManagerStub()
+        #endif
+    } else {
+        return LiveActivityManagerStub()
     }
 }
