@@ -1,5 +1,3 @@
-import 'dart:io';
-
 import 'package:airspothealth/core/models/ble_device.dart';
 import 'package:airspothealth/core/models/device_data.dart';
 import 'package:airspothealth/core/models/device_settings.dart';
@@ -111,7 +109,7 @@ class DeviceSettingsPage extends ConsumerWidget {
           AlarmSettingWidget(deviceId: deviceId),
           VibrateSettingWidget(deviceId: deviceId),
           AutoConnectSettingWidget(deviceId: deviceId),
-          if (Platform.isIOS) LiveActivitySettingWidget(deviceId: deviceId),
+          LiveActivitySettingWidget(deviceId: deviceId),
           _buildTimeSettingWidget(ref),
           PowerModeSettingWidget(deviceId: deviceId),
           ..._buildSettingsList(ref),

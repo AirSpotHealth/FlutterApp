@@ -249,6 +249,35 @@ class _BleDeviceCommunicationNotifier extends FamilyNotifier<dynamic, String> {
         debugPrint(
             'BLE: Updating widget with: CO2=$co2Value, Device=$deviceName, PowerMode=$powerMode, Battery=$batteryLevel, History=${co2History.length} values');
         HomeWidgetService.instance.updateHomeWidget(data: widgetData);
+
+        // 9. Update Android foreground notification if Live Activity setting is enabled
+        if (deviceSettings?.showLiveActivity == true) {
+          debugPrint(
+              'BLE: Updating Android foreground notification with CO2=$co2Value');
+          LiveActivityService().updateLiveActivity(
+              deviceId: deviceId,
+              data: LiveActivityModel(
+                deviceId: deviceId,
+                co2Value: int.parse(co2Value),
+                powerMode: powerMode,
+                batteryLevel: int.parse(batteryLevel),
+                isCharging: isCharging,
+                alarmEnabled: alarmEnabled,
+                vibrationEnabled: vibrationEnabled,
+                co2History: co2History,
+                greenUpperLimit: deviceSettings?.thresholds.greenUpperLimit ??
+                    Constants.defaultGreenUpperLimit,
+                yellowUpperLimit: deviceSettings?.thresholds.yellowUpperLimit ??
+                    Constants.defaultYellowUpperLimit,
+                graphMaxValue: deviceSettings?.graphMaxValue ?? 1600,
+                graphMinValue: deviceSettings?.graphMinValue ?? 0,
+              ));
+        } else {
+          // If notification is disabled, make sure to stop any active notification service
+          debugPrint(
+              'BLE: Android notification setting is disabled - stopping any active notification service');
+          LiveActivityService().endLiveActivity();
+        }
       }
 
       if (Platform.isIOS && deviceSettings?.showLiveActivity == true) {

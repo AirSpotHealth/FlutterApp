@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:airspothealth/core/providers/ble_device_communication_provider.dart';
 import 'package:airspothealth/core/providers/device_settings_provider.dart';
 import 'package:airspothealth/core/services/live_activity_service.dart';
@@ -16,10 +18,14 @@ class LiveActivitySettingWidget extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final deviceSettings = ref.watch(deviceSettingsProvider(deviceId));
+
+    // Get platform-specific title
+    final title = _getTitle();
+
     return SettingItemWidget(
       onTap: () {},
       item: SettingItem(
-        title: 'Live Activity',
+        title: title,
         assetIcon: Assets.liveActivity,
         suffixWidget: SizedBox(
           height: 24,
@@ -34,14 +40,14 @@ class LiveActivitySettingWidget extends ConsumerWidget {
                   );
 
               if (value) {
-                // User toggled ON - start the live activity
+                // User toggled ON - start the live activity/notification
                 // Trigger a fresh data update which will start the live activity
                 ref
                     .read(bleDeviceCommunicationProvider(deviceId).notifier)
                     .sendCommand(DeviceCmdUtils
                         .getCO2()); // Get CO2 command to trigger live activity update
               } else {
-                // User toggled OFF - end the live activity
+                // User toggled OFF - end the live activity/notification
                 LiveActivityService().endLiveActivity();
               }
             },
@@ -49,5 +55,15 @@ class LiveActivitySettingWidget extends ConsumerWidget {
         ),
       ),
     );
+  }
+
+  String _getTitle() {
+    if (Platform.isIOS) {
+      return 'Live Activity';
+    } else if (Platform.isAndroid) {
+      return 'Persistent Notification';
+    } else {
+      return 'Live Activity';
+    }
   }
 }

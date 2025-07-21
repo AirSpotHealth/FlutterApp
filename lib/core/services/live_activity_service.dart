@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:airspothealth/core/models/live_activity_model.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -17,6 +19,17 @@ class LiveActivityService {
 
   // Track which device currently has active Live Activity
   String? _activeDeviceId;
+
+  // Helper method to get platform name for logging
+  String _getPlatformName() {
+    if (Platform.isIOS) {
+      return 'iOS (Live Activity)';
+    } else if (Platform.isAndroid) {
+      return 'Android (Foreground Notification)';
+    } else {
+      return 'Unknown Platform';
+    }
+  }
 
   // Set up method call handler to listen for refresh requests
   void _setupMethodCallHandler() {
@@ -101,8 +114,10 @@ class LiveActivityService {
         'startLiveActivity',
         data.toJson(),
       );
+
+      final platformName = _getPlatformName();
       debugPrint(
-          'Live Activity started successfully${deviceId != null ? ' for device: $deviceId' : ''}');
+          'Live Activity started successfully on $platformName${deviceId != null ? ' for device: $deviceId' : ''}');
     } on PlatformException catch (e) {
       debugPrint("Failed to start live activity: '${e.message}'.");
     }
@@ -120,8 +135,10 @@ class LiveActivityService {
         'updateLiveActivity',
         data.toJson(),
       );
+
+      final platformName = _getPlatformName();
       debugPrint(
-          'Live Activity updated successfully${deviceId != null ? ' for device: $deviceId' : ''}');
+          'Live Activity updated successfully on $platformName${deviceId != null ? ' for device: $deviceId' : ''}');
     } on PlatformException catch (e) {
       debugPrint("Failed to update live activity: '${e.message}'.");
     }
@@ -133,7 +150,9 @@ class LiveActivityService {
         'endLiveActivity',
       );
       _activeDeviceId = null; // Clear active device when ending
-      debugPrint('Live Activity ended successfully');
+
+      final platformName = _getPlatformName();
+      debugPrint('Live Activity ended successfully on $platformName');
     } on PlatformException catch (e) {
       debugPrint("Failed to end live activity: '${e.message}'.");
     }

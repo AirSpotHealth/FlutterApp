@@ -5,6 +5,7 @@ import 'package:airspothealth/core/services/ble_device_communicator.dart';
 import 'package:airspothealth/core/utils/constants.dart';
 import 'package:airspothealth/core/utils/device_cmd_utils.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_blue_plus/flutter_blue_plus.dart';
 import 'package:home_widget/home_widget.dart';
 
@@ -214,10 +215,24 @@ class HomeWidgetService {
         androidName: Constants.androidWidgetName,
       );
 
+      // Also update Android foreground notification if we have data
+      _updateAndroidNotification();
+
       debugPrint(
           'Widget data saved as single JSON payload (${jsonEncode(widgetData).length} chars)');
     } catch (e, stackTrace) {
       debugPrint('Error updating home widget: $e\n$stackTrace');
+    }
+  }
+
+  /// Update Android foreground notification service with latest data
+  void _updateAndroidNotification() {
+    try {
+      const platform = MethodChannel('liveActivityChannel');
+      platform.invokeMethod('updateLiveActivity');
+      debugPrint('Android notification update triggered');
+    } catch (e) {
+      debugPrint('Error updating Android notification: $e');
     }
   }
 }

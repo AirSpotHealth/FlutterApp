@@ -1,0 +1,92 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="horizontal"
+    android:padding="12dp"
+    android:background="@android:color/transparent">
+
+    <!-- Left section: CO2 Value -->
+    <LinearLayout
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_weight="1"
+        android:orientation="vertical"
+        android:gravity="center_vertical">
+
+        <TextView
+            android:id="@+id/co2_value_compact"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="----"
+            android:textSize="18sp"
+            android:textStyle="bold"
+            android:textColor="#4CAF50" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="CO₂ ppm"
+            android:textSize="10sp"
+            android:textColor="#FFFFFF"
+            android:alpha="0.8" />
+
+    </LinearLayout>
+
+    <!-- Center section: Device Name -->
+    <LinearLayout
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_weight="2"
+        android:orientation="vertical"
+        android:gravity="center">
+
+        <TextView
+            android:id="@+id/device_name_compact"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="No Device"
+            android:textSize="14sp"
+            android:textColor="#FFFFFF"
+            android:textStyle="bold"
+            android:maxLines="1"
+            android:ellipsize="end" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="AirSpot Health"
+            android:textSize="10sp"
+            android:textColor="#FFFFFF"
+            android:alpha="0.6" />
+
+    </LinearLayout>
+
+    <!-- Right section: Battery -->
+    <LinearLayout
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_weight="1"
+        android:orientation="vertical"
+        android:gravity="center_vertical|end">
+
+        <TextView
+            android:id="@+id/battery_compact"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="0%"
+            android:textSize="12sp"
+            android:textColor="#FFFFFF"
+            android:textStyle="bold" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Battery"
+            android:textSize="9sp"
+            android:textColor="#FFFFFF"
+            android:alpha="0.6" />
+
+    </LinearLayout>
+
+</LinearLayout>
