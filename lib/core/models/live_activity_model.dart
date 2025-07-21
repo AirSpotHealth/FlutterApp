@@ -1,5 +1,6 @@
 class LiveActivityModel {
   final String deviceId;
+  final String deviceName;
   final int co2Value;
   final String powerMode;
   final int batteryLevel;
@@ -14,6 +15,7 @@ class LiveActivityModel {
 
   LiveActivityModel({
     required this.deviceId,
+    required this.deviceName,
     required this.co2Value,
     required this.powerMode,
     required this.batteryLevel,
@@ -30,6 +32,7 @@ class LiveActivityModel {
   Map<String, dynamic> toJson() {
     return {
       'deviceId': deviceId,
+      'deviceName': deviceName,
       'co2Value': co2Value,
       'powerMode': powerMode,
       'batteryLevel': batteryLevel,

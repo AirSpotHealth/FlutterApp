@@ -1,8 +1,12 @@
+import 'dart:convert';
 import 'dart:io';
 
+import 'package:airspothealth/core/models/device_settings.dart';
 import 'package:airspothealth/core/models/live_activity_model.dart';
+import 'package:airspothealth/core/utils/constants.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:home_widget/home_widget.dart';
 
 class LiveActivityService {
   static const platform = MethodChannel('liveActivityChannel');
@@ -19,17 +23,6 @@ class LiveActivityService {
 
   // Track which device currently has active Live Activity
   String? _activeDeviceId;
-
-  // Helper method to get platform name for logging
-  String _getPlatformName() {
-    if (Platform.isIOS) {
-      return 'iOS (Live Activity)';
-    } else if (Platform.isAndroid) {
-      return 'Android (Foreground Notification)';
-    } else {
-      return 'Unknown Platform';
-    }
-  }
 
   // Set up method call handler to listen for refresh requests
   void _setupMethodCallHandler() {
@@ -110,17 +103,32 @@ class LiveActivityService {
         setActiveDevice(deviceId);
       }
 
-      await platform.invokeMethod(
-        'startLiveActivity',
-        data.toJson(),
-      );
-
-      final platformName = _getPlatformName();
-      debugPrint(
-          'Live Activity started successfully on $platformName${deviceId != null ? ' for device: $deviceId' : ''}');
+      if (Platform.isIOS) {
+        // iOS: Start Live Activity
+        await platform.invokeMethod(
+          'startLiveActivity',
+          data.toJson(),
+        );
+        debugPrint(
+            'iOS Live Activity started successfully${deviceId != null ? ' for device: $deviceId' : ''}');
+      } else if (Platform.isAndroid) {
+        // Android: Start both Foreground Notification AND update Home Widget
+        await _startAndroidNotification(data);
+        await _updateAndroidHomeWidget(data);
+        debugPrint(
+            'Android Notification started and Widget updated successfully${deviceId != null ? ' for device: $deviceId' : ''}');
+      }
     } on PlatformException catch (e) {
       debugPrint("Failed to start live activity: '${e.message}'.");
     }
+  }
+
+  Future<void> _startAndroidNotification(LiveActivityModel data) async {
+    // Start Android Foreground Notification via method channel
+    await platform.invokeMethod(
+      'startLiveActivity',
+      data.toJson(),
+    );
   }
 
   Future<void> updateLiveActivity(
@@ -131,30 +139,155 @@ class LiveActivityService {
         setActiveDevice(deviceId);
       }
 
-      await platform.invokeMethod(
-        'updateLiveActivity',
-        data.toJson(),
-      );
-
-      final platformName = _getPlatformName();
-      debugPrint(
-          'Live Activity updated successfully on $platformName${deviceId != null ? ' for device: $deviceId' : ''}');
+      if (Platform.isIOS) {
+        // iOS: Update Live Activity
+        await platform.invokeMethod(
+          'updateLiveActivity',
+          data.toJson(),
+        );
+        debugPrint(
+            'iOS Live Activity updated successfully${deviceId != null ? ' for device: $deviceId' : ''}');
+      } else if (Platform.isAndroid) {
+        // Android: Update both Foreground Notification AND Home Widget
+        await _updateAndroidNotification(data);
+        await _updateAndroidHomeWidget(data);
+        debugPrint(
+            'Android Notification and Widget updated successfully${deviceId != null ? ' for device: $deviceId' : ''}');
+      }
     } on PlatformException catch (e) {
       debugPrint("Failed to update live activity: '${e.message}'.");
     }
   }
 
+  Future<void> _updateAndroidNotification(LiveActivityModel data) async {
+    // Update Android Foreground Notification via method channel
+    await platform.invokeMethod(
+      'updateLiveActivity',
+      data.toJson(),
+    );
+  }
+
+  Future<void> _updateAndroidHomeWidget(LiveActivityModel data) async {
+    // Update Android Home Widget via home_widget plugin
+    final widgetData = data.toJson();
+
+    // Store data for widget
+    await HomeWidget.saveWidgetData<String>(
+        'widget_data_json', jsonEncode(widgetData));
+
+    // Update the widget
+    await HomeWidget.updateWidget(
+      name: 'Co2ValueWidget',
+      androidName: 'Co2ValueWidget',
+    );
+  }
+
   Future<void> endLiveActivity() async {
     try {
-      await platform.invokeMethod(
-        'endLiveActivity',
-      );
-      _activeDeviceId = null; // Clear active device when ending
+      if (Platform.isIOS) {
+        // iOS: End Live Activity
+        await platform.invokeMethod('endLiveActivity');
+        debugPrint('iOS Live Activity ended successfully');
+      } else if (Platform.isAndroid) {
+        // Android: Stop Foreground Notification (Home Widget stays)
+        await platform.invokeMethod('endLiveActivity');
+        debugPrint('Android Foreground Notification ended successfully');
+      }
 
-      final platformName = _getPlatformName();
-      debugPrint('Live Activity ended successfully on $platformName');
+      _activeDeviceId = null; // Clear active device when ending
     } on PlatformException catch (e) {
       debugPrint("Failed to end live activity: '${e.message}'.");
+    }
+  }
+
+  /// Unified method to update all UI components with CO2 data
+  /// This replaces the complex logic previously in BLE provider
+  Future<void> updateWithCO2Data({
+    required String deviceId,
+    required String co2Value,
+    required String deviceName,
+    required DeviceSettings? deviceSettings,
+    required String batteryLevel,
+    required bool isCharging,
+    required List<int> co2History,
+  }) async {
+    try {
+      // Extract device settings or use defaults
+      final String powerMode = deviceSettings?.powerMode.name ?? 'Now';
+      final bool alarmEnabled = deviceSettings?.alarmEnabled ?? false;
+      final bool vibrationEnabled = deviceSettings?.vibrationEnabled ?? false;
+
+      // Create unified data model
+      final liveActivityData = LiveActivityModel(
+        deviceId: deviceId,
+        deviceName: deviceName,
+        co2Value: int.parse(co2Value),
+        powerMode: powerMode,
+        batteryLevel: int.parse(batteryLevel),
+        isCharging: isCharging,
+        alarmEnabled: alarmEnabled,
+        vibrationEnabled: vibrationEnabled,
+        co2History: co2History,
+        greenUpperLimit: deviceSettings?.thresholds.greenUpperLimit ??
+            Constants.defaultGreenUpperLimit,
+        yellowUpperLimit: deviceSettings?.thresholds.yellowUpperLimit ??
+            Constants.defaultYellowUpperLimit,
+        graphMaxValue: deviceSettings?.graphMaxValue ?? 1600,
+        graphMinValue: deviceSettings?.graphMinValue ?? 0,
+      );
+
+      if (Platform.isAndroid) {
+        // Android: Handle both notification and widget
+        if (deviceSettings?.showLiveActivity == true) {
+          bool isActive = await isLiveActivityActive();
+          if (isActive) {
+            debugPrint(
+                'LiveActivity: Updating Android notification and widget with CO2=$co2Value');
+            await updateLiveActivity(
+                deviceId: deviceId, data: liveActivityData);
+          } else {
+            debugPrint(
+                'LiveActivity: Setting is ON but no active notification found - not auto-starting');
+          }
+        } else {
+          debugPrint(
+              'LiveActivity: Android notification setting is disabled - stopping any active service');
+          await endLiveActivity();
+        }
+      } else if (Platform.isIOS) {
+        // iOS: Handle Live Activity
+        if (deviceSettings?.showLiveActivity == true) {
+          debugPrint(
+              'LiveActivity: Updating iOS Live Activity with CO2=$co2Value');
+
+          // Check dismissal state for iOS
+          bool wasDismissed = await wasUserDismissedThisSession();
+          if (wasDismissed) {
+            debugPrint(
+                'LiveActivity: Was dismissed by user this session - update will be blocked');
+          } else {
+            debugPrint(
+                'LiveActivity: Proceeding with update - no user dismissal detected');
+            await updateLiveActivity(
+                deviceId: deviceId, data: liveActivityData);
+          }
+        } else {
+          debugPrint(
+              'LiveActivity: iOS Live Activity setting is disabled - ending any active activity');
+          await endLiveActivity();
+        }
+      }
+    } catch (e) {
+      debugPrint('LiveActivity: Error processing CO2 data update: $e');
+
+      // Fallback for Android home widget
+      if (Platform.isAndroid) {
+        await HomeWidget.saveWidgetData(Constants.homeWidgetKey, '----');
+        await HomeWidget.updateWidget(
+          iOSName: Constants.iOSWidgetName,
+          androidName: Constants.androidWidgetName,
+        );
+      }
     }
   }
 

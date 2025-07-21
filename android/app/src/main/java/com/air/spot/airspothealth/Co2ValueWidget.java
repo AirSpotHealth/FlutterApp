@@ -49,22 +49,24 @@ public class Co2ValueWidget extends AppWidgetProvider {
             JSONObject widgetData = new JSONObject(widgetDataJson);
             
             // Extract all values from JSON with fallbacks
-            String co2Value = widgetData.optString("co2_value", "----");
-            String deviceId = widgetData.optString("device_id", "");
-            String deviceName = widgetData.optString("device_name", "No Device");
-            String powerMode = widgetData.optString("power_mode", "Now");
-            String batteryLevel = widgetData.optString("battery_level", "0");
-            boolean isCharging = widgetData.optBoolean("is_charging", false);
-            boolean alarmEnabled = widgetData.optBoolean("alarm_enabled", false);
-            boolean vibrationEnabled = widgetData.optBoolean("vibration_enabled", false);
+            // Note: co2Value and batteryLevel are now sent as integers from Flutter
+            String co2Value = String.valueOf(widgetData.optInt("co2Value", 0));
+            if (co2Value.equals("0")) co2Value = "----"; // Fallback for invalid data
+            String deviceId = widgetData.optString("deviceId", "");
+            String deviceName = widgetData.optString("deviceName", "No Device");
+            String powerMode = widgetData.optString("powerMode", "Now");
+            String batteryLevel = String.valueOf(widgetData.optInt("batteryLevel", 0));
+            boolean isCharging = widgetData.optBoolean("isCharging", false);
+            boolean alarmEnabled = widgetData.optBoolean("alarmEnabled", false);
+            boolean vibrationEnabled = widgetData.optBoolean("vibrationEnabled", false);
             
             // Graph data
-            JSONArray co2HistoryArray = widgetData.optJSONArray("co2_history");
+            JSONArray co2HistoryArray = widgetData.optJSONArray("co2History");
             List<Integer> co2History = parseJsonArrayToIntList(co2HistoryArray);
-            int greenUpperLimit = widgetData.optInt("green_upper_limit", 800);
-            int yellowUpperLimit = widgetData.optInt("yellow_upper_limit", 1000);
-            int graphMaxValue = widgetData.optInt("graph_max_value", 1600);
-            int graphMinValue = widgetData.optInt("graph_min_value", 0);
+            int greenUpperLimit = widgetData.optInt("greenUpperLimit", 800);
+            int yellowUpperLimit = widgetData.optInt("yellowUpperLimit", 1000);
+            int graphMaxValue = widgetData.optInt("graphMaxValue", 1600);
+            int graphMinValue = widgetData.optInt("graphMinValue", 0);
             
             Log.d(TAG, "Parsed widget data: CO2=" + co2Value + ", Device=" + deviceName + 
                       ", History=" + co2History.size() + " values, Thresholds=" + greenUpperLimit + "/" + yellowUpperLimit);

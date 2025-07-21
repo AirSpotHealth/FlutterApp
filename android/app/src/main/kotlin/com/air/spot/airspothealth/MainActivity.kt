@@ -100,7 +100,6 @@ class MainActivity: FlutterActivity() {
     }
     
     private fun isNotificationServiceRunning(): Boolean {
-        // Simple check - in a real implementation you might want to check if service is actually running
-        return true // For simplicity, always return true when called
+        return ForegroundNotificationService.isServiceRunning(this)
     }
 }
