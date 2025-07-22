@@ -95,42 +95,6 @@ class LiveActivityService {
     return _activeDeviceId;
   }
 
-  Future<void> startLiveActivity(
-      {required LiveActivityModel data, String? deviceId}) async {
-    try {
-      // Track which device started the Live Activity
-      if (deviceId != null) {
-        setActiveDevice(deviceId);
-      }
-
-      if (Platform.isIOS) {
-        // iOS: Start Live Activity
-        await platform.invokeMethod(
-          'startLiveActivity',
-          data.toJson(),
-        );
-        debugPrint(
-            'iOS Live Activity started successfully${deviceId != null ? ' for device: $deviceId' : ''}');
-      } else if (Platform.isAndroid) {
-        // Android: Start both Foreground Notification AND update Home Widget
-        await _startAndroidNotification(data);
-        await _updateAndroidHomeWidget(data);
-        debugPrint(
-            'Android Notification started and Widget updated successfully${deviceId != null ? ' for device: $deviceId' : ''}');
-      }
-    } on PlatformException catch (e) {
-      debugPrint("Failed to start live activity: '${e.message}'.");
-    }
-  }
-
-  Future<void> _startAndroidNotification(LiveActivityModel data) async {
-    // Start Android Foreground Notification via method channel
-    await platform.invokeMethod(
-      'startLiveActivity',
-      data.toJson(),
-    );
-  }
-
   Future<void> updateLiveActivity(
       {required LiveActivityModel data, String? deviceId}) async {
     try {
@@ -138,33 +102,17 @@ class LiveActivityService {
       if (deviceId != null) {
         setActiveDevice(deviceId);
       }
+      _updateAndroidHomeWidget(data).ignore();
 
-      if (Platform.isIOS) {
-        // iOS: Update Live Activity
-        await platform.invokeMethod(
-          'updateLiveActivity',
-          data.toJson(),
-        );
-        debugPrint(
-            'iOS Live Activity updated successfully${deviceId != null ? ' for device: $deviceId' : ''}');
-      } else if (Platform.isAndroid) {
-        // Android: Update both Foreground Notification AND Home Widget
-        await _updateAndroidNotification(data);
-        await _updateAndroidHomeWidget(data);
-        debugPrint(
-            'Android Notification and Widget updated successfully${deviceId != null ? ' for device: $deviceId' : ''}');
-      }
+      await platform.invokeMethod(
+        'updateLiveActivity',
+        data.toJson(),
+      );
+      debugPrint(
+          'Live Activity updated successfully${deviceId != null ? ' for device: $deviceId' : ''}');
     } on PlatformException catch (e) {
       debugPrint("Failed to update live activity: '${e.message}'.");
     }
-  }
-
-  Future<void> _updateAndroidNotification(LiveActivityModel data) async {
-    // Update Android Foreground Notification via method channel
-    await platform.invokeMethod(
-      'updateLiveActivity',
-      data.toJson(),
-    );
   }
 
   Future<void> _updateAndroidHomeWidget(LiveActivityModel data) async {
@@ -177,8 +125,8 @@ class LiveActivityService {
 
     // Update the widget
     await HomeWidget.updateWidget(
-      name: 'Co2ValueWidget',
-      androidName: 'Co2ValueWidget',
+      name: Constants.androidWidgetName,
+      androidName: Constants.androidWidgetName,
     );
   }
 
@@ -236,46 +184,22 @@ class LiveActivityService {
         graphMinValue: deviceSettings?.graphMinValue ?? 0,
       );
 
-      if (Platform.isAndroid) {
-        // Android: Handle both notification and widget
-        if (deviceSettings?.showLiveActivity == true) {
-          bool isActive = await isLiveActivityActive();
-          if (isActive) {
-            debugPrint(
-                'LiveActivity: Updating Android notification and widget with CO2=$co2Value');
-            await updateLiveActivity(
-                deviceId: deviceId, data: liveActivityData);
-          } else {
-            debugPrint(
-                'LiveActivity: Setting is ON but no active notification found - not auto-starting');
-          }
-        } else {
-          debugPrint(
-              'LiveActivity: Android notification setting is disabled - stopping any active service');
-          await endLiveActivity();
-        }
-      } else if (Platform.isIOS) {
-        // iOS: Handle Live Activity
-        if (deviceSettings?.showLiveActivity == true) {
-          debugPrint(
-              'LiveActivity: Updating iOS Live Activity with CO2=$co2Value');
-
+      if (deviceSettings?.showLiveActivity == true) {
+        if (Platform.isIOS) {
           // Check dismissal state for iOS
           bool wasDismissed = await wasUserDismissedThisSession();
           if (wasDismissed) {
             debugPrint(
                 'LiveActivity: Was dismissed by user this session - update will be blocked');
-          } else {
-            debugPrint(
-                'LiveActivity: Proceeding with update - no user dismissal detected');
-            await updateLiveActivity(
-                deviceId: deviceId, data: liveActivityData);
+            return;
           }
-        } else {
-          debugPrint(
-              'LiveActivity: iOS Live Activity setting is disabled - ending any active activity');
-          await endLiveActivity();
         }
+
+        await updateLiveActivity(deviceId: deviceId, data: liveActivityData);
+      } else {
+        debugPrint(
+            'LiveActivity: Android notification setting is disabled - stopping any active service');
+        await endLiveActivity();
       }
     } catch (e) {
       debugPrint('LiveActivity: Error processing CO2 data update: $e');

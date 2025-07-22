@@ -80,6 +80,14 @@ public class ForegroundNotificationService extends Service {
                     updateNotification();
                 }
                 return START_STICKY;
+            } else if ("REFRESH_DATA".equals(action)) {
+                Log.d(TAG, "Received REFRESH_DATA action - sending refresh request to MainActivity");
+                // Send refresh request to MainActivity via deep link
+                Intent refreshIntent = new Intent(this, MainActivity.class);
+                refreshIntent.setData(Uri.parse("airspothealthapp://refresh"));
+                refreshIntent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP);
+                startActivity(refreshIntent);
+                return START_STICKY;
             }
         }
 
@@ -104,10 +112,7 @@ public class ForegroundNotificationService extends Service {
     private void createNotificationChannel() {
         Log.d(TAG, "Creating notification channel");
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            NotificationChannel channel = new NotificationChannel(
-                    CHANNEL_ID,
-                    "CO2 Monitoring",
-                    NotificationManager.IMPORTANCE_MAX  // Use MAX to force lock screen visibility
+            NotificationChannel channel = new NotificationChannel(CHANNEL_ID, "CO2 Monitoring", NotificationManager.IMPORTANCE_MAX  // Use MAX to force lock screen visibility
             );
             channel.setDescription("Real-time CO2 monitoring notification - Always show on lock screen");
             channel.setShowBadge(true);
@@ -213,43 +218,29 @@ public class ForegroundNotificationService extends Service {
             // Create open app intent
             Intent openAppIntent = new Intent(this, MainActivity.class);
             openAppIntent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TOP);
-            PendingIntent openAppPendingIntent = PendingIntent.getActivity(this, 0, openAppIntent,
-                    PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
+            PendingIntent openAppPendingIntent = PendingIntent.getActivity(this, 0, openAppIntent, PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
 
             // Create full screen intent for lock screen visibility
             Intent fullScreenIntent = new Intent(this, MainActivity.class);
             fullScreenIntent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TOP);
-            PendingIntent fullScreenPendingIntent = PendingIntent.getActivity(this, 1, fullScreenIntent,
-                    PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
+            PendingIntent fullScreenPendingIntent = PendingIntent.getActivity(this, 1, fullScreenIntent, PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
 
             // Create our custom expanded layout
-            RemoteViews expandedLayout = createExpandedNotificationLayout(co2Value, deviceName, powerMode,
-                    batteryLevel, isCharging, alarmEnabled, vibrationEnabled, co2History,
-                    greenUpperLimit, yellowUpperLimit, graphMaxValue, graphMinValue, deviceId);
+            RemoteViews expandedLayout = createExpandedNotificationLayout(co2Value, deviceName, powerMode, batteryLevel, isCharging, alarmEnabled, vibrationEnabled, co2History, greenUpperLimit, yellowUpperLimit, graphMaxValue, graphMinValue, deviceId);
 
             // Create compact layout for collapsed state
             RemoteViews compactLayout = createCompactNotificationLayout(co2Value, batteryLevel, isCharging, alarmEnabled, vibrationEnabled, powerMode);
 
             // Create notification with custom layouts - always expanded
             Log.d(TAG, "Building custom expanded notification...");
-            NotificationCompat.Builder builder = new NotificationCompat.Builder(this, CHANNEL_ID)
-                    .setSmallIcon(R.drawable.ic_launcher_foreground)  // Use our AirSpot logo
+            NotificationCompat.Builder builder = new NotificationCompat.Builder(this, CHANNEL_ID).setSmallIcon(R.drawable.ic_launcher_foreground)  // Use our AirSpot logo
                     .setContentTitle("AirSpot Health")  // Simple title for system
                     .setContentText(co2Value + " ppm")   // Simple text for system
                     .setCustomContentView(compactLayout)       // Custom compact layout
                     .setCustomBigContentView(expandedLayout)   // Custom expanded layout
                     .setStyle(new NotificationCompat.DecoratedCustomViewStyle())  // Use decorated style
-                    .setOngoing(true)
-                    .setPriority(NotificationCompat.PRIORITY_MAX)
-                    .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
-                    .setCategory(NotificationCompat.CATEGORY_SERVICE)
-                    .setContentIntent(openAppPendingIntent)
-                    .setFullScreenIntent(fullScreenPendingIntent, false)
-                    .setAutoCancel(false)
-                    .setShowWhen(false)  // Hide time to save space
-                    .setOnlyAlertOnce(true)
-                    .setLocalOnly(false)
-                    .setDefaults(0);
+                    .setOngoing(true).setPriority(NotificationCompat.PRIORITY_MAX).setVisibility(NotificationCompat.VISIBILITY_PUBLIC).setCategory(NotificationCompat.CATEGORY_SERVICE).setContentIntent(openAppPendingIntent).setFullScreenIntent(fullScreenPendingIntent, false).setAutoCancel(false).setShowWhen(false)  // Hide time to save space
+                    .setOnlyAlertOnce(true).setLocalOnly(false).setDefaults(0);
 
             // Add action buttons
             addNotificationActions(builder, deviceId);
@@ -265,8 +256,7 @@ public class ForegroundNotificationService extends Service {
         return null;
     }
 
-    private RemoteViews createCompactNotificationLayout(String co2Value, String batteryLevel, boolean isCharging,
-                                                        boolean alarmEnabled, boolean vibrationEnabled, String powerMode)  {
+    private RemoteViews createCompactNotificationLayout(String co2Value, String batteryLevel, boolean isCharging, boolean alarmEnabled, boolean vibrationEnabled, String powerMode) {
         RemoteViews views = new RemoteViews(getPackageName(), R.layout.notification_compact);
 
         // Set CO2 value with color
@@ -287,10 +277,7 @@ public class ForegroundNotificationService extends Service {
         return views;
     }
 
-    private RemoteViews createNotificationLayout(String co2Value, String deviceName,
-                                                 String powerMode, String batteryLevel, boolean isCharging,
-                                                 boolean alarmEnabled, boolean vibrationEnabled, List<Integer> co2History,
-                                                 int greenUpperLimit, int yellowUpperLimit, int graphMaxValue, int graphMinValue) {
+    private RemoteViews createNotificationLayout(String co2Value, String deviceName, String powerMode, String batteryLevel, boolean isCharging, boolean alarmEnabled, boolean vibrationEnabled, List<Integer> co2History, int greenUpperLimit, int yellowUpperLimit, int graphMaxValue, int graphMinValue) {
 
         RemoteViews views = new RemoteViews(getPackageName(), R.layout.notification_compact);
 
@@ -312,11 +299,7 @@ public class ForegroundNotificationService extends Service {
         return views;
     }
 
-    private RemoteViews createExpandedNotificationLayout(String co2Value, String deviceName,
-                                                         String powerMode, String batteryLevel, boolean isCharging,
-                                                         boolean alarmEnabled, boolean vibrationEnabled, List<Integer> co2History,
-                                                         int greenUpperLimit, int yellowUpperLimit, int graphMaxValue, int graphMinValue,
-                                                         String deviceId) {
+    private RemoteViews createExpandedNotificationLayout(String co2Value, String deviceName, String powerMode, String batteryLevel, boolean isCharging, boolean alarmEnabled, boolean vibrationEnabled, List<Integer> co2History, int greenUpperLimit, int yellowUpperLimit, int graphMaxValue, int graphMinValue, String deviceId) {
 
         RemoteViews views = new RemoteViews(getPackageName(), R.layout.notification_expanded);
 
@@ -337,10 +320,25 @@ public class ForegroundNotificationService extends Service {
         views.setImageViewResource(R.id.vibrate_mode_expanded, vibrationEnabled ? R.drawable.vibrate_on : R.drawable.vibrate_off);
         views.setImageViewResource(R.id.alarm_mode_expanded, alarmEnabled ? R.drawable.alarm_on : R.drawable.alarm_off);
 
+        // Add click actions to map and graph icons
+        // Map icon click action - open map website
+        Intent mapIntent = new Intent(Intent.ACTION_VIEW);
+        mapIntent.setData(Uri.parse("https://airspot-map.vercel.app/"));
+        PendingIntent mapPendingIntent = PendingIntent.getActivity(this, 100, mapIntent,
+                PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
+        views.setOnClickPendingIntent(R.id.ic_map, mapPendingIntent);
+
+        // Graph icon click action - deep link to graph
+        Intent graphIntent = new Intent(this, MainActivity.class);
+        graphIntent.setData(Uri.parse("airspothealth://devices/" + deviceId + "/graph"));
+        graphIntent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TOP);
+        PendingIntent graphPendingIntent = PendingIntent.getActivity(this, 101, graphIntent,
+                PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
+        views.setOnClickPendingIntent(R.id.ic_graph, graphPendingIntent);
+
         // Create and set graph
         if (!co2History.isEmpty()) {
-            Bitmap graphBitmap = generateCo2GraphBitmap(co2History, greenUpperLimit,
-                    yellowUpperLimit, graphMaxValue, graphMinValue);
+            Bitmap graphBitmap = generateCo2GraphBitmap(co2History, greenUpperLimit, yellowUpperLimit, graphMaxValue, graphMinValue);
             views.setImageViewBitmap(R.id.co2_graph_expanded, graphBitmap);
         }
 
@@ -348,46 +346,26 @@ public class ForegroundNotificationService extends Service {
     }
 
     private void addNotificationActions(NotificationCompat.Builder builder, String deviceId) {
-        // Refresh action
+        // Refresh action - should trigger Flutter to refresh data WITHOUT opening app
         Intent refreshIntent = new Intent(this, ForegroundNotificationService.class);
-        refreshIntent.setAction("UPDATE_DATA");
-        PendingIntent refreshPendingIntent = PendingIntent.getService(this, 0, refreshIntent,
-                PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
+        refreshIntent.setAction("REFRESH_DATA");
+        PendingIntent refreshPendingIntent = PendingIntent.getService(this, 1, refreshIntent, PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
         builder.addAction(R.drawable.ic_refresh, "Refresh", refreshPendingIntent);
 
         // Open app action
         Intent openAppIntent = new Intent(this, MainActivity.class);
         openAppIntent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TOP);
-        PendingIntent openAppPendingIntent = PendingIntent.getActivity(this, 0, openAppIntent,
-                PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
+        PendingIntent openAppPendingIntent = PendingIntent.getActivity(this, 0, openAppIntent, PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
         builder.addAction(R.drawable.ic_open_app, "Open App", openAppPendingIntent);
 
         // Stop service action
         Intent stopIntent = new Intent(this, ForegroundNotificationService.class);
         stopIntent.setAction("STOP_SERVICE");
-        PendingIntent stopPendingIntent = PendingIntent.getService(this, 0, stopIntent,
-                PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
+        PendingIntent stopPendingIntent = PendingIntent.getService(this, 0, stopIntent, PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
         builder.addAction(R.drawable.ic_close, "Stop", stopPendingIntent);
     }
 
-    private void addSimpleNotificationActions(NotificationCompat.Builder builder, String deviceId) {
-        // Only add Open App action to keep it simple for Honor devices
-        Intent openAppIntent = new Intent(this, MainActivity.class);
-        openAppIntent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TOP);
-        PendingIntent openAppPendingIntent = PendingIntent.getActivity(this, 0, openAppIntent,
-                PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
-        builder.addAction(android.R.drawable.ic_menu_view, "Open App", openAppPendingIntent);
-
-        // Stop service action
-        Intent stopIntent = new Intent(this, ForegroundNotificationService.class);
-        stopIntent.setAction("STOP_SERVICE");
-        PendingIntent stopPendingIntent = PendingIntent.getService(this, 0, stopIntent,
-                PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
-        builder.addAction(android.R.drawable.ic_menu_close_clear_cancel, "Stop", stopPendingIntent);
-    }
-
-    private Bitmap generateCo2GraphBitmap(List<Integer> co2History, int greenUpperLimit,
-                                          int yellowUpperLimit, int graphMaxValue, int graphMinValue) {
+    private Bitmap generateCo2GraphBitmap(List<Integer> co2History, int greenUpperLimit, int yellowUpperLimit, int graphMaxValue, int graphMinValue) {
         // Reuse the same graph generation logic from Co2ValueWidget
         float density = getResources().getDisplayMetrics().density;
         int width = (int) (320 * density);  // Slightly wider for notification

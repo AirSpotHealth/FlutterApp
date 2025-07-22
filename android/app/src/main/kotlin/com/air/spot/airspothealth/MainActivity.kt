@@ -63,11 +63,29 @@ class MainActivity: FlutterActivity() {
     
     private fun handleDeepLink(intent: Intent?) {
         intent?.data?.let { uri ->
-            if (uri.scheme == "airspothealthapp" && uri.host == "refresh") {
-                Log.d(TAG, "Received refresh request from notification/widget")
-                // Notify Flutter about the refresh request
-                MethodChannel(flutterEngine?.dartExecutor?.binaryMessenger!!, CHANNEL)
-                    .invokeMethod("onRefreshRequested", null)
+            Log.d(TAG, "Received deep link: $uri")
+            
+            when {
+                // Handle refresh requests
+                uri.scheme == "airspothealthapp" && uri.host == "refresh" -> {
+                    Log.d(TAG, "Received refresh request from notification/widget")
+                    // Notify Flutter about the refresh request
+                    MethodChannel(flutterEngine?.dartExecutor?.binaryMessenger!!, CHANNEL)
+                        .invokeMethod("onRefreshRequested", null)
+                }
+                
+                // Handle graph navigation
+                uri.scheme == "airspothealth" && uri.path?.contains("/graph") == true -> {
+                    Log.d(TAG, "Received graph request from notification: ${uri.path}")
+                    // Extract device ID and notify Flutter to navigate to graph
+                    val deviceId = uri.pathSegments?.getOrNull(1) // devices/{deviceId}/graph
+                    MethodChannel(flutterEngine?.dartExecutor?.binaryMessenger!!, CHANNEL)
+                        .invokeMethod("onGraphRequested", mapOf("deviceId" to deviceId))
+                }
+                
+                else -> {
+                    Log.d(TAG, "Unhandled deep link: $uri")
+                }
             }
         }
     }
@@ -83,8 +101,12 @@ class MainActivity: FlutterActivity() {
     
     private fun updateForegroundNotificationService() {
         try {
-            Log.d(TAG, "Updating foreground notification service")
-            ForegroundNotificationService.updateService(this)
+            Log.d(TAG, "Updating foreground notification service: ${isNotificationServiceRunning()}")
+            if (isNotificationServiceRunning()) {
+                ForegroundNotificationService.updateService(this)
+            } else {
+                startForegroundNotificationService()
+            }
         } catch (e: Exception) {
             Log.e(TAG, "Error updating foreground notification service: ${e.message}")
         }

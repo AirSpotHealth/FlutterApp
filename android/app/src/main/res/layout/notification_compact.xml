@@ -91,7 +91,7 @@
             android:orientation="horizontal">
 
             <ImageView
-                android:id="@+id/power_mode"
+                android:id="@+id/power_mode_icon_compact"
                 android:layout_width="24dp"
                 android:layout_height="10dp"
                 android:src="@drawable/ic_power_mode" />

@@ -1,5 +1,4 @@
 import 'package:airspothealth/core/router/app_router.dart';
-import 'package:airspothealth/core/services/home_widget_service.dart';
 import 'package:airspothealth/core/services/isar_service.dart';
 import 'package:airspothealth/core/services/notification_service.dart';
 import 'package:airspothealth/core/services/prefs_service.dart';
@@ -19,7 +18,6 @@ void main() async {
     PrefsService().initialize(),
     LocalDateFormat().initialize(),
     NotificationService.initNotification(),
-    HomeWidgetService().initialize(),
   ].wait;
 
   await _checkVersion();

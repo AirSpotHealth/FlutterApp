@@ -122,6 +122,14 @@
                 <category android:name="android.intent.category.BROWSABLE" />
                 <data android:scheme="airspothealthapp" />
             </intent-filter>
+            
+            <!-- Deep link intent filter for app navigation -->
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="airspothealth" />
+            </intent-filter>
         </activity>
         <!--
  Don't delete the meta-data below.

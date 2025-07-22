@@ -102,7 +102,7 @@ import ActivityKit
   @objc func handleMapClick() {
       print("🔄 Map clicked")
       // Open the map in the browser
-      UIApplication.shared.open(URL(string: "https://airspot.ushahidi.io/")!)
+      UIApplication.shared.open(URL(string: "https://airspot-map.vercel.app/")!)
   }
    
    deinit {
