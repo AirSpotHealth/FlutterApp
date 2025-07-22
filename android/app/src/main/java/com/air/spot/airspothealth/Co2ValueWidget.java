@@ -132,20 +132,16 @@ public class Co2ValueWidget extends AppWidgetProvider {
     }
 
     private static void setupRefreshButton(Context context, RemoteViews views, int appWidgetId, String deviceId) {
+        // When the refresh button is clicked, send the REFRESH_DATA broadcast
         Intent intent = new Intent(context, Co2ValueWidget.class);
-        intent.setAction(AppWidgetManager.ACTION_APPWIDGET_UPDATE);
-        intent.putExtra(AppWidgetManager.EXTRA_APPWIDGET_IDS, new int[] {appWidgetId});
-
-        // Create URI with device ID as query parameter
-        String uriString = "airspothealthapp://refresh";
+        intent.setAction("com.air.spot.airspothealth.REFRESH_DATA");
+        // Optionally, add deviceId as extra if needed
         if (deviceId != null && !deviceId.isEmpty()) {
-            uriString += "?deviceId=" + deviceId;
+            intent.putExtra("deviceId", deviceId);
         }
-        
-        PendingIntent refreshPendingIntent = HomeWidgetBackgroundIntent.INSTANCE.getBroadcast(context, Uri.parse(uriString));
+        PendingIntent refreshPendingIntent = PendingIntent.getBroadcast(context, appWidgetId, intent, PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
         views.setOnClickPendingIntent(R.id.refresh_button, refreshPendingIntent);
-        
-        Log.d(TAG, "Refresh button setup with URI: " + uriString);
+        Log.d(TAG, "Refresh button setup to send REFRESH_DATA broadcast");
     }
 
     private static void setupDynamicCo2Graph(Context context, RemoteViews views, List<Integer> co2History, 
@@ -287,6 +283,13 @@ public class Co2ValueWidget extends AppWidgetProvider {
         }
     }
 
+    // Add a static method to send the REFRESH_DATA broadcast
+    public static void sendRefreshBroadcast(Context context) {
+        Intent broadcastIntent = new Intent("com.air.spot.airspothealth.REFRESH_DATA");
+        context.sendBroadcast(broadcastIntent);
+        Log.d(TAG, "Sent REFRESH_DATA broadcast from Co2ValueWidget");
+    }
+
     @Override
     public void onUpdate(Context context, AppWidgetManager appWidgetManager, int[] appWidgetIds) {
         // Update all widget instances
@@ -311,5 +314,14 @@ public class Co2ValueWidget extends AppWidgetProvider {
     public void onDisabled(Context context) {
         // Enter relevant functionality for when the last widget is disabled
         Log.d(TAG, "Widget disabled");
+    }
+
+    @Override
+    public void onReceive(Context context, Intent intent) {
+        super.onReceive(context, intent);
+        if ("com.air.spot.airspothealth.REFRESH_DATA".equals(intent.getAction())) {
+            // Send the broadcast to MainActivity (which will forward to Flutter)
+            sendRefreshBroadcast(context);
+        }
     }
 }
