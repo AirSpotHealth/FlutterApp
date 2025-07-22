@@ -81,12 +81,9 @@ public class ForegroundNotificationService extends Service {
                 }
                 return START_STICKY;
             } else if ("REFRESH_DATA".equals(action)) {
-                Log.d(TAG, "Received REFRESH_DATA action - sending refresh request to MainActivity");
-                // Send refresh request to MainActivity via deep link
-                Intent refreshIntent = new Intent(this, MainActivity.class);
-                refreshIntent.setData(Uri.parse("airspothealthapp://refresh"));
-                refreshIntent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP);
-                startActivity(refreshIntent);
+                Log.d(TAG, "Received REFRESH_DATA action - sending broadcast to Flutter");
+                Intent broadcastIntent = new Intent("com.air.spot.airspothealth.REFRESH_DATA");
+                sendBroadcast(broadcastIntent);
                 return START_STICKY;
             }
         }

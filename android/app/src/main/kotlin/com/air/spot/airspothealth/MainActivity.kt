@@ -5,11 +5,21 @@ import android.util.Log
 import io.flutter.embedding.android.FlutterActivity
 import io.flutter.embedding.engine.FlutterEngine
 import io.flutter.plugin.common.MethodChannel
+import android.content.Context.RECEIVER_EXPORTED
 
 class MainActivity: FlutterActivity() {
     
     private val CHANNEL = "liveActivityChannel"
     private val TAG = "MainActivity"
+    
+    // Add BroadcastReceiver for refresh
+    private val refreshReceiver = object : android.content.BroadcastReceiver() {
+        override fun onReceive(context: android.content.Context?, intent: android.content.Intent?) {
+            Log.d(TAG, "Received REFRESH_DATA broadcast in MainActivity")
+            MethodChannel(flutterEngine?.dartExecutor?.binaryMessenger!!, CHANNEL)
+                .invokeMethod("onRefreshRequested", null)
+        }
+    }
     
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
         super.configureFlutterEngine(flutterEngine)
@@ -59,6 +69,18 @@ class MainActivity: FlutterActivity() {
     override fun onResume() {
         super.onResume()
         handleDeepLink(intent)
+    }
+    
+    override fun onCreate(savedInstanceState: android.os.Bundle?) {
+        super.onCreate(savedInstanceState)
+        // Register the refresh broadcast receiver
+        val filter = android.content.IntentFilter("com.air.spot.airspothealth.REFRESH_DATA")
+        registerReceiver(refreshReceiver, filter, RECEIVER_EXPORTED)
+    }
+    
+    override fun onDestroy() {
+        super.onDestroy()
+        unregisterReceiver(refreshReceiver)
     }
     
     private fun handleDeepLink(intent: Intent?) {
