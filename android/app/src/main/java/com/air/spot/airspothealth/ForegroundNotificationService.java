@@ -230,14 +230,23 @@ public class ForegroundNotificationService extends Service {
 
             // Create notification with custom layouts - always expanded
             Log.d(TAG, "Building custom expanded notification...");
-            NotificationCompat.Builder builder = new NotificationCompat.Builder(this, CHANNEL_ID).setSmallIcon(R.drawable.ic_launcher_foreground)  // Use our AirSpot logo
+            NotificationCompat.Builder builder = new NotificationCompat.Builder(this, CHANNEL_ID)
+                    .setSmallIcon(R.drawable.ic_launcher_foreground)  // Use our AirSpot logo
                     .setContentTitle("AirSpot Health")  // Simple title for system
                     .setContentText(co2Value + " ppm")   // Simple text for system
                     .setCustomContentView(compactLayout)       // Custom compact layout
                     .setCustomBigContentView(expandedLayout)   // Custom expanded layout
                     .setStyle(new NotificationCompat.DecoratedCustomViewStyle())  // Use decorated style
-                    .setOngoing(true).setPriority(NotificationCompat.PRIORITY_MAX).setVisibility(NotificationCompat.VISIBILITY_PUBLIC).setCategory(NotificationCompat.CATEGORY_SERVICE).setContentIntent(openAppPendingIntent).setFullScreenIntent(fullScreenPendingIntent, false).setAutoCancel(false).setShowWhen(false)  // Hide time to save space
-                    .setOnlyAlertOnce(true).setLocalOnly(false).setDefaults(0);
+                    .setOngoing(true)
+                    .setPriority(NotificationCompat.PRIORITY_DEFAULT)
+                    .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
+                    .setCategory(NotificationCompat.CATEGORY_SERVICE)
+                    .setContentIntent(openAppPendingIntent)
+                    .setAutoCancel(false)
+                    .setShowWhen(false)  // Hide time to save space
+                    .setOnlyAlertOnce(true)
+                    .setLocalOnly(false)
+                    .setDefaults(0);
 
             // Add action buttons
             addNotificationActions(builder, deviceId);
