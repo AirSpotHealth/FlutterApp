@@ -112,10 +112,10 @@ public class ForegroundNotificationService extends Service {
             NotificationChannel channel = new NotificationChannel(CHANNEL_ID, "CO2 Monitoring", NotificationManager.IMPORTANCE_MAX  // Use MAX to force lock screen visibility
             );
             channel.setDescription("Real-time CO2 monitoring notification - Always show on lock screen");
-            channel.setShowBadge(true);
+            channel.setShowBadge(false);
             channel.setLockscreenVisibility(Notification.VISIBILITY_PUBLIC);
             channel.setBypassDnd(false);
-            channel.enableLights(true);
+            channel.enableLights(false);
             channel.setLightColor(Color.GREEN);
             channel.enableVibration(false); // Disable to avoid blocking
             channel.setSound(null, null); // No sound to avoid aggressive filtering
