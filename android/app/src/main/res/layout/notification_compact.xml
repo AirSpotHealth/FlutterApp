@@ -1,92 +1,150 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
+    android:background="@android:color/transparent"
+    android:gravity="center_vertical"
     android:orientation="horizontal"
-    android:padding="12dp"
-    android:background="@android:color/transparent">
+    android:padding="8dp"
+    tools:background="@color/widget_bg_black">
 
-    <!-- Left section: CO2 Value -->
+
+    <!-- CO2 Value -->
     <LinearLayout
-        android:layout_width="0dp"
+        android:id="@+id/co2_layout"
+        android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_weight="1"
-        android:orientation="vertical"
-        android:gravity="center_vertical">
+        android:layout_alignParentStart="true"
+        android:layout_centerVertical="true"
+        android:gravity="center_horizontal"
+        android:orientation="vertical">
 
         <TextView
             android:id="@+id/co2_value_compact"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="----"
-            android:textSize="18sp"
-            android:textStyle="bold"
-            android:textColor="#4CAF50" />
-
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="CO₂ ppm"
-            android:textSize="10sp"
-            android:textColor="#FFFFFF"
-            android:alpha="0.8" />
-
-    </LinearLayout>
-
-    <!-- Center section: Device Name -->
-    <LinearLayout
-        android:layout_width="0dp"
-        android:layout_height="wrap_content"
-        android:layout_weight="2"
-        android:orientation="vertical"
-        android:gravity="center">
-
-        <TextView
-            android:id="@+id/device_name_compact"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="No Device"
-            android:textSize="14sp"
-            android:textColor="#FFFFFF"
-            android:textStyle="bold"
-            android:maxLines="1"
-            android:ellipsize="end" />
-
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="AirSpot Health"
-            android:textSize="10sp"
-            android:textColor="#FFFFFF"
-            android:alpha="0.6" />
-
-    </LinearLayout>
-
-    <!-- Right section: Battery -->
-    <LinearLayout
-        android:layout_width="0dp"
-        android:layout_height="wrap_content"
-        android:layout_weight="1"
-        android:orientation="vertical"
-        android:gravity="center_vertical|end">
-
-        <TextView
-            android:id="@+id/battery_compact"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="0%"
-            android:textSize="12sp"
-            android:textColor="#FFFFFF"
+            android:textColor="#4CAF50"
+            android:textSize="24sp"
             android:textStyle="bold" />
 
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Battery"
-            android:textSize="9sp"
+            android:alpha="0.7"
+            android:gravity="center"
+            android:text="CO₂ ppm"
             android:textColor="#FFFFFF"
-            android:alpha="0.6" />
+            android:textSize="10sp" />
 
     </LinearLayout>
 
-</LinearLayout>
+
+    <!-- Right section: Battery and Quick Actions -->
+    <LinearLayout
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_centerVertical="true"
+        android:layout_toStartOf="@id/layout_graph"
+        android:layout_toEndOf="@id/co2_layout"
+        android:gravity="center_horizontal"
+        android:orientation="vertical">
+
+        <!-- Battery -->
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginEnd="8dp"
+            android:gravity="center"
+            android:orientation="horizontal">
+
+            <ImageView
+                android:id="@+id/battery_icon_compact"
+                android:layout_width="24dp"
+                android:layout_height="12dp"
+                android:src="@drawable/ic_battery" />
+
+            <TextView
+                android:id="@+id/battery_compact"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="0%"
+                android:textColor="#FFFFFF"
+                android:textSize="11sp"
+                android:textStyle="bold" />
+
+            <ImageView
+                android:id="@+id/vibrate_mode_compact"
+                android:layout_width="12dp"
+                android:layout_height="12dp"
+                android:layout_marginStart="8dp"
+                android:src="@drawable/alarm_off" />
+        </LinearLayout>
+
+        <!-- Battery -->
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginEnd="8dp"
+            android:gravity="center"
+            android:orientation="horizontal">
+
+            <ImageView
+                android:id="@+id/power_mode"
+                android:layout_width="24dp"
+                android:layout_height="10dp"
+                android:src="@drawable/ic_power_mode" />
+
+            <TextView
+                android:id="@+id/power_mode_compact"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="0%"
+                android:textColor="#FFFFFF"
+                android:textSize="11sp"
+                android:textStyle="bold" />
+
+            <ImageView
+                android:id="@+id/alarm_mode_compact"
+                android:layout_width="12dp"
+                android:layout_height="12dp"
+                android:layout_marginStart="8dp"
+                android:src="@drawable/vibrate_off" />
+
+
+        </LinearLayout>
+
+    </LinearLayout>
+
+    <LinearLayout
+        android:id="@+id/layout_graph"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentEnd="true"
+        android:layout_centerVertical="true"
+        android:orientation="horizontal">
+
+        <!-- Map Icon -->
+        <ImageView
+            android:id="@+id/ic_map"
+            android:layout_width="28dp"
+            android:layout_height="28dp"
+            android:layout_marginEnd="6dp"
+            android:contentDescription="Map"
+            android:src="@drawable/ic_map"
+            tools:srcCompat="@drawable/ic_map" />
+
+
+        <!-- Graph Icon -->
+        <ImageView
+            android:id="@+id/ic_graph"
+            android:layout_width="28dp"
+            android:layout_height="28dp"
+            android:layout_marginStart="12dp"
+            android:contentDescription="Graph"
+            android:src="@drawable/ic_graph" />
+
+    </LinearLayout>
+
+</RelativeLayout>

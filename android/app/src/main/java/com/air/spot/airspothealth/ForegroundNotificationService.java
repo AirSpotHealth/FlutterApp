@@ -27,6 +27,9 @@ import org.json.JSONObject;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.text.SimpleDateFormat;
+import java.util.Date;
+import java.util.Locale;
 
 import es.antonborri.home_widget.HomeWidgetBackgroundIntent;
 import es.antonborri.home_widget.HomeWidgetPlugin;
@@ -132,7 +135,7 @@ public class ForegroundNotificationService extends Service {
         if (!isServiceRunning) {
             try {
                 Log.d(TAG, "Creating notification...");
-                
+
                 Notification notification = createNotification();
                 Log.d(TAG, "Notification created, starting foreground...");
                 startForeground(NOTIFICATION_ID, notification);
@@ -140,15 +143,9 @@ public class ForegroundNotificationService extends Service {
                 Log.d(TAG, "Foreground service started with notification");
             } catch (Exception e) {
                 Log.e(TAG, "Error starting foreground service: " + e.getMessage(), e);
-                // Try with default notification on error
-                try {
-                    Notification defaultNotification = createDefaultNotification();
-                    startForeground(NOTIFICATION_ID, defaultNotification);
-                    isServiceRunning = true;
-                    Log.d(TAG, "Foreground service started with default notification");
-                } catch (Exception ex) {
-                    Log.e(TAG, "Failed to start with default notification: " + ex.getMessage(), ex);
-                }
+                // If we fail to create the notification, we should not start the service
+                isServiceRunning = false;
+                stopSelf(); // Stop the service if we can't start it properlyÏ
             }
         } else {
             Log.d(TAG, "Service already running, skipping start");
@@ -197,14 +194,21 @@ public class ForegroundNotificationService extends Service {
             if (co2Value.equals("0")) co2Value = "----"; // Fallback for invalid data
             String deviceName = widgetData.optString("deviceName", "No Device");
             String deviceId = widgetData.optString("deviceId", "");
+            String powerMode = widgetData.optString("powerMode", "Now");
             String batteryLevel = String.valueOf(widgetData.optInt("batteryLevel", 0));
             boolean isCharging = widgetData.optBoolean("isCharging", false);
+            boolean alarmEnabled = widgetData.optBoolean("alarmEnabled", false);
+            boolean vibrationEnabled = widgetData.optBoolean("vibrationEnabled", false);
 
-            Log.d(TAG, "Parsed data - CO2: " + co2Value + ", Device: " + deviceName);
+            // Extract graph data
+            JSONArray co2HistoryArray = widgetData.optJSONArray("co2History");
+            List<Integer> co2History = parseJsonArrayToIntList(co2HistoryArray);
+            int greenUpperLimit = widgetData.optInt("greenUpperLimit", 800);
+            int yellowUpperLimit = widgetData.optInt("yellowUpperLimit", 1000);
+            int graphMaxValue = widgetData.optInt("graphMaxValue", 1600);
+            int graphMinValue = widgetData.optInt("graphMinValue", 0);
 
-            // Create a simple notification without custom layouts for Honor compatibility
-            String title = "AirSpot Health • " + co2Value + " ppm";
-            String text = deviceName + " • Battery: " + (isCharging ? "Charging" : batteryLevel + "%");
+            Log.d(TAG, "Parsed data - CO2: " + co2Value + ", Device: " + deviceName + ", History: " + co2History.size() + " values");
 
             // Create open app intent
             Intent openAppIntent = new Intent(this, MainActivity.class);
@@ -218,40 +222,69 @@ public class ForegroundNotificationService extends Service {
             PendingIntent fullScreenPendingIntent = PendingIntent.getActivity(this, 1, fullScreenIntent,
                     PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
 
-            // Create notification with simple text only - no custom layouts
-            Log.d(TAG, "Building simple notification for Honor compatibility...");
+            // Create our custom expanded layout
+            RemoteViews expandedLayout = createExpandedNotificationLayout(co2Value, deviceName, powerMode,
+                    batteryLevel, isCharging, alarmEnabled, vibrationEnabled, co2History,
+                    greenUpperLimit, yellowUpperLimit, graphMaxValue, graphMinValue, deviceId);
+
+            // Create compact layout for collapsed state
+            RemoteViews compactLayout = createCompactNotificationLayout(co2Value, batteryLevel, isCharging, alarmEnabled, vibrationEnabled, powerMode);
+
+            // Create notification with custom layouts - always expanded
+            Log.d(TAG, "Building custom expanded notification...");
             NotificationCompat.Builder builder = new NotificationCompat.Builder(this, CHANNEL_ID)
-                    .setSmallIcon(android.R.drawable.stat_sys_warning)  // Use system icon
-                    .setContentTitle(title)
-                    .setContentText(text)
-                    .setSubText("Tap to open • Always visible")
+                    .setSmallIcon(R.drawable.ic_launcher_foreground)  // Use our AirSpot logo
+                    .setContentTitle("AirSpot Health")  // Simple title for system
+                    .setContentText(co2Value + " ppm")   // Simple text for system
+                    .setCustomContentView(compactLayout)       // Custom compact layout
+                    .setCustomBigContentView(expandedLayout)   // Custom expanded layout
+                    .setStyle(new NotificationCompat.DecoratedCustomViewStyle())  // Use decorated style
                     .setOngoing(true)
-                    .setPriority(NotificationCompat.PRIORITY_MAX)  // Use MAX to match channel
+                    .setPriority(NotificationCompat.PRIORITY_MAX)
                     .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
-                    .setCategory(NotificationCompat.CATEGORY_SERVICE)  // Use SERVICE for persistent
+                    .setCategory(NotificationCompat.CATEGORY_SERVICE)
                     .setContentIntent(openAppPendingIntent)
-                    .setFullScreenIntent(fullScreenPendingIntent, false)  // Add for lock screen
+                    .setFullScreenIntent(fullScreenPendingIntent, false)
                     .setAutoCancel(false)
-                    .setShowWhen(true)
-                    .setWhen(System.currentTimeMillis())
-                    .setTicker(title)  // Add ticker for lock screen
-                    .setOnlyAlertOnce(true)  // Don't spam with updates
-                    .setLocalOnly(false)     // Allow on lock screen
-                    .setDefaults(0);  // No defaults
+                    .setShowWhen(false)  // Hide time to save space
+                    .setOnlyAlertOnce(true)
+                    .setLocalOnly(false)
+                    .setDefaults(0);
 
-            // Add simple action buttons without custom icons
-            addSimpleNotificationActions(builder, deviceId);
+            // Add action buttons
+            addNotificationActions(builder, deviceId);
 
-            Log.d(TAG, "Simple notification built successfully");
+            Log.d(TAG, "Custom expanded notification built successfully");
             return builder.build();
 
         } catch (JSONException e) {
             Log.e(TAG, "Error parsing notification data: " + e.getMessage());
-            return createDefaultNotification();
         } catch (Exception e) {
             Log.e(TAG, "Unexpected error creating notification: " + e.getMessage(), e);
-            return createDefaultNotification();
         }
+        return null;
+    }
+
+    private RemoteViews createCompactNotificationLayout(String co2Value, String batteryLevel, boolean isCharging,
+                                                        boolean alarmEnabled, boolean vibrationEnabled, String powerMode)  {
+        RemoteViews views = new RemoteViews(getPackageName(), R.layout.notification_compact);
+
+        // Set CO2 value with color
+        views.setTextViewText(R.id.co2_value_compact, co2Value);
+        int co2Color = getColorForCO2Value(co2Value, 800, 1000); // Use default thresholds
+        views.setTextColor(R.id.co2_value_compact, co2Color);
+
+        // Set battery info
+        String batteryText = isCharging ? "CHG" : batteryLevel + "%";
+        views.setTextViewText(R.id.battery_compact, batteryText);
+
+        // Set power mode with timer icon
+        views.setTextViewText(R.id.power_mode_compact, powerMode); // Default power mode
+
+
+        views.setImageViewResource(R.id.vibrate_mode_compact, vibrationEnabled ? R.drawable.vibrate_on : R.drawable.vibrate_off);
+        views.setImageViewResource(R.id.alarm_mode_compact, alarmEnabled ? R.drawable.alarm_on : R.drawable.alarm_off);
+        return views;
     }
 
     private RemoteViews createNotificationLayout(String co2Value, String deviceName,
@@ -263,16 +296,19 @@ public class ForegroundNotificationService extends Service {
 
         // Set CO2 value with color
         views.setTextViewText(R.id.co2_value_compact, co2Value);
-        int co2Color = getColorForCO2Value(co2Value, greenUpperLimit, yellowUpperLimit);
+        int co2Color = getColorForCO2Value(co2Value, 800, 1000); // Use default thresholds
         views.setTextColor(R.id.co2_value_compact, co2Color);
-
-        // Set device name
-        views.setTextViewText(R.id.device_name_compact, deviceName);
 
         // Set battery info
         String batteryText = isCharging ? "CHG" : batteryLevel + "%";
         views.setTextViewText(R.id.battery_compact, batteryText);
 
+        // Set power mode with timer icon
+        views.setTextViewText(R.id.power_mode_compact, powerMode); // Default power mode
+
+
+        views.setImageViewResource(R.id.vibrate_mode_compact, vibrationEnabled ? R.drawable.vibrate_on : R.drawable.vibrate_off);
+        views.setImageViewResource(R.id.alarm_mode_compact, alarmEnabled ? R.drawable.alarm_on : R.drawable.alarm_off);
         return views;
     }
 
@@ -286,26 +322,20 @@ public class ForegroundNotificationService extends Service {
 
         // Set CO2 value with color
         views.setTextViewText(R.id.co2_value_expanded, co2Value);
-        int co2Color = getColorForCO2Value(co2Value, greenUpperLimit, yellowUpperLimit);
+        int co2Color = getColorForCO2Value(co2Value, 800, 1000); // Use default thresholds
         views.setTextColor(R.id.co2_value_expanded, co2Color);
 
-        // Set device name
-        views.setTextViewText(R.id.device_name_expanded, deviceName);
-
-        // Set power mode
-        views.setTextViewText(R.id.power_mode_expanded, powerMode);
 
         // Set battery info
         String batteryText = isCharging ? "CHG" : batteryLevel + "%";
         views.setTextViewText(R.id.battery_expanded, batteryText);
 
-        // Set alarm status
-        int alarmIcon = alarmEnabled ? R.drawable.alarm_on : R.drawable.alarm_off;
-        views.setImageViewResource(R.id.alarm_status_expanded, alarmIcon);
+        // Set power mode with timer icon
+        views.setTextViewText(R.id.power_mode_expanded, powerMode); // Default power mode
 
-        // Set vibration status
-        int vibrationIcon = vibrationEnabled ? R.drawable.vibrate_on : R.drawable.vibrate_off;
-        views.setImageViewResource(R.id.vibration_status_expanded, vibrationIcon);
+
+        views.setImageViewResource(R.id.vibrate_mode_expanded, vibrationEnabled ? R.drawable.vibrate_on : R.drawable.vibrate_off);
+        views.setImageViewResource(R.id.alarm_mode_expanded, alarmEnabled ? R.drawable.alarm_on : R.drawable.alarm_off);
 
         // Create and set graph
         if (!co2History.isEmpty()) {
@@ -313,9 +343,6 @@ public class ForegroundNotificationService extends Service {
                     yellowUpperLimit, graphMaxValue, graphMinValue);
             views.setImageViewBitmap(R.id.co2_graph_expanded, graphBitmap);
         }
-
-        // Set up refresh button
-        setupRefreshButton(views, deviceId);
 
         return views;
     }
@@ -357,18 +384,6 @@ public class ForegroundNotificationService extends Service {
         PendingIntent stopPendingIntent = PendingIntent.getService(this, 0, stopIntent,
                 PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
         builder.addAction(android.R.drawable.ic_menu_close_clear_cancel, "Stop", stopPendingIntent);
-    }
-
-    private void setupRefreshButton(RemoteViews views, String deviceId) {
-        // Create refresh intent similar to widget
-        String uriString = "airspothealthapp://refresh";
-        if (deviceId != null && !deviceId.isEmpty()) {
-            uriString += "?deviceId=" + deviceId;
-        }
-
-        PendingIntent refreshPendingIntent = HomeWidgetBackgroundIntent.INSTANCE.getBroadcast(
-                this, Uri.parse(uriString));
-        views.setOnClickPendingIntent(R.id.refresh_button_expanded, refreshPendingIntent);
     }
 
     private Bitmap generateCo2GraphBitmap(List<Integer> co2History, int greenUpperLimit,
@@ -450,34 +465,6 @@ public class ForegroundNotificationService extends Service {
         }
 
         return bitmap;
-    }
-
-    private Notification createDefaultNotification() {
-        Log.d(TAG, "Creating default notification");
-
-        // Create open app intent
-        Intent openAppIntent = new Intent(this, MainActivity.class);
-        openAppIntent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TOP);
-        PendingIntent openAppPendingIntent = PendingIntent.getActivity(this, 0, openAppIntent,
-                PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
-
-        return new NotificationCompat.Builder(this, CHANNEL_ID)
-                .setSmallIcon(android.R.drawable.stat_sys_warning) // Use system warning icon
-                .setContentTitle("AirSpot Health")
-                .setContentText("CO2 Monitoring Active")
-                .setSubText("Tap to open app")
-                .setOngoing(true)
-                .setPriority(NotificationCompat.PRIORITY_MAX)  // Use MAX priority
-                .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
-                .setCategory(NotificationCompat.CATEGORY_STATUS)
-                .setContentIntent(openAppPendingIntent)
-                .setShowWhen(true)
-                .setWhen(System.currentTimeMillis())
-                .setTicker("AirSpot Health - CO2 Monitoring Active")
-                .setOnlyAlertOnce(true)
-                .setLocalOnly(false)
-                .setDefaults(0)
-                .build();
     }
 
     // Helper methods (reused from Co2ValueWidget)
