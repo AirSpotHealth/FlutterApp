@@ -1,5 +1,3 @@
-import 'dart:io';
-
 import 'package:airspothealth/core/providers/ble_device_communication_provider.dart';
 import 'package:airspothealth/core/providers/device_settings_provider.dart';
 import 'package:airspothealth/core/services/live_activity_service.dart';
@@ -19,13 +17,10 @@ class LiveActivitySettingWidget extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final deviceSettings = ref.watch(deviceSettingsProvider(deviceId));
 
-    // Get platform-specific title
-    final title = _getTitle();
-
     return SettingItemWidget(
       onTap: () {},
       item: SettingItem(
-        title: title,
+        title: 'Live Activity',
         assetIcon: Assets.liveActivity,
         suffixWidget: SizedBox(
           height: 24,
@@ -55,15 +50,5 @@ class LiveActivitySettingWidget extends ConsumerWidget {
         ),
       ),
     );
-  }
-
-  String _getTitle() {
-    if (Platform.isIOS) {
-      return 'Live Activity';
-    } else if (Platform.isAndroid) {
-      return 'Persistent Notification';
-    } else {
-      return 'Live Activity';
-    }
   }
 }
