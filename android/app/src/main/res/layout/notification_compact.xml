@@ -6,7 +6,6 @@
     android:background="@android:color/transparent"
     android:gravity="center_vertical"
     android:orientation="horizontal"
-    android:padding="8dp"
     tools:background="@color/widget_bg_black">
 
 
@@ -37,6 +36,16 @@
             android:text="CO₂ ppm"
             android:textColor="#FFFFFF"
             android:textSize="10sp" />
+
+        <TextView
+            android:id="@+id/updated_time_compact"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:alpha="0.6"
+            android:gravity="center"
+            android:text="at 12:30 PM"
+            android:textColor="#FFFFFF"
+            android:textSize="8sp" />
 
     </LinearLayout>
 
@@ -125,6 +134,17 @@
         android:layout_centerVertical="true"
         android:orientation="horizontal">
 
+        <!-- Refresh Icon -->
+        <ImageView
+            android:id="@+id/ic_refresh_compact"
+            android:layout_width="32dp"
+            android:layout_height="32dp"
+            android:layout_gravity="center_vertical"
+            android:layout_marginEnd="6dp"
+            android:contentDescription="Refresh"
+            android:src="@drawable/refresh_button_dark"
+      />
+
         <!-- Map Icon -->
         <ImageView
             android:id="@+id/ic_map"
@@ -134,7 +154,6 @@
             android:contentDescription="Map"
             android:src="@drawable/ic_map"
             tools:srcCompat="@drawable/ic_map" />
-
 
         <!-- Graph Icon -->
         <ImageView

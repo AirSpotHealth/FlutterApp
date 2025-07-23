@@ -4,9 +4,7 @@
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:background="@android:color/transparent"
-    android:orientation="vertical"
-    android:paddingHorizontal="6dp"
-    android:paddingVertical="12dp">
+    android:orientation="vertical">
 
     <RelativeLayout
         android:layout_width="match_parent"
@@ -131,6 +129,16 @@
             android:layout_centerVertical="true"
             android:orientation="horizontal">
 
+            <!-- Refresh Icon -->
+            <ImageView
+                android:id="@+id/ic_refresh_expanded"
+                android:layout_width="32dp"
+                android:layout_height="32dp"
+                android:layout_marginEnd="6dp"
+                android:layout_gravity="center_vertical"
+                android:contentDescription="Refresh"
+                android:src="@drawable/refresh_button_dark" />
+
             <!-- Map Icon -->
             <ImageView
                 android:id="@+id/ic_map"
@@ -139,7 +147,6 @@
                 android:layout_marginEnd="6dp"
                 android:contentDescription="Map"
                 android:src="@drawable/ic_map" />
-
 
             <!-- Graph Icon -->
             <ImageView

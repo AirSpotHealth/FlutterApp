@@ -1,14 +1,38 @@
 <?xml version="1.0" encoding="utf-8"?>
-<shape xmlns:android="http://schemas.android.com/apk/res/android"
-    android:shape="oval">
-    <solid android:color="#ffffff" />
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
 
-    <stroke
-        android:width="14dp"
-        android:color="#1D1D1D" />
-    <!-- a small dot in the center -->
-    <size
-        android:width="4dp"
-        android:height="4dp" />
+    <!-- Shadow layer (slightly larger and blurred color) -->
+    <item>
+        <shape android:shape="oval">
+            <solid android:color="#55000000" /> <!-- semi-transparent black -->
+            <size
+                android:width="42dp"
+                android:height="42dp" />
+        </shape>
+    </item>
 
-</shape>
+    <!-- Main black circle -->
+    <item
+        android:bottom="2dp"
+        android:left="2dp"
+        android:right="2dp"
+        android:top="2dp">
+        <shape android:shape="oval">
+            <solid android:color="#1F1F1F" />
+            <size
+                android:width="40dp"
+                android:height="40dp" />
+        </shape>
+    </item>
+
+    <!-- Center white dot -->
+    <item android:gravity="center">
+        <shape android:shape="oval">
+            <solid android:color="#FFFFFF" />
+            <size
+                android:width="6dp"
+                android:height="6dp" />
+        </shape>
+    </item>
+
+</layer-list>

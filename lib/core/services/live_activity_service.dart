@@ -7,6 +7,7 @@ import 'package:airspothealth/core/utils/constants.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:home_widget/home_widget.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class LiveActivityService {
   static const platform = MethodChannel('liveActivityChannel');
@@ -31,6 +32,18 @@ class LiveActivityService {
         case 'onRefreshRequested':
           debugPrint('Live Activity refresh requested');
           _handleRefreshRequest();
+          break;
+        case 'onMapRequested':
+          debugPrint('Live Activity map requested');
+          launchUrl(Uri.parse(Constants.mapUrl),
+                  mode: LaunchMode.externalApplication)
+              .then((success) {
+            if (!success) {
+              debugPrint('Failed to open map URL: ${Constants.mapUrl}');
+            }
+          }).catchError((error) {
+            debugPrint('Error opening map URL: $error');
+          });
           break;
         default:
           debugPrint('Unknown method call: ${call.method}');

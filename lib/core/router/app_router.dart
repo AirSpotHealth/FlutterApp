@@ -42,6 +42,23 @@ class AppRouter {
         return '/devices/$deviceId/graph';
       }
 
+      // // if we receive airspothealth://open_map that means we need to go to a URL
+      // if (uri.pathSegments.isNotEmpty &&
+      //     uri.pathSegments.contains('open_map')) {
+      //   debugPrint('Opening map URL');
+      //   // Open the map URL in an external browser
+      //   launchUrlString(Constants.mapUrl, mode: LaunchMode.externalApplication)
+      //       .then((success) {
+      //     if (!success) {
+      //       debugPrint('Failed to open map URL: ${Constants.mapUrl}');
+      //     }
+      //   }).catchError((error) {
+      //     debugPrint('Error opening map URL: $error');
+      //   });
+      //   // Return null to indicate no redirect is needed
+      //   return null; // No redirect needed, we just open the URL
+      // }
+
       return null; // No redirect
     },
     routes: [

@@ -6,6 +6,8 @@ import io.flutter.embedding.android.FlutterActivity
 import io.flutter.embedding.engine.FlutterEngine
 import io.flutter.plugin.common.MethodChannel
 import android.content.Context.RECEIVER_EXPORTED
+import android.os.Build
+import androidx.annotation.RequiresApi
 
 class MainActivity: FlutterActivity() {
     
@@ -71,6 +73,7 @@ class MainActivity: FlutterActivity() {
         handleDeepLink(intent)
     }
     
+    @RequiresApi(Build.VERSION_CODES.O)
     override fun onCreate(savedInstanceState: android.os.Bundle?) {
         super.onCreate(savedInstanceState)
         // Register the refresh broadcast receiver
@@ -103,6 +106,13 @@ class MainActivity: FlutterActivity() {
                     val deviceId = uri.pathSegments?.getOrNull(1) // devices/{deviceId}/graph
                     MethodChannel(flutterEngine?.dartExecutor?.binaryMessenger!!, CHANNEL)
                         .invokeMethod("onGraphRequested", mapOf("deviceId" to deviceId))
+                }
+
+                // Handle map redirect
+                uri.scheme == "airspothealth" && uri.host == "open_map" -> {
+                    Log.d(TAG, "Received map request from notification/widget")
+                    MethodChannel(flutterEngine?.dartExecutor?.binaryMessenger!!, CHANNEL)
+                        .invokeMethod("onMapRequested", null)
                 }
                 
                 else -> {
