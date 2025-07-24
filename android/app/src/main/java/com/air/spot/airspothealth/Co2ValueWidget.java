@@ -228,8 +228,10 @@ public class Co2ValueWidget extends AppWidgetProvider {
             
             float barHeight = drawableHeight * heightRatio;
             
-            // Calculate bar position (align with grey bars)
-            int barIndex = (40 - maxBars) + i; // Position from right like iOS (latest data rightmost)
+            // Calculate bar position - align to RIGHT side (most recent data on rightmost positions)
+            // Example: if maxBars=5, bars appear at positions 35,36,37,38,39 (rightmost positions)
+            // Example: if maxBars=3, bars appear at positions 37,38,39 (rightmost positions)
+            int barIndex = (40 - maxBars) + i;
             float barLeft = padding + (barIndex * (barWidth + barSpacing));
             float barTop = height - padding - barHeight; // Draw from bottom
             float barRight = barLeft + barWidth;

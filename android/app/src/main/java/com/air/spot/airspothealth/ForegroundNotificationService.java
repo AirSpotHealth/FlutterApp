@@ -427,7 +427,8 @@ public class ForegroundNotificationService extends Service {
 
             float barHeight = drawableHeight * heightRatio;
 
-            // Calculate bar position
+            // Calculate bar position - align bars to the right side
+            // For example: if maxBars=5, bars appear at positions 35,36,37,38,39 (rightmost)
             int barIndex = (40 - maxBars) + i;
             float barLeft = padding + (barIndex * (barWidth + barSpacing));
             float barTop = height - padding - barHeight;

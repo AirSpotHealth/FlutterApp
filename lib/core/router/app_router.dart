@@ -1,4 +1,5 @@
 import 'package:airspothealth/core/router/route_names.dart';
+import 'package:airspothealth/core/utils/constants.dart';
 import 'package:airspothealth/features/add_device/add_device_page.dart';
 import 'package:airspothealth/features/advanced_alarm_settings/advanced_alarm_settings_page.dart';
 import 'package:airspothealth/features/app_setup/app_setup_page.dart';
@@ -22,6 +23,7 @@ import 'package:airspothealth/features/home/homepage.dart';
 import 'package:airspothealth/features/solutions/solutions_page.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:url_launcher/url_launcher_string.dart';
 
 class AppRouter {
   static final navigatorKey = GlobalKey<NavigatorState>();
@@ -31,7 +33,8 @@ class AppRouter {
     initialLocation: RouteNames.home,
     debugLogDiagnostics: true,
     redirect: (context, state) {
-      debugPrint('Redirecting to: ${state.uri}');
+      debugPrint(
+          'Redirecting to: ${state.uri}, Paths: ${state.uri.pathSegments}');
       final uri = Uri.parse(state.uri.toString());
 
       // Redirect malformed paths missing "/devices"
@@ -42,22 +45,24 @@ class AppRouter {
         return '/devices/$deviceId/graph';
       }
 
-      // // if we receive airspothealth://open_map that means we need to go to a URL
-      // if (uri.pathSegments.isNotEmpty &&
-      //     uri.pathSegments.contains('open_map')) {
-      //   debugPrint('Opening map URL');
-      //   // Open the map URL in an external browser
-      //   launchUrlString(Constants.mapUrl, mode: LaunchMode.externalApplication)
-      //       .then((success) {
-      //     if (!success) {
-      //       debugPrint('Failed to open map URL: ${Constants.mapUrl}');
-      //     }
-      //   }).catchError((error) {
-      //     debugPrint('Error opening map URL: $error');
-      //   });
-      //   // Return null to indicate no redirect is needed
-      //   return null; // No redirect needed, we just open the URL
-      // }
+      // if we receive airspothealth://open_map that means we need to go to a URL
+      if (uri.host.contains('open_map')) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          debugPrint('Opening map URL');
+          // Open the map URL in an external browser
+          launchUrlString(Constants.mapUrl,
+                  mode: LaunchMode.externalApplication)
+              .then((success) {
+            if (!success) {
+              debugPrint('Failed to open map URL: ${Constants.mapUrl}');
+            }
+          }).catchError((error) {
+            debugPrint('Error opening map URL: $error');
+          });
+        });
+        // Return null to indicate no redirect is needed
+        return null; // No redirect needed, we just open the URL
+      }
 
       return null; // No redirect
     },
