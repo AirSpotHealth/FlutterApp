@@ -220,6 +220,7 @@ class _BleDeviceCommunicationNotifier extends FamilyNotifier<dynamic, String> {
         deviceSettings: deviceSettings,
         batteryLevel: batteryLevel,
         isCharging: isCharging,
+        isConnected: device?.isConnected ?? false,
         co2History: co2History,
       );
     } catch (e) {

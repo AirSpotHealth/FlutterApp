@@ -138,15 +138,28 @@ public class ForegroundNotificationService extends Service {
                 Log.d(TAG, "Creating notification...");
 
                 Notification notification = createNotification();
+                if (notification == null) {
+                    Log.w(TAG, "Failed to create notification, using fallback");
+                    notification = createFallbackNotification();
+                }
+
                 Log.d(TAG, "Notification created, starting foreground...");
                 startForeground(NOTIFICATION_ID, notification);
                 isServiceRunning = true;
                 Log.d(TAG, "Foreground service started with notification");
             } catch (Exception e) {
                 Log.e(TAG, "Error starting foreground service: " + e.getMessage(), e);
-                // If we fail to create the notification, we should not start the service
-                isServiceRunning = false;
-                stopSelf(); // Stop the service if we can't start it properlyÏ
+                // Always call startForeground to avoid ANR, even with a basic notification
+                try {
+                    Notification fallbackNotification = createFallbackNotification();
+                    startForeground(NOTIFICATION_ID, fallbackNotification);
+                    isServiceRunning = true;
+                    Log.d(TAG, "Foreground service started with fallback notification");
+                } catch (Exception fallbackException) {
+                    Log.e(TAG, "Failed to start foreground service even with fallback: " + fallbackException.getMessage());
+                    isServiceRunning = false;
+                    stopSelf(); // Stop the service if we can't start it properly
+                }
             }
         } else {
             Log.d(TAG, "Service already running, skipping start");
@@ -200,6 +213,7 @@ public class ForegroundNotificationService extends Service {
             boolean isCharging = widgetData.optBoolean("isCharging", false);
             boolean alarmEnabled = widgetData.optBoolean("alarmEnabled", false);
             boolean vibrationEnabled = widgetData.optBoolean("vibrationEnabled", false);
+            boolean isConnected = widgetData.optBoolean("isConnected", false);
 
             // Extract graph data
             JSONArray co2HistoryArray = widgetData.optJSONArray("co2History");
@@ -212,7 +226,7 @@ public class ForegroundNotificationService extends Service {
             Log.d(TAG, "Parsed data - CO2: " + co2Value + ", Device: " + deviceName + ", History: " + co2History.size() + " values");
 
             // Format custom timestamp
-            String customTimestamp = "Updated at " + new SimpleDateFormat("h:mm a", Locale.getDefault()).format(new Date());
+            String customTimestamp = "at " + new SimpleDateFormat("h:mm a", Locale.getDefault()).format(new Date());
 
             // Create open app intent
             Intent openAppIntent = new Intent(this, MainActivity.class);
@@ -224,10 +238,7 @@ public class ForegroundNotificationService extends Service {
             fullScreenIntent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TOP);
 
             // Create our custom expanded layout
-            RemoteViews expandedLayout = createExpandedNotificationLayout(co2Value, deviceName, powerMode, batteryLevel, isCharging, alarmEnabled, vibrationEnabled, co2History, greenUpperLimit, yellowUpperLimit, graphMaxValue, graphMinValue, deviceId);
-
-            // Create compact layout for collapsed state
-            RemoteViews compactLayout = createCompactNotificationLayout(co2Value, batteryLevel, isCharging, alarmEnabled, vibrationEnabled, powerMode);
+            RemoteViews expandedLayout = createExpandedNotificationLayout(co2Value, customTimestamp, powerMode, batteryLevel, isCharging, alarmEnabled, vibrationEnabled, co2History, greenUpperLimit, yellowUpperLimit, graphMaxValue, graphMinValue, deviceId, isConnected);
 
             // Create notification with custom layouts - clean minimal style
             Log.d(TAG, "Building clean custom notification...");
@@ -249,48 +260,41 @@ public class ForegroundNotificationService extends Service {
         return null;
     }
 
-    private RemoteViews createCompactNotificationLayout(String co2Value, String batteryLevel, boolean isCharging, boolean alarmEnabled, boolean vibrationEnabled, String powerMode) {
-        RemoteViews views = new RemoteViews(getPackageName(), R.layout.notification_compact);
+    private Notification createFallbackNotification() {
+        Log.d(TAG, "Creating fallback notification");
 
-        // Set CO2 value with color
-        views.setTextViewText(R.id.co2_value_compact, co2Value);
-        int co2Color = getColorForCO2Value(co2Value, 800, 1000); // Use default thresholds
-        views.setTextColor(R.id.co2_value_compact, co2Color);
+        // Create open app intent
+        Intent openAppIntent = new Intent(this, MainActivity.class);
+        openAppIntent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TOP);
+        PendingIntent openAppPendingIntent = PendingIntent.getActivity(this, 0, openAppIntent,
+                PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
 
-        // Set battery info
-        String batteryText = isCharging ? "CHG" : batteryLevel + "%";
-        views.setTextViewText(R.id.battery_compact, batteryText);
+        // Create a simple fallback notification
+        NotificationCompat.Builder builder = new NotificationCompat.Builder(this, CHANNEL_ID)
+                .setSmallIcon(R.drawable.ic_launcher_foreground)
+                .setContentTitle("AirSpot CO2 Monitor")
+                .setContentText("CO2 monitoring active")
+                .setOngoing(true)
+                .setPriority(NotificationCompat.PRIORITY_DEFAULT)
+                .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
+                .setCategory(NotificationCompat.CATEGORY_SERVICE)
+                .setContentIntent(openAppPendingIntent)
+                .setAutoCancel(false)
+                .setShowWhen(false)
+                .setOnlyAlertOnce(true)
+                .setLocalOnly(false)
+                .setDefaults(0);
 
-        // Set power mode with timer icon
-        views.setTextViewText(R.id.power_mode_compact, powerMode); // Default power mode
-
-        views.setImageViewResource(R.id.vibrate_mode_compact, vibrationEnabled ? R.drawable.vibrate_on : R.drawable.vibrate_off);
-        views.setImageViewResource(R.id.alarm_mode_compact, alarmEnabled ? R.drawable.alarm_on : R.drawable.alarm_off);
-
-        // Set updated at time in compact layout
-        String updatedAt = new SimpleDateFormat("h:mm a", Locale.getDefault()).format(new Date());
-        views.setTextViewText(R.id.updated_time_compact, "at " + updatedAt);
-
-        // Add refresh functionality to compact layout (if refresh icon exists)
-        try {
-            Intent refreshIntent = new Intent(this, ForegroundNotificationService.class);
-            refreshIntent.setAction("REFRESH_DATA");
-            PendingIntent refreshPendingIntent = PendingIntent.getService(this, 2, refreshIntent, PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
-            views.setOnClickPendingIntent(R.id.ic_refresh_compact, refreshPendingIntent);
-        } catch (Exception e) {
-            Log.d(TAG, "Refresh icon not found in compact layout: " + e.getMessage());
-        }
-
-        return views;
+        return builder.build();
     }
 
-    private RemoteViews createExpandedNotificationLayout(String co2Value, String deviceName, String powerMode, String batteryLevel, boolean isCharging, boolean alarmEnabled, boolean vibrationEnabled, List<Integer> co2History, int greenUpperLimit, int yellowUpperLimit, int graphMaxValue, int graphMinValue, String deviceId) {
+    private RemoteViews createExpandedNotificationLayout(String co2Value, String updatedAt, String powerMode, String batteryLevel, boolean isCharging, boolean alarmEnabled, boolean vibrationEnabled, List<Integer> co2History, int greenUpperLimit, int yellowUpperLimit, int graphMaxValue, int graphMinValue, String deviceId, boolean isConnected) {
 
         RemoteViews views = new RemoteViews(getPackageName(), R.layout.notification_expanded);
 
         // Set CO2 value with color
         views.setTextViewText(R.id.co2_value_expanded, co2Value);
-        int co2Color = getColorForCO2Value(co2Value, 800, 1000); // Use default thresholds
+        int co2Color = isConnected ? getColorForCO2Value(co2Value, greenUpperLimit, yellowUpperLimit) : Color.parseColor("#808080"); // Grey when disconnected
         views.setTextColor(R.id.co2_value_expanded, co2Color);
 
 
@@ -303,6 +307,9 @@ public class ForegroundNotificationService extends Service {
 
         views.setImageViewResource(R.id.vibrate_mode_expanded, vibrationEnabled ? R.drawable.vibrate_on : R.drawable.vibrate_off);
         views.setImageViewResource(R.id.alarm_mode_expanded, alarmEnabled ? R.drawable.alarm_on : R.drawable.alarm_off);
+
+        // Set timestamp
+        views.setTextViewText(R.id.updated_time_expanded, updatedAt);
 
         // Add refresh functionality directly in the UI
         Intent refreshIntent = new Intent(this, ForegroundNotificationService.class);

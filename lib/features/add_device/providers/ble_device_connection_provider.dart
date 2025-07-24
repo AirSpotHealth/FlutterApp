@@ -8,6 +8,7 @@ import 'package:airspothealth/core/providers/device_settings_provider.dart';
 import 'package:airspothealth/core/router/app_router.dart';
 import 'package:airspothealth/core/router/route_names.dart';
 import 'package:airspothealth/core/services/ble_service.dart';
+import 'package:airspothealth/core/services/live_activity_service.dart';
 import 'package:airspothealth/core/utils/extensions.dart';
 import 'package:airspothealth/features/device_settings/models/progress_model.dart';
 import 'package:airspothealth/features/device_settings/providers/dfu_update_provider.dart';
@@ -76,6 +77,9 @@ class _BleDeviceConnectionNotifier
           return;
         }
 
+        // Update Live Activity with disconnected state
+        _updateLiveActivityOnDisconnect();
+
         _checkRouteAndPop();
         // _checkIfHisoricalDataWasRequestedAndInProgess();
 
@@ -142,6 +146,16 @@ class _BleDeviceConnectionNotifier
       context.showSnackBar('Device disconnected.');
 
       router.popUntilPath(RouteNames.devices);
+    }
+  }
+
+  void _updateLiveActivityOnDisconnect() async {
+    try {
+      await LiveActivityService().updateWithDisconnectedState(
+        deviceId: arg,
+      );
+    } catch (e) {
+      debugPrint('Error updating Live Activity on disconnect: $e');
     }
   }
 }

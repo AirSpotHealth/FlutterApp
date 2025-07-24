@@ -25,6 +25,9 @@ class LiveActivityService {
   // Track which device currently has active Live Activity
   String? _activeDeviceId;
 
+  // Store the last Live Activity data for each device
+  final Map<String, LiveActivityModel> _lastLiveActivityData = {};
+
   // Set up method call handler to listen for refresh requests
   void _setupMethodCallHandler() {
     platform.setMethodCallHandler((call) async {
@@ -80,6 +83,22 @@ class LiveActivityService {
       _activeDeviceId = null;
     }
     debugPrint('Live Activity refresh callback cleared for device: $deviceId');
+  }
+
+  // Clear stored Live Activity data for a specific device
+  void clearDeviceData(String deviceId) {
+    _lastLiveActivityData.remove(deviceId);
+    debugPrint('Live Activity data cleared for device: $deviceId');
+  }
+
+  // Get the last known Live Activity data for a device (useful for debugging)
+  LiveActivityModel? getLastDeviceData(String deviceId) {
+    return _lastLiveActivityData[deviceId];
+  }
+
+  // Check if we have stored data for a device
+  bool hasDataForDevice(String deviceId) {
+    return _lastLiveActivityData.containsKey(deviceId);
   }
 
   // Legacy method for backward compatibility
@@ -156,6 +175,7 @@ class LiveActivityService {
       }
 
       _activeDeviceId = null; // Clear active device when ending
+      _lastLiveActivityData.clear(); // Clear all stored data when ending
     } on PlatformException catch (e) {
       debugPrint("Failed to end live activity: '${e.message}'.");
     }
@@ -170,6 +190,7 @@ class LiveActivityService {
     required DeviceSettings? deviceSettings,
     required String batteryLevel,
     required bool isCharging,
+    required bool isConnected,
     required List<int> co2History,
   }) async {
     try {
@@ -186,6 +207,7 @@ class LiveActivityService {
         powerMode: powerMode,
         batteryLevel: int.parse(batteryLevel),
         isCharging: isCharging,
+        isConnected: isConnected,
         alarmEnabled: alarmEnabled,
         vibrationEnabled: vibrationEnabled,
         co2History: co2History,
@@ -196,6 +218,9 @@ class LiveActivityService {
         graphMaxValue: deviceSettings?.graphMaxValue ?? 1600,
         graphMinValue: deviceSettings?.graphMinValue ?? 0,
       );
+
+      // Store the data for potential disconnection updates
+      _lastLiveActivityData[deviceId] = liveActivityData;
 
       if (deviceSettings?.showLiveActivity == true) {
         if (Platform.isIOS) {
@@ -225,6 +250,31 @@ class LiveActivityService {
           androidName: Constants.androidWidgetName,
         );
       }
+    }
+  }
+
+  /// Method to update Live Activity when device disconnects
+  /// Uses the last known data and marks the device as disconnected
+  Future<void> updateWithDisconnectedState({
+    required String deviceId,
+  }) async {
+    try {
+      // Get the last known Live Activity data for this device
+      final lastData = _lastLiveActivityData[deviceId];
+      if (lastData == null) {
+        debugPrint(
+            'LiveActivity: No previous data found for device $deviceId, cannot update disconnected state');
+        return;
+      }
+
+      // Create disconnected version using copyWith
+      final disconnectedData = lastData.copyWith(isConnected: false);
+
+      await updateLiveActivity(deviceId: deviceId, data: disconnectedData);
+      debugPrint(
+          'LiveActivity: Updated with disconnected state for device: $deviceId');
+    } catch (e) {
+      debugPrint('LiveActivity: Error updating disconnected state: $e');
     }
   }
 
