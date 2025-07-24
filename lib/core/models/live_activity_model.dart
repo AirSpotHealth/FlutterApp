@@ -13,6 +13,7 @@ class LiveActivityModel {
   final int yellowUpperLimit;
   final int graphMaxValue;
   final int graphMinValue;
+  final bool isRefreshing;
 
   LiveActivityModel({
     required this.deviceId,
@@ -29,6 +30,7 @@ class LiveActivityModel {
     required this.yellowUpperLimit,
     required this.graphMaxValue,
     required this.graphMinValue,
+    required this.isRefreshing,
   });
 
   Map<String, dynamic> toJson() {
@@ -47,6 +49,7 @@ class LiveActivityModel {
       'yellowUpperLimit': yellowUpperLimit,
       'graphMaxValue': graphMaxValue,
       'graphMinValue': graphMinValue,
+      'isRefreshing': isRefreshing,
     };
   }
 
@@ -65,6 +68,7 @@ class LiveActivityModel {
     int? yellowUpperLimit,
     int? graphMaxValue,
     int? graphMinValue,
+    bool? isRefreshing,
   }) {
     return LiveActivityModel(
       deviceId: deviceId ?? this.deviceId,
@@ -81,6 +85,7 @@ class LiveActivityModel {
       yellowUpperLimit: yellowUpperLimit ?? this.yellowUpperLimit,
       graphMaxValue: graphMaxValue ?? this.graphMaxValue,
       graphMinValue: graphMinValue ?? this.graphMinValue,
+      isRefreshing: isRefreshing ?? this.isRefreshing,
     );
   }
 }

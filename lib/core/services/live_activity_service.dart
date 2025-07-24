@@ -47,6 +47,11 @@ class LiveActivityService {
         _deviceRefreshCallbacks.containsKey(_activeDeviceId)) {
       debugPrint('Refreshing active Live Activity device: $_activeDeviceId');
       _deviceRefreshCallbacks[_activeDeviceId]?.call();
+
+      updateLiveActivity(
+          data: _lastLiveActivityData[_activeDeviceId]!.copyWith(
+        isRefreshing: true,
+      ));
     } else {
       // Fallback: refresh all registered devices
       debugPrint(
@@ -204,6 +209,7 @@ class LiveActivityService {
             Constants.defaultYellowUpperLimit,
         graphMaxValue: deviceSettings?.graphMaxValue ?? 1600,
         graphMinValue: deviceSettings?.graphMinValue ?? 0,
+        isRefreshing: false,
       );
 
       // Store the data for potential disconnection updates
@@ -255,7 +261,10 @@ class LiveActivityService {
       }
 
       // Create disconnected version using copyWith
-      final disconnectedData = lastData.copyWith(isConnected: false);
+      final disconnectedData = lastData.copyWith(
+        isConnected: false,
+        isRefreshing: false,
+      );
 
       await updateLiveActivity(deviceId: deviceId, data: disconnectedData);
       debugPrint(

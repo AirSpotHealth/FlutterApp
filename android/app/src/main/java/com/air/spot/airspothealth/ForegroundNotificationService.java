@@ -1,6 +1,5 @@
 package com.air.spot.airspothealth;
 
-import android.annotation.SuppressLint;
 import android.app.ActivityManager;
 import android.app.Notification;
 import android.app.NotificationChannel;
@@ -214,6 +213,7 @@ public class ForegroundNotificationService extends Service {
             boolean alarmEnabled = widgetData.optBoolean("alarmEnabled", false);
             boolean vibrationEnabled = widgetData.optBoolean("vibrationEnabled", false);
             boolean isConnected = widgetData.optBoolean("isConnected", false);
+            boolean isRefreshing = widgetData.optBoolean("isRefreshing", false);
 
             // Extract graph data
             JSONArray co2HistoryArray = widgetData.optJSONArray("co2History");
@@ -241,11 +241,11 @@ public class ForegroundNotificationService extends Service {
             fullScreenIntent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TOP);
 
             // Create our custom expanded layout
-            RemoteViews expandedLayout = createNotificationLayout(co2Value, true, powerMode, batteryLevel, isCharging, alarmEnabled, vibrationEnabled, co2History, greenUpperLimit, yellowUpperLimit, graphMaxValue, graphMinValue, deviceId, isConnected);
-            RemoteViews compactLayout = createNotificationLayout(co2Value, false, powerMode, batteryLevel, isCharging, alarmEnabled, vibrationEnabled, co2History, greenUpperLimit, yellowUpperLimit, graphMaxValue, graphMinValue, deviceId, isConnected);
+            RemoteViews expandedLayout = createNotificationLayout(co2Value, true, powerMode, batteryLevel, isCharging, alarmEnabled, vibrationEnabled, co2History, greenUpperLimit, yellowUpperLimit, graphMaxValue, graphMinValue, deviceId, isConnected, isRefreshing);
+            RemoteViews compactLayout = createNotificationLayout(co2Value, false, powerMode, batteryLevel, isCharging, alarmEnabled, vibrationEnabled, co2History, greenUpperLimit, yellowUpperLimit, graphMaxValue, graphMinValue, deviceId, isConnected, isRefreshing);
 
             // Create notification with custom layouts - clean minimal style
-            Log.d(TAG, "Building clean custom notification...");
+            Log.d(TAG, "Building clean custom notification with refresh state: " + isRefreshing);
             NotificationCompat.Builder builder = new NotificationCompat.Builder(this, CHANNEL_ID).setSmallIcon(R.drawable.ic_launcher_foreground)  // Minimal transparent icon
                     .setCustomContentView(compactLayout)        // Custom compact layout
                     .setCustomBigContentView(expandedLayout).setOngoing(true)                           // Persistent notification
@@ -284,43 +284,50 @@ public class ForegroundNotificationService extends Service {
         return builder.build();
     }
 
-    private RemoteViews createNotificationLayout(String co2Value, boolean isExpanded, String powerMode, String batteryLevel, boolean isCharging, boolean alarmEnabled, boolean vibrationEnabled, List<Integer> co2History, int greenUpperLimit, int yellowUpperLimit, int graphMaxValue, int graphMinValue, String deviceId, boolean isConnected) {
+    private RemoteViews createNotificationLayout(String co2Value, boolean isExpanded, String powerMode, String batteryLevel, boolean isCharging, boolean alarmEnabled, boolean vibrationEnabled, List<Integer> co2History, int greenUpperLimit, int yellowUpperLimit, int graphMaxValue, int graphMinValue, String deviceId, boolean isConnected, boolean isRefreshing) {
 
-        RemoteViews views = new RemoteViews(getPackageName(), R.layout.notification_expanded);
+        RemoteViews views = new RemoteViews(getPackageName(), isExpanded ? R.layout.notification_expanded : R.layout.notification_compact);
 
-        // Set CO2 value with color
-        views.setTextViewText(R.id.co2_value_expanded, co2Value);
+        views.setTextViewText(R.id.co2_value, co2Value);
         int co2Color = isConnected ? getColorForCO2Value(co2Value, greenUpperLimit, yellowUpperLimit) : Color.parseColor("#808080"); // Grey when disconnected
-        views.setTextColor(R.id.co2_value_expanded, co2Color);
+        views.setTextColor(R.id.co2_value, co2Color);
 
+        if (isRefreshing && isConnected) {
+            Log.d(TAG, "Setting refresh animation VISIBLE for " + (isExpanded ? "expanded" : "compact") + " layout");
+            views.setViewVisibility(R.id.progress_refresh, android.view.View.VISIBLE);
+            views.setViewVisibility(R.id.ic_refresh, android.view.View.GONE);
+        } else {
+            Log.d(TAG, "Setting refresh animation GONE for " + (isExpanded ? "expanded" : "compact") + " layout");
+            views.setViewVisibility(R.id.progress_refresh, android.view.View.GONE);
+            views.setViewVisibility(R.id.ic_refresh, android.view.View.VISIBLE);
+        }
 
-        // Set battery info
         String batteryText = isCharging ? "CHG" : batteryLevel + "%";
-        views.setTextViewText(R.id.battery_expanded, batteryText);
+        views.setTextViewText(R.id.battery, batteryText);
 
-        // Set power mode with timer icon
-        views.setTextViewText(R.id.power_mode_expanded, powerMode); // Default power mode
+        views.setTextViewText(R.id.power_mode, powerMode);
 
-        views.setImageViewResource(R.id.vibrate_mode_expanded, vibrationEnabled ? R.drawable.vibrate_on : R.drawable.vibrate_off);
-        views.setImageViewResource(R.id.alarm_mode_expanded, alarmEnabled ? R.drawable.alarm_on : R.drawable.alarm_off);
+        views.setImageViewResource(R.id.vibrate_mode, vibrationEnabled ? R.drawable.vibrate_on : R.drawable.vibrate_off);
+        views.setImageViewResource(R.id.alarm_mode, alarmEnabled ? R.drawable.alarm_on : R.drawable.alarm_off);
 
         // Add refresh functionality directly in the UI
         Intent refreshIntent = new Intent(this, ForegroundNotificationService.class);
         refreshIntent.setAction("REFRESH_DATA");
         PendingIntent refreshPendingIntent = PendingIntent.getService(this, 2, refreshIntent, PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
 
-        if (isConnected) {
-            views.setImageViewResource(R.id.ic_refresh_expanded, R.drawable.refresh_button_dark); // Show refresh icon when connected
+        if (isConnected && !isRefreshing) {
+            // Show refresh icon when connected (set appropriate resource for layout)
+            views.setImageViewResource(R.id.ic_refresh, R.drawable.refresh_button_dark);
 
-            // Add refresh click to a refresh icon in the expanded layout
+            // Add refresh click to the refresh icon
             try {
-                views.setOnClickPendingIntent(R.id.ic_refresh_expanded, refreshPendingIntent);
+                views.setOnClickPendingIntent(R.id.ic_refresh, refreshPendingIntent);
             } catch (Exception e) {
-                Log.d(TAG, "Refresh icon not found in expanded layout, trying alternative: " + e.getMessage());
-                // If there's no dedicated refresh icon, we could use another element
+                Log.d(TAG, "Refresh icon not found in layout, trying alternative: " + e.getMessage());
             }
         } else {
-            views.setImageViewResource(R.id.ic_refresh_expanded, R.drawable.ic_bt_off); // Show disabled icon when disconnected
+            // Show disabled icon when disconnected
+            views.setImageViewResource(R.id.ic_refresh, R.drawable.ic_bt_off);
         }
 
         // Add click actions to map and graph icons
@@ -336,19 +343,21 @@ public class ForegroundNotificationService extends Service {
         PendingIntent graphPendingIntent = PendingIntent.getActivity(this, 101, graphIntent, PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
         views.setOnClickPendingIntent(R.id.ic_graph, graphPendingIntent);
 
-        try {
-            // Open Website action button
-            Intent websiteIntent = new Intent(Intent.ACTION_VIEW, Uri.parse("https://airspothealth.com"));
-            PendingIntent websitePendingIntent = PendingIntent.getActivity(this, 102, websiteIntent, PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
-            views.setOnClickPendingIntent(R.id.txt_open_website, websitePendingIntent);
-        } catch (Exception e) {
-            Log.d(TAG, "Open Website action not found in expanded layout, skipping: " + e.getMessage());
+        // Open Website action button (only available in expanded layout)
+        if (isExpanded) {
+            try {
+                Intent websiteIntent = new Intent(Intent.ACTION_VIEW, Uri.parse("https://airspothealth.com"));
+                PendingIntent websitePendingIntent = PendingIntent.getActivity(this, 102, websiteIntent, PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
+                views.setOnClickPendingIntent(R.id.txt_open_website, websitePendingIntent);
+            } catch (Exception e) {
+                Log.d(TAG, "Open Website action not found in expanded layout, skipping: " + e.getMessage());
+            }
         }
 
-        // Create and set graph
+        // Create and set graph (using appropriate ID for layout)
         if (!co2History.isEmpty()) {
             Bitmap graphBitmap = generateCo2GraphBitmap(co2History, greenUpperLimit, yellowUpperLimit, graphMaxValue, graphMinValue);
-            views.setImageViewBitmap(R.id.co2_graph_expanded, graphBitmap);
+            views.setImageViewBitmap(R.id.co2_graph, graphBitmap);
         }
 
         return views;
@@ -501,4 +510,5 @@ public class ForegroundNotificationService extends Service {
         }
         return false;
     }
+
 }
