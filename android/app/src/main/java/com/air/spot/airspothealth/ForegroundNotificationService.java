@@ -205,6 +205,8 @@ public class ForegroundNotificationService extends Service {
             // Note: co2Value and batteryLevel are now sent as integers from Flutter
             String co2Value = String.valueOf(widgetData.optInt("co2Value", 0));
             if (co2Value.equals("0")) co2Value = "----"; // Fallback for invalid data
+
+            int co2IntValue = widgetData.optInt("co2Value", 0);
             String deviceName = widgetData.optString("deviceName", "No Device");
             String deviceId = widgetData.optString("deviceId", "");
             String powerMode = widgetData.optString("powerMode", "Now");
@@ -251,7 +253,8 @@ public class ForegroundNotificationService extends Service {
                     .setCustomBigContentView(expandedLayout).setOngoing(true)                           // Persistent notification
                     .setPriority(NotificationCompat.PRIORITY_DEFAULT).setVisibility(NotificationCompat.VISIBILITY_PUBLIC).setCategory(NotificationCompat.CATEGORY_SERVICE).setContentIntent(openAppPendingIntent).setAutoCancel(false).setShowWhen(true)                         // Hide system timestamp
                     .setOnlyAlertOnce(true).setLocalOnly(false).setDefaults(0)                            // No sound/vibration
-                    .setContentText(customTimestamp).setContentTitle(null);
+                    .setContentText(customTimestamp).setContentTitle(null)
+                    .setSilent(co2IntValue < greenUpperLimit);
 
 
             // Open website action

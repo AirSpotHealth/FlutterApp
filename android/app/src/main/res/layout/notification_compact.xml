@@ -67,31 +67,6 @@
                 <LinearLayout
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:gravity="fill_horizontal"
-                    android:orientation="horizontal">
-
-                    <ImageView
-                        android:id="@+id/vibrate_mode"
-                        android:layout_width="12dp"
-                        android:layout_height="12dp"
-                        android:src="@drawable/alarm_off"
-                        android:tint="?android:textColorPrimary" />
-
-                    <ImageView
-                        android:id="@+id/alarm_mode"
-                        android:layout_width="12dp"
-                        android:layout_height="12dp"
-                        android:layout_marginStart="8dp"
-                        android:alpha="0.9"
-                        android:src="@drawable/vibrate_off"
-                        android:tint="?android:textColorPrimary" />
-
-                </LinearLayout>
-
-                <!-- Battery -->
-                <LinearLayout
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
                     android:gravity="center"
                     android:orientation="horizontal">
 
@@ -179,6 +154,33 @@
                 android:visibility="gone" />
 
         </FrameLayout>
+
+        <!-- Battery -->
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_centerVertical="true"
+            android:layout_toStartOf="@id/layout_graph"
+            android:layout_toEndOf="@id/refresh_layout"
+            android:gravity="center_horizontal"
+            android:orientation="vertical">
+
+            <ImageView
+                android:id="@+id/vibrate_mode"
+                android:layout_width="12dp"
+                android:layout_height="12dp"
+                android:src="@drawable/alarm_off"
+                android:layout_marginBottom="4dp"
+                android:tint="?android:textColorPrimary" />
+
+            <ImageView
+                android:id="@+id/alarm_mode"
+                android:layout_width="12dp"
+                android:layout_height="12dp"
+                android:src="@drawable/vibrate_off"
+                android:tint="?android:textColorPrimary" />
+
+        </LinearLayout>
 
 
         <LinearLayout
