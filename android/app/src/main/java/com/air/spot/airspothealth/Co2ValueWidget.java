@@ -59,6 +59,8 @@ public class Co2ValueWidget extends AppWidgetProvider {
             boolean isCharging = widgetData.optBoolean("isCharging", false);
             boolean alarmEnabled = widgetData.optBoolean("alarmEnabled", false);
             boolean vibrationEnabled = widgetData.optBoolean("vibrationEnabled", false);
+            boolean isConnected = widgetData.optBoolean("isConnected", false);
+            boolean isRefreshing = widgetData.optBoolean("isRefreshing", false);
             
             // Graph data
             JSONArray co2HistoryArray = widgetData.optJSONArray("co2History");
@@ -104,6 +106,9 @@ public class Co2ValueWidget extends AppWidgetProvider {
             setupDynamicCo2Graph(context, views, co2History, greenUpperLimit, yellowUpperLimit, 
                                  graphMaxValue, graphMinValue);
 
+            // Handle refresh state and connection state (similar to notification)
+            setupRefreshState(views, isRefreshing, isConnected);
+            
             // Set up refresh button with device ID
             setupRefreshButton(context, views, appWidgetId, deviceId);
 
@@ -129,6 +134,31 @@ public class Co2ValueWidget extends AppWidgetProvider {
             }
         }
         return intList;
+    }
+
+    private static void setupRefreshState(RemoteViews views, boolean isRefreshing, boolean isConnected) {
+        Log.d(TAG, "Setting up refresh state - isRefreshing: " + isRefreshing + ", isConnected: " + isConnected);
+        
+        if (isRefreshing && isConnected) {
+            // Show progress bar, hide refresh button
+            Log.d(TAG, "Showing refresh animation");
+            views.setViewVisibility(R.id.progress_refresh, View.VISIBLE);
+            views.setViewVisibility(R.id.refresh_button, View.GONE);
+        } else {
+            // Hide progress bar, show refresh button
+            Log.d(TAG, "Hiding refresh animation");
+            views.setViewVisibility(R.id.progress_refresh, View.GONE);
+            views.setViewVisibility(R.id.refresh_button, View.VISIBLE);
+            
+            // Set appropriate refresh button icon based on connection state
+            if (isConnected && !isRefreshing) {
+                // Show normal refresh icon when connected
+                views.setImageViewResource(R.id.refresh_button, R.drawable.refresh_button_widget);
+            } else {
+                // Show disabled/disconnected icon when not connected
+                views.setImageViewResource(R.id.refresh_button, R.drawable.ic_bt_off);
+            }
+        }
     }
 
     private static void setupRefreshButton(Context context, RemoteViews views, int appWidgetId, String deviceId) {

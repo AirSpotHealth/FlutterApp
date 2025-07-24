@@ -240,7 +240,7 @@
             android:layout_height="wrap_content"
             android:text="Open Website"
             android:textColor="?android:colorPrimary"
-            android:layout_marginRight="?android:attr/actionBarSize"
+            android:layout_marginRight="24dp"
             android:textStyle="bold" />
     </LinearLayout>
 
