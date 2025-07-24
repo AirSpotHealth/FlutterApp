@@ -108,13 +108,7 @@ class MainActivity: FlutterActivity() {
                         .invokeMethod("onGraphRequested", mapOf("deviceId" to deviceId))
                 }
 
-                // Handle map redirect
-                uri.scheme == "airspothealth" && uri.host == "open_map" -> {
-                    Log.d(TAG, "Received map request from notification/widget")
-                    MethodChannel(flutterEngine?.dartExecutor?.binaryMessenger!!, CHANNEL)
-                        .invokeMethod("onMapRequested", null)
-                }
-                
+                // Other deep links can be handled here
                 else -> {
                     Log.d(TAG, "Unhandled deep link: $uri")
                 }
