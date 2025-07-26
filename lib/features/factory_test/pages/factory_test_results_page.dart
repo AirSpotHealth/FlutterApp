@@ -44,7 +44,6 @@ class _FactoryTestResultsPageState
       backgroundColor: AppColors.backgroundSecondary,
       appBar: AppBar(
         title: const Text('Factory Test Results'),
-        backgroundColor: AppColors.backgroundPrimary,
         elevation: 0,
         actions: [
           if (results.isNotEmpty) ...[
@@ -416,66 +415,157 @@ class _FactoryTestResultsPageState
   }
 
   void _showExportDialog() {
-    final testerNameController = TextEditingController(
-      text: ref.read(testerNameProvider),
-    );
-    final commentController = TextEditingController();
-
-    showDialog(
+    showModalBottomSheet(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Export Results'),
-        content: Column(
+      isScrollControlled: true,
+      builder: (context) => _ExportBottomSheet(),
+    );
+  }
+}
+
+class _ExportBottomSheet extends ConsumerStatefulWidget {
+  @override
+  ConsumerState<_ExportBottomSheet> createState() => _ExportBottomSheetState();
+}
+
+class _ExportBottomSheetState extends ConsumerState<_ExportBottomSheet> {
+  final TextEditingController _testerNameController = TextEditingController();
+  final TextEditingController _commentController = TextEditingController();
+
+  @override
+  void initState() {
+    super.initState();
+    // Pre-populate tester name
+    _testerNameController.text = ref.read(testerNameProvider);
+  }
+
+  @override
+  void dispose() {
+    _testerNameController.dispose();
+    _commentController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final exportState = ref.watch(factoryTestExportProvider);
+
+    return Container(
+      decoration: const BoxDecoration(
+        color: AppColors.backgroundPrimary,
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      padding: EdgeInsets.only(
+        bottom: MediaQuery.of(context).viewInsets.bottom + 16,
+        left: 16,
+        right: 16,
+        top: 16,
+      ),
+      child: SafeArea(
+        child: Column(
           mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
+            Text(
+              'Export Test Results',
+              style: context.textTheme.headlineSmall?.copyWith(
+                fontWeight: FontWeight.bold,
+              ),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 24),
+
+            // Tester name field
             TextField(
-              controller: testerNameController,
-              decoration: const InputDecoration(
+              controller: _testerNameController,
+              decoration: InputDecoration(
                 labelText: 'Tested By *',
                 hintText: 'Enter your name',
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                prefixIcon: const Icon(Icons.person),
               ),
+              textInputAction: TextInputAction.next,
             ),
             const SizedBox(height: 16),
+
+            // Comment field
             TextField(
-              controller: commentController,
-              decoration: const InputDecoration(
+              controller: _commentController,
+              decoration: InputDecoration(
                 labelText: 'Comment (Optional)',
                 hintText: 'Add any notes about these results',
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                prefixIcon: const Icon(Icons.comment),
               ),
-              maxLines: 2,
+              maxLines: 3,
+              textInputAction: TextInputAction.done,
             ),
+            const SizedBox(height: 24),
+
+            // Action buttons
+            if (exportState.status == ExportStatus.exporting)
+              const Center(
+                child: Padding(
+                  padding: EdgeInsets.all(16.0),
+                  child: CircularProgressIndicator(),
+                ),
+              )
+            else
+              Row(
+                children: [
+                  Expanded(
+                    child: OutlinedButton.icon(
+                      onPressed: () {
+                        Navigator.pop(context);
+                        ref
+                            .read(factoryTestExportProvider.notifier)
+                            .downloadJson(
+                              _testerNameController.text.trim(),
+                              _commentController.text.trim(),
+                            );
+                      },
+                      icon: const Icon(Icons.download),
+                      label: const Text('Download'),
+                      style: OutlinedButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: ElevatedButton.icon(
+                      onPressed: () {
+                        Navigator.pop(context);
+                        ref
+                            .read(factoryTestExportProvider.notifier)
+                            .sendByEmail(
+                              _testerNameController.text.trim(),
+                              _commentController.text.trim(),
+                            );
+                      },
+                      icon: const Icon(Icons.email),
+                      label: const Text('Send Email'),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppColors.primaryColor,
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
           ],
         ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel'),
-          ),
-          TextButton(
-            onPressed: () {
-              Navigator.pop(context);
-              ref.read(factoryTestExportProvider.notifier).downloadJson(
-                    testerNameController.text.trim(),
-                    commentController.text.trim(),
-                  );
-            },
-            child: const Text('Download'),
-          ),
-          ElevatedButton(
-            onPressed: () {
-              Navigator.pop(context);
-              ref.read(factoryTestExportProvider.notifier).sendByEmail(
-                    testerNameController.text.trim(),
-                    commentController.text.trim(),
-                  );
-            },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.primaryColor,
-              foregroundColor: Colors.white,
-            ),
-            child: const Text('Send Email'),
-          ),
-        ],
       ),
     );
   }

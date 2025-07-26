@@ -56,7 +56,7 @@ class ManualTestsTab extends ConsumerWidget {
         children: [
           Text(
             manualTests.isComplete
-                ? 'All manual tests completed! Results will be saved locally.'
+                ? 'All manual tests completed! Device will restart automatically.'
                 : 'Follow the instructions to perform manual tests on the device.',
             style: context.textTheme.bodyMedium?.copyWith(
               color: Colors.grey.shade600,

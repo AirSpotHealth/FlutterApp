@@ -17,6 +17,7 @@ import 'package:airspothealth/features/device_settings/pages/time_settings_page.
 import 'package:airspothealth/features/device_settings/widgets/sensor_configuration_page.dart';
 import 'package:airspothealth/features/devices/devices_page.dart';
 import 'package:airspothealth/features/factory_test/factory_test_wrapper.dart';
+import 'package:airspothealth/features/factory_test/pages/factory_test_results_page.dart';
 import 'package:airspothealth/features/find_my_device/find_my_device_page.dart';
 import 'package:airspothealth/features/home/homepage.dart';
 import 'package:airspothealth/features/solutions/solutions_page.dart';
@@ -240,6 +241,13 @@ class AppRouter {
         name: RouteNames.factoryTest,
         path: RouteNames.factoryTest,
         builder: (context, state) => const FactoryTestWrapper(),
+      ),
+
+      // Factory Test Results route (hidden)
+      GoRoute(
+        name: RouteNames.factoryTestResults,
+        path: RouteNames.factoryTestResults,
+        builder: (context, state) => const FactoryTestResultsPage(),
       ),
     ],
   );

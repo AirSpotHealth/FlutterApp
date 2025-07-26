@@ -169,7 +169,7 @@ class FactoryTestExportNotifier extends Notifier<ExportState> {
             'overall_status': result.status,
             'completion_date':
                 DateFormat('yyyy-MM-dd HH:mm:ss').format(result.completedAt),
-            'tested_by': result.testedBy,
+            'tested_by': testedBy,
             'total_tests': result.totalTests,
             'passed_tests': result.passedTests,
             'pass_rate_percentage': result.passRate.toStringAsFixed(1),

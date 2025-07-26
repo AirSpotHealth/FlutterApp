@@ -930,6 +930,8 @@ class _FactoryTestPageState extends ConsumerState<DeviceFactoryTestPage>
     // Check if all tests are complete and save results locally
     if (state.isTestingComplete) {
       _saveTestResultsLocally(state);
+      // Don't change tabs when all tests are complete - let user see final results
+      return;
     } else {
       // Use phase-based logic for tab switching
       switch (state.phase) {
@@ -955,6 +957,13 @@ class _FactoryTestPageState extends ConsumerState<DeviceFactoryTestPage>
         case DeviceFactoryTestPhase.error:
           // Don't auto-change for error states
           break;
+      }
+
+      // Additional check: if automatic tests just completed, switch to manual tests
+      if (state.automaticTests.isComplete &&
+          !state.manualTests.isComplete &&
+          currentIndex == 0) {
+        newIndex = 1;
       }
     }
 
@@ -1021,16 +1030,16 @@ class _FactoryTestPageState extends ConsumerState<DeviceFactoryTestPage>
             deviceType: factoryTestNotifier.getDeviceType(widget.deviceId),
           );
 
+      // End factory test mode and restart device
+      await factoryTestNotifier.endFactoryTestMode(putDeviceToSleep: true);
+
       // Mark device as completed in queue
       ref
           .read(factoryTestDevicesProvider.notifier)
           .markDeviceCompleted(widget.deviceId, success: true);
 
-      // Show success message
-      if (mounted) {
-        context.showSnackBar(
-            'Test results saved locally. View all results from the menu.');
-      }
+      // Clean up BT connection after successful completion
+      factoryTestNotifier.dispose();
 
       debugPrint('Test results saved locally for device: ${widget.deviceId}');
     } catch (e) {

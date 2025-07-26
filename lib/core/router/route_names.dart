@@ -72,4 +72,7 @@ class RouteNames {
 
   /// factory test route
   static const String factoryTest = '/factory-test';
+
+  /// factory test results route
+  static const String factoryTestResults = '/factory-test-results';
 }
