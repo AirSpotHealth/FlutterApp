@@ -2,6 +2,7 @@ import 'package:airspothealth/core/theme/app_colors.dart';
 import 'package:airspothealth/core/utils/extensions.dart';
 import 'package:airspothealth/features/factory_test/device_factory_test_page.dart';
 import 'package:airspothealth/features/factory_test/models/factory_test_models.dart';
+import 'package:airspothealth/features/factory_test/pages/factory_test_results_page.dart';
 import 'package:airspothealth/features/factory_test/providers/factory_test_devices_provider.dart';
 import 'package:airspothealth/features/factory_test/widgets/device_queue_status_widget.dart';
 import 'package:airspothealth/features/factory_test/widgets/device_selection_sheet.dart';
@@ -181,6 +182,18 @@ class _FactoryTestWrapperState extends ConsumerState<FactoryTestWrapper>
             ],
           ),
           actions: [
+            IconButton(
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const FactoryTestResultsPage(),
+                  ),
+                );
+              },
+              icon: const Icon(Icons.assignment),
+              tooltip: 'View All Results',
+            ),
             IconButton(
               onPressed: _showAddDeviceSheet,
               icon: const Icon(Icons.add_circle),

@@ -1,3 +1,4 @@
+import 'package:airspothealth/core/providers/factory_test_results_provider.dart';
 import 'package:airspothealth/core/theme/app_colors.dart';
 import 'package:airspothealth/core/utils/extensions.dart';
 import 'package:airspothealth/features/factory_test/models/factory_test_models.dart';
@@ -5,7 +6,6 @@ import 'package:airspothealth/features/factory_test/providers/factory_test_devic
 import 'package:airspothealth/features/factory_test/providers/factory_test_provider.dart';
 import 'package:airspothealth/features/factory_test/widgets/automatic_tests_tab.dart';
 import 'package:airspothealth/features/factory_test/widgets/manual_tests_tab.dart';
-import 'package:airspothealth/features/factory_test/widgets/submit_results_tab.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -31,7 +31,7 @@ class _FactoryTestPageState extends ConsumerState<DeviceFactoryTestPage>
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 3, vsync: this);
+    _tabController = TabController(length: 2, vsync: this);
     _pageController = PageController();
   }
 
@@ -253,7 +253,6 @@ class _FactoryTestPageState extends ConsumerState<DeviceFactoryTestPage>
                 children: [
                   AutomaticTestsTab(deviceId: widget.deviceId),
                   ManualTestsTab(deviceId: widget.deviceId),
-                  SubmitResultsTab(deviceId: widget.deviceId),
                 ],
               ),
             ),
@@ -468,7 +467,7 @@ class _FactoryTestPageState extends ConsumerState<DeviceFactoryTestPage>
     }
 
     // Get current step name
-    final stepNames = ['Automatic Tests', 'Manual Tests', 'Submit Results'];
+    final stepNames = ['Automatic Tests', 'Manual Tests'];
     final currentStepName = stepNames[_tabController.index];
 
     return Container(
@@ -683,11 +682,9 @@ class _FactoryTestPageState extends ConsumerState<DeviceFactoryTestPage>
               child: _buildStepperItem('Automatic\nTests', 0, state,
                   isFirst: true)),
           _buildConnector(0, state),
-          Expanded(child: _buildStepperItem('Manual\nTests', 1, state)),
-          _buildConnector(1, state),
           Expanded(
               child:
-                  _buildStepperItem('Submit\nResults', 2, state, isLast: true)),
+                  _buildStepperItem('Manual\nTests', 1, state, isLast: true)),
         ],
       ),
     );
@@ -886,8 +883,6 @@ class _FactoryTestPageState extends ConsumerState<DeviceFactoryTestPage>
         return true;
       case 1: // Manual Tests - enabled if auto tests completed
         return state.automaticTests.isComplete;
-      case 2: // Results - enabled if all tests completed
-        return state.isTestingComplete;
       default:
         return false;
     }
@@ -899,8 +894,6 @@ class _FactoryTestPageState extends ConsumerState<DeviceFactoryTestPage>
         return state.automaticTests.isComplete;
       case 1:
         return state.manualTests.isComplete;
-      case 2:
-        return state.isTestingComplete;
       default:
         return false;
     }
@@ -913,8 +906,6 @@ class _FactoryTestPageState extends ConsumerState<DeviceFactoryTestPage>
             state.automaticTests.isRunning;
       case 1:
         return state.phase == DeviceFactoryTestPhase.runningManualTests;
-      case 2:
-        return false;
       default:
         return false;
     }
@@ -936,11 +927,11 @@ class _FactoryTestPageState extends ConsumerState<DeviceFactoryTestPage>
     debugPrint(
         '[${widget.deviceId}] All testing complete: ${state.isTestingComplete}');
 
-    // Check if all tests are complete and should move to submit tab
-    if (state.isTestingComplete && currentIndex < 2) {
-      newIndex = 2;
+    // Check if all tests are complete and save results locally
+    if (state.isTestingComplete) {
+      _saveTestResultsLocally(state);
     } else {
-      // Otherwise, use phase-based logic
+      // Use phase-based logic for tab switching
       switch (state.phase) {
         case DeviceFactoryTestPhase.connecting:
         case DeviceFactoryTestPhase.enteringFactoryMode:
@@ -953,13 +944,13 @@ class _FactoryTestPageState extends ConsumerState<DeviceFactoryTestPage>
           }
           break;
         case DeviceFactoryTestPhase.runningManualTests:
-          // Only switch to manual tests if automatic tests are complete and we're not on submit tab
-          if (state.automaticTests.isComplete && currentIndex < 2) {
+          // Switch to manual tests if automatic tests are complete
+          if (state.automaticTests.isComplete) {
             newIndex = 1;
           }
           break;
         case DeviceFactoryTestPhase.completed:
-          newIndex = 2;
+          // Stay on current tab when completed
           break;
         case DeviceFactoryTestPhase.error:
           // Don't auto-change for error states
@@ -1007,13 +998,46 @@ class _FactoryTestPageState extends ConsumerState<DeviceFactoryTestPage>
       case 1:
         message = 'Complete automatic tests first';
         break;
-      case 2:
-        message = 'Complete all tests first';
-        break;
+
       default:
         message = 'Step not available yet';
     }
 
     context.showSnackBar(message);
+  }
+
+  /// Save test results locally when all tests are completed
+  Future<void> _saveTestResultsLocally(DeviceFactoryTestState state) async {
+    try {
+      final factoryTestNotifier =
+          ref.read(factoryTestProvider(widget.deviceId).notifier);
+
+      await ref.read(factoryTestResultsProvider.notifier).saveTestResult(
+            deviceId: widget.deviceId,
+            testedBy:
+                'Tester', // Placeholder - actual name will be provided during CSV download
+            testState: state,
+            sensorVariant: state.selectedDeviceVariant ?? 0,
+            deviceType: factoryTestNotifier.getDeviceType(widget.deviceId),
+          );
+
+      // Mark device as completed in queue
+      ref
+          .read(factoryTestDevicesProvider.notifier)
+          .markDeviceCompleted(widget.deviceId, success: true);
+
+      // Show success message
+      if (mounted) {
+        context.showSnackBar(
+            'Test results saved locally. View all results from the menu.');
+      }
+
+      debugPrint('Test results saved locally for device: ${widget.deviceId}');
+    } catch (e) {
+      debugPrint('Error saving test results locally: $e');
+      if (mounted) {
+        context.showSnackBar('Error saving test results: $e');
+      }
+    }
   }
 }
