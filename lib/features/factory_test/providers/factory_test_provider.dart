@@ -635,8 +635,6 @@ class FactoryTestNotifier
         return 'Vibration Test';
       case ManualTestType.manualTestCaseCheck:
         return 'Case Check';
-      case ManualTestType.manualTestLcdOca:
-        return 'LCD with OCA?';
       default:
         return 'Unknown Test';
     }

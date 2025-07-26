@@ -81,8 +81,7 @@ class ManualTestsTab extends ConsumerWidget {
       BuildContext context, WidgetRef ref, TestResult test) {
     final isChargeTest = test.testName == 'Charge Test';
     final isCaseCheck = test.testName == 'Case Check';
-    final isLcdOcaCheck = test.testName == 'LCD with OCA?';
-    final needsManualStart = !isChargeTest && !isCaseCheck && !isLcdOcaCheck;
+    final needsManualStart = !isChargeTest && !isCaseCheck;
 
     return Card(
       elevation: 1,
@@ -140,8 +139,8 @@ class ManualTestsTab extends ConsumerWidget {
       return _buildPassFailButtons(context, ref, test);
     }
 
-    // Case Check and LCD with OCA: Visual only, show Pass/Fail immediately
-    if (test.testName == 'Case Check' || test.testName == 'LCD with OCA?') {
+    // Case Check: Visual only, show Pass/Fail immediately
+    if (test.testName == 'Case Check') {
       return _buildPassFailButtons(context, ref, test);
     }
 
@@ -280,8 +279,6 @@ class ManualTestsTab extends ConsumerWidget {
         return 'Feel for smooth vibration from device motor';
       case 'Case Check':
         return 'Visual inspection: no scratches, cracks, or defects';
-      case 'LCD with OCA?':
-        return 'Visual inspection: Does the LCD have OCA (Optically Clear Adhesive)?';
       default:
         return 'Manual test';
     }
