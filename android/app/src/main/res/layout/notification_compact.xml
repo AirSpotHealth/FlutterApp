@@ -6,6 +6,7 @@
     android:background="@android:color/transparent"
     android:orientation="vertical">
 
+
     <RelativeLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
@@ -32,7 +33,8 @@
                 android:text="----"
                 android:textColor="?android:textColorPrimary"
                 android:textSize="24sp"
-                android:textStyle="bold" />
+                android:textStyle="bold"
+                tools:textColor="@color/white" />
 
             <TextView
                 android:layout_width="wrap_content"
@@ -41,7 +43,8 @@
                 android:includeFontPadding="false"
                 android:text="CO₂ ppm"
                 android:textColor="?android:textColorSecondary"
-                android:textSize="10sp" />
+                android:textSize="10sp"
+                tools:textColor="@color/white" />
 
         </LinearLayout>
 
@@ -72,21 +75,20 @@
 
                     <ImageView
                         android:id="@+id/battery_icon"
-                        android:layout_width="12dp"
-                        android:layout_height="12dp"
-                        android:src="@drawable/ic_battery"
-                        android:tint="?android:textColorPrimary" />
+                        android:layout_width="14dp"
+                        android:layout_height="14dp"
+                        android:src="@drawable/battery_100percent_bolt"
+                        android:tint="@color/brand_green" />
 
                     <TextView
                         android:id="@+id/battery"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:layout_marginStart="4dp"
-                        android:alpha="0.9"
-                        android:text="0%"
+                        android:text="85%"
                         android:textColor="?android:textColorPrimary"
                         android:textSize="10sp"
-                        android:textStyle="bold" />
+                        tools:textColor="@color/white" />
 
 
                 </LinearLayout>
@@ -100,21 +102,21 @@
 
                     <ImageView
                         android:id="@+id/power_mode_icon"
-                        android:layout_width="12dp"
-                        android:layout_height="12dp"
+                        android:layout_width="10dp"
+                        android:layout_height="10dp"
                         android:src="@drawable/ic_power_mode"
-                        android:tint="?android:textColorPrimary" />
+                        android:tint="@color/primary"
+                        tools:tint="@color/light_blue_900" />
 
                     <TextView
                         android:id="@+id/power_mode"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:layout_marginStart="4dp"
-                        android:alpha="0.9"
-                        android:text="0%"
+                        android:text="1 min"
                         android:textColor="?android:textColorPrimary"
                         android:textSize="10sp"
-                        android:textStyle="bold" />
+                        tools:textColor="@color/white" />
 
 
                 </LinearLayout>
@@ -139,8 +141,7 @@
                 android:layout_height="40dp"
                 android:layout_gravity="center"
                 android:contentDescription="Refresh"
-                android:src="@drawable/refresh_button_dark"
-                android:visibility="visible" />
+                android:src="@drawable/refresh_button_dark" />
 
             <!-- Animated Progress Ring (shown when refreshing) -->
             <ProgressBar
@@ -165,20 +166,29 @@
             android:gravity="center_horizontal"
             android:orientation="vertical">
 
-            <ImageView
-                android:id="@+id/vibrate_mode"
-                android:layout_width="12dp"
-                android:layout_height="12dp"
-                android:src="@drawable/alarm_off"
-                android:layout_marginBottom="4dp"
-                android:tint="?android:textColorPrimary" />
+            <LinearLayout
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:orientation="vertical">
 
-            <ImageView
-                android:id="@+id/alarm_mode"
-                android:layout_width="12dp"
-                android:layout_height="12dp"
-                android:src="@drawable/vibrate_off"
-                android:tint="?android:textColorPrimary" />
+                <ImageView
+                    android:id="@+id/vibrate_mode"
+                    android:layout_width="12dp"
+                    android:layout_height="12dp"
+                    android:layout_marginBottom="4dp"
+                    android:src="@drawable/ic_alarm_on"
+                    android:tint="@color/primary" />
+
+                <ImageView
+                    android:id="@+id/alarm_mode"
+                    android:layout_width="12dp"
+                    android:layout_height="12dp"
+                    android:src="@drawable/ic_vibrate_off"
+                    android:tint="@color/primary" />
+
+
+            </LinearLayout>
+
 
         </LinearLayout>
 
@@ -208,8 +218,8 @@
                 android:layout_marginStart="6dp"
                 android:contentDescription="Graph"
                 android:src="@drawable/ic_graph" />
-        </LinearLayout>
 
+        </LinearLayout>
 
     </RelativeLayout>
 

@@ -72,20 +72,20 @@
 
                     <ImageView
                         android:id="@+id/battery_icon"
-                        android:layout_width="12dp"
-                        android:layout_height="12dp"
-                        android:src="@drawable/ic_battery"
-                        android:tint="?android:textColorPrimary" />
+                        android:layout_width="14dp"
+                        android:layout_height="14dp"
+                        android:src="@drawable/battery_100percent_bolt"
+                        android:tint="@color/widget_co2_green" />
 
                     <TextView
                         android:id="@+id/battery"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:layout_marginStart="4dp"
-                        android:text="0%"
+                        android:text="85%"
                         android:textColor="?android:textColorPrimary"
                         android:textSize="10sp"
-                        android:textStyle="bold" />
+                        tools:textColor="@color/white" />
 
 
                 </LinearLayout>
@@ -99,20 +99,21 @@
 
                     <ImageView
                         android:id="@+id/power_mode_icon"
-                        android:layout_width="12dp"
-                        android:layout_height="12dp"
+                        android:layout_width="10dp"
+                        android:layout_height="10dp"
                         android:src="@drawable/ic_power_mode"
-                        android:tint="?android:textColorPrimary" />
+                        android:tint="?android:colorPrimary"
+                        tools:tint="@color/light_blue_900" />
 
                     <TextView
                         android:id="@+id/power_mode"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:layout_marginStart="4dp"
-                        android:text="0%"
+                        android:text="1 min"
                         android:textColor="?android:textColorPrimary"
                         android:textSize="10sp"
-                        android:textStyle="bold" />
+                        tools:textColor="@color/white" />
 
 
                 </LinearLayout>
@@ -171,16 +172,18 @@
                     android:id="@+id/vibrate_mode"
                     android:layout_width="12dp"
                     android:layout_height="12dp"
-                    android:src="@drawable/alarm_off"
                     android:layout_marginBottom="4dp"
-                    android:tint="?android:textColorPrimary" />
+                    android:src="@drawable/ic_alarm_on"
+                    tools:tint="@color/light_blue_900"
+                    android:tint="?android:colorPrimary" />
 
                 <ImageView
                     android:id="@+id/alarm_mode"
                     android:layout_width="12dp"
                     android:layout_height="12dp"
-                    android:src="@drawable/vibrate_off"
-                    android:tint="?android:textColorPrimary" />
+                    android:src="@drawable/ic_vibrate_off"
+                    android:tint="?android:textColorPrimary"
+                    tools:tint="@color/light_blue_600" />
 
 
             </LinearLayout>
@@ -238,9 +241,9 @@
             android:id="@+id/txt_open_website"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
+            android:layout_marginRight="24dp"
             android:text="Open Website"
             android:textColor="?android:colorPrimary"
-            android:layout_marginRight="24dp"
             android:textStyle="bold" />
     </LinearLayout>
 

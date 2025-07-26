@@ -19,4 +19,20 @@
     <color name="widget_text_gray">#CCCCCC</color>
     <color name="widget_button_bg">#333333</color>
 
+<!--    static const primaryColor = Color(0xFF009FD7);-->
+<!--    static const primaryColorDark = Color(0xFF007A9A);-->
+<!--    static const primaryColorLight = Color(0xFF00BCEA);-->
+
+<!--    // Brand colors-->
+<!--    static const brandColorGreen = Color(0xFF63A103);-->
+<!--    static const brandColorRed = Color(0xFFD9001B);-->
+<!--    static const brandColorAmber = Color(0xFFFE9A23);-->
+
+    <color name="primary">#FF009FD7</color>
+    <color name="primary_dark">#FF007A9A</color>
+    <color name="primary_light">#FF00BCEA</color>
+    <color name="brand_green">#FF63A103</color>
+    <color name="brand_red">#FFD9001B</color>Ï
+    <color name="brand_amber">#FFFE9A23</color>
+
 </resources>

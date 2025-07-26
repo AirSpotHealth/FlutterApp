@@ -660,19 +660,7 @@ struct LiveActivityWidgetLiveActivity: Widget {
 
     private func batteryIcon(for level: Int, isCharging: Bool) -> String {
         if isCharging {
-            // Use charging icons
-            switch level {
-            case 0...10:
-                return "battery.0percent.bolt"
-            case 11...25:
-                return "battery.25percent.bolt"
-            case 26...50:
-                return "battery.50percent.bolt"
-            case 51...75:
-                return "battery.75percent.bolt"
-            default:
-                return "battery.100percent.bolt"
-            }
+            return "battery.100percent.bolt"
         } else {
             // Use regular battery icons
             switch level {

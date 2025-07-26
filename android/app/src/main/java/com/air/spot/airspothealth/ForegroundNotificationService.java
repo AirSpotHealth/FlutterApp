@@ -252,10 +252,7 @@ public class ForegroundNotificationService extends Service {
                     .setCustomContentView(compactLayout)        // Custom compact layout
                     .setCustomBigContentView(expandedLayout).setOngoing(true)                           // Persistent notification
                     .setPriority(NotificationCompat.PRIORITY_DEFAULT).setVisibility(NotificationCompat.VISIBILITY_PUBLIC).setCategory(NotificationCompat.CATEGORY_SERVICE).setContentIntent(openAppPendingIntent).setAutoCancel(false).setShowWhen(true)                         // Hide system timestamp
-                    .setOnlyAlertOnce(true).setLocalOnly(false).setDefaults(0)                            // No sound/vibration
-                    .setContentText(customTimestamp).setContentTitle(null)
-                    .setSilent(co2IntValue < greenUpperLimit);
-
+                    .setOnlyAlertOnce(true).setLocalOnly(false).setDefaults(0).setContentText(customTimestamp).setContentTitle(null).setSilent(co2IntValue < greenUpperLimit);
 
             // Open website action
             Intent browserIntent = new Intent(Intent.ACTION_VIEW, Uri.parse("https://airspothealth.com"));
@@ -305,13 +302,15 @@ public class ForegroundNotificationService extends Service {
             views.setViewVisibility(R.id.ic_refresh, android.view.View.VISIBLE);
         }
 
+        int batteryPercentage = Integer.parseInt(batteryLevel);
+        views.setImageViewResource(R.id.battery_icon, getBatteryIconResource(batteryPercentage, isCharging));
         String batteryText = isCharging ? "CHG" : batteryLevel + "%";
         views.setTextViewText(R.id.battery, batteryText);
 
         views.setTextViewText(R.id.power_mode, powerMode);
 
-        views.setImageViewResource(R.id.vibrate_mode, vibrationEnabled ? R.drawable.vibrate_on : R.drawable.vibrate_off);
-        views.setImageViewResource(R.id.alarm_mode, alarmEnabled ? R.drawable.alarm_on : R.drawable.alarm_off);
+        views.setImageViewResource(R.id.vibrate_mode, vibrationEnabled ? R.drawable.ic_vibrate_on : R.drawable.ic_vibrate_off);
+        views.setImageViewResource(R.id.alarm_mode, alarmEnabled ? R.drawable.ic_alarm_on : R.drawable.ic_alarm_off);
 
         // Add refresh functionality directly in the UI
         Intent refreshIntent = new Intent(this, ForegroundNotificationService.class);
@@ -364,6 +363,20 @@ public class ForegroundNotificationService extends Service {
         }
 
         return views;
+    }
+
+    private int getBatteryIconResource(int batteryPercentage, boolean isCharging) {
+        if (isCharging) {
+            return R.drawable.battery_100percent_bolt; // Charging icon
+        } else if (batteryPercentage >= 90) {
+            return R.drawable.battery_100percent; // Full battery
+        } else if (batteryPercentage >= 50) {
+            return R.drawable.battery_75percent; // Half battery
+        } else if (batteryPercentage >= 20) {
+            return R.drawable.battery_25percent; // Low battery
+        } else {
+            return R.drawable.battery_0percent; // Empty battery
+        }
     }
 
     private Bitmap generateCo2GraphBitmap(List<Integer> co2History, int greenUpperLimit, int yellowUpperLimit, int graphMaxValue, int graphMinValue) {
