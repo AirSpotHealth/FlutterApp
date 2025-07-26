@@ -613,7 +613,7 @@ struct LiveActivityWidgetLiveActivity: Widget {
                     .foregroundColor(.white)
                 }
             } minimal: {
-                Text("AS")
+                Text("\(context.state.co2Value)")
                     .foregroundColor(
                         co2Color(
                             for: context.state.co2Value,
