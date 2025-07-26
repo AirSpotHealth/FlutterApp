@@ -970,14 +970,16 @@ class _FactoryTestPageState extends ConsumerState<DeviceFactoryTestPage>
     debugPrint('[${widget.deviceId}] Calculated new tab index: $newIndex');
 
     // Only change tabs if necessary and if the tab is enabled
-    if (newIndex != currentIndex && _isTabEnabled(newIndex, state) && mounted) {
-      debugPrint('[${widget.deviceId}] Switching to tab $newIndex');
-      _tabController.animateTo(newIndex);
-      _pageController.animateToPage(
-        newIndex,
-        duration: const Duration(milliseconds: 300),
-        curve: Curves.easeInOut,
-      );
+    if (newIndex != currentIndex && _isTabEnabled(newIndex, state)) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        debugPrint('[${widget.deviceId}] Switching to tab $newIndex');
+        _tabController.animateTo(newIndex);
+        _pageController.animateToPage(
+          newIndex,
+          duration: const Duration(milliseconds: 300),
+          curve: Curves.easeInOut,
+        );
+      });
     } else {
       debugPrint(
           '[${widget.deviceId}] No tab switch needed - current: $currentIndex, calculated: $newIndex, enabled: ${_isTabEnabled(newIndex, state)}');
