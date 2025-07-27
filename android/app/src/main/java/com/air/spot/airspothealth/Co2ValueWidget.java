@@ -49,22 +49,26 @@ public class Co2ValueWidget extends AppWidgetProvider {
             JSONObject widgetData = new JSONObject(widgetDataJson);
             
             // Extract all values from JSON with fallbacks
-            String co2Value = widgetData.optString("co2_value", "----");
-            String deviceId = widgetData.optString("device_id", "");
-            String deviceName = widgetData.optString("device_name", "No Device");
-            String powerMode = widgetData.optString("power_mode", "Now");
-            String batteryLevel = widgetData.optString("battery_level", "0");
-            boolean isCharging = widgetData.optBoolean("is_charging", false);
-            boolean alarmEnabled = widgetData.optBoolean("alarm_enabled", false);
-            boolean vibrationEnabled = widgetData.optBoolean("vibration_enabled", false);
+            // Note: co2Value and batteryLevel are now sent as integers from Flutter
+            String co2Value = String.valueOf(widgetData.optInt("co2Value", 0));
+            if (co2Value.equals("0")) co2Value = "----"; // Fallback for invalid data
+            String deviceId = widgetData.optString("deviceId", "");
+            String deviceName = widgetData.optString("deviceName", "No Device");
+            String powerMode = widgetData.optString("powerMode", "Now");
+            String batteryLevel = String.valueOf(widgetData.optInt("batteryLevel", 0));
+            boolean isCharging = widgetData.optBoolean("isCharging", false);
+            boolean alarmEnabled = widgetData.optBoolean("alarmEnabled", false);
+            boolean vibrationEnabled = widgetData.optBoolean("vibrationEnabled", false);
+            boolean isConnected = widgetData.optBoolean("isConnected", false);
+            boolean isRefreshing = widgetData.optBoolean("isRefreshing", false);
             
             // Graph data
-            JSONArray co2HistoryArray = widgetData.optJSONArray("co2_history");
+            JSONArray co2HistoryArray = widgetData.optJSONArray("co2History");
             List<Integer> co2History = parseJsonArrayToIntList(co2HistoryArray);
-            int greenUpperLimit = widgetData.optInt("green_upper_limit", 800);
-            int yellowUpperLimit = widgetData.optInt("yellow_upper_limit", 1000);
-            int graphMaxValue = widgetData.optInt("graph_max_value", 1600);
-            int graphMinValue = widgetData.optInt("graph_min_value", 0);
+            int greenUpperLimit = widgetData.optInt("greenUpperLimit", 800);
+            int yellowUpperLimit = widgetData.optInt("yellowUpperLimit", 1000);
+            int graphMaxValue = widgetData.optInt("graphMaxValue", 1600);
+            int graphMinValue = widgetData.optInt("graphMinValue", 0);
             
             Log.d(TAG, "Parsed widget data: CO2=" + co2Value + ", Device=" + deviceName + 
                       ", History=" + co2History.size() + " values, Thresholds=" + greenUpperLimit + "/" + yellowUpperLimit);
@@ -102,6 +106,9 @@ public class Co2ValueWidget extends AppWidgetProvider {
             setupDynamicCo2Graph(context, views, co2History, greenUpperLimit, yellowUpperLimit, 
                                  graphMaxValue, graphMinValue);
 
+            // Handle refresh state and connection state (similar to notification)
+            setupRefreshState(views, isRefreshing, isConnected);
+            
             // Set up refresh button with device ID
             setupRefreshButton(context, views, appWidgetId, deviceId);
 
@@ -129,21 +136,42 @@ public class Co2ValueWidget extends AppWidgetProvider {
         return intList;
     }
 
-    private static void setupRefreshButton(Context context, RemoteViews views, int appWidgetId, String deviceId) {
-        Intent intent = new Intent(context, Co2ValueWidget.class);
-        intent.setAction(AppWidgetManager.ACTION_APPWIDGET_UPDATE);
-        intent.putExtra(AppWidgetManager.EXTRA_APPWIDGET_IDS, new int[] {appWidgetId});
-
-        // Create URI with device ID as query parameter
-        String uriString = "airspothealthapp://refresh";
-        if (deviceId != null && !deviceId.isEmpty()) {
-            uriString += "?deviceId=" + deviceId;
+    private static void setupRefreshState(RemoteViews views, boolean isRefreshing, boolean isConnected) {
+        Log.d(TAG, "Setting up refresh state - isRefreshing: " + isRefreshing + ", isConnected: " + isConnected);
+        
+        if (isRefreshing && isConnected) {
+            // Show progress bar, hide refresh button
+            Log.d(TAG, "Showing refresh animation");
+            views.setViewVisibility(R.id.progress_refresh, View.VISIBLE);
+            views.setViewVisibility(R.id.refresh_button, View.GONE);
+        } else {
+            // Hide progress bar, show refresh button
+            Log.d(TAG, "Hiding refresh animation");
+            views.setViewVisibility(R.id.progress_refresh, View.GONE);
+            views.setViewVisibility(R.id.refresh_button, View.VISIBLE);
+            
+            // Set appropriate refresh button icon based on connection state
+            if (isConnected && !isRefreshing) {
+                // Show normal refresh icon when connected
+                views.setImageViewResource(R.id.refresh_button, R.drawable.refresh_button_widget);
+            } else {
+                // Show disabled/disconnected icon when not connected
+                views.setImageViewResource(R.id.refresh_button, R.drawable.ic_bt_off);
+            }
         }
-        
-        PendingIntent refreshPendingIntent = HomeWidgetBackgroundIntent.INSTANCE.getBroadcast(context, Uri.parse(uriString));
+    }
+
+    private static void setupRefreshButton(Context context, RemoteViews views, int appWidgetId, String deviceId) {
+        // When the refresh button is clicked, send the REFRESH_DATA broadcast
+        Intent intent = new Intent(context, Co2ValueWidget.class);
+        intent.setAction("com.air.spot.airspothealth.REFRESH_DATA");
+        // Optionally, add deviceId as extra if needed
+        if (deviceId != null && !deviceId.isEmpty()) {
+            intent.putExtra("deviceId", deviceId);
+        }
+        PendingIntent refreshPendingIntent = PendingIntent.getBroadcast(context, appWidgetId, intent, PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
         views.setOnClickPendingIntent(R.id.refresh_button, refreshPendingIntent);
-        
-        Log.d(TAG, "Refresh button setup with URI: " + uriString);
+        Log.d(TAG, "Refresh button setup to send REFRESH_DATA broadcast");
     }
 
     private static void setupDynamicCo2Graph(Context context, RemoteViews views, List<Integer> co2History, 
@@ -230,8 +258,10 @@ public class Co2ValueWidget extends AppWidgetProvider {
             
             float barHeight = drawableHeight * heightRatio;
             
-            // Calculate bar position (align with grey bars)
-            int barIndex = (40 - maxBars) + i; // Position from right like iOS (latest data rightmost)
+            // Calculate bar position - align to RIGHT side (most recent data on rightmost positions)
+            // Example: if maxBars=5, bars appear at positions 35,36,37,38,39 (rightmost positions)
+            // Example: if maxBars=3, bars appear at positions 37,38,39 (rightmost positions)
+            int barIndex = (40 - maxBars) + i;
             float barLeft = padding + (barIndex * (barWidth + barSpacing));
             float barTop = height - padding - barHeight; // Draw from bottom
             float barRight = barLeft + barWidth;
@@ -285,6 +315,13 @@ public class Co2ValueWidget extends AppWidgetProvider {
         }
     }
 
+    // Add a static method to send the REFRESH_DATA broadcast
+    public static void sendRefreshBroadcast(Context context) {
+        Intent broadcastIntent = new Intent("com.air.spot.airspothealth.REFRESH_DATA");
+        context.sendBroadcast(broadcastIntent);
+        Log.d(TAG, "Sent REFRESH_DATA broadcast from Co2ValueWidget");
+    }
+
     @Override
     public void onUpdate(Context context, AppWidgetManager appWidgetManager, int[] appWidgetIds) {
         // Update all widget instances
@@ -309,5 +346,14 @@ public class Co2ValueWidget extends AppWidgetProvider {
     public void onDisabled(Context context) {
         // Enter relevant functionality for when the last widget is disabled
         Log.d(TAG, "Widget disabled");
+    }
+
+    @Override
+    public void onReceive(Context context, Intent intent) {
+        super.onReceive(context, intent);
+        if ("com.air.spot.airspothealth.REFRESH_DATA".equals(intent.getAction())) {
+            // Send the broadcast to MainActivity (which will forward to Flutter)
+            sendRefreshBroadcast(context);
+        }
     }
 }

@@ -5,14 +5,12 @@ import 'package:airspothealth/core/models/ble_device.dart';
 import 'package:airspothealth/core/models/device_data.dart';
 import 'package:airspothealth/core/models/device_data_type.dart';
 import 'package:airspothealth/core/models/device_settings.dart';
-import 'package:airspothealth/core/models/live_activity_model.dart';
 import 'package:airspothealth/core/providers/ble_connected_devices_provider.dart';
 import 'package:airspothealth/core/providers/device_settings_provider.dart';
 import 'package:airspothealth/core/services/ble_communicator_service.dart';
 import 'package:airspothealth/core/services/ble_data_service.dart';
 import 'package:airspothealth/core/services/ble_device_communicator.dart';
 import 'package:airspothealth/core/services/data_logger_service.dart';
-import 'package:airspothealth/core/services/home_widget_service.dart';
 import 'package:airspothealth/core/services/isar_service.dart';
 import 'package:airspothealth/core/services/live_activity_service.dart';
 import 'package:airspothealth/core/utils/constants.dart';
@@ -68,12 +66,8 @@ class _BleDeviceCommunicationNotifier extends FamilyNotifier<dynamic, String> {
     ref.onDispose(() {
       _notifySubscription?.cancel();
       // Clear refresh callbacks when this provider is disposed
-      if (Platform.isIOS) {
-        LiveActivityService().clearDeviceRefreshCallback(deviceId);
-      }
-      if (Platform.isAndroid) {
-        HomeWidgetService.instance.clearDeviceRefreshCallback(deviceId);
-      }
+      // Clear refresh callbacks when this provider is disposed
+      LiveActivityService().clearDeviceRefreshCallback(deviceId);
     });
     return lastValue;
   }
@@ -105,8 +99,9 @@ class _BleDeviceCommunicationNotifier extends FamilyNotifier<dynamic, String> {
   }
 
   void _setupWidgetRefreshCallback() {
-    HomeWidgetService.instance.setDeviceRefreshCallback(deviceId, () {
-      debugPrint('Widget refresh triggered for device: $deviceId');
+    // Use unified LiveActivityService for both widget and notification refresh
+    LiveActivityService().setDeviceRefreshCallback(deviceId, () {
+      debugPrint('Unified refresh triggered for device: $deviceId');
       _handleWidgetRefresh();
     });
   }
@@ -150,7 +145,7 @@ class _BleDeviceCommunicationNotifier extends FamilyNotifier<dynamic, String> {
     });
   }
 
-  void _handleNotificationData(List<int> data) {
+  void _handleNotificationData(List<int> data) async {
     debugPrint(
         'Data received: $deviceId, ${BleDataService.bytesToHexStr(data)}');
 
@@ -174,18 +169,15 @@ class _BleDeviceCommunicationNotifier extends FamilyNotifier<dynamic, String> {
     }
   }
 
-  void setHomeValue(DeviceData co2Data) {
+  Future<void> setHomeValue(DeviceData co2Data) async {
     debugPrint(
-        'BLE: FRESH CO2 DATA RECEIVED: ${co2Data.value} - Updating widget with all data');
+        'BLE: FRESH CO2 DATA RECEIVED: ${co2Data.value} - Delegating to LiveActivityService for unified update');
 
     try {
-      // 1. We have the fresh CO2 value
-      final String co2Value = co2Data.value.toString();
-
-      // 2. Get device name
+      // 1. Get device name
       final String deviceName = device?.advName ?? 'AirSpot Device';
 
-      // 3. Get device settings (power mode, alarms, etc.)
+      // 2. Get device settings
       DeviceSettings? deviceSettings;
       try {
         deviceSettings = ref.read(deviceSettingsProvider(deviceId));
@@ -193,14 +185,9 @@ class _BleDeviceCommunicationNotifier extends FamilyNotifier<dynamic, String> {
         debugPrint('BLE: Could not read device settings: $e');
       }
 
-      final String powerMode = deviceSettings?.powerMode.name ?? 'Now';
-      final bool alarmEnabled = deviceSettings?.alarmEnabled ?? false;
-      final bool vibrationEnabled = deviceSettings?.vibrationEnabled ?? false;
-
-      // 4. Get battery info
+      // 3. Get battery info
       String batteryLevel = '0';
       bool isCharging = false;
-
       try {
         final batteryState = ref.read(deviceBatteryLevelProvider(deviceId));
         batteryLevel = batteryState.level?.toString() ?? '0';
@@ -209,9 +196,9 @@ class _BleDeviceCommunicationNotifier extends FamilyNotifier<dynamic, String> {
         debugPrint('BLE: Could not read battery state: $e');
       }
 
-      // 5. Get last 39 co2 readings from database + current value (same as iOS)
+      // 4. Get historical CO2 data
       final historicalData = _isarService.read<List<int>>((isar) {
-        final co2Data = isar.deviceDatas
+        final co2DataList = isar.deviceDatas
             .where()
             .deviceIdEqualTo(deviceId)
             .typeEqualTo(DeviceDataType.co2.index)
@@ -219,85 +206,29 @@ class _BleDeviceCommunicationNotifier extends FamilyNotifier<dynamic, String> {
             .findAll()
             .take(39)
             .toList();
-        return co2Data.map((e) => e.value).toList().reversed.toList();
+        return co2DataList.map((e) => e.value).toList().reversed.toList();
       });
 
-      // 6. Ensure current value is included as the latest value
-      final co2History = [...historicalData, int.parse(co2Value)];
+      // 5. Include current value as the latest
+      final co2History = [...historicalData, co2Data.value];
 
-      if (Platform.isAndroid) {
-        // 7. Create complete widget data with graph information
-        final widgetData = WidgetUpdateData(
-          deviceId: deviceId,
-          co2Value: co2Value,
-          deviceName: deviceName,
-          powerMode: powerMode,
-          batteryLevel: batteryLevel,
-          isCharging: isCharging,
-          alarmEnabled: alarmEnabled,
-          vibrationEnabled: vibrationEnabled,
-          co2History: co2History,
-          greenUpperLimit: deviceSettings?.thresholds.greenUpperLimit ??
-              Constants.defaultGreenUpperLimit,
-          yellowUpperLimit: deviceSettings?.thresholds.yellowUpperLimit ??
-              Constants.defaultYellowUpperLimit,
-          graphMaxValue: deviceSettings?.graphMaxValue ?? 1600,
-          graphMinValue: deviceSettings?.graphMinValue ?? 0,
-        );
-
-        // 8. Call service to update home widget with all data
-        debugPrint(
-            'BLE: Updating widget with: CO2=$co2Value, Device=$deviceName, PowerMode=$powerMode, Battery=$batteryLevel, History=${co2History.length} values');
-        HomeWidgetService.instance.updateHomeWidget(data: widgetData);
-      }
-
-      if (Platform.isIOS && deviceSettings?.showLiveActivity == true) {
-        // 9. Call service to update live activity with all data
-        debugPrint('BLE: Updating live activity with CO2=$co2Value');
-
-        // For debugging: Check if user dismissed it this session
-        LiveActivityService()
-            .wasUserDismissedThisSession()
-            .then((wasDismissed) {
-          if (wasDismissed) {
-            debugPrint(
-                'BLE: Live activity was dismissed by user this session - update will be blocked');
-          } else {
-            debugPrint(
-                'BLE: Live activity proceeding with update - no user dismissal detected');
-          }
-        });
-
-        LiveActivityService().updateLiveActivity(
-            deviceId: deviceId,
-            data: LiveActivityModel(
-              deviceId: deviceId,
-              co2Value: int.parse(co2Value),
-              powerMode: powerMode,
-              batteryLevel: int.parse(batteryLevel),
-              isCharging: isCharging,
-              alarmEnabled: alarmEnabled,
-              vibrationEnabled: vibrationEnabled,
-              co2History: co2History,
-              greenUpperLimit: deviceSettings?.thresholds.greenUpperLimit ??
-                  Constants.defaultGreenUpperLimit,
-              yellowUpperLimit: deviceSettings?.thresholds.yellowUpperLimit ??
-                  Constants.defaultYellowUpperLimit,
-              graphMaxValue: deviceSettings?.graphMaxValue ?? 1600,
-              graphMinValue: deviceSettings?.graphMinValue ?? 0,
-            ));
-      } else if (Platform.isIOS && deviceSettings?.showLiveActivity == false) {
-        // If live activity is disabled, make sure to end any active activity
-        debugPrint(
-            'BLE: Live activity setting is disabled - ending any active activity');
-        LiveActivityService().endLiveActivity();
-      }
+      // 6. Delegate to unified LiveActivityService
+      await LiveActivityService().updateWithCO2Data(
+        deviceId: deviceId,
+        co2Value: co2Data.value.toString(),
+        deviceName: deviceName,
+        deviceSettings: deviceSettings,
+        batteryLevel: batteryLevel,
+        isCharging: isCharging,
+        isConnected: device?.isConnected ?? false,
+        co2History: co2History,
+      );
     } catch (e) {
-      debugPrint('BLE: Error gathering widget data: $e');
-      // Fallback to basic CO2 update
+      debugPrint('BLE: Error delegating to LiveActivityService: $e');
+      // Fallback for Android home widget only
       if (Platform.isAndroid) {
-        HomeWidget.saveWidgetData(Constants.homeWidgetKey, '----');
-        HomeWidget.updateWidget(
+        await HomeWidget.saveWidgetData(Constants.homeWidgetKey, '----');
+        await HomeWidget.updateWidget(
           iOSName: Constants.iOSWidgetName,
           androidName: Constants.androidWidgetName,
         );

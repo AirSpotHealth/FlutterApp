@@ -6,8 +6,8 @@
         <shape android:shape="oval">
             <solid android:color="#55000000" /> <!-- semi-transparent black -->
             <size
-                android:width="42dp"
-                android:height="42dp" />
+                android:width="36dp"
+                android:height="36dp" />
         </shape>
     </item>
 
@@ -20,8 +20,8 @@
         <shape android:shape="oval">
             <solid android:color="#1F1F1F" />
             <size
-                android:width="40dp"
-                android:height="40dp" />
+                android:width="34dp"
+                android:height="34dp" />
         </shape>
     </item>
 

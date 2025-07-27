@@ -35,22 +35,7 @@ struct RefreshDataIntent: LiveActivityIntent {
     }
 }
 
-// Map Intent for Map click (iOS 17+ only)
-@available(iOS 17.0, *)
-struct MapIntent: LiveActivityIntent {
-    static var title: LocalizedStringResource = "Open Map"
-    static var description = IntentDescription("Opens the map in the browser")
 
-    func perform() async throws -> some IntentResult {
-        print("Live Activity map via LiveActivityIntent (iOS 17+)")
-        // Send notification to main app to open map
-        NotificationCenter.default.post(
-            name: Notification.Name("MapClicked"),
-            object: nil
-        )
-        return .result()
-    }
-}
 #endif
 
 struct LiveActivityWidgetAttributes: ActivityAttributes {
@@ -79,6 +64,8 @@ struct LiveActivityWidgetAttributes: ActivityAttributes {
         var graphMinValue: Int
         // Refresh State
         var isRefreshing: Bool
+        // Connection State
+        var isConnected: Bool
         // Last Updated
         var lastUpdated: Date
     }
@@ -90,11 +77,17 @@ struct Co2ValueView: View {
     let greenUpperLimit: Int
     let yellowUpperLimit: Int
     let isRefreshing: Bool
+    let isConnected: Bool
     let fontSize: CGFloat
 
     @State private var isAnimating: Bool = false
 
     private func co2Color(for value: Int) -> Color {
+        // Show grey when disconnected, normal colors when connected
+        if !isConnected {
+            return .gray
+        }
+        
         if value <= greenUpperLimit {
             return .green
         } else if value <= yellowUpperLimit {
@@ -166,9 +159,31 @@ struct Co2GraphView: View {
     var body: some View {
         GeometryReader { geometry in
             let maxHeight = geometry.size.height
+            let maxBars = 40  // Maximum number of bars to display
+            let actualBars = min(maxBars, co2History.count)
+            let emptyBars = max(0, maxBars - actualBars)
+            
             HStack(alignment: .bottom, spacing: 2) {
-                ForEach(0..<co2History.count, id: \.self) { index in
-                    let value = co2History[index]
+                // Add empty bars on the left to push actual data to the right
+                ForEach(0..<emptyBars, id: \.self) { _ in
+                    VStack {
+                        Spacer(minLength: 0)
+                        RoundedRectangle(cornerRadius: 1)
+                            .fill(Color.clear)
+                            .frame(height: 0)
+                    }
+                    .frame(width: 6)
+                    .background(
+                        RoundedRectangle(cornerRadius: 1)
+                            .fill(Color.gray.opacity(0.3))
+                            .frame(height: maxHeight)
+                    )
+                }
+                
+                // Display actual CO2 data on the right side
+                ForEach(0..<actualBars, id: \.self) { index in
+                    let dataIndex = co2History.count - actualBars + index
+                    let value = co2History[dataIndex]
                     let heightRatio = normalizedHeight(for: value)
                     let barHeight = maxHeight * heightRatio
 
@@ -178,7 +193,7 @@ struct Co2GraphView: View {
                             .fill(co2Color(for: value))
                             .frame(height: barHeight)
                     }
-                    .frame(width: 6)  // or whatever width you want for each bar
+                    .frame(width: 6)
                     .background(
                         RoundedRectangle(cornerRadius: 1)
                             .fill(Color.gray.opacity(0.3))
@@ -194,39 +209,57 @@ struct Co2GraphView: View {
                     .fill(Color.black.opacity(0.1))
             )
         }
-        .frame(height: 70)  // or your desired height
+        .frame(height: 70)
 
     }
 }
 
-// Refresh button with configurable size (iOS 17+ only)
+// Refresh button with configurable size and activity indicator (iOS 17+ only)
 struct CompactRefreshButton: View {
     let size: CGFloat
+    let isRefreshing: Bool
+    let isConnected: Bool
 
     var body: some View {
         #if canImport(AppIntents)
         if #available(iOS 17.0, *) {
-            Button(intent: RefreshDataIntent()) {
-                ZStack {
-                    // Dark circular background - lighter shade for visibility
-                    Circle()
-                        .strokeBorder(.white.opacity(0.8), lineWidth: 1)
-                        .fill(.secondary.opacity(0.3))
+            ZStack {
+                if isRefreshing && isConnected {
+                    // Show activity indicator when refreshing and connected
+                    ProgressView()
+                        .progressViewStyle(CircularProgressViewStyle(tint: .white))
+                        .scaleEffect(size / 40) // Scale based on button size
                         .frame(width: size, height: size)
-                        .shadow(
-                            color: .secondary.opacity(0.2),
-                            radius: 1,
-                            x: 0,
-                            y: 0
-                        )
+                } else if isConnected {
+                    // Show refresh button when connected but not refreshing
+                    Button(intent: RefreshDataIntent()) {
+                        ZStack {
+                            // Dark circular background - lighter shade for visibility
+                            Circle()
+                                .strokeBorder(.white.opacity(0.8), lineWidth: 1)
+                                .fill(.secondary.opacity(0.3))
+                                .frame(width: size, height: size)
+                                .shadow(
+                                    color: .secondary.opacity(0.2),
+                                    radius: 1,
+                                    x: 0,
+                                    y: 0
+                                )
 
-                    // Small white circle in center - scales with button size
-                    Circle()
-                        .fill(.white)
-                        .frame(width: size * 0.2, height: size * 0.2)
-                }
-            }
-            .buttonStyle(.plain)
+                            // Small white circle in center - scales with button size
+                            Circle()
+                                .fill(.white)
+                                .frame(width: size * 0.2, height: size * 0.2)
+                        }
+                                         }
+                     .buttonStyle(.plain)
+                 } else {
+                     Image("ic_bt_off")
+                         .resizable()
+                         .aspectRatio(contentMode: .fit)
+                         .frame(width: size, height: size)
+                 }
+             }
         } else {
             // No refresh button on iOS 16.x - LiveActivityIntent not available
             EmptyView()
@@ -249,24 +282,26 @@ struct LiveActivityWidgetLiveActivity: Widget {
                 ZStack {
                     // Center refresh button – visually centered
                     CompactRefreshButton(
-                        size: context.state.isRefreshing ? 32 : 36
+                        size: context.state.isRefreshing ? 32 : 36,
+                        isRefreshing: context.state.isRefreshing,
+                        isConnected: context.state.isConnected
                     )
 
                     // Full width HStack to layout left and right sections
                     HStack {
                         // Left Section (Map + CO2)
                         HStack(spacing: 6) {
-                            #if canImport(AppIntents)
-                            if #available(iOS 17.0, *) {
-                                Button(intent: MapIntent()) {
-                                    Image("ic_map")
-                                        .resizable()
-                                        .aspectRatio(contentMode: .fit)
-                                        .frame(width: 32, height: 32)
-                                }
-                                .buttonStyle(.plain)
+                            Link(
+                                destination: URL(
+                                    string: "airspothealth://open_map"
+                                )!
+                            ) {
+                                Image("ic_map")
+                                    .resizable()
+                                    .aspectRatio(contentMode: .fit)
+                                    .frame(width: 32, height: 32)
                             }
-                            #endif
+                            .buttonStyle(.plain)
 
 
                             VStack(alignment: .center, spacing: 2) {
@@ -277,6 +312,7 @@ struct LiveActivityWidgetLiveActivity: Widget {
                                     yellowUpperLimit: context.state
                                         .yellowUpperLimit,
                                     isRefreshing: context.state.isRefreshing,
+                                    isConnected: context.state.isConnected,
                                     fontSize: 24
                                 )
                                 Text("CO₂ ppm")
@@ -380,10 +416,10 @@ struct LiveActivityWidgetLiveActivity: Widget {
                                         "airspothealth://devices/\(context.state.deviceId)/graph"
                                 )!
                             ) {
-                                Image("ic_graph")
+                                Image("ic_graph2")
                                     .resizable()
                                     .aspectRatio(contentMode: .fit)
-                                    .frame(width: 28, height: 28)
+                                    .frame(width: 32, height: 32)
                             }
                             .buttonStyle(.plain)
                         }
@@ -437,6 +473,7 @@ struct LiveActivityWidgetLiveActivity: Widget {
                                 yellowUpperLimit: context.state
                                     .yellowUpperLimit,
                                 isRefreshing: context.state.isRefreshing,
+                                isConnected: context.state.isConnected,
                                 fontSize: 20
                             )
                             Text("CO₂ ppm")
@@ -449,7 +486,11 @@ struct LiveActivityWidgetLiveActivity: Widget {
 
                 DynamicIslandExpandedRegion(.trailing) {
                     VStack(alignment: .trailing, spacing: 6) {
-                        CompactRefreshButton(size: 24)
+                        CompactRefreshButton(
+                            size: 24,
+                            isRefreshing: context.state.isRefreshing,
+                            isConnected: context.state.isConnected
+                        )
 
                         HStack(spacing: 4) {
                             Image(
@@ -533,7 +574,8 @@ struct LiveActivityWidgetLiveActivity: Widget {
                             co2Color(
                                 for: context.state.co2Value,
                                 green: context.state.greenUpperLimit,
-                                yellow: context.state.yellowUpperLimit
+                                yellow: context.state.yellowUpperLimit,
+                                isConnected: context.state.isConnected
                             )
                         )
                         .font(.system(size: 10, weight: .bold))
@@ -542,6 +584,7 @@ struct LiveActivityWidgetLiveActivity: Widget {
                         greenUpperLimit: context.state.greenUpperLimit,
                         yellowUpperLimit: context.state.yellowUpperLimit,
                         isRefreshing: context.state.isRefreshing,
+                        isConnected: context.state.isConnected,
                         fontSize: 12
                     )
                 }
@@ -570,12 +613,13 @@ struct LiveActivityWidgetLiveActivity: Widget {
                     .foregroundColor(.white)
                 }
             } minimal: {
-                Text("AS")
+                Text("\(context.state.co2Value)")
                     .foregroundColor(
                         co2Color(
                             for: context.state.co2Value,
                             green: context.state.greenUpperLimit,
-                            yellow: context.state.yellowUpperLimit
+                            yellow: context.state.yellowUpperLimit,
+                            isConnected: context.state.isConnected
                         )
                     )
                     .font(.system(size: 10, weight: .bold))
@@ -584,7 +628,12 @@ struct LiveActivityWidgetLiveActivity: Widget {
     }
 
     // Helper functions for dynamic colors and icons
-    private func co2Color(for value: Int, green: Int, yellow: Int) -> Color {
+    private func co2Color(for value: Int, green: Int, yellow: Int, isConnected: Bool = true) -> Color {
+        // Show grey when disconnected
+        if !isConnected {
+            return .gray
+        }
+        
         if value <= green {
             return .green
         } else if value <= yellow {
@@ -611,19 +660,7 @@ struct LiveActivityWidgetLiveActivity: Widget {
 
     private func batteryIcon(for level: Int, isCharging: Bool) -> String {
         if isCharging {
-            // Use charging icons
-            switch level {
-            case 0...10:
-                return "battery.0percent.bolt"
-            case 11...25:
-                return "battery.25percent.bolt"
-            case 26...50:
-                return "battery.50percent.bolt"
-            case 51...75:
-                return "battery.75percent.bolt"
-            default:
-                return "battery.100percent.bolt"
-            }
+            return "battery.100percent.bolt"
         } else {
             // Use regular battery icons
             switch level {
@@ -680,6 +717,7 @@ extension LiveActivityWidgetAttributes.ContentState {
             graphMaxValue: 1600,
             graphMinValue: 0,
             isRefreshing: false,
+            isConnected: true,
             lastUpdated: Date()
         )
     }
@@ -701,6 +739,51 @@ extension LiveActivityWidgetAttributes.ContentState {
             graphMaxValue: 1600,
             graphMinValue: 0,
             isRefreshing: false,
+            isConnected: true,
+            lastUpdated: Date()
+        )
+    }
+
+    fileprivate static var refreshingData:
+        LiveActivityWidgetAttributes.ContentState
+    {
+        LiveActivityWidgetAttributes.ContentState(
+            deviceId: "1234567890",
+            co2Value: 850,
+            powerMode: "3 Min",
+            batteryLevel: 65,
+            isCharging: false,
+            alarmEnabled: true,
+            vibrationEnabled: true,
+            co2History: [800, 820, 840, 860, 850],
+            greenUpperLimit: 800,
+            yellowUpperLimit: 1000,
+            graphMaxValue: 1600,
+            graphMinValue: 0,
+            isRefreshing: true,
+            isConnected: true,
+            lastUpdated: Date()
+        )
+    }
+
+    fileprivate static var disconnectedData:
+        LiveActivityWidgetAttributes.ContentState
+    {
+        LiveActivityWidgetAttributes.ContentState(
+            deviceId: "1234567890",
+            co2Value: 750,
+            powerMode: "3 Min",
+            batteryLevel: 45,
+            isCharging: false,
+            alarmEnabled: true,
+            vibrationEnabled: false,
+            co2History: [700, 720, 740, 760, 750],
+            greenUpperLimit: 800,
+            yellowUpperLimit: 1000,
+            graphMaxValue: 1600,
+            graphMinValue: 0,
+            isRefreshing: false,
+            isConnected: false,
             lastUpdated: Date()
         )
     }
@@ -716,4 +799,6 @@ extension LiveActivityWidgetAttributes.ContentState {
 } contentStates: {
     LiveActivityWidgetAttributes.ContentState.sampleData
     LiveActivityWidgetAttributes.ContentState.lowBatteryData
+    LiveActivityWidgetAttributes.ContentState.refreshingData
+    LiveActivityWidgetAttributes.ContentState.disconnectedData
 }

@@ -38,7 +38,7 @@ class LiveActivityManagerStub: LiveActivityManagerProtocol {
     }
     
     func startRefreshState() {
-        print("Live Activities not available on iOS 15.0")
+        print("Live Activities not available on iOS 15.0 - refresh state controlled by Flutter")
     }
     
     func endLiveActivity() {
@@ -65,9 +65,7 @@ class LiveActivityManager: LiveActivityManagerProtocol {
     private var userDismissedInCurrentSession = false
     private var activityMonitorTask: Task<Void, Never>?
     
-    // Refresh state management
-    private var isRefreshing = false
-    private var refreshTimer: Timer?
+    // Store last valid state for activity management
     private var lastValidState: [String: Any]?
        
     init() {
@@ -78,7 +76,6 @@ class LiveActivityManager: LiveActivityManagerProtocol {
     
     deinit {
         activityMonitorTask?.cancel()
-        refreshTimer?.invalidate()
     }
     
     private func startActivityMonitoring() {
@@ -109,7 +106,7 @@ class LiveActivityManager: LiveActivityManagerProtocol {
         }
     }
     
-    private func createContentState(from data: [String: Any]?, isRefreshing: Bool = false) -> LiveActivityWidgetAttributes.ContentState {
+    private func createContentState(from data: [String: Any]?) -> LiveActivityWidgetAttributes.ContentState {
         guard let info = data else {
             return LiveActivityWidgetAttributes.ContentState(
                 deviceId: "1234567890",
@@ -124,7 +121,8 @@ class LiveActivityManager: LiveActivityManagerProtocol {
                 yellowUpperLimit: 1000,
                 graphMaxValue: 1600,
                 graphMinValue: 0,
-                isRefreshing: isRefreshing,
+                isRefreshing: false,
+                isConnected: false,
                 lastUpdated: Date()
             )
         }
@@ -142,7 +140,8 @@ class LiveActivityManager: LiveActivityManagerProtocol {
             yellowUpperLimit: info["yellowUpperLimit"] as? Int ?? 1000,
             graphMaxValue: info["graphMaxValue"] as? Int ?? 1600,
             graphMinValue: info["graphMinValue"] as? Int ?? 0,
-            isRefreshing: isRefreshing,
+            isRefreshing: info["isRefreshing"] as? Bool ?? false,
+            isConnected: info["isConnected"] as? Bool ?? false,
             lastUpdated: Date()
         )
     }
@@ -201,11 +200,6 @@ class LiveActivityManager: LiveActivityManagerProtocol {
             return
         }
         
-        // Stop refresh state and timer if new data arrives
-        if isRefreshing {
-            stopRefreshState()
-        }
-        
         // Store the new valid data
         lastValidState = data
         
@@ -224,64 +218,16 @@ class LiveActivityManager: LiveActivityManagerProtocol {
     }
     
     func startRefreshState() {
-        // Only start refresh if we have an active activity and valid last state
-        guard isActivityActive(), let lastState = lastValidState, isRefreshing == false else {
-            print("Cannot start refresh: no active activity or no last valid state or already refreshing")
-            return
-        }
-        
-        print("Starting refresh state with blink animation")
-        isRefreshing = true
-        
-        // Update the live activity with refresh state
-        let refreshState = createContentState(from: lastState, isRefreshing: true)
-        
-        Task {
-            do {
-                await liveActivity?.update(using: refreshState)
-                print("Live Activity updated with refresh state")
-            } catch {
-                print("Error updating Live Activity with refresh state: \(error)")
-            }
-        }
-        
-        // Start 6-second timeout timer
-        refreshTimer?.invalidate()
-        refreshTimer = Timer.scheduledTimer(withTimeInterval: 6.0, repeats: false) { [weak self] _ in
-            self?.stopRefreshState()
-        }
+        // Refresh state is now controlled by Flutter via updateLiveActivity data
+        print("startRefreshState called - refresh state is now controlled by Flutter via data updates")
     }
     
-    private func stopRefreshState() {
-        guard isRefreshing else { return }
-        
-        print("Stopping refresh state")
-        isRefreshing = false
-        refreshTimer?.invalidate()
-        refreshTimer = nil
-        
-        // Update the live activity to stop the refresh state
-        guard let lastState = lastValidState else { return }
-        
-        let normalState = createContentState(from: lastState, isRefreshing: false)
-        
-        Task {
-            do {
-                await liveActivity?.update(using: normalState)
-                print("Live Activity updated to normal state after refresh")
-            } catch {
-                print("Error updating Live Activity to normal state: \(error)")
-            }
-        }
-    }
+
     
     func endLiveActivity() {
         // This is app-initiated dismissal (user toggled setting OFF)
         // Reset the user dismissal flag since this is intentional
         userDismissedInCurrentSession = false
-        
-        // Clean up refresh state
-        stopRefreshState()
         
         if !isActivityActive() {
             print("No active Live Activity to end")

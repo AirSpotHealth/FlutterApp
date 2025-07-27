@@ -132,17 +132,35 @@
 
     </LinearLayout>
 
-    <!-- Refresh Button -->
-    <ImageButton
-        android:id="@+id/refresh_button"
+    <!-- Refresh Button/Progress Container -->
+    <FrameLayout
         android:layout_width="36dp"
         android:layout_height="36dp"
-        android:layout_marginTop="2dp"
-        android:background="@drawable/refresh_button_dark"
-        android:contentDescription="Refresh CO₂ Value"
-        android:padding="2dp"
-        android:scaleType="fitCenter"
-        android:tint="#FFFFFF" />
+        android:layout_marginTop="2dp">
+
+        <!-- Static Refresh Button (shown when not refreshing) -->
+        <ImageButton
+            android:id="@+id/refresh_button"
+            android:layout_width="36dp"
+            android:layout_height="36dp"
+            android:layout_gravity="center"
+            android:backgroundTint="@android:color/transparent"
+            android:src="@drawable/refresh_button_widget"
+            android:contentDescription="Refresh CO₂ Value"
+            android:visibility="visible" />
+
+        <!-- Animated Progress Ring (shown when refreshing) -->
+        <ProgressBar
+            android:id="@+id/progress_refresh"
+            style="?android:attr/progressBarStyle"
+            android:layout_width="28dp"
+            android:layout_height="28dp"
+            android:layout_gravity="center"
+            android:indeterminate="true"
+            android:indeterminateTint="#FFFFFF"
+            android:visibility="gone" />
+
+    </FrameLayout>
 
 
 </LinearLayout>
