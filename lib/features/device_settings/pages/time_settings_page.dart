@@ -135,7 +135,7 @@ class _TimeSettingsPageState extends ConsumerState<TimeSettingsPage> {
 
   void _showTimePicker(BuildContext context, bool is12Hour) {
     BottomPicker.time(
-      pickerTitle: Text('Select time', style: _styles['title']),
+      headerBuilder: (context) => Text('Select time', style: _styles['title']),
       initialTime: Time(
         hours: _selectedHour,
         minutes: _selectedMinute,

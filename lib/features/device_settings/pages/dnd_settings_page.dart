@@ -115,7 +115,7 @@ class DndSettingsPage extends ConsumerWidget {
     final int defaultHour = isStartTime ? _defaultStartHour : _defaultEndHour;
 
     BottomPicker.time(
-      pickerTitle: Text(
+      headerBuilder: (context) => Text(
         'Select ${isStartTime ? 'start' : 'end'} time',
         style: _styles['title'],
       ),

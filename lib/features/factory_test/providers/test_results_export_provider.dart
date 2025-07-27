@@ -122,7 +122,7 @@ class TestResultsExportNotifier
       name: fileName,
       bytes: bytes,
       mimeType: MimeType.csv,
-      ext: 'csv',
+      fileExtension: 'csv',
     );
   }
 
@@ -134,7 +134,7 @@ class TestResultsExportNotifier
       name: fileName,
       bytes: bytes,
       mimeType: MimeType.custom,
-      ext: 'json',
+      fileExtension: 'json',
     );
   }
 

@@ -168,7 +168,10 @@ class _DeviceDataDownloadNotifier
       ));
     } else {
       await FileSaver.instance.saveAs(
-          name: fileName, bytes: bytes, mimeType: MimeType.csv, ext: 'csv');
+          name: fileName,
+          bytes: bytes,
+          mimeType: MimeType.csv,
+          fileExtension: 'csv');
     }
   }
 
