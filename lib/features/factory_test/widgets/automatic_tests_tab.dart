@@ -225,9 +225,10 @@ class AutomaticTestsTab extends ConsumerWidget {
             const SizedBox(height: 32),
             ElevatedButton.icon(
               onPressed: () {
-                ref
-                    .read(factoryTestProvider(deviceId).notifier)
-                    .connectToDeviceAndStartFactoryTest();
+                final notifier =
+                    ref.read(factoryTestProvider(deviceId).notifier);
+                notifier.resetFactoryTest();
+                notifier.connectToDeviceAndStartFactoryTest();
               },
               icon: const Icon(Icons.refresh, size: 20),
               label: const Text('Retry Connection'),

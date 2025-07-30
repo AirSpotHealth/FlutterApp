@@ -259,10 +259,11 @@ class FactoryTestDevicesNotifier
 
       state = state.copyWith(devices: updatedDevices);
 
-      // Start the factory test for this device
-      ref
-          .read(factoryTestProvider(nextDevice.deviceId).notifier)
-          .connectToDeviceAndStartFactoryTest();
+      // Reset and start the factory test for this device
+      final factoryTestNotifier =
+          ref.read(factoryTestProvider(nextDevice.deviceId).notifier);
+      factoryTestNotifier.resetFactoryTest();
+      factoryTestNotifier.connectToDeviceAndStartFactoryTest();
 
       // Update queue positions after starting a device
       _updateQueuePositions();
