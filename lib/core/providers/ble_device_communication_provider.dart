@@ -55,19 +55,22 @@ class _BleDeviceCommunicationNotifier extends FamilyNotifier<dynamic, String> {
     _notifySubscription =
         _communicator.dataStream.listen(_handleNotificationData);
 
+    // Set up refresh callbacks based on platform
     if (Platform.isIOS) {
       _setupLiveActivityRefreshCallback();
-    }
-
-    if (Platform.isAndroid) {
+    } else if (Platform.isAndroid) {
       _setupWidgetRefreshCallback();
     }
+
+    // Set up unified dismissal callback for both platforms
+    _setupUnifiedDismissalCallback();
 
     ref.onDispose(() {
       _notifySubscription?.cancel();
       // Clear refresh callbacks when this provider is disposed
-      // Clear refresh callbacks when this provider is disposed
       LiveActivityService().clearDeviceRefreshCallback(deviceId);
+      // Clear dismissal callbacks when this provider is disposed
+      LiveActivityService().clearDeviceDismissalCallback(deviceId);
     });
     return lastValue;
   }
@@ -77,6 +80,61 @@ class _BleDeviceCommunicationNotifier extends FamilyNotifier<dynamic, String> {
       debugPrint('Live Activity refresh triggered for device: $deviceId');
       _handleLiveActivityRefresh();
     });
+  }
+
+  void _setupUnifiedDismissalCallback() {
+    LiveActivityService().setDeviceDismissalCallback(deviceId,
+        (String dismissedDeviceId) {
+      debugPrint(
+          'Live Activity/Notification dismissed for device: $dismissedDeviceId');
+      _handleUnifiedDismissal(dismissedDeviceId);
+    });
+  }
+
+  void _handleUnifiedDismissal(String dismissedDeviceId) {
+    debugPrint(
+        'Handling unified dismissal for device: $dismissedDeviceId, disabling setting');
+
+    try {
+      // Update the device settings to disable live activity
+      final currentSettings =
+          ref.read(deviceSettingsProvider(dismissedDeviceId));
+      ref
+          .read(deviceSettingsProvider(dismissedDeviceId).notifier)
+          .updateSettings(
+            currentSettings.copyWith(showLiveActivity: false),
+            sendCommands: false, // Don't send BLE commands for this setting
+          );
+
+      debugPrint(
+          'Live Activity setting disabled for device: $dismissedDeviceId');
+    } catch (e) {
+      debugPrint(
+          'Error disabling live activity setting for device $dismissedDeviceId: $e');
+    }
+  }
+
+  void _handleLiveActivityDismissed(String dismissedDeviceId) {
+    debugPrint(
+        'Handling live activity dismissal for device: $dismissedDeviceId, disabling setting');
+
+    try {
+      // Update the device settings to disable live activity
+      final currentSettings =
+          ref.read(deviceSettingsProvider(dismissedDeviceId));
+      ref
+          .read(deviceSettingsProvider(dismissedDeviceId).notifier)
+          .updateSettings(
+            currentSettings.copyWith(showLiveActivity: false),
+            sendCommands: false, // Don't send BLE commands for this setting
+          );
+
+      debugPrint(
+          'Live Activity setting disabled for device: $dismissedDeviceId');
+    } catch (e) {
+      debugPrint(
+          'Error disabling live activity setting for device $dismissedDeviceId: $e');
+    }
   }
 
   void _handleLiveActivityRefresh() {

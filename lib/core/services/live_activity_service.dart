@@ -8,6 +8,75 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:home_widget/home_widget.dart';
 
+/// Enum for different types of device callbacks
+enum CallbackType {
+  refresh,
+  dismissal,
+  // Future callback types can be added here:
+  // connectionChange,
+  // dataUpdate,
+  // errorOccurred,
+}
+
+/// Model to hold all callback types for a device
+class DeviceCallbacks {
+  VoidCallback? refreshCallback;
+  Function(String deviceId)? dismissalCallback;
+
+  DeviceCallbacks({
+    this.refreshCallback,
+    this.dismissalCallback,
+  });
+
+  /// Check if any callbacks are registered for this device
+  bool get hasCallbacks => refreshCallback != null || dismissalCallback != null;
+
+  /// Check if a specific callback type is registered
+  bool hasCallback(CallbackType type) {
+    switch (type) {
+      case CallbackType.refresh:
+        return refreshCallback != null;
+      case CallbackType.dismissal:
+        return dismissalCallback != null;
+    }
+  }
+
+  /// Set a callback of specific type
+  void setCallback(CallbackType type, dynamic callback) {
+    switch (type) {
+      case CallbackType.refresh:
+        refreshCallback = callback as VoidCallback?;
+        break;
+      case CallbackType.dismissal:
+        dismissalCallback = callback as Function(String deviceId)?;
+        break;
+    }
+  }
+
+  /// Clear a specific callback type
+  void clearCallback(CallbackType type) {
+    switch (type) {
+      case CallbackType.refresh:
+        refreshCallback = null;
+        break;
+      case CallbackType.dismissal:
+        dismissalCallback = null;
+        break;
+    }
+  }
+
+  /// Clear all callbacks for this device
+  void clear() {
+    refreshCallback = null;
+    dismissalCallback = null;
+  }
+
+  /// Get registered callback types for debugging
+  List<CallbackType> get registeredCallbacks {
+    return CallbackType.values.where((type) => hasCallback(type)).toList();
+  }
+}
+
 class LiveActivityService {
   static const platform = MethodChannel('liveActivityChannel');
 
@@ -18,8 +87,8 @@ class LiveActivityService {
     _setupMethodCallHandler();
   }
 
-  // Map of device callbacks for refresh requests
-  final Map<String, VoidCallback> _deviceRefreshCallbacks = {};
+  // Unified map of device callbacks using wrapper model
+  final Map<String, DeviceCallbacks> _deviceCallbacks = {};
 
   // Track which device currently has active Live Activity
   String? _activeDeviceId;
@@ -27,16 +96,27 @@ class LiveActivityService {
   // Store the last Live Activity data for each device
   final Map<String, LiveActivityModel> _lastLiveActivityData = {};
 
-  // Set up method call handler to listen for refresh requests
+  // Set up method call handler to listen for refresh requests and dismissal events
   void _setupMethodCallHandler() {
     platform.setMethodCallHandler((call) async {
+      debugPrint('🔔 Received method call from native: ${call.method}');
+      debugPrint('🔔 Arguments: ${call.arguments}');
+
       switch (call.method) {
         case 'onRefreshRequested':
-          debugPrint('Live Activity refresh requested');
+          debugPrint('📲 Live Activity refresh requested');
           _handleRefreshRequest();
           break;
+        case 'onLiveActivityDismissed':
+          debugPrint('🚫 Live Activity dismissed by user');
+          final String? deviceId = call.arguments != null
+              ? call.arguments['deviceId'] as String?
+              : null;
+          debugPrint('🆔 Device ID from dismissal: $deviceId');
+          _handleDismissalEvent(deviceId);
+          break;
         default:
-          debugPrint('Unknown method call: ${call.method}');
+          debugPrint('❓ Unknown method call: ${call.method}');
       }
     });
   }
@@ -44,37 +124,177 @@ class LiveActivityService {
   void _handleRefreshRequest() {
     // If we know which device has active Live Activity, refresh that one
     if (_activeDeviceId != null &&
-        _deviceRefreshCallbacks.containsKey(_activeDeviceId)) {
-      debugPrint('Refreshing active Live Activity device: $_activeDeviceId');
-      _deviceRefreshCallbacks[_activeDeviceId]?.call();
+        _deviceCallbacks.containsKey(_activeDeviceId)) {
+      final refreshCallback =
+          _deviceCallbacks[_activeDeviceId]?.refreshCallback;
+      if (refreshCallback != null) {
+        debugPrint('Refreshing active Live Activity device: $_activeDeviceId');
+        refreshCallback.call();
 
-      updateLiveActivity(
-          data: _lastLiveActivityData[_activeDeviceId]!.copyWith(
-        isRefreshing: true,
-      ));
-    } else {
-      // Fallback: refresh all registered devices
-      debugPrint(
-          'Refreshing all registered devices (${_deviceRefreshCallbacks.length} devices)');
-      for (final callback in _deviceRefreshCallbacks.values) {
-        callback.call();
+        updateLiveActivity(
+            data: _lastLiveActivityData[_activeDeviceId]!.copyWith(
+          isRefreshing: true,
+        ));
+        return;
       }
     }
+
+    // Fallback: refresh all registered devices
+    debugPrint(
+        'Refreshing all registered devices (${_deviceCallbacks.length} devices)');
+    for (final entry in _deviceCallbacks.entries) {
+      entry.value.refreshCallback?.call();
+    }
+  }
+
+  void _handleDismissalEvent(String? deviceId) {
+    debugPrint('🚫 Processing dismissal event...');
+    debugPrint('🆔 Device ID parameter: $deviceId');
+    debugPrint('🎯 Current active device: $_activeDeviceId');
+    debugPrint('📋 Registered callbacks: ${_deviceCallbacks.keys.toList()}');
+    debugPrint('📊 Total callback devices: ${_deviceCallbacks.length}');
+
+    // Use active device if no specific device provided
+    final targetDeviceId = deviceId ?? _activeDeviceId;
+    debugPrint('🎯 Target device for dismissal: $targetDeviceId');
+
+    if (targetDeviceId != null &&
+        _deviceCallbacks.containsKey(targetDeviceId)) {
+      final dismissalCallback =
+          _deviceCallbacks[targetDeviceId]?.dismissalCallback;
+      debugPrint(
+          '🔄 Found callback for target device: ${dismissalCallback != null}');
+
+      if (dismissalCallback != null) {
+        debugPrint('✅ Calling dismissal callback for device: $targetDeviceId');
+        dismissalCallback.call(targetDeviceId);
+
+        // Clear active device when dismissed
+        _activeDeviceId = null;
+        debugPrint('🗑️ Cleared active device');
+        return;
+      } else {
+        debugPrint(
+            '⚠️ No dismissal callback registered for device: $targetDeviceId');
+      }
+    } else {
+      debugPrint('⚠️ Target device not found in callbacks or is null');
+    }
+
+    // Fallback: call dismissal for all registered devices
+    debugPrint(
+        '🔄 Fallback: calling dismissal for all ${_deviceCallbacks.length} registered devices');
+    int callbacksInvoked = 0;
+    for (final entry in _deviceCallbacks.entries) {
+      if (entry.value.dismissalCallback != null) {
+        debugPrint('✅ Calling dismissal callback for device: ${entry.key}');
+        entry.value.dismissalCallback?.call(entry.key);
+        callbacksInvoked++;
+      } else {
+        debugPrint('⚠️ No dismissal callback for device: ${entry.key}');
+      }
+    }
+    debugPrint('📊 Total dismissal callbacks invoked: $callbacksInvoked');
+
+    // Clear active device when dismissed
+    _activeDeviceId = null;
+    debugPrint('🗑️ Cleared active device');
   }
 
   // Set the callback for refresh requests for a specific device
   void setDeviceRefreshCallback(String deviceId, VoidCallback callback) {
-    _deviceRefreshCallbacks[deviceId] = callback;
+    _deviceCallbacks.putIfAbsent(deviceId, () => DeviceCallbacks());
+    _deviceCallbacks[deviceId]!.refreshCallback = callback;
     debugPrint('Live Activity refresh callback set for device: $deviceId');
+  }
+
+  // Set the callback for dismissal events for a specific device
+  void setDeviceDismissalCallback(
+      String deviceId, Function(String deviceId) callback) {
+    _deviceCallbacks.putIfAbsent(deviceId, () => DeviceCallbacks());
+    _deviceCallbacks[deviceId]!.dismissalCallback = callback;
+    debugPrint('Live Activity dismissal callback set for device: $deviceId');
   }
 
   // Clear the refresh callback for a specific device
   void clearDeviceRefreshCallback(String deviceId) {
-    _deviceRefreshCallbacks.remove(deviceId);
-    if (_activeDeviceId == deviceId) {
-      _activeDeviceId = null;
+    if (_deviceCallbacks.containsKey(deviceId)) {
+      _deviceCallbacks[deviceId]!.refreshCallback = null;
+
+      // Remove the device entry if no callbacks remain
+      if (!_deviceCallbacks[deviceId]!.hasCallbacks) {
+        _deviceCallbacks.remove(deviceId);
+      }
+
+      if (_activeDeviceId == deviceId) {
+        _activeDeviceId = null;
+      }
     }
     debugPrint('Live Activity refresh callback cleared for device: $deviceId');
+  }
+
+  // Clear the dismissal callback for a specific device
+  void clearDeviceDismissalCallback(String deviceId) {
+    if (_deviceCallbacks.containsKey(deviceId)) {
+      _deviceCallbacks[deviceId]!.dismissalCallback = null;
+
+      // Remove the device entry if no callbacks remain
+      if (!_deviceCallbacks[deviceId]!.hasCallbacks) {
+        _deviceCallbacks.remove(deviceId);
+      }
+    }
+    debugPrint(
+        'Live Activity dismissal callback cleared for device: $deviceId');
+  }
+
+  // Clear all callbacks for a specific device
+  void clearAllDeviceCallbacks(String deviceId) {
+    if (_deviceCallbacks.containsKey(deviceId)) {
+      _deviceCallbacks[deviceId]!.clear();
+      _deviceCallbacks.remove(deviceId);
+
+      if (_activeDeviceId == deviceId) {
+        _activeDeviceId = null;
+      }
+    }
+    debugPrint('All Live Activity callbacks cleared for device: $deviceId');
+  }
+
+  // MARK: - Convenience and Debugging Methods
+
+  /// Check if a device has any callbacks registered
+  bool hasDeviceCallbacks(String deviceId) {
+    return _deviceCallbacks.containsKey(deviceId) &&
+        _deviceCallbacks[deviceId]!.hasCallbacks;
+  }
+
+  /// Check if a device has a specific callback type registered
+  bool hasDeviceCallback(String deviceId, CallbackType type) {
+    return _deviceCallbacks.containsKey(deviceId) &&
+        _deviceCallbacks[deviceId]!.hasCallback(type);
+  }
+
+  /// Get all registered device IDs with callbacks
+  List<String> get registeredDeviceIds => _deviceCallbacks.keys.toList();
+
+  /// Get callback types registered for a specific device (for debugging)
+  List<CallbackType> getRegisteredCallbackTypes(String deviceId) {
+    return _deviceCallbacks[deviceId]?.registeredCallbacks ?? [];
+  }
+
+  /// Print debug information about all registered callbacks
+  void debugPrintCallbackStatus() {
+    debugPrint('=== Live Activity Callback Status ===');
+    debugPrint('Active device: $_activeDeviceId');
+    debugPrint('Total devices with callbacks: ${_deviceCallbacks.length}');
+
+    for (final entry in _deviceCallbacks.entries) {
+      final deviceId = entry.key;
+      final callbacks = entry.value;
+      final types = callbacks.registeredCallbacks.map((t) => t.name).join(', ');
+      debugPrint('Device $deviceId: [$types]');
+    }
+    debugPrint('=====================================');
   }
 
   // Clear stored Live Activity data for a specific device
@@ -216,21 +436,7 @@ class LiveActivityService {
       _lastLiveActivityData[deviceId] = liveActivityData;
 
       if (deviceSettings?.showLiveActivity == true) {
-        if (Platform.isIOS) {
-          // Check dismissal state for iOS
-          bool wasDismissed = await wasUserDismissedThisSession();
-          if (wasDismissed) {
-            debugPrint(
-                'LiveActivity: Was dismissed by user this session - update will be blocked');
-            return;
-          }
-        }
-
         await updateLiveActivity(deviceId: deviceId, data: liveActivityData);
-      } else {
-        debugPrint(
-            'LiveActivity: Android notification setting is disabled - stopping any active service');
-        await endLiveActivity();
       }
     } catch (e) {
       debugPrint('LiveActivity: Error processing CO2 data update: $e');
@@ -289,17 +495,6 @@ class LiveActivityService {
       await platform.invokeMethod('resetDismissalState');
     } on PlatformException catch (e) {
       debugPrint("Failed to reset dismissal state: '${e.message}'.");
-    }
-  }
-
-  Future<bool> wasUserDismissedThisSession() async {
-    try {
-      final bool wasDismissed =
-          await platform.invokeMethod('wasUserDismissedThisSession');
-      return wasDismissed;
-    } on PlatformException catch (e) {
-      debugPrint("Failed to check user dismissal state: '${e.message}'.");
-      return false;
     }
   }
 }

@@ -22,6 +22,21 @@ class MainActivity: FlutterActivity() {
         }
     }
     
+    // Add BroadcastReceiver for dismissal
+    private val dismissalReceiver = object : android.content.BroadcastReceiver() {
+        override fun onReceive(context: android.content.Context?, intent: android.content.Intent?) {
+            Log.d(TAG, "Received LIVE_ACTIVITY_DISMISSED broadcast in MainActivity")
+            val deviceId = intent?.getStringExtra("deviceId")
+            val arguments = if (deviceId != null) {
+                mapOf("deviceId" to deviceId)
+            } else {
+                emptyMap<String, Any>()
+            }
+            MethodChannel(flutterEngine?.dartExecutor?.binaryMessenger!!, CHANNEL)
+                .invokeMethod("onLiveActivityDismissed", arguments)
+        }
+    }
+    
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
         super.configureFlutterEngine(flutterEngine)
         
@@ -47,14 +62,6 @@ class MainActivity: FlutterActivity() {
                     val isActive = isNotificationServiceRunning()
                     result.success(isActive)
                 }
-                "resetDismissalState" -> {
-                    // Android doesn't need dismissal state reset
-                    result.success(null)
-                }
-                "wasUserDismissedThisSession" -> {
-                    // Android persistent notifications don't get dismissed the same way
-                    result.success(false)
-                }
                 else -> {
                     result.notImplemented()
                 }
@@ -76,13 +83,18 @@ class MainActivity: FlutterActivity() {
     override fun onCreate(savedInstanceState: android.os.Bundle?) {
         super.onCreate(savedInstanceState)
         // Register the refresh broadcast receiver
-        val filter = android.content.IntentFilter("com.air.spot.airspothealth.REFRESH_DATA")
-        registerReceiver(refreshReceiver, filter, RECEIVER_EXPORTED)
+        val refreshFilter = android.content.IntentFilter("com.air.spot.airspothealth.REFRESH_DATA")
+        registerReceiver(refreshReceiver, refreshFilter, RECEIVER_EXPORTED)
+        
+        // Register the dismissal broadcast receiver  
+        val dismissalFilter = android.content.IntentFilter("com.air.spot.airspothealth.LIVE_ACTIVITY_DISMISSED")
+        registerReceiver(dismissalReceiver, dismissalFilter, RECEIVER_EXPORTED)
     }
     
     override fun onDestroy() {
         super.onDestroy()
         unregisterReceiver(refreshReceiver)
+        unregisterReceiver(dismissalReceiver)
     }
     
     private fun handleDeepLink(intent: Intent?) {

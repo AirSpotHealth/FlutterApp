@@ -6,8 +6,10 @@ import android.app.NotificationChannel;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.app.Service;
+import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.graphics.Color;
@@ -43,9 +45,25 @@ public class ForegroundNotificationService extends Service {
     private static final int NOTIFICATION_ID = 1001;
     private static final String CHANNEL_ID = "CO2_MONITORING_CHANNEL";
     private static final String WIDGET_DATA_KEY = "widget_data_json";
+    private static final String ACTION_NOTIFICATION_DISMISSED = "com.air.spot.airspothealth.NOTIFICATION_DISMISSED";
 
     private NotificationManager notificationManager;
     private boolean isServiceRunning = false;
+
+    // Broadcast receiver for notification dismissal
+    private BroadcastReceiver dismissalReceiver = new BroadcastReceiver() {
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            Log.d(TAG, "Dismissal receiver triggered with action: " + (intent != null ? intent.getAction() : "null"));
+            if (intent != null && ACTION_NOTIFICATION_DISMISSED.equals(intent.getAction())) {
+                String deviceId = intent.getStringExtra("deviceId");
+                Log.d(TAG, "Notification dismissed by user - sending dismissal event to Flutter for deviceId: " + deviceId);
+                sendDismissalEventToFlutter(deviceId);
+            } else {
+                Log.w(TAG, "Dismissal receiver received unexpected action: " + (intent != null ? intent.getAction() : "null"));
+            }
+        }
+    };
 
     @Override
     public void onCreate() {
@@ -53,6 +71,16 @@ public class ForegroundNotificationService extends Service {
         Log.d(TAG, "ForegroundNotificationService created");
         notificationManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
         createNotificationChannel();
+        
+        // Register broadcast receiver for dismissal events
+        IntentFilter filter = new IntentFilter(ACTION_NOTIFICATION_DISMISSED);
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            registerReceiver(dismissalReceiver, filter, Context.RECEIVER_NOT_EXPORTED);
+            Log.d(TAG, "Registered dismissal receiver with RECEIVER_NOT_EXPORTED for action: " + ACTION_NOTIFICATION_DISMISSED);
+        } else {
+            registerReceiver(dismissalReceiver, filter);
+            Log.d(TAG, "Registered dismissal receiver for action: " + ACTION_NOTIFICATION_DISMISSED);
+        }
     }
 
     @Override
@@ -103,6 +131,13 @@ public class ForegroundNotificationService extends Service {
         super.onDestroy();
         Log.d(TAG, "ForegroundNotificationService destroyed");
         isServiceRunning = false;
+        
+        // Unregister broadcast receiver
+        try {
+            unregisterReceiver(dismissalReceiver);
+        } catch (IllegalArgumentException e) {
+            Log.w(TAG, "Dismissal receiver not registered, skipping unregister");
+        }
     }
 
     private void createNotificationChannel() {
@@ -246,13 +281,24 @@ public class ForegroundNotificationService extends Service {
             RemoteViews expandedLayout = createNotificationLayout(co2Value, true, powerMode, batteryLevel, isCharging, alarmEnabled, vibrationEnabled, co2History, greenUpperLimit, yellowUpperLimit, graphMaxValue, graphMinValue, deviceId, isConnected, isRefreshing);
             RemoteViews compactLayout = createNotificationLayout(co2Value, false, powerMode, batteryLevel, isCharging, alarmEnabled, vibrationEnabled, co2History, greenUpperLimit, yellowUpperLimit, graphMaxValue, graphMinValue, deviceId, isConnected, isRefreshing);
 
+            // Create delete intent for dismissal detection
+            Intent deleteIntent = new Intent(ACTION_NOTIFICATION_DISMISSED);
+            deleteIntent.putExtra("deviceId", deviceId);
+            PendingIntent deletePendingIntent = PendingIntent.getBroadcast(
+                this, 
+                3, 
+                deleteIntent, 
+                PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE
+            );
+            Log.d(TAG, "Created delete intent for dismissal detection with deviceId: " + deviceId);
+
             // Create notification with custom layouts - clean minimal style
             Log.d(TAG, "Building clean custom notification with refresh state: " + isRefreshing);
             NotificationCompat.Builder builder = new NotificationCompat.Builder(this, CHANNEL_ID).setSmallIcon(R.drawable.ic_launcher_foreground)  // Minimal transparent icon
                     .setCustomContentView(compactLayout)        // Custom compact layout
-                    .setCustomBigContentView(expandedLayout).setOngoing(true)                           // Persistent notification
-                    .setPriority(NotificationCompat.PRIORITY_DEFAULT).setVisibility(NotificationCompat.VISIBILITY_PUBLIC).setCategory(NotificationCompat.CATEGORY_SERVICE).setContentIntent(openAppPendingIntent).setAutoCancel(false).setShowWhen(true)                         // Hide system timestamp
-                    .setOnlyAlertOnce(true).setLocalOnly(false).setDefaults(0).setContentText(customTimestamp).setContentTitle(null).setSilent(co2IntValue < greenUpperLimit);
+                    .setCustomBigContentView(expandedLayout).setOngoing(true)                          // Allow dismissal to trigger delete intent
+                    .setPriority(NotificationCompat.PRIORITY_DEFAULT).setVisibility(NotificationCompat.VISIBILITY_PUBLIC).setCategory(NotificationCompat.CATEGORY_SERVICE).setContentIntent(openAppPendingIntent).setAutoCancel(false).setShowWhen(true)                         // Show system timestamp
+                    .setOnlyAlertOnce(true).setLocalOnly(false).setDefaults(0).setContentText(customTimestamp).setContentTitle(null).setSilent(co2IntValue < greenUpperLimit).setDeleteIntent(deletePendingIntent);  // Add delete intent for dismissal detection
 
             // Open website action
             Intent browserIntent = new Intent(Intent.ACTION_VIEW, Uri.parse("https://airspothealth.com"));
@@ -492,6 +538,19 @@ public class ForegroundNotificationService extends Service {
         } else {
             return Color.parseColor("#F44336"); // Red
         }
+    }
+
+    private void sendDismissalEventToFlutter(String deviceId) {
+        Intent broadcastIntent = new Intent("com.air.spot.airspothealth.LIVE_ACTIVITY_DISMISSED");
+        if (deviceId != null) {
+            broadcastIntent.putExtra("deviceId", deviceId);
+        }
+        sendBroadcast(broadcastIntent);
+        Log.d(TAG, "Dismissal event sent to Flutter via broadcast for device: " + deviceId);
+        
+        // Stop the service when notification is dismissed to avoid system killing it
+        Log.d(TAG, "Stopping foreground service due to notification dismissal");
+        stopForegroundService();
     }
 
     // Static methods to control the service from outside

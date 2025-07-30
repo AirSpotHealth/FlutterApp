@@ -22,9 +22,7 @@ protocol LiveActivityManagerProtocol {
     func updateLiveActivity(data: [String: Any]?)
     func startRefreshState()
     func endLiveActivity()
-    func resetDismissalState()
     func isLiveActivityActive() -> Bool
-    func wasUserDismissedThisSession() -> Bool
 }
 
 // Implementation for iOS 15.0 where Live Activities are not available
@@ -45,15 +43,15 @@ class LiveActivityManagerStub: LiveActivityManagerProtocol {
         print("Live Activities not available on iOS 15.0")
     }
     
-    func resetDismissalState() {
-        print("Live Activities not available on iOS 15.0")
-    }
-    
     func isLiveActivityActive() -> Bool {
         return false
     }
     
-    func wasUserDismissedThisSession() -> Bool {
+    func getLiveActivityDuration() -> TimeInterval {
+        return 0
+    }
+    
+    func willNeedRefreshSoon() -> Bool {
         return false
     }
 }
@@ -62,15 +60,22 @@ class LiveActivityManagerStub: LiveActivityManagerProtocol {
 @available(iOS 16.2, *)
 class LiveActivityManager: LiveActivityManagerProtocol {
     private var liveActivity: Activity<LiveActivityWidgetAttributes>? = nil
-    private var userDismissedInCurrentSession = false
     private var activityMonitorTask: Task<Void, Never>?
     
     // Store last valid state for activity management
     private var lastValidState: [String: Any]?
+    
+    // Track when the current Live Activity was started for duration management
+    private var activityStartTime: Date?
+    
+    // Track dismissal intent to avoid unnecessary callbacks to Flutter
+    private var isAppInitiatedDismissal = false
+    
+    // Live Activity duration limits (iOS default is 8 hours)
+    private let maxActivityDuration: TimeInterval = 8 * 60 * 60 // 8 hours
+    private let refreshThreshold: TimeInterval = 7.5 * 60 * 60 // 7.5 hours - refresh before limit
        
     init() {
-        // Reset dismissal state on fresh app launch
-        userDismissedInCurrentSession = false
         startActivityMonitoring()
     }
     
@@ -82,12 +87,59 @@ class LiveActivityManager: LiveActivityManagerProtocol {
         activityMonitorTask?.cancel()
         activityMonitorTask = Task {
             for await activity in Activity<LiveActivityWidgetAttributes>.activityUpdates {
+                print("📱 Live Activity state changed: \(activity.activityState)")
+                print("📱 Activity ID: \(activity.id)")
+                print("📱 Our stored activity ID: \(liveActivity?.id ?? "none")")
+                print("📱 isAppInitiatedDismissal flag: \(isAppInitiatedDismissal)")
+                
                 if activity.activityState == .dismissed {
-                    print("User dismissed Live Activity manually")
-                    userDismissedInCurrentSession = true
-                    // Clear our reference since the activity is dismissed
+                    print("🚫 Live Activity dismissed")
+
+                    // Clear our reference and timestamp since the activity is dismissed
+                    if let currentActivity = liveActivity, currentActivity.id == activity.id {
+                        print("🗑️ Clearing stored activity reference")
+                        liveActivity = nil
+                        activityStartTime = nil
+                    }
+                    
+                    // Always send callback to Flutter for dismissal, regardless of who initiated it
+                    // This ensures Flutter always knows when the live activity is gone
+                    print("📤 Sending dismissal notification to Flutter")
+                    
+                    // Get device ID from the last valid state if available
+                    var deviceId: String?
+                    if let lastState = lastValidState,
+                       let id = lastState["deviceId"] as? String {
+                        deviceId = id
+                        print("📱 Found deviceId in last state: \(id)")
+                    } else {
+                        print("⚠️ No deviceId found in last state")
+                    }
+                    
+                    // Post notification to AppDelegate to notify Flutter about dismissal
+                    let userInfo: [String: Any] = deviceId != nil ? ["deviceId": deviceId!] : [:]
+                    NotificationCenter.default.post(
+                        name: Notification.Name("LiveActivityDismissed"),
+                        object: nil,
+                        userInfo: userInfo
+                    )
+                    print("✅ Posted LiveActivityDismissed notification with userInfo: \(userInfo)")
+                    
+                    // Reset the flag for next dismissal
+                    isAppInitiatedDismissal = false
+                } else if activity.activityState == .stale {
+                    print("⚠️ Live Activity became stale (exceeded duration limit)")
+                    
+                    // Clear our reference and timestamp since the activity is stale
                     if let currentActivity = liveActivity, currentActivity.id == activity.id {
                         liveActivity = nil
+                        activityStartTime = nil
+                        
+                        // Optionally restart if we have valid data
+                        if let lastData = lastValidState {
+                            print("🔄 Automatically restarting stale Live Activity")
+                            startLiveActivity(data: lastData)
+                        }
                     }
                 }
             }
@@ -103,6 +155,7 @@ class LiveActivityManager: LiveActivityManagerProtocol {
         if let activity = liveActivity, !Activity<LiveActivityWidgetAttributes>.activities.contains(where: { $0.id == activity.id }) {
             print("Cleaning up stale activity reference")
             liveActivity = nil
+            activityStartTime = nil
         }
     }
     
@@ -145,21 +198,72 @@ class LiveActivityManager: LiveActivityManagerProtocol {
             lastUpdated: Date()
         )
     }
-   
-    func startLiveActivity(data: [String: Any]?) {
-        // Check if user dismissed it manually this session
-        if userDismissedInCurrentSession {
-            print("User dismissed Live Activity this session, not starting new one")
+    
+    /// Check if the current Live Activity is approaching the duration limit
+    private func isApproachingDurationLimit() -> Bool {
+        guard let startTime = activityStartTime else { return false }
+        let elapsed = Date().timeIntervalSince(startTime)
+        return elapsed >= refreshThreshold
+    }
+    
+    /// Check if the current Live Activity has exceeded the duration limit
+    private func hasExceededDurationLimit() -> Bool {
+        guard let startTime = activityStartTime else { return false }
+        let elapsed = Date().timeIntervalSince(startTime)
+        return elapsed >= maxActivityDuration
+    }
+    
+    /// Get the remaining time before the Live Activity needs to be refreshed
+    private func timeUntilRefreshNeeded() -> TimeInterval {
+        guard let startTime = activityStartTime else { return 0 }
+        let elapsed = Date().timeIntervalSince(startTime)
+        return max(0, refreshThreshold - elapsed)
+    }
+    
+    /// Proactively refresh the Live Activity by ending the current one and starting a new one
+    private func refreshLiveActivity() {
+        guard let lastData = lastValidState else {
+            print("No last valid state available for Live Activity refresh")
             return
         }
         
+        print("Refreshing Live Activity proactively (approaching 8-hour limit)")
+        
+        // Mark this as app-initiated dismissal to avoid callback to Flutter
+        isAppInitiatedDismissal = true
+        
+        // End the current activity and start a new one
+        Task {
+            await self.liveActivity?.end(dismissalPolicy: .immediate)
+            self.liveActivity = nil
+            self.activityStartTime = nil
+            
+            // Brief delay to ensure clean transition
+            try? await Task.sleep(nanoseconds: 500_000_000) // 0.5 seconds
+            
+            // Start a new activity with the same data
+            self.startLiveActivity(data: lastData)
+        }
+    }
+   
+    func startLiveActivity(data: [String: Any]?) {
         // Clean up any stale activity references first
         cleanupStaleActivity()
         
-        // If we already have an active activity, don't start a new one
+        // If we already have an active activity, check if it needs refresh due to duration
         if isActivityActive() {
-            print("Live Activity already active, skipping start")
-            return
+            if hasExceededDurationLimit() {
+                print("Current Live Activity has exceeded duration limit, refreshing...")
+                refreshLiveActivity()
+                return
+            } else if isApproachingDurationLimit() {
+                print("Current Live Activity is approaching duration limit, will refresh proactively")
+                refreshLiveActivity()
+                return
+            } else {
+                print("Live Activity already active and within duration limits, skipping start")
+                return
+            }
         }
         
         // Store the data for potential refresh scenarios
@@ -168,30 +272,41 @@ class LiveActivityManager: LiveActivityManagerProtocol {
         let attributes = LiveActivityWidgetAttributes()
         let state = createContentState(from: data)
         
+        // Set a stale date to help iOS manage the activity lifecycle
+        let staleDate = Date().addingTimeInterval(maxActivityDuration)
+        
+        // Record start time for duration tracking
+        activityStartTime = Date()
+        
         Task {
             do {
                 liveActivity = try Activity<LiveActivityWidgetAttributes>.request(
                     attributes: attributes,
-                    content: .init(state: state, staleDate: nil),
+                    content: .init(state: state, staleDate: staleDate),
                     pushType: .none
                 )
-                print("Live Activity started successfully")
+                print("Live Activity started successfully at \(activityStartTime!)")
+                print("Will become stale at: \(staleDate)")
+                print("Proactive refresh scheduled in: \(timeUntilRefreshNeeded() / 3600) hours")
             } catch {
                 print("Error starting Live Activity: \(error)")
                 liveActivity = nil
+                activityStartTime = nil
             }
         }
     }
 
     func updateLiveActivity(data: [String: Any]?) {
-        // Check if user dismissed it manually this session
-        if userDismissedInCurrentSession {
-            print("User dismissed Live Activity this session, not updating or restarting")
-            return
-        }
-        
         // Clean up any stale activity references first
         cleanupStaleActivity()
+        
+        // Check if we need to refresh due to duration before attempting update
+        if isActivityActive() && (hasExceededDurationLimit() || isApproachingDurationLimit()) {
+            print("Live Activity needs refresh due to duration, refreshing instead of updating")
+            lastValidState = data // Update the data first
+            refreshLiveActivity()
+            return
+        }
         
         // If no active activity, start one
         if !isActivityActive() {
@@ -209,10 +324,18 @@ class LiveActivityManager: LiveActivityManagerProtocol {
             do {
                 await liveActivity?.update(using: updatedState)
                 print("Live Activity updated successfully")
+                
+                // Log duration info for debugging
+                if let startTime = activityStartTime {
+                    let elapsed = Date().timeIntervalSince(startTime)
+                    let remaining = timeUntilRefreshNeeded()
+                    print("Live Activity running for: \(elapsed / 3600) hours, refresh in: \(remaining / 3600) hours")
+                }
             } catch {
                 print("Error updating Live Activity: \(error)")
                 // If update fails, the activity might be stale, clean it up
                 liveActivity = nil
+                activityStartTime = nil
             }
         }
     }
@@ -226,41 +349,45 @@ class LiveActivityManager: LiveActivityManagerProtocol {
     
     func endLiveActivity() {
         // This is app-initiated dismissal (user toggled setting OFF)
-        // Reset the user dismissal flag since this is intentional
-        userDismissedInCurrentSession = false
         
         if !isActivityActive() {
             print("No active Live Activity to end")
             liveActivity = nil
+            activityStartTime = nil
             return
         }
+        
+        // Mark this as app-initiated dismissal to avoid callback to Flutter
+        isAppInitiatedDismissal = true
         
         Task {
             do {
                 await self.liveActivity?.end(dismissalPolicy: .immediate)
                 self.liveActivity = nil
+                self.activityStartTime = nil
                 print("Live Activity ended successfully")
             } catch {
                 print("Error ending Live Activity: \(error)")
-                // Even if ending fails, clear the reference
+                // Even if ending fails, clear the reference and timestamp
                 self.liveActivity = nil
+                self.activityStartTime = nil
             }
         }
-    }
-    
-    func resetDismissalState() {
-        // This can be called when app comes to foreground from background
-        // to reset the dismissal state for new session
-        userDismissedInCurrentSession = false
-        print("Live Activity dismissal state reset for new session")
     }
     
     func isLiveActivityActive() -> Bool {
         return isActivityActive()
     }
     
-    func wasUserDismissedThisSession() -> Bool {
-        return userDismissedInCurrentSession
+    /// Get the current Live Activity duration in seconds (for debugging)
+    func getLiveActivityDuration() -> TimeInterval {
+        guard let startTime = activityStartTime else { return 0 }
+        return Date().timeIntervalSince(startTime)
+    }
+    
+    /// Check if the Live Activity will need refresh soon (for debugging)
+    func willNeedRefreshSoon() -> Bool {
+        return isApproachingDurationLimit()
     }
 }
 #endif

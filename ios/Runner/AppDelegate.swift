@@ -29,6 +29,14 @@ import ActivityKit
         object: nil
     )
 
+    // Set up notification listener for live activity dismissal
+    NotificationCenter.default.addObserver(
+        self,
+        selector: #selector(handleDismissalNotification(_:)),
+        name: Notification.Name("LiveActivityDismissed"),
+        object: nil
+    )
+
     // Setup notification listener for map click
     NotificationCenter.default.addObserver(
         self,
@@ -59,13 +67,6 @@ import ActivityKit
         case "isLiveActivityActive":
             result(liveActivityManager.isLiveActivityActive())
             break
-        case "resetDismissalState":
-            liveActivityManager.resetDismissalState()
-            result(true)
-            break
-        case "wasUserDismissedThisSession":
-            result(liveActivityManager.wasUserDismissedThisSession())
-            break
         case "startRefreshState":
             liveActivityManager.startRefreshState()
             result(true)
@@ -79,16 +80,6 @@ import ActivityKit
     return super.application(application, didFinishLaunchingWithOptions: launchOptions)
   }
     
-  // Reset dismissal state when app comes to foreground
-  override func applicationWillEnterForeground(_ application: UIApplication) {
-      super.applicationWillEnterForeground(application)
-      if #available(iOS 16.2, *), let liveActivityManager = liveActivityManager as? LiveActivityManager {
-        // Reset dismissal state when app comes back to foreground
-        // This allows live activity to start again after app was backgrounded/closed
-        liveActivityManager.resetDismissalState()
-      }
-  }
-
   @objc func handleRefreshNotification() {
       print("🔄 Live Activity refresh via LiveActivityIntent (iOS 17+)")
       if #available(iOS 16.2, *), let liveActivityManager = liveActivityManager as? LiveActivityManager {
@@ -97,6 +88,24 @@ import ActivityKit
       }
       // Also notify Flutter for any additional refresh logic
       liveActivityChannel?.invokeMethod("onRefreshRequested", arguments: nil)
+  }
+
+  @objc func handleDismissalNotification(_ notification: Notification) {
+      print("📨 AppDelegate received LiveActivityDismissed notification")
+      print("📨 Notification object: \(notification)")
+      print("📨 UserInfo: \(notification.userInfo ?? [:])")
+      
+      // Get device ID from notification if available
+      let deviceId = notification.userInfo?["deviceId"] as? String
+      let arguments: [String: Any] = deviceId != nil ? ["deviceId": deviceId!] : [:]
+      
+      print("📱 Calling Flutter method 'onLiveActivityDismissed' with arguments: \(arguments)")
+      print("📱 Channel available: \(liveActivityChannel != nil)")
+      
+      // Notify Flutter about the dismissal
+      liveActivityChannel?.invokeMethod("onLiveActivityDismissed", arguments: arguments) { result in
+          print("📱 Flutter method call result: \(result)")
+      }
   }
 
   @objc func handleMapClick() {
