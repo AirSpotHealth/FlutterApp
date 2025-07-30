@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:airspothealth/core/providers/factory_test_results_provider.dart';
 import 'package:airspothealth/core/services/ble_service.dart';
 import 'package:airspothealth/core/utils/constants.dart';
 import 'package:airspothealth/core/utils/device_cmd_utils.dart';
@@ -1045,6 +1046,38 @@ class FactoryTestNotifier
 
     debugPrint(
         'Device ${state.selectedDevice.deviceId} marked as ready to submit results');
+
+    // Save test results locally when all tests are complete
+    _saveTestResultsLocally();
+  }
+
+  /// Save test results locally when all tests are completed
+  Future<void> _saveTestResultsLocally() async {
+    try {
+      await ref.read(factoryTestResultsProvider.notifier).saveTestResult(
+            deviceId: state.selectedDevice.deviceId,
+            testedBy:
+                'Tester', // Placeholder - actual name will be provided during CSV download
+            testState: state,
+            sensorVariant: state.selectedDeviceVariant ?? 0,
+            deviceType: getDeviceType(state.selectedDevice.deviceId),
+          );
+
+      debugPrint(
+          'Test results saved locally for device: ${state.selectedDevice.deviceId}');
+
+      // End factory test mode and restart device
+      await endFactoryTestMode(putDeviceToSleep: true);
+
+      // Mark device as completed in queue
+      ref
+          .read(factoryTestDevicesProvider.notifier)
+          .markDeviceCompleted(state.selectedDevice.deviceId, success: true);
+    } catch (e) {
+      debugPrint('Error saving test results locally: $e');
+      // Note: Don't set error state here as test completion was successful
+      // The error is just with local saving, not the actual tests
+    }
   }
 
   /// Set error state and notify queue manager

@@ -209,7 +209,8 @@ class FactoryTestResponseParser {
           final frequency = ((data[6] << 8) | data[7]) / 1000.0;
           return {
             'testName': 'LF Crystal Test',
-            'status': result == 1 ? 'Pass' : 'Fail',
+            'status':
+                (frequency > 32.358 && frequency < 33.178) ? 'Pass' : 'Fail',
             'comment': '${frequency.toStringAsFixed(3)}KHz',
             'value': frequency,
           };

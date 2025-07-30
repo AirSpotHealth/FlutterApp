@@ -1,4 +1,3 @@
-import 'package:airspothealth/core/providers/factory_test_results_provider.dart';
 import 'package:airspothealth/core/theme/app_colors.dart';
 import 'package:airspothealth/core/utils/extensions.dart';
 import 'package:airspothealth/features/factory_test/models/factory_test_models.dart';
@@ -927,10 +926,8 @@ class _FactoryTestPageState extends ConsumerState<DeviceFactoryTestPage>
     debugPrint(
         '[${widget.deviceId}] All testing complete: ${state.isTestingComplete}');
 
-    // Check if all tests are complete and save results locally
+    // Don't change tabs when all tests are complete - let user see final results
     if (state.isTestingComplete) {
-      _saveTestResultsLocally(state);
-      // Don't change tabs when all tests are complete - let user see final results
       return;
     } else {
       // Use phase-based logic for tab switching
@@ -1015,40 +1012,5 @@ class _FactoryTestPageState extends ConsumerState<DeviceFactoryTestPage>
     }
 
     context.showSnackBar(message);
-  }
-
-  /// Save test results locally when all tests are completed
-  Future<void> _saveTestResultsLocally(DeviceFactoryTestState state) async {
-    try {
-      final factoryTestNotifier =
-          ref.read(factoryTestProvider(widget.deviceId).notifier);
-
-      await ref.read(factoryTestResultsProvider.notifier).saveTestResult(
-            deviceId: widget.deviceId,
-            testedBy:
-                'Tester', // Placeholder - actual name will be provided during CSV download
-            testState: state,
-            sensorVariant: state.selectedDeviceVariant ?? 0,
-            deviceType: factoryTestNotifier.getDeviceType(widget.deviceId),
-          );
-
-      // End factory test mode and restart device
-      await factoryTestNotifier.endFactoryTestMode(putDeviceToSleep: true);
-
-      // Mark device as completed in queue
-      ref
-          .read(factoryTestDevicesProvider.notifier)
-          .markDeviceCompleted(widget.deviceId, success: true);
-
-      // Clean up BT connection after successful completion
-      factoryTestNotifier.dispose();
-
-      debugPrint('Test results saved locally for device: ${widget.deviceId}');
-    } catch (e) {
-      debugPrint('Error saving test results locally: $e');
-      if (mounted) {
-        context.showSnackBar('Error saving test results: $e');
-      }
-    }
   }
 }
