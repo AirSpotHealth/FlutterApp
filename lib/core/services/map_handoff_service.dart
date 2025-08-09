@@ -54,8 +54,7 @@ class MapHandoffService {
       'alg': 'HS256',
       'enc': 'gzip',
       'iat': nowSec.toString(),
-      'exp': (nowSec + 60).toString(),
-      'nonce': payload['nonce'] as String,
+      'exp': (nowSec + 180).toString(),
       'payload': _base64UrlEncode(compressed),
       'sig': _base64UrlEncode(sigBytes),
     };
