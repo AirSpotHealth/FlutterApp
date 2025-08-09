@@ -72,7 +72,7 @@ class MenuItems {
     ),
     MenuItem(
       title: 'AirMap',
-      description: 'Geolocate indoor air quality with the Clean Air Map.',
+      description: 'Geolocate indoor air quality with the AirSpot Map.',
       iconAsset: Assets.airMap,
       externalUrl: ExternalUrls.airmap,
     ),
