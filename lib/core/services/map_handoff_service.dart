@@ -1,6 +1,5 @@
 import 'dart:convert';
 import 'dart:io' show gzip;
-import 'dart:math';
 import 'dart:typed_data';
 
 import 'package:airspothealth/core/models/ble_device.dart';
@@ -39,8 +38,7 @@ class MapHandoffService {
       'co2': records.isNotEmpty ? records.last['co2'] : 0,
       'records': records,
       'iat': nowSec,
-      'exp': nowSec + 60,
-      'nonce': _randomNonce(16),
+      'exp': nowSec + 180,
     };
 
     final jsonBytes = utf8.encode(json.encode(payload));
@@ -132,9 +130,5 @@ class MapHandoffService {
     return Uint8List.fromList(base64.decode(normalized));
   }
 
-  String _randomNonce(int length) {
-    final rand = Random.secure();
-    final bytes = List<int>.generate(length, (_) => rand.nextInt(256));
-    return _base64UrlEncode(bytes);
-  }
+  // no nonce used in 3-minute TTL mode
 }

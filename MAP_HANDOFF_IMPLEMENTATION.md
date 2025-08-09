@@ -60,7 +60,7 @@ Notes:
 Field naming for GET transport (query or fragment):
 
 ```
-v=1&kid=map-key-2025-01&alg=HS256&enc=gzip&iat=1736360400&exp=1736360460&nonce=b2d7...&payload=<base64url(gzip(JSON))>&sig=<base64url(HMAC_SHA256(kid_key, payload_bytes))>
+v=1&kid=map-key-2025-01&alg=HS256&enc=gzip&iat=1736360400&exp=1736360460&payload=<base64url(gzip(JSON))>&sig=<base64url(HMAC_SHA256(kid_key, payload_bytes))>
 ```
 
 Signing the compressed bytes ensures integrity of the exact data that will be decoded.
@@ -197,8 +197,7 @@ class MapHandoffService {
       'co2': currentCo2,
       'records': records,
       'iat': nowSec,
-      'exp': nowSec + 60,
-      'nonce': _randomNonce(16),
+  'exp': nowSec + 180,
     };
 
     final jsonBytes = utf8.encode(json.encode(payload));
@@ -214,8 +213,7 @@ class MapHandoffService {
       'alg': 'HS256',
       'enc': 'gzip',
       'iat': nowSec.toString(),
-      'exp': (nowSec + 60).toString(),
-      'nonce': payload['nonce'] as String,
+  'exp': (nowSec + 180).toString(),
       'payload': _base64UrlEncode(compressed),
       'sig': _base64UrlEncode(sigBytes),
     };
