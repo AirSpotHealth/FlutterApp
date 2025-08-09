@@ -379,8 +379,10 @@ public class ForegroundNotificationService extends Service {
         }
 
         // Add click actions to map and graph icons
-        // Map icon click action - open app with map action (works from lock screen)
-        Intent mapIntent = new Intent(Intent.ACTION_VIEW, Uri.parse("https://map.airspothealth.com"));
+        // Map icon click action - deep link into app for secure handoff
+        Intent mapIntent = new Intent(this, MainActivity.class);
+        mapIntent.setData(Uri.parse("airspothealth://map-handoff?deviceId=" + deviceId));
+        mapIntent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TOP);
         PendingIntent mapPendingIntent = PendingIntent.getActivity(this, 102, mapIntent, PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
         views.setOnClickPendingIntent(R.id.ic_map, mapPendingIntent);
 

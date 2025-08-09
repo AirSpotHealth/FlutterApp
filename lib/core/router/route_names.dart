@@ -72,4 +72,7 @@ class RouteNames {
 
   /// factory test route
   static const String factoryTest = '/factory-test';
+
+  /// map handoff route (deep link handler)
+  static const String mapHandoff = '/map-handoff';
 }

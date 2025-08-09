@@ -261,9 +261,7 @@ class _BleDeviceCommunicationNotifier extends FamilyNotifier<dynamic, String> {
             .deviceIdEqualTo(deviceId)
             .typeEqualTo(DeviceDataType.co2.index)
             .sortByDateTimeDesc()
-            .findAll()
-            .take(39)
-            .toList();
+            .findAll(limit: 39);
         return co2DataList.map((e) => e.value).toList().reversed.toList();
       });
 

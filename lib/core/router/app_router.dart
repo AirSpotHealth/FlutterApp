@@ -1,4 +1,5 @@
 import 'package:airspothealth/core/router/route_names.dart';
+import 'package:airspothealth/core/services/map_handoff_service.dart';
 import 'package:airspothealth/core/utils/constants.dart';
 import 'package:airspothealth/features/add_device/add_device_page.dart';
 import 'package:airspothealth/features/advanced_alarm_settings/advanced_alarm_settings_page.dart';
@@ -45,7 +46,7 @@ class AppRouter {
         return '/devices/$deviceId/graph';
       }
 
-      // if we receive airspothealth://open_map that means we need to go to a URL
+      // legacy: airspothealth://open_map
       if (uri.host.contains('open_map')) {
         WidgetsBinding.instance.addPostFrameCallback((_) {
           debugPrint('Opening map URL');
@@ -64,9 +65,39 @@ class AppRouter {
         return null; // No redirect needed, we just open the URL
       }
 
+      // new: airspothealth://map-handoff?deviceId=...
+      if (uri.host.contains('map-handoff')) {
+        final deviceId = uri.queryParameters['deviceId'];
+        WidgetsBinding.instance.addPostFrameCallback((_) async {
+          try {
+            // Build signed URL and open externally
+            final service = MapHandoffService();
+            final url = await service.buildSignedMapUrl(
+              deviceId: deviceId ?? '',
+              recordLimit: 500,
+              useFragment: true,
+            );
+            await launchUrlString(url.toString(),
+                mode: LaunchMode.externalApplication);
+          } catch (e) {
+            debugPrint('Failed to build/open map handoff URL: $e');
+          }
+        });
+        return null;
+      }
+
       return null; // No redirect
     },
     routes: [
+      // Map handoff internal route (optional: for manual triggering)
+      GoRoute(
+        path: RouteNames.mapHandoff,
+        name: RouteNames.mapHandoff,
+        builder: (context, state) {
+          // This route is primarily driven by deep link redirect logic above
+          return const SizedBox.shrink();
+        },
+      ),
       // Route for HomePage
       GoRoute(
         path: RouteNames.home,

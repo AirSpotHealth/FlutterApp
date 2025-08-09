@@ -293,7 +293,7 @@ struct LiveActivityWidgetLiveActivity: Widget {
                         HStack(spacing: 6) {
                             Link(
                                 destination: URL(
-                                    string: "airspothealth://open_map"
+                                    string: "airspothealth://map-handoff?deviceId=\(context.state.deviceId)"
                                 )!
                             ) {
                                 Image("ic_map")
