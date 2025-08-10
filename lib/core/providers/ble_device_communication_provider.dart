@@ -114,29 +114,6 @@ class _BleDeviceCommunicationNotifier extends FamilyNotifier<dynamic, String> {
     }
   }
 
-  void _handleLiveActivityDismissed(String dismissedDeviceId) {
-    debugPrint(
-        'Handling live activity dismissal for device: $dismissedDeviceId, disabling setting');
-
-    try {
-      // Update the device settings to disable live activity
-      final currentSettings =
-          ref.read(deviceSettingsProvider(dismissedDeviceId));
-      ref
-          .read(deviceSettingsProvider(dismissedDeviceId).notifier)
-          .updateSettings(
-            currentSettings.copyWith(showLiveActivity: false),
-            sendCommands: false, // Don't send BLE commands for this setting
-          );
-
-      debugPrint(
-          'Live Activity setting disabled for device: $dismissedDeviceId');
-    } catch (e) {
-      debugPrint(
-          'Error disabling live activity setting for device $dismissedDeviceId: $e');
-    }
-  }
-
   void _handleLiveActivityRefresh() {
     // Request fresh CO2 data from the device
     debugPrint('Requesting fresh CO2 data for Live Activity refresh');
