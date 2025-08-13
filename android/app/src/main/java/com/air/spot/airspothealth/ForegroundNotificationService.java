@@ -71,7 +71,7 @@ public class ForegroundNotificationService extends Service {
         Log.d(TAG, "ForegroundNotificationService created");
         notificationManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
         createNotificationChannel();
-        
+
         // Register broadcast receiver for dismissal events
         IntentFilter filter = new IntentFilter(ACTION_NOTIFICATION_DISMISSED);
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
@@ -131,7 +131,7 @@ public class ForegroundNotificationService extends Service {
         super.onDestroy();
         Log.d(TAG, "ForegroundNotificationService destroyed");
         isServiceRunning = false;
-        
+
         // Unregister broadcast receiver
         try {
             unregisterReceiver(dismissalReceiver);
@@ -281,15 +281,11 @@ public class ForegroundNotificationService extends Service {
             RemoteViews expandedLayout = createNotificationLayout(co2Value, true, powerMode, batteryLevel, isCharging, alarmEnabled, vibrationEnabled, co2History, greenUpperLimit, yellowUpperLimit, graphMaxValue, graphMinValue, deviceId, isConnected, isRefreshing);
             RemoteViews compactLayout = createNotificationLayout(co2Value, false, powerMode, batteryLevel, isCharging, alarmEnabled, vibrationEnabled, co2History, greenUpperLimit, yellowUpperLimit, graphMaxValue, graphMinValue, deviceId, isConnected, isRefreshing);
 
+
             // Create delete intent for dismissal detection
             Intent deleteIntent = new Intent(ACTION_NOTIFICATION_DISMISSED);
             deleteIntent.putExtra("deviceId", deviceId);
-            PendingIntent deletePendingIntent = PendingIntent.getBroadcast(
-                this, 
-                3, 
-                deleteIntent, 
-                PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE
-            );
+            PendingIntent deletePendingIntent = PendingIntent.getBroadcast(this, 3, deleteIntent, PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
             Log.d(TAG, "Created delete intent for dismissal detection with deviceId: " + deviceId);
 
             // Create notification with custom layouts - clean minimal style
@@ -331,8 +327,10 @@ public class ForegroundNotificationService extends Service {
     }
 
     private RemoteViews createNotificationLayout(String co2Value, boolean isExpanded, String powerMode, String batteryLevel, boolean isCharging, boolean alarmEnabled, boolean vibrationEnabled, List<Integer> co2History, int greenUpperLimit, int yellowUpperLimit, int graphMaxValue, int graphMinValue, String deviceId, boolean isConnected, boolean isRefreshing) {
+        boolean isSamsung = Build.MANUFACTURER.equalsIgnoreCase("samsung");
 
-        RemoteViews views = new RemoteViews(getPackageName(), isExpanded ? R.layout.notification_expanded : R.layout.notification_compact);
+        int layoutId = isExpanded ? R.layout.notification_expanded : isSamsung ? R.layout.notification_compact_samsung : R.layout.notification_compact;
+        RemoteViews views = new RemoteViews(getPackageName(), layoutId);
 
         views.setTextViewText(R.id.co2_value, co2Value);
         int co2Color = isConnected ? getColorForCO2Value(co2Value, greenUpperLimit, yellowUpperLimit) : Color.parseColor("#808080"); // Grey when disconnected
@@ -405,7 +403,7 @@ public class ForegroundNotificationService extends Service {
         }
 
         // Create and set graph (using appropriate ID for layout)
-        if (!co2History.isEmpty()) {
+        if (!co2History.isEmpty() && !(isSamsung && !isExpanded)) {
             Bitmap graphBitmap = generateCo2GraphBitmap(co2History, greenUpperLimit, yellowUpperLimit, graphMaxValue, graphMinValue);
             views.setImageViewBitmap(R.id.co2_graph, graphBitmap);
         }
@@ -549,7 +547,7 @@ public class ForegroundNotificationService extends Service {
         }
         sendBroadcast(broadcastIntent);
         Log.d(TAG, "Dismissal event sent to Flutter via broadcast for device: " + deviceId);
-        
+
         // Stop the service when notification is dismissed to avoid system killing it
         Log.d(TAG, "Stopping foreground service due to notification dismissal");
         stopForegroundService();

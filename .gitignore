@@ -49,3 +49,4 @@ app.*.map.json
 .cursor/
 
 .vscode/launch.json
+.generator.sh
