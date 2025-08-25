@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'dart:io' show gzip;
+import 'dart:math';
 import 'dart:typed_data';
 
 import 'package:airspothealth/core/models/ble_device.dart';
@@ -7,8 +8,8 @@ import 'package:airspothealth/core/models/device_data.dart';
 import 'package:airspothealth/core/models/device_data_type.dart';
 import 'package:airspothealth/core/services/isar_service.dart';
 import 'package:airspothealth/core/utils/constants.dart';
-import 'package:crypto/crypto.dart' as crypto;
 import 'package:isar/isar.dart';
+import 'package:pointycastle/export.dart';
 
 class MapHandoffService {
   MapHandoffService({IsarService? isarService})
@@ -28,35 +29,27 @@ class MapHandoffService {
     final canonicalId = bleName?.isNotEmpty == true ? bleName! : deviceId;
     final records =
         await _fetchLastCo2Records(deviceId: deviceId, limit: recordLimit);
-
-    final nowSec = DateTime.now().millisecondsSinceEpoch ~/ 1000;
-
-    final payload = {
-      'v': 1,
-      'deviceId': deviceId, // platform-local id
-      'canonicalId': canonicalId, // cross-platform id (BLE name or fallback)
-      'co2': records.isNotEmpty ? records.last['co2'] : 0,
-      'records': records,
-      'iat': nowSec,
-      'exp': nowSec + 180,
-    };
-
-    final jsonBytes = utf8.encode(json.encode(payload));
-    final compressed = gzip.encode(jsonBytes);
+    final currentCo2 = records.isNotEmpty ? records.last['co2'] : 0;
 
     final secret = _base64UrlDecode(_secretB64);
-    final hmac = crypto.Hmac(crypto.sha256, secret);
-    final sigBytes = hmac.convert(compressed).bytes;
+
+    // 1. Encrypt device ID using AES-256-GCM
+    final encryptedDeviceId = _encryptAES256GCM(canonicalId, secret);
+
+    // 2. Encrypt CO2 value using AES-256-GCM
+    final encryptedCo2 = _encryptAES256GCM(currentCo2.toString(), secret);
+
+    // 3. Compress records
+    final recordsJson = json.encode(records);
+    final recordsBytes = utf8.encode(recordsJson);
+    final compressedRecords = gzip.encode(recordsBytes);
+    final encodedRecords = _base64UrlEncode(compressedRecords);
 
     final params = {
-      'v': '1',
       'kid': _kid,
-      'alg': 'HS256',
-      'enc': 'gzip',
-      'iat': nowSec.toString(),
-      'exp': (nowSec + 180).toString(),
-      'payload': _base64UrlEncode(compressed),
-      'sig': _base64UrlEncode(sigBytes),
+      'deviceId': encryptedDeviceId,
+      'co2': encryptedCo2,
+      'records': encodedRecords,
     };
 
     final base = Uri.parse(Constants.mapUrl);
@@ -80,6 +73,59 @@ class MapHandoffService {
     } catch (_) {
       return null;
     }
+  }
+
+  /// Encrypts data using AES-256-GCM
+  /// Returns: IV (16 bytes) + Ciphertext + AuthTag (16 bytes), then base64url encoded
+  String _encryptAES256GCM(String plaintext, Uint8List key) {
+    // Generate random IV (16 bytes for GCM)
+    final random = Random.secure();
+    final iv = Uint8List(16);
+    for (int i = 0; i < iv.length; i++) {
+      iv[i] = random.nextInt(256);
+    }
+
+    // Ensure key is 32 bytes for AES-256
+    final aesKey = _deriveKey(key, 32);
+
+    // Create AES-GCM cipher
+    final cipher = GCMBlockCipher(AESEngine());
+    final params = AEADParameters(KeyParameter(aesKey), 128, iv, Uint8List(0));
+
+    cipher.init(true, params);
+
+    // Encrypt the plaintext
+    final plaintextBytes = utf8.encode(plaintext);
+    final ciphertext = cipher.process(plaintextBytes);
+
+    // Extract authentication tag (last 16 bytes)
+    final authTag = ciphertext.sublist(ciphertext.length - 16);
+    final encryptedData = ciphertext.sublist(0, ciphertext.length - 16);
+
+    // Format: IV (16 bytes) + Ciphertext + AuthTag (16 bytes)
+    final result = Uint8List(iv.length + encryptedData.length + authTag.length);
+    result.setRange(0, iv.length, iv);
+    result.setRange(iv.length, iv.length + encryptedData.length, encryptedData);
+    result.setRange(iv.length + encryptedData.length, result.length, authTag);
+
+    return _base64UrlEncode(result);
+  }
+
+  /// Derives a key of specified length from the input key using SHA-256
+  Uint8List _deriveKey(Uint8List inputKey, int keyLength) {
+    if (inputKey.length >= keyLength) {
+      return Uint8List.fromList(inputKey.take(keyLength).toList());
+    }
+
+    // If input key is shorter, derive using repeated hashing
+    final digest = SHA256Digest();
+    var result = Uint8List.fromList(inputKey);
+
+    while (result.length < keyLength) {
+      result = Uint8List.fromList([...result, ...digest.process(result)]);
+    }
+
+    return Uint8List.fromList(result.take(keyLength).toList());
   }
 
   Future<List<Map<String, dynamic>>> _fetchLastCo2Records({
