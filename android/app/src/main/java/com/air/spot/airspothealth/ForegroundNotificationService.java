@@ -291,8 +291,8 @@ public class ForegroundNotificationService extends Service {
             fullScreenIntent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TOP);
 
             // Create our custom expanded layout
-            RemoteViews expandedLayout = createNotificationLayout(co2Value, true, powerMode, batteryLevel, isCharging, alarmEnabled, vibrationEnabled, co2History, greenUpperLimit, yellowUpperLimit, graphMaxValue, graphMinValue, deviceId, isConnected, isRefreshing);
-            RemoteViews compactLayout = createNotificationLayout(co2Value, false, powerMode, batteryLevel, isCharging, alarmEnabled, vibrationEnabled, co2History, greenUpperLimit, yellowUpperLimit, graphMaxValue, graphMinValue, deviceId, isConnected, isRefreshing);
+            RemoteViews expandedLayout = createNotificationLayout(co2Value, true, powerMode, batteryLevel, isCharging, alarmEnabled, vibrationEnabled, co2History, greenUpperLimit, yellowUpperLimit, graphMaxValue, graphMinValue, deviceId, deviceName, isConnected, isRefreshing);
+            RemoteViews compactLayout = createNotificationLayout(co2Value, false, powerMode, batteryLevel, isCharging, alarmEnabled, vibrationEnabled, co2History, greenUpperLimit, yellowUpperLimit, graphMaxValue, graphMinValue, deviceId, deviceName, isConnected, isRefreshing);
 
 
             // Create delete intent for dismissal detection
@@ -339,7 +339,7 @@ public class ForegroundNotificationService extends Service {
         return builder.build();
     }
 
-    private RemoteViews createNotificationLayout(String co2Value, boolean isExpanded, String powerMode, String batteryLevel, boolean isCharging, boolean alarmEnabled, boolean vibrationEnabled, List<Integer> co2History, int greenUpperLimit, int yellowUpperLimit, int graphMaxValue, int graphMinValue, String deviceId, boolean isConnected, boolean isRefreshing) {
+    private RemoteViews createNotificationLayout(String co2Value, boolean isExpanded, String powerMode, String batteryLevel, boolean isCharging, boolean alarmEnabled, boolean vibrationEnabled, List<Integer> co2History, int greenUpperLimit, int yellowUpperLimit, int graphMaxValue, int graphMinValue, String deviceId, String deviceName, boolean isConnected, boolean isRefreshing) {
         boolean isSamsung = Build.MANUFACTURER.equalsIgnoreCase("samsung");
 
         int layoutId = isExpanded ? R.layout.notification_expanded : isSamsung ? R.layout.notification_compact_samsung : R.layout.notification_compact;
@@ -348,6 +348,20 @@ public class ForegroundNotificationService extends Service {
         views.setTextViewText(R.id.co2_value, co2Value);
         int co2Color = isConnected ? getColorForCO2Value(co2Value, greenUpperLimit, yellowUpperLimit) : Color.parseColor("#808080"); // Grey when disconnected
         views.setTextColor(R.id.co2_value, co2Color);
+
+        // Set device name only for expanded layout
+        if (isExpanded) {
+            try {
+                if (deviceName != null && !deviceName.trim().isEmpty()) {
+                    views.setTextViewText(R.id.device_name, deviceName);
+                    views.setViewVisibility(R.id.device_name, android.view.View.VISIBLE);
+                } else {
+                    views.setViewVisibility(R.id.device_name, android.view.View.GONE);
+                }
+            } catch (Exception e) {
+                Log.d(TAG, "Device name TextView not found in expanded layout: " + e.getMessage());
+            }
+        }
 
         if (isRefreshing && isConnected) {
             Log.d(TAG, "Setting refresh animation VISIBLE for " + (isExpanded ? "expanded" : "compact") + " layout");
