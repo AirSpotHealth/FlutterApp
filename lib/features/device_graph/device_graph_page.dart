@@ -32,24 +32,27 @@ class DeviceGraphPage extends ConsumerWidget {
           SizedBox(width: 8),
         ],
       ),
-      body: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const SizedBox(height: 12),
-          Align(
-            alignment: Alignment.center,
-            child: Text(
-              device.alias ?? device.name,
-              style: context.textTheme.bodyMedium?.weight600,
+      body: SafeArea(
+        bottom: true,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const SizedBox(height: 12),
+            Align(
+              alignment: Alignment.center,
+              child: Text(
+                device.alias ?? device.name,
+                style: context.textTheme.bodyMedium?.weight600,
+              ),
             ),
-          ),
-          const SizedBox(height: 12),
-          DeviceCurrentValueWidget(deviceId: device.deviceId),
-          const SizedBox(height: 12),
-          DeviceDataAggregateCard(deviceId: device.deviceId),
-          const SizedBox(height: 12),
-          Flexible(child: DataGraphWrapper(deviceId: device.deviceId)),
-        ],
+            const SizedBox(height: 12),
+            DeviceCurrentValueWidget(deviceId: device.deviceId),
+            const SizedBox(height: 12),
+            DeviceDataAggregateCard(deviceId: device.deviceId),
+            const SizedBox(height: 12),
+            Flexible(child: DataGraphWrapper(deviceId: device.deviceId)),
+          ],
+        ),
       ),
     );
   }
