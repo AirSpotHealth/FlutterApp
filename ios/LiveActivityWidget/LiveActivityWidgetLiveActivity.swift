@@ -42,6 +42,8 @@ struct LiveActivityWidgetAttributes: ActivityAttributes {
     public struct ContentState: Codable, Hashable {
         // Device ID
         var deviceId: String
+        // Device Name/Alias
+        var deviceName: String
         // CO2 Value
         var co2Value: Int
         // Power Mode
@@ -277,7 +279,7 @@ struct LiveActivityWidgetLiveActivity: Widget {
         ActivityConfiguration(for: LiveActivityWidgetAttributes.self) {
             context in
             // Lock screen/banner UI goes here
-            VStack(spacing: 8) {
+            VStack(spacing: 4) {
                 // Top section with CO2 value and status
                 ZStack {
                     // Center refresh button – visually centered
@@ -427,6 +429,16 @@ struct LiveActivityWidgetLiveActivity: Widget {
                     }
                 }
 
+                // Device Name Section
+                if !context.state.deviceName.isEmpty {
+                    Text(context.state.deviceName)
+                        .font(.system(size: 11, weight: .medium))
+                        .foregroundColor(.gray)
+                        .frame(maxWidth: .infinity, alignment: .center)
+                        .padding(.top, -4) // Reduce spacing from top section
+                        .padding(.bottom, -4) // Reduce spacing to bottom section
+                }
+
                 // Graph Section
                 if !context.state.co2History.isEmpty {
                     Co2GraphView(
@@ -464,6 +476,13 @@ struct LiveActivityWidgetLiveActivity: Widget {
                             Text("SPOT")
                                 .foregroundColor(.primary)
                                 .font(.system(size: 16, weight: .light))
+                        }
+                        
+                        // Device Name
+                        if !context.state.deviceName.isEmpty {
+                            Text(context.state.deviceName)
+                                .font(.system(size: 10, weight: .medium))
+                                .foregroundColor(.gray)
                         }
 
                         HStack(alignment: .bottom, spacing: 2) {
@@ -698,6 +717,7 @@ extension LiveActivityWidgetAttributes.ContentState {
     {
         LiveActivityWidgetAttributes.ContentState(
             deviceId: "1234567890",
+            deviceName: "Living Room",
             co2Value: 450,
             powerMode: "3 Min",
             batteryLevel: 85,
@@ -727,6 +747,7 @@ extension LiveActivityWidgetAttributes.ContentState {
     {
         LiveActivityWidgetAttributes.ContentState(
             deviceId: "1234567890",
+            deviceName: "Bedroom",
             co2Value: 1200,
             powerMode: "1 Min",
             batteryLevel: 25,
@@ -749,6 +770,7 @@ extension LiveActivityWidgetAttributes.ContentState {
     {
         LiveActivityWidgetAttributes.ContentState(
             deviceId: "1234567890",
+            deviceName: "Office",
             co2Value: 850,
             powerMode: "3 Min",
             batteryLevel: 65,
@@ -771,6 +793,7 @@ extension LiveActivityWidgetAttributes.ContentState {
     {
         LiveActivityWidgetAttributes.ContentState(
             deviceId: "1234567890",
+            deviceName: "Kitchen",
             co2Value: 750,
             powerMode: "3 Min",
             batteryLevel: 45,

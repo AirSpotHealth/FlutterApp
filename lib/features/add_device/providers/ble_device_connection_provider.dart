@@ -77,7 +77,9 @@ class _BleDeviceConnectionNotifier
           return;
         }
 
-        // Update Live Activity with disconnected state
+        // Update Live Activity with disconnected state immediately
+        debugPrint(
+            'Device disconnected, updating Live Activity with disconnected state');
         _updateLiveActivityOnDisconnect();
 
         _checkRouteAndPop();

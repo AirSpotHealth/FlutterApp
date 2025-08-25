@@ -215,14 +215,27 @@ public class ForegroundNotificationService extends Service {
             try {
                 Log.d(TAG, "Creating updated notification...");
                 Notification notification = createNotification();
+                if (notification == null) {
+                    Log.w(TAG, "Failed to create notification, using fallback");
+                    notification = createFallbackNotification();
+                }
                 Log.d(TAG, "Updating existing notification...");
                 notificationManager.notify(NOTIFICATION_ID, notification);
                 Log.d(TAG, "Notification updated successfully");
             } catch (Exception e) {
                 Log.e(TAG, "Error updating notification: " + e.getMessage(), e);
+                // If update fails, try to restart the service
+                try {
+                    Log.d(TAG, "Attempting to restart service after update failure");
+                    stopForegroundService();
+                    startForegroundService();
+                } catch (Exception restartError) {
+                    Log.e(TAG, "Failed to restart service: " + restartError.getMessage(), restartError);
+                }
             }
         } else {
-            Log.d(TAG, "Service not running, cannot update notification");
+            Log.d(TAG, "Service not running, starting service to show notification");
+            startForegroundService();
         }
     }
 
@@ -371,8 +384,17 @@ public class ForegroundNotificationService extends Service {
             } catch (Exception e) {
                 Log.d(TAG, "Refresh icon not found in layout, trying alternative: " + e.getMessage());
             }
+        } else if (!isConnected) {
+            // Show disconnected icon when not connected
+            views.setImageViewResource(R.id.ic_refresh, R.drawable.ic_bt_off);
+            // Remove click action for disconnected state
+            try {
+                views.setOnClickPendingIntent(R.id.ic_refresh, null);
+            } catch (Exception e) {
+                Log.d(TAG, "Error removing click action from disconnect icon: " + e.getMessage());
+            }
         } else {
-            // Show disabled icon when disconnected
+            // Show disabled icon when refreshing
             views.setImageViewResource(R.id.ic_refresh, R.drawable.ic_bt_off);
         }
 

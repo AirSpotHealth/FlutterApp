@@ -342,6 +342,14 @@ class LiveActivityService {
   Future<void> updateLiveActivity(
       {required LiveActivityModel data, String? deviceId}) async {
     try {
+      debugPrint(
+          'Live Activity update requested${deviceId != null ? ' for device: $deviceId' : ''} with connection: ${data.isConnected}');
+
+      // Store the data regardless of device settings for potential future use
+      if (deviceId != null) {
+        _lastLiveActivityData[deviceId] = data;
+      }
+
       // Track which device is updating the Live Activity
       if (deviceId != null) {
         setActiveDevice(deviceId);
@@ -353,9 +361,24 @@ class LiveActivityService {
         data.toJson(),
       );
       debugPrint(
-          'Live Activity updated successfully${deviceId != null ? ' for device: $deviceId' : ''}');
+          'Live Activity updated successfully${deviceId != null ? ' for device: $deviceId' : ''} - Connection: ${data.isConnected ? "Connected" : "Disconnected"}');
     } on PlatformException catch (e) {
       debugPrint("Failed to update live activity: '${e.message}'.");
+
+      // If update fails and device is disconnected, ensure we still show disconnected state
+      if (!data.isConnected && deviceId != null) {
+        debugPrint(
+            "Update failed for disconnected device, attempting to restart Live Activity with disconnected state");
+        try {
+          // Try to create a new Live Activity with the disconnected state
+          await platform.invokeMethod('startLiveActivity', data.toJson());
+        } catch (retryError) {
+          debugPrint(
+              "Failed to restart Live Activity with disconnected state: $retryError");
+        }
+      }
+    } catch (e) {
+      debugPrint("Unexpected error updating live activity: $e");
     }
   }
 
@@ -458,11 +481,29 @@ class LiveActivityService {
     required String deviceId,
   }) async {
     try {
+      debugPrint(
+          'LiveActivity: Updating disconnected state for device: $deviceId');
+
       // Get the last known Live Activity data for this device
       final lastData = _lastLiveActivityData[deviceId];
       if (lastData == null) {
         debugPrint(
             'LiveActivity: No previous data found for device $deviceId, cannot update disconnected state');
+        return;
+      }
+
+      // Only update if this device currently has an active Live Activity
+      final isActive = await isLiveActivityActive();
+      if (!isActive) {
+        debugPrint(
+            'LiveActivity: No active Live Activity found, skipping disconnected state update');
+        return;
+      }
+
+      // Check if this device is the one with the active Live Activity
+      if (_activeDeviceId != deviceId) {
+        debugPrint(
+            'LiveActivity: Device $deviceId is not the active Live Activity device ($_activeDeviceId), skipping update');
         return;
       }
 
@@ -472,9 +513,21 @@ class LiveActivityService {
         isRefreshing: false,
       );
 
-      await updateLiveActivity(deviceId: deviceId, data: disconnectedData);
+      // Force update even if settings say not to show Live Activity
+      // This ensures the disconnected state is shown immediately
+      await platform.invokeMethod(
+        'updateLiveActivity',
+        disconnectedData.toJson(),
+      );
+
+      // Update Android home widget as well
+      await _updateAndroidHomeWidget(disconnectedData);
+
+      // Store the disconnected state as the latest data
+      _lastLiveActivityData[deviceId] = disconnectedData;
+
       debugPrint(
-          'LiveActivity: Updated with disconnected state for device: $deviceId');
+          'LiveActivity: Successfully updated with disconnected state for device: $deviceId');
     } catch (e) {
       debugPrint('LiveActivity: Error updating disconnected state: $e');
     }
@@ -495,6 +548,49 @@ class LiveActivityService {
       await platform.invokeMethod('resetDismissalState');
     } on PlatformException catch (e) {
       debugPrint("Failed to reset dismissal state: '${e.message}'.");
+    }
+  }
+
+  /// Force refresh the Live Activity by ending current one and starting new one
+  /// This helps resolve stale activity issues
+  Future<void> forceRefreshLiveActivity() async {
+    try {
+      debugPrint('LiveActivity: Force refreshing Live Activity');
+
+      // End current activity first
+      await endLiveActivity();
+
+      // Wait a moment for clean transition
+      await Future.delayed(const Duration(milliseconds: 500));
+
+      // Find the device with active Live Activity and restart it
+      if (_activeDeviceId != null) {
+        final lastData = _lastLiveActivityData[_activeDeviceId];
+        if (lastData != null) {
+          debugPrint(
+              'LiveActivity: Restarting with last known data for device: $_activeDeviceId');
+          await updateLiveActivity(data: lastData, deviceId: _activeDeviceId);
+        }
+      }
+    } catch (e) {
+      debugPrint('LiveActivity: Error force refreshing: $e');
+    }
+  }
+
+  /// Check if Live Activity should be refreshed (for background app refresh)
+  Future<void> refreshIfNeeded() async {
+    try {
+      final isActive = await isLiveActivityActive();
+      if (!isActive && _activeDeviceId != null) {
+        final lastData = _lastLiveActivityData[_activeDeviceId];
+        if (lastData != null && lastData.isConnected) {
+          debugPrint(
+              'LiveActivity: No active Live Activity found but should be active, restarting');
+          await updateLiveActivity(data: lastData, deviceId: _activeDeviceId);
+        }
+      }
+    } catch (e) {
+      debugPrint('LiveActivity: Error checking refresh status: $e');
     }
   }
 }

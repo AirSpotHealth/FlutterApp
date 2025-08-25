@@ -71,6 +71,14 @@ import ActivityKit
             liveActivityManager.startRefreshState()
             result(true)
             break
+        case "resetDismissalState":
+            liveActivityManager.resetDismissalState()
+            result(true)
+            break
+        case "forceCleanupAndRestart":
+            liveActivityManager.forceCleanupAndRestart(data: call.arguments as? Dictionary<String,Any>)
+            result(true)
+            break
         default:
             result(FlutterMethodNotImplemented)
         }

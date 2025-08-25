@@ -132,13 +132,31 @@ class LiveActivityManager: LiveActivityManagerProtocol {
                     
                     // Clear our reference and timestamp since the activity is stale
                     if let currentActivity = liveActivity, currentActivity.id == activity.id {
+                        print("🔄 Activity became stale, cleaning up references")
                         liveActivity = nil
                         activityStartTime = nil
                         
-                        // Optionally restart if we have valid data
-                        if let lastData = lastValidState {
-                            print("🔄 Automatically restarting stale Live Activity")
-                            startLiveActivity(data: lastData)
+                        // Automatically restart if we have valid data and the activity was actively being used
+                        if let lastData = lastValidState,
+                           let isConnected = lastData["isConnected"] as? Bool,
+                           isConnected == true {
+                            print("🔄 Device is still connected, automatically restarting stale Live Activity")
+                            // Wait a moment before restarting to ensure clean transition
+                            DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
+                                self.startLiveActivity(data: lastData)
+                            }
+                        } else {
+                            print("📱 Device disconnected or no valid data, not restarting stale activity")
+                        }
+                    }
+                } else if activity.activityState == .active {
+                    print("✅ Live Activity is active")
+                    // Ensure we have the correct reference
+                    if liveActivity?.id != activity.id {
+                        print("🔄 Updating activity reference to active activity")
+                        liveActivity = activity
+                        if activityStartTime == nil {
+                            activityStartTime = Date()
                         }
                     }
                 }
@@ -163,6 +181,7 @@ class LiveActivityManager: LiveActivityManagerProtocol {
         guard let info = data else {
             return LiveActivityWidgetAttributes.ContentState(
                 deviceId: "1234567890",
+                deviceName: "AirSpot Device",
                 co2Value: 0,
                 powerMode: "3 Min",
                 batteryLevel: 0,
@@ -182,6 +201,7 @@ class LiveActivityManager: LiveActivityManagerProtocol {
         
         return LiveActivityWidgetAttributes.ContentState(
             deviceId: info["deviceId"] as? String ?? "1234567890",
+            deviceName: info["deviceName"] as? String ?? "AirSpot Device",
             co2Value: info["co2Value"] as? Int ?? 0,
             powerMode: info["powerMode"] as? String ?? "3 Min",
             batteryLevel: info["batteryLevel"] as? Int ?? 0,
@@ -252,23 +272,51 @@ class LiveActivityManager: LiveActivityManagerProtocol {
         
         // If we already have an active activity, check if it needs refresh due to duration
         if isActivityActive() {
+            print("📱 Live Activity already active, checking duration...")
             if hasExceededDurationLimit() {
-                print("Current Live Activity has exceeded duration limit, refreshing...")
+                print("⏰ Current Live Activity has exceeded duration limit, refreshing...")
                 refreshLiveActivity()
                 return
             } else if isApproachingDurationLimit() {
-                print("Current Live Activity is approaching duration limit, will refresh proactively")
+                print("⏰ Current Live Activity is approaching duration limit, will refresh proactively")
                 refreshLiveActivity()
                 return
             } else {
-                print("Live Activity already active and within duration limits, skipping start")
+                print("✅ Live Activity already active and within duration limits")
+                // Update the existing activity with new data instead of skipping
+                updateLiveActivity(data: data)
                 return
             }
+        }
+        
+        // Check if there are any existing activities we don't know about
+        let existingActivities = Activity<LiveActivityWidgetAttributes>.activities
+        if !existingActivities.isEmpty {
+            print("🔍 Found \(existingActivities.count) existing Live Activities")
+            // End all existing activities to ensure clean state
+            Task {
+                for activity in existingActivities {
+                    print("🗑️ Ending existing activity: \(activity.id)")
+                    await activity.end(dismissalPolicy: .immediate)
+                }
+                // Brief delay to ensure clean transition
+                try? await Task.sleep(nanoseconds: 500_000_000) // 0.5 seconds
+                
+                // Now start the new activity
+                await self.performStartLiveActivity(data: data)
+            }
+            return
         }
         
         // Store the data for potential refresh scenarios
         lastValidState = data
         
+        Task {
+            await performStartLiveActivity(data: data)
+        }
+    }
+    
+    private func performStartLiveActivity(data: [String: Any]?) async {
         let attributes = LiveActivityWidgetAttributes()
         let state = createContentState(from: data)
         
@@ -278,20 +326,44 @@ class LiveActivityManager: LiveActivityManagerProtocol {
         // Record start time for duration tracking
         activityStartTime = Date()
         
-        Task {
-            do {
-                liveActivity = try Activity<LiveActivityWidgetAttributes>.request(
-                    attributes: attributes,
-                    content: .init(state: state, staleDate: staleDate),
-                    pushType: .none
-                )
-                print("Live Activity started successfully at \(activityStartTime!)")
-                print("Will become stale at: \(staleDate)")
-                print("Proactive refresh scheduled in: \(timeUntilRefreshNeeded() / 3600) hours")
-            } catch {
-                print("Error starting Live Activity: \(error)")
-                liveActivity = nil
-                activityStartTime = nil
+        do {
+            liveActivity = try Activity<LiveActivityWidgetAttributes>.request(
+                attributes: attributes,
+                content: .init(state: state, staleDate: staleDate),
+                pushType: .none
+            )
+            print("✅ Live Activity started successfully at \(activityStartTime!)")
+            print("📅 Will become stale at: \(staleDate)")
+            print("⏰ Proactive refresh scheduled in: \(timeUntilRefreshNeeded() / 3600) hours")
+        } catch {
+            print("❌ Error starting Live Activity: \(error)")
+            liveActivity = nil
+            activityStartTime = nil
+            
+            // If starting fails, it might be due to system limitations
+            // Try again after a brief delay
+            let errorString = error.localizedDescription
+            if errorString.contains("TooManyActivitiesError") || errorString.contains("ActivityLimitExceeded") {
+                print("🔄 Too many activities, cleaning up and retrying...")
+                // End all activities and retry
+                let existingActivities = Activity<LiveActivityWidgetAttributes>.activities
+                for activity in existingActivities {
+                    await activity.end(dismissalPolicy: .immediate)
+                }
+                // Wait a moment and retry
+                try? await Task.sleep(nanoseconds: 1_000_000_000) // 1 second
+                
+                do {
+                    liveActivity = try Activity<LiveActivityWidgetAttributes>.request(
+                        attributes: attributes,
+                        content: .init(state: state, staleDate: staleDate),
+                        pushType: .none
+                    )
+                    activityStartTime = Date()
+                    print("✅ Live Activity started successfully on retry")
+                } catch {
+                    print("❌ Failed to start Live Activity even after cleanup: \(error)")
+                }
             }
         }
     }
@@ -388,6 +460,39 @@ class LiveActivityManager: LiveActivityManagerProtocol {
     /// Check if the Live Activity will need refresh soon (for debugging)
     func willNeedRefreshSoon() -> Bool {
         return isApproachingDurationLimit()
+    }
+    
+    /// Reset the dismissal state flag
+    func resetDismissalState() {
+        isAppInitiatedDismissal = false
+        print("🔄 Dismissal state reset")
+    }
+    
+    /// Force clean up all existing activities and start fresh
+    func forceCleanupAndRestart(data: [String: Any]?) {
+        print("🧹 Force cleanup and restart requested")
+        
+        Task {
+            // End all existing activities
+            let existingActivities = Activity<LiveActivityWidgetAttributes>.activities
+            for activity in existingActivities {
+                print("🗑️ Force ending activity: \(activity.id)")
+                await activity.end(dismissalPolicy: .immediate)
+            }
+            
+            // Clear internal state
+            liveActivity = nil
+            activityStartTime = nil
+            
+            // Wait for clean transition
+            try? await Task.sleep(nanoseconds: 1_000_000_000) // 1 second
+            
+            // Start fresh if data provided
+            if let data = data {
+                print("🔄 Starting fresh Live Activity after cleanup")
+                await performStartLiveActivity(data: data)
+            }
+        }
     }
 }
 #endif

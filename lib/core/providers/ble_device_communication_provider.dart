@@ -209,8 +209,12 @@ class _BleDeviceCommunicationNotifier extends FamilyNotifier<dynamic, String> {
         'BLE: FRESH CO2 DATA RECEIVED: ${co2Data.value} - Delegating to LiveActivityService for unified update');
 
     try {
-      // 1. Get device name
-      final String deviceName = device?.advName ?? 'AirSpot Device';
+      // 1. Get device name (prefer alias over advertised name)
+      final BleDevice? bleDevice = ref.read(bleDeviceProvider(deviceId));
+      final String deviceName = bleDevice?.alias ??
+          device?.advName ??
+          bleDevice?.name ??
+          'AirSpot Device';
 
       // 2. Get device settings
       DeviceSettings? deviceSettings;
