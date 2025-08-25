@@ -33,7 +33,7 @@ dependencies:
   # awesome_notifications_core: ^0.10.1
   flutter_local_notifications: ^19.4.0
   # awesome_notifications: ^0.10.1
-  font_awesome_flutter: ^10.10.0
+  font_awesome_flutter: ^10.9.1
   animated_icon: ^0.0.9
   geolocator: ^14.0.2
   share_plus: ^11.1.0
