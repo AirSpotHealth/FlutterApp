@@ -165,51 +165,60 @@ struct Co2GraphView: View {
             let actualBars = min(maxBars, co2History.count)
             let emptyBars = max(0, maxBars - actualBars)
             
-            HStack(alignment: .bottom, spacing: 2) {
-                // Add empty bars on the left to push actual data to the right
-                ForEach(0..<emptyBars, id: \.self) { _ in
-                    VStack {
-                        Spacer(minLength: 0)
-                        RoundedRectangle(cornerRadius: 1)
-                            .fill(Color.clear)
-                            .frame(height: 0)
-                    }
-                    .frame(width: 6)
-                    .background(
-                        RoundedRectangle(cornerRadius: 1)
-                            .fill(Color.gray.opacity(0.3))
-                            .frame(height: maxHeight)
-                    )
-                }
-                
-                // Display actual CO2 data on the right side
-                ForEach(0..<actualBars, id: \.self) { index in
-                    let dataIndex = co2History.count - actualBars + index
-                    let value = co2History[dataIndex]
-                    let heightRatio = normalizedHeight(for: value)
-                    let barHeight = maxHeight * heightRatio
-
-                    VStack {
-                        Spacer(minLength: 0)
-                        RoundedRectangle(cornerRadius: 1)
-                            .fill(co2Color(for: value))
-                            .frame(height: barHeight)
-                    }
-                    .frame(width: 6)
-                    .background(
-                        RoundedRectangle(cornerRadius: 1)
-                            .fill(Color.gray.opacity(0.3))
-                            .frame(height: maxHeight)
-                    )
-                }
-            }
-            .frame(height: maxHeight)
-            .padding(.horizontal, 6)
-            .padding(.vertical, 4)
-            .background(
+            // Calculate dynamic bar width based on available space
+            let graphHorizontalPadding: CGFloat = 8  // 4 on each side for the graph
+            let spacing: CGFloat = 2
+            let availableWidth = geometry.size.width - graphHorizontalPadding
+            let totalSpacing = spacing * CGFloat(maxBars - 1)
+            let barWidth = (availableWidth - totalSpacing) / CGFloat(maxBars)
+            
+            ZStack {
+                // Background
                 RoundedRectangle(cornerRadius: 8)
                     .fill(Color.black.opacity(0.1))
-            )
+                
+                // Centered graph content
+                HStack(alignment: .bottom, spacing: spacing) {
+                    // Add empty bars on the left to show full timeline
+                    ForEach(0..<emptyBars, id: \.self) { _ in
+                        VStack {
+                            Spacer(minLength: 0)
+                            RoundedRectangle(cornerRadius: 1)
+                                .fill(Color.clear)
+                                .frame(height: 0)
+                        }
+                        .frame(width: barWidth)
+                        .background(
+                            RoundedRectangle(cornerRadius: 1)
+                                .fill(Color.gray.opacity(0.3))
+                                .frame(height: maxHeight - 8)
+                        )
+                    }
+                    
+                    // Display actual CO2 data on the right side
+                    ForEach(0..<actualBars, id: \.self) { index in
+                        let dataIndex = co2History.count - actualBars + index
+                        let value = co2History[dataIndex]
+                        let heightRatio = normalizedHeight(for: value)
+                        let barHeight = (maxHeight - 8) * heightRatio
+
+                        VStack {
+                            Spacer(minLength: 0)
+                            RoundedRectangle(cornerRadius: 1)
+                                .fill(co2Color(for: value))
+                                .frame(height: barHeight)
+                        }
+                        .frame(width: barWidth)
+                        .background(
+                            RoundedRectangle(cornerRadius: 1)
+                                .fill(Color.gray.opacity(0.3))
+                                .frame(height: maxHeight - 8)
+                        )
+                    }
+                }
+                .padding(.horizontal, 4)
+                .padding(.vertical, 4)
+            }
         }
         .frame(height: 70)
 

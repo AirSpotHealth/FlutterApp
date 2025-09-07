@@ -111,6 +111,42 @@ class DataGraphWidget extends ConsumerStatefulWidget {
 
     return 0; // Fallback
   }
+
+  // Calculate the "1 in X breaths" value from CO2 level
+  static int? calculateOneInXBreaths(num co2Value) {
+    // For values below first entry
+    if (co2Value <= rebreatheTable[0].co2) return null;
+
+    // Find the appropriate interval in the table
+    for (int i = 0; i < rebreatheTable.length - 1; i++) {
+      if (co2Value >= rebreatheTable[i].co2 &&
+          co2Value < rebreatheTable[i + 1].co2) {
+        final co2Lower = rebreatheTable[i].co2;
+        final co2Upper = rebreatheTable[i + 1].co2;
+        final breathsLower = rebreatheTable[i].oneInXBreaths;
+        final breathsUpper = rebreatheTable[i + 1].oneInXBreaths;
+
+        // If either value is null, use the non-null one
+        if (breathsLower == null) return breathsUpper;
+        if (breathsUpper == null) return breathsLower;
+
+        // Linear interpolation between points
+        final interpolated = breathsLower +
+            (co2Value - co2Lower) *
+                (breathsUpper - breathsLower) /
+                (co2Upper - co2Lower);
+
+        return interpolated.round();
+      }
+    }
+
+    // For values above last entry
+    if (co2Value >= rebreatheTable.last.co2) {
+      return rebreatheTable.last.oneInXBreaths;
+    }
+
+    return null; // Fallback
+  }
 }
 
 class _DataGraphWidgetState extends ConsumerState<DataGraphWidget> {
@@ -207,13 +243,58 @@ class _DataGraphWidgetState extends ConsumerState<DataGraphWidget> {
         : ((hours < 10 ? '0' : '') + hours + ':' + (minutes < 10 ? '0' : '') + minutes + ':' + (seconds < 10 ? '0' : '') + seconds);
       
       var result = date.toLocaleDateString() + ' ' + timeStr + '<br/>';
+      var co2Value = null;
       
+      // Helper function to calculate "1 in X breaths" from CO2 value
+      function calculateOneInXBreaths(co2Val) {
+        var rebreatheTable = ${jsonEncode(rebreatheTable.map((r) => {
+              'co2': r.co2,
+              'rebreathed': r.rebreathed,
+              'oneInXBreaths': r.oneInXBreaths
+            }).toList())};
+        
+        if (co2Val <= rebreatheTable[0].co2) return null;
+        
+        for (var i = 0; i < rebreatheTable.length - 1; i++) {
+          if (co2Val >= rebreatheTable[i].co2 && co2Val < rebreatheTable[i + 1].co2) {
+            var co2Lower = rebreatheTable[i].co2;
+            var co2Upper = rebreatheTable[i + 1].co2;
+            var breathsLower = rebreatheTable[i].oneInXBreaths;
+            var breathsUpper = rebreatheTable[i + 1].oneInXBreaths;
+
+            if (breathsLower === null) return breathsUpper;
+            if (breathsUpper === null) return breathsLower;
+
+            var interpolated = breathsLower + (co2Val - co2Lower) * (breathsUpper - breathsLower) / (co2Upper - co2Lower);
+            return Math.round(interpolated);
+          }
+        }
+
+        if (co2Val >= rebreatheTable[rebreatheTable.length - 1].co2) {
+          return rebreatheTable[rebreatheTable.length - 1].oneInXBreaths;
+        }
+        return null;
+      }
+      
+      // First pass: find CO2 value
       for (var i = 0; i < params.length; i++) {
         var param = params[i];
         if (param.seriesName === 'CO₂') {
+          co2Value = param.value[1];
           result += 'CO₂: ' + param.value[1] + ' ppm<br/>';
-        } else if (param.seriesName === 'Rebreathed Air' && param.value[1] != null) {
+          break;
+        }
+      }
+      
+      // Second pass: handle other series
+      for (var i = 0; i < params.length; i++) {
+        var param = params[i];
+        if (param.seriesName === 'Rebreathed Air' && param.value[1] != null) {
+          var oneInX = co2Value ? calculateOneInXBreaths(co2Value) : null;
           result += 'Rebreathed: ' + param.value[1].toFixed(1) + '%';
+          if (oneInX && oneInX > 0) {
+            result += ' (1 in ' + oneInX + ')';
+          }
         }
       }
       
@@ -311,7 +392,29 @@ class _DataGraphWidgetState extends ConsumerState<DataGraphWidget> {
       max: $maxRebreathePercentage,
       interval: ${maxRebreathePercentage <= 6 ? 1 : 2},
       axisLabel: {
-        formatter: '{value}%'
+        formatter: function(value) {
+          // Find corresponding "1 in X" value for this percentage
+          var rebreatheTable = ${jsonEncode(rebreatheTable.map((r) => {
+                  'co2': r.co2,
+                  'rebreathed': r.rebreathed,
+                  'oneInXBreaths': r.oneInXBreaths
+                }).toList())};
+          
+          var oneInX = null;
+          // Find the closest match in the table
+          for (var i = 0; i < rebreatheTable.length; i++) {
+            if (Math.abs(rebreatheTable[i].rebreathed - value) < 0.1) {
+              oneInX = rebreatheTable[i].oneInXBreaths;
+              break;
+            }
+          }
+          
+          if (oneInX && value > 0) {
+            return value + '% (1 in ' + oneInX + ')';
+          }
+          return value + '%';
+        },
+        fontSize: 10
       }
     }''' : ''}
   ],
@@ -328,7 +431,7 @@ class _DataGraphWidgetState extends ConsumerState<DataGraphWidget> {
   ],
   grid: {
     left: 40,
-    right: ${settings.showRebreathePercentage ? '40' : '20'},
+    right: ${settings.showRebreathePercentage ? '80' : '20'},
     top: 50,
     bottom: ${settings.showZoomSlider ? 80 : 50}
   },

@@ -35,7 +35,7 @@ class GraphSettingsWidget extends ConsumerWidget {
               () => ref.read(graphSettingsProvider.notifier).setSettings(
                   settings.copyWith(showMarkLines: !settings.showMarkLines))),
           _buildPopupMenuItem(
-              'Rebreathed %',
+              'Breaths from Others',
               settings.showRebreathePercentage,
               () => ref.read(graphSettingsProvider.notifier).setSettings(
                   settings.copyWith(
