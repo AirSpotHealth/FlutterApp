@@ -29,6 +29,8 @@ import org.json.JSONObject;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.HashMap;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Locale;
@@ -36,19 +38,25 @@ import java.util.Locale;
 import es.antonborri.home_widget.HomeWidgetPlugin;
 
 /**
- * Foreground Service that displays a persistent notification with real-time CO2 data
- * Similar to iOS Live Activity functionality
+ * Foreground Service that displays persistent notifications with real-time CO2 data for multiple devices
+ * Similar to iOS Live Activity functionality - supports up to 3 devices
  */
 public class ForegroundNotificationService extends Service {
 
     private static final String TAG = "ForegroundNotificationService";
-    private static final int NOTIFICATION_ID = 1001;
+    private static final int BASE_NOTIFICATION_ID = 1001;
+    private static final int MAX_DEVICES = 3;
     private static final String CHANNEL_ID = "CO2_MONITORING_CHANNEL";
     private static final String WIDGET_DATA_KEY = "widget_data_json";
     private static final String ACTION_NOTIFICATION_DISMISSED = "com.air.spot.airspothealth.NOTIFICATION_DISMISSED";
 
     private NotificationManager notificationManager;
     private boolean isServiceRunning = false;
+    
+    // Track active device notifications (max 3)
+    private final Map<String, Integer> deviceNotificationIds = new HashMap<>();
+    private final Map<String, JSONObject> deviceData = new HashMap<>();
+    private int nextNotificationId = BASE_NOTIFICATION_ID;
 
     // Broadcast receiver for notification dismissal
     private BroadcastReceiver dismissalReceiver = new BroadcastReceiver() {
@@ -112,6 +120,59 @@ public class ForegroundNotificationService extends Service {
                 Intent broadcastIntent = new Intent("com.air.spot.airspothealth.REFRESH_DATA");
                 sendBroadcast(broadcastIntent);
                 return START_STICKY;
+            } else if ("ADD_DEVICE_NOTIFICATION".equals(action)) {
+                Log.d(TAG, "Received ADD_DEVICE_NOTIFICATION action");
+                String deviceId = intent.getStringExtra("deviceId");
+                String dataJson = intent.getStringExtra("data");
+                if (deviceId != null && dataJson != null) {
+                    try {
+                        JSONObject data = new JSONObject(dataJson);
+                        addDeviceNotification(deviceId, data);
+                    } catch (JSONException e) {
+                        Log.e(TAG, "Error parsing device data JSON: " + e.getMessage());
+                    }
+                }
+                return START_STICKY;
+            } else if ("UPDATE_DEVICE_NOTIFICATION".equals(action)) {
+                Log.d(TAG, "Received UPDATE_DEVICE_NOTIFICATION action");
+                String deviceId = intent.getStringExtra("deviceId");
+                String dataJson = intent.getStringExtra("data");
+                if (deviceId != null) {
+                    // If service is not running, start it first
+                    if (!isServiceRunning) {
+                        Log.d(TAG, "Service not running, starting foreground service first");
+                        startForegroundService();
+                    }
+                    
+                    if (dataJson != null) {
+                        try {
+                            JSONObject data = new JSONObject(dataJson);
+                            deviceData.put(deviceId, data);
+                            Log.d(TAG, "Updated device data for: " + deviceId);
+                            
+                            // If device is not tracked yet, add it
+                            if (!deviceNotificationIds.containsKey(deviceId)) {
+                                Log.d(TAG, "Device not tracked yet, adding notification for: " + deviceId);
+                                addDeviceNotification(deviceId, data);
+                            } else {
+                                updateDeviceNotification(deviceId, deviceNotificationIds.get(deviceId));
+                            }
+                        } catch (JSONException e) {
+                            Log.e(TAG, "Error parsing device data JSON: " + e.getMessage());
+                        }
+                    } else {
+                        // If no data provided, just try to update existing notification
+                        updateDeviceNotification(deviceId, deviceNotificationIds.get(deviceId));
+                    }
+                }
+                return START_STICKY;
+            } else if ("REMOVE_DEVICE_NOTIFICATION".equals(action)) {
+                Log.d(TAG, "Received REMOVE_DEVICE_NOTIFICATION action");
+                String deviceId = intent.getStringExtra("deviceId");
+                if (deviceId != null) {
+                    removeDeviceNotification(deviceId);
+                }
+                return START_STICKY;
             }
         }
 
@@ -169,31 +230,17 @@ public class ForegroundNotificationService extends Service {
         Log.d(TAG, "startForegroundService called, isServiceRunning: " + isServiceRunning);
         if (!isServiceRunning) {
             try {
-                Log.d(TAG, "Creating notification...");
-
-                Notification notification = createNotification();
-                if (notification == null) {
-                    Log.w(TAG, "Failed to create notification, using fallback");
-                    notification = createFallbackNotification();
-                }
-
-                Log.d(TAG, "Notification created, starting foreground...");
-                startForeground(NOTIFICATION_ID, notification);
+                Log.d(TAG, "Starting foreground service for multiple devices...");
+                
+                // Start with a basic service notification
+                Notification serviceNotification = createServiceNotification();
+                startForeground(BASE_NOTIFICATION_ID, serviceNotification);
                 isServiceRunning = true;
-                Log.d(TAG, "Foreground service started with notification");
+                Log.d(TAG, "Foreground service started with service notification");
             } catch (Exception e) {
                 Log.e(TAG, "Error starting foreground service: " + e.getMessage(), e);
-                // Always call startForeground to avoid ANR, even with a basic notification
-                try {
-                    Notification fallbackNotification = createFallbackNotification();
-                    startForeground(NOTIFICATION_ID, fallbackNotification);
-                    isServiceRunning = true;
-                    Log.d(TAG, "Foreground service started with fallback notification");
-                } catch (Exception fallbackException) {
-                    Log.e(TAG, "Failed to start foreground service even with fallback: " + fallbackException.getMessage());
-                    isServiceRunning = false;
-                    stopSelf(); // Stop the service if we can't start it properly
-                }
+                isServiceRunning = false;
+                stopSelf();
             }
         } else {
             Log.d(TAG, "Service already running, skipping start");
@@ -210,32 +257,94 @@ public class ForegroundNotificationService extends Service {
     }
 
     public void updateNotification() {
-        Log.d(TAG, "updateNotification called, isServiceRunning: " + isServiceRunning);
+        Log.d(TAG, "updateNotification called - updating all device notifications");
         if (isServiceRunning) {
-            try {
-                Log.d(TAG, "Creating updated notification...");
-                Notification notification = createNotification();
-                if (notification == null) {
-                    Log.w(TAG, "Failed to create notification, using fallback");
-                    notification = createFallbackNotification();
-                }
-                Log.d(TAG, "Updating existing notification...");
-                notificationManager.notify(NOTIFICATION_ID, notification);
-                Log.d(TAG, "Notification updated successfully");
-            } catch (Exception e) {
-                Log.e(TAG, "Error updating notification: " + e.getMessage(), e);
-                // If update fails, try to restart the service
-                try {
-                    Log.d(TAG, "Attempting to restart service after update failure");
-                    stopForegroundService();
-                    startForegroundService();
-                } catch (Exception restartError) {
-                    Log.e(TAG, "Failed to restart service: " + restartError.getMessage(), restartError);
-                }
+            for (Map.Entry<String, Integer> entry : deviceNotificationIds.entrySet()) {
+                String deviceId = entry.getKey();
+                Integer notificationId = entry.getValue();
+                updateDeviceNotification(deviceId, notificationId);
             }
         } else {
-            Log.d(TAG, "Service not running, starting service to show notification");
-            startForegroundService();
+            Log.w(TAG, "Cannot update notifications - service not running");
+        }
+    }
+    
+    public void updateDeviceNotification(String deviceId, int notificationId) {
+        Log.d(TAG, "updateDeviceNotification called for device: " + deviceId);
+        if (isServiceRunning && deviceNotificationIds.containsKey(deviceId)) {
+            try {
+                Notification notification = createDeviceNotification(deviceId);
+                if (notification != null) {
+                    notificationManager.notify(notificationId, notification);
+                    Log.d(TAG, "Device notification updated successfully for: " + deviceId);
+                } else {
+                    Log.w(TAG, "Failed to create notification for device: " + deviceId);
+                }
+            } catch (Exception e) {
+                Log.e(TAG, "Error updating device notification for " + deviceId + ": " + e.getMessage(), e);
+            }
+        } else {
+            Log.w(TAG, "Cannot update notification for device " + deviceId + " - service not running or device not tracked");
+        }
+    }
+    
+    public void addDeviceNotification(String deviceId, JSONObject data) {
+        Log.d(TAG, "addDeviceNotification called for device: " + deviceId);
+        
+        // Check if we've reached the maximum number of devices
+        if (deviceNotificationIds.size() >= MAX_DEVICES) {
+            Log.w(TAG, "Maximum number of devices (" + MAX_DEVICES + ") reached, cannot add device: " + deviceId);
+            return;
+        }
+        
+        // Check if device already has a notification
+        if (deviceNotificationIds.containsKey(deviceId)) {
+            Log.d(TAG, "Device " + deviceId + " already has a notification, updating instead");
+            updateDeviceNotification(deviceId, deviceNotificationIds.get(deviceId));
+            return;
+        }
+        
+        try {
+            // Store device data
+            deviceData.put(deviceId, data);
+            
+            // Assign notification ID
+            int notificationId = nextNotificationId++;
+            deviceNotificationIds.put(deviceId, notificationId);
+            
+            // Create and show notification
+            Notification notification = createDeviceNotification(deviceId);
+            if (notification != null) {
+                notificationManager.notify(notificationId, notification);
+                Log.d(TAG, "Device notification added successfully for: " + deviceId + " with ID: " + notificationId);
+            } else {
+                Log.w(TAG, "Failed to create notification for device: " + deviceId);
+                // Clean up if notification creation failed
+                deviceNotificationIds.remove(deviceId);
+                deviceData.remove(deviceId);
+            }
+        } catch (Exception e) {
+            Log.e(TAG, "Error adding device notification for " + deviceId + ": " + e.getMessage(), e);
+        }
+    }
+    
+    public void removeDeviceNotification(String deviceId) {
+        Log.d(TAG, "removeDeviceNotification called for device: " + deviceId);
+        
+        if (deviceNotificationIds.containsKey(deviceId)) {
+            int notificationId = deviceNotificationIds.get(deviceId);
+            notificationManager.cancel(notificationId);
+            deviceNotificationIds.remove(deviceId);
+            deviceData.remove(deviceId);
+            Log.d(TAG, "Device notification removed for: " + deviceId);
+            
+            // If no more device notifications, stop the service
+            if (deviceNotificationIds.isEmpty()) {
+                Log.d(TAG, "No more device notifications, stopping service");
+                stopForegroundService();
+            }
+        } else {
+            Log.w(TAG, "Device " + deviceId + " not found in active notifications");
         }
     }
 
@@ -337,6 +446,123 @@ public class ForegroundNotificationService extends Service {
         NotificationCompat.Builder builder = new NotificationCompat.Builder(this, CHANNEL_ID).setSmallIcon(R.drawable.ic_launcher_foreground).setContentTitle("AirSpot CO2 Monitor").setContentText("CO2 monitoring active").setOngoing(true).setPriority(NotificationCompat.PRIORITY_MAX).setVisibility(NotificationCompat.VISIBILITY_PUBLIC).setCategory(NotificationCompat.CATEGORY_SERVICE).setContentIntent(openAppPendingIntent).setAutoCancel(false).setShowWhen(false).setOnlyAlertOnce(true).setLocalOnly(false).setDefaults(0);
 
         return builder.build();
+    }
+    
+    private Notification createServiceNotification() {
+        Log.d(TAG, "createServiceNotification called");
+        
+        // Create open app intent
+        Intent openAppIntent = new Intent(this, MainActivity.class);
+        openAppIntent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TOP);
+        PendingIntent openAppPendingIntent = PendingIntent.getActivity(this, 0, openAppIntent, PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
+        
+        // Create a simple service notification
+        NotificationCompat.Builder builder = new NotificationCompat.Builder(this, CHANNEL_ID)
+                .setSmallIcon(R.drawable.ic_launcher_foreground)
+                .setContentTitle("AirSpot CO2 Monitor")
+                .setContentText("Monitoring multiple devices")
+                .setOngoing(true)
+                .setPriority(NotificationCompat.PRIORITY_LOW)
+                .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
+                .setCategory(NotificationCompat.CATEGORY_SERVICE)
+                .setContentIntent(openAppPendingIntent)
+                .setAutoCancel(false)
+                .setShowWhen(false)
+                .setOnlyAlertOnce(true)
+                .setLocalOnly(false)
+                .setDefaults(0);
+        
+        return builder.build();
+    }
+    
+    private Notification createDeviceNotification(String deviceId) {
+        Log.d(TAG, "createDeviceNotification called for device: " + deviceId);
+        
+        JSONObject deviceDataObj = deviceData.get(deviceId);
+        if (deviceDataObj == null) {
+            Log.w(TAG, "No data found for device: " + deviceId);
+            return createFallbackNotification();
+        }
+        
+        try {
+            // Extract data with fallbacks
+            String co2Value = String.valueOf(deviceDataObj.optInt("co2Value", 0));
+            if (co2Value.equals("0")) co2Value = "----";
+            
+            int co2IntValue = deviceDataObj.optInt("co2Value", 0);
+            String deviceName = deviceDataObj.optString("deviceName", "AirSpot Device");
+            String powerMode = deviceDataObj.optString("powerMode", "Now");
+            String batteryLevel = String.valueOf(deviceDataObj.optInt("batteryLevel", 0));
+            boolean isCharging = deviceDataObj.optBoolean("isCharging", false);
+            boolean alarmEnabled = deviceDataObj.optBoolean("alarmEnabled", false);
+            boolean vibrationEnabled = deviceDataObj.optBoolean("vibrationEnabled", false);
+            boolean isConnected = deviceDataObj.optBoolean("isConnected", true);
+            boolean isRefreshing = deviceDataObj.optBoolean("isRefreshing", false);
+            
+            // Parse CO2 history
+            List<Integer> co2History = new ArrayList<>();
+            JSONArray historyArray = deviceDataObj.optJSONArray("co2History");
+            if (historyArray != null) {
+                for (int i = 0; i < historyArray.length(); i++) {
+                    co2History.add(historyArray.optInt(i, 0));
+                }
+            }
+            
+            int greenUpperLimit = deviceDataObj.optInt("greenUpperLimit", 1000);
+            int yellowUpperLimit = deviceDataObj.optInt("yellowUpperLimit", 1200);
+            int graphMaxValue = deviceDataObj.optInt("graphMaxValue", 1600);
+            int graphMinValue = deviceDataObj.optInt("graphMinValue", 0);
+            
+            // Format custom timestamp
+            String customTimestamp = "at " + new SimpleDateFormat("h:mm a", Locale.getDefault()).format(new Date());
+            
+            // Create open app intent
+            Intent openAppIntent = new Intent(this, MainActivity.class);
+            openAppIntent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TOP);
+            PendingIntent openAppPendingIntent = PendingIntent.getActivity(this, 0, openAppIntent, PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
+            
+            // Create our custom expanded layout
+            RemoteViews expandedLayout = createNotificationLayout(co2Value, true, powerMode, batteryLevel, isCharging, alarmEnabled, vibrationEnabled, co2History, greenUpperLimit, yellowUpperLimit, graphMaxValue, graphMinValue, deviceId, deviceName, isConnected, isRefreshing);
+            RemoteViews compactLayout = createNotificationLayout(co2Value, false, powerMode, batteryLevel, isCharging, alarmEnabled, vibrationEnabled, co2History, greenUpperLimit, yellowUpperLimit, graphMaxValue, graphMinValue, deviceId, deviceName, isConnected, isRefreshing);
+            
+            // Create delete intent for dismissal detection
+            Intent deleteIntent = new Intent(ACTION_NOTIFICATION_DISMISSED);
+            deleteIntent.putExtra("deviceId", deviceId);
+            PendingIntent deletePendingIntent = PendingIntent.getBroadcast(this, deviceId.hashCode(), deleteIntent, PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
+            
+            // Create the notification
+            NotificationCompat.Builder builder = new NotificationCompat.Builder(this, CHANNEL_ID)
+                    .setSmallIcon(R.drawable.ic_launcher_foreground)
+                    .setContentTitle(deviceName + " - " + co2Value + " ppm")
+                    .setContentText(customTimestamp)
+                    .setOngoing(true)
+                    .setPriority(NotificationCompat.PRIORITY_MAX)
+                    .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
+                    .setCategory(NotificationCompat.CATEGORY_SERVICE)
+                    .setContentIntent(openAppPendingIntent)
+                    .setAutoCancel(false)
+                    .setShowWhen(false)
+                    .setOnlyAlertOnce(true)
+                    .setLocalOnly(false)
+                    .setDefaults(0)
+                    .setCustomBigContentView(expandedLayout)
+                    .setCustomContentView(compactLayout)
+                    .setDeleteIntent(deletePendingIntent);
+            
+            // Add refresh action
+            Intent refreshIntent = new Intent(this, ForegroundNotificationService.class);
+            refreshIntent.setAction("REFRESH_DATA");
+            refreshIntent.putExtra("deviceId", deviceId);
+            PendingIntent refreshPendingIntent = PendingIntent.getService(this, deviceId.hashCode() + 1000, refreshIntent, PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
+            builder.addAction(R.drawable.ic_refresh, "Refresh", refreshPendingIntent);
+            
+            Log.d(TAG, "Device notification created successfully for: " + deviceId);
+            return builder.build();
+            
+        } catch (Exception e) {
+            Log.e(TAG, "Error creating device notification for " + deviceId + ": " + e.getMessage(), e);
+            return createFallbackNotification();
+        }
     }
 
     private RemoteViews createNotificationLayout(String co2Value, boolean isExpanded, String powerMode, String batteryLevel, boolean isCharging, boolean alarmEnabled, boolean vibrationEnabled, List<Integer> co2History, int greenUpperLimit, int yellowUpperLimit, int graphMaxValue, int graphMinValue, String deviceId, String deviceName, boolean isConnected, boolean isRefreshing) {
@@ -621,6 +847,36 @@ public class ForegroundNotificationService extends Service {
             }
         }
         return false;
+    }
+    
+    public static void addDeviceNotification(Context context, String deviceId, Map<String, Object> data) {
+        Intent intent = new Intent(context, ForegroundNotificationService.class);
+        intent.setAction("ADD_DEVICE_NOTIFICATION");
+        intent.putExtra("deviceId", deviceId);
+        intent.putExtra("data", new JSONObject(data).toString());
+        context.startService(intent);
+    }
+    
+    public static void updateDeviceNotification(Context context, String deviceId, Map<String, Object> data) {
+        Intent intent = new Intent(context, ForegroundNotificationService.class);
+        intent.setAction("UPDATE_DEVICE_NOTIFICATION");
+        intent.putExtra("deviceId", deviceId);
+        if (data != null) {
+            try {
+                JSONObject jsonData = new JSONObject(data);
+                intent.putExtra("data", jsonData.toString());
+            } catch (Exception e) {
+                Log.e(TAG, "Error converting data to JSON: " + e.getMessage());
+            }
+        }
+        context.startService(intent);
+    }
+    
+    public static void removeDeviceNotification(Context context, String deviceId) {
+        Intent intent = new Intent(context, ForegroundNotificationService.class);
+        intent.setAction("REMOVE_DEVICE_NOTIFICATION");
+        intent.putExtra("deviceId", deviceId);
+        context.startService(intent);
     }
 
 }

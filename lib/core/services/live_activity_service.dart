@@ -90,8 +90,9 @@ class LiveActivityService {
   // Unified map of device callbacks using wrapper model
   final Map<String, DeviceCallbacks> _deviceCallbacks = {};
 
-  // Track which device currently has active Live Activity
-  String? _activeDeviceId;
+  // Track which devices currently have active Live Activities (max 3)
+  final Set<String> _activeDeviceIds = <String>{};
+  static const int maxActiveDevices = 3;
 
   // Store the last Live Activity data for each device
   final Map<String, LiveActivityModel> _lastLiveActivityData = {};
@@ -122,83 +123,76 @@ class LiveActivityService {
   }
 
   void _handleRefreshRequest() {
-    // If we know which device has active Live Activity, refresh that one
-    if (_activeDeviceId != null &&
-        _deviceCallbacks.containsKey(_activeDeviceId)) {
-      final refreshCallback =
-          _deviceCallbacks[_activeDeviceId]?.refreshCallback;
-      if (refreshCallback != null) {
-        debugPrint('Refreshing active Live Activity device: $_activeDeviceId');
-        refreshCallback.call();
-
-        updateLiveActivity(
-            data: _lastLiveActivityData[_activeDeviceId]!.copyWith(
-          isRefreshing: true,
-        ));
-        return;
-      }
-    }
-
-    // Fallback: refresh all registered devices
+    // Refresh all active devices
     debugPrint(
-        'Refreshing all registered devices (${_deviceCallbacks.length} devices)');
-    for (final entry in _deviceCallbacks.entries) {
-      entry.value.refreshCallback?.call();
+        'Refreshing all active Live Activity devices (${_activeDeviceIds.length} devices)');
+
+    for (final deviceId in _activeDeviceIds) {
+      if (_deviceCallbacks.containsKey(deviceId)) {
+        final refreshCallback = _deviceCallbacks[deviceId]?.refreshCallback;
+        if (refreshCallback != null) {
+          debugPrint('Refreshing Live Activity device: $deviceId');
+          refreshCallback.call();
+
+          // Update the specific device's Live Activity with refreshing state
+          final deviceData = _lastLiveActivityData[deviceId];
+          if (deviceData != null) {
+            _updateDeviceLiveActivity(
+              deviceId: deviceId,
+              data: deviceData.copyWith(isRefreshing: true),
+            );
+          }
+        }
+      }
     }
   }
 
   void _handleDismissalEvent(String? deviceId) {
     debugPrint('🚫 Processing dismissal event...');
     debugPrint('🆔 Device ID parameter: $deviceId');
-    debugPrint('🎯 Current active device: $_activeDeviceId');
+    debugPrint('🎯 Current active devices: ${_activeDeviceIds.toList()}');
     debugPrint('📋 Registered callbacks: ${_deviceCallbacks.keys.toList()}');
     debugPrint('📊 Total callback devices: ${_deviceCallbacks.length}');
 
-    // Use active device if no specific device provided
-    final targetDeviceId = deviceId ?? _activeDeviceId;
-    debugPrint('🎯 Target device for dismissal: $targetDeviceId');
-
-    if (targetDeviceId != null &&
-        _deviceCallbacks.containsKey(targetDeviceId)) {
-      final dismissalCallback =
-          _deviceCallbacks[targetDeviceId]?.dismissalCallback;
+    if (deviceId != null && _deviceCallbacks.containsKey(deviceId)) {
+      // Specific device dismissal
+      final dismissalCallback = _deviceCallbacks[deviceId]?.dismissalCallback;
       debugPrint(
           '🔄 Found callback for target device: ${dismissalCallback != null}');
 
       if (dismissalCallback != null) {
-        debugPrint('✅ Calling dismissal callback for device: $targetDeviceId');
-        dismissalCallback.call(targetDeviceId);
+        debugPrint('✅ Calling dismissal callback for device: $deviceId');
+        dismissalCallback.call(deviceId);
 
-        // Clear active device when dismissed
-        _activeDeviceId = null;
-        debugPrint('🗑️ Cleared active device');
+        // Remove from active devices and clear data
+        _activeDeviceIds.remove(deviceId);
+        _lastLiveActivityData.remove(deviceId);
+        debugPrint('🗑️ Removed device from active devices: $deviceId');
         return;
       } else {
-        debugPrint(
-            '⚠️ No dismissal callback registered for device: $targetDeviceId');
+        debugPrint('⚠️ No dismissal callback registered for device: $deviceId');
       }
+    } else if (deviceId == null) {
+      // No specific device - dismiss all active devices
+      debugPrint(
+          '🔄 Dismissing all active devices (${_activeDeviceIds.length} devices)');
+      for (final activeDeviceId in _activeDeviceIds.toList()) {
+        if (_deviceCallbacks.containsKey(activeDeviceId)) {
+          final dismissalCallback =
+              _deviceCallbacks[activeDeviceId]?.dismissalCallback;
+          if (dismissalCallback != null) {
+            debugPrint(
+                '✅ Calling dismissal callback for device: $activeDeviceId');
+            dismissalCallback.call(activeDeviceId);
+          }
+        }
+        _lastLiveActivityData.remove(activeDeviceId);
+      }
+      _activeDeviceIds.clear();
+      debugPrint('🗑️ Cleared all active devices');
     } else {
-      debugPrint('⚠️ Target device not found in callbacks or is null');
+      debugPrint('⚠️ Target device not found in callbacks: $deviceId');
     }
-
-    // Fallback: call dismissal for all registered devices
-    debugPrint(
-        '🔄 Fallback: calling dismissal for all ${_deviceCallbacks.length} registered devices');
-    int callbacksInvoked = 0;
-    for (final entry in _deviceCallbacks.entries) {
-      if (entry.value.dismissalCallback != null) {
-        debugPrint('✅ Calling dismissal callback for device: ${entry.key}');
-        entry.value.dismissalCallback?.call(entry.key);
-        callbacksInvoked++;
-      } else {
-        debugPrint('⚠️ No dismissal callback for device: ${entry.key}');
-      }
-    }
-    debugPrint('📊 Total dismissal callbacks invoked: $callbacksInvoked');
-
-    // Clear active device when dismissed
-    _activeDeviceId = null;
-    debugPrint('🗑️ Cleared active device');
   }
 
   // Set the callback for refresh requests for a specific device
@@ -226,9 +220,7 @@ class LiveActivityService {
         _deviceCallbacks.remove(deviceId);
       }
 
-      if (_activeDeviceId == deviceId) {
-        _activeDeviceId = null;
-      }
+      _activeDeviceIds.remove(deviceId);
     }
     debugPrint('Live Activity refresh callback cleared for device: $deviceId');
   }
@@ -253,9 +245,8 @@ class LiveActivityService {
       _deviceCallbacks[deviceId]!.clear();
       _deviceCallbacks.remove(deviceId);
 
-      if (_activeDeviceId == deviceId) {
-        _activeDeviceId = null;
-      }
+      _activeDeviceIds.remove(deviceId);
+      _lastLiveActivityData.remove(deviceId);
     }
     debugPrint('All Live Activity callbacks cleared for device: $deviceId');
   }
@@ -285,7 +276,7 @@ class LiveActivityService {
   /// Print debug information about all registered callbacks
   void debugPrintCallbackStatus() {
     debugPrint('=== Live Activity Callback Status ===');
-    debugPrint('Active device: $_activeDeviceId');
+    debugPrint('Active devices: ${_activeDeviceIds.toList()}');
     debugPrint('Total devices with callbacks: ${_deviceCallbacks.length}');
 
     for (final entry in _deviceCallbacks.entries) {
@@ -328,32 +319,119 @@ class LiveActivityService {
     clearDeviceRefreshCallback('default');
   }
 
-  // Set the active device (called when updating Live Activity)
-  void setActiveDevice(String deviceId) {
-    _activeDeviceId = deviceId;
-    debugPrint('Active Live Activity device set to: $deviceId');
+  // Get all currently active devices
+  Set<String> getActiveDevices() {
+    return Set.from(_activeDeviceIds);
   }
 
-  // Get the currently active device
-  String? getActiveDevice() {
-    return _activeDeviceId;
+  // Check if a specific device is active
+  bool isDeviceActive(String deviceId) {
+    return _activeDeviceIds.contains(deviceId);
+  }
+
+  // Get the number of active devices
+  int getActiveDeviceCount() {
+    return _activeDeviceIds.length;
+  }
+
+  // Check if we can add more devices
+  bool canAddMoreDevices() {
+    return _activeDeviceIds.length < maxActiveDevices;
   }
 
   Future<void> updateLiveActivity(
       {required LiveActivityModel data, String? deviceId}) async {
+    if (deviceId != null) {
+      await _updateDeviceLiveActivity(deviceId: deviceId, data: data);
+    } else {
+      // Legacy single device support
+      await _updateSingleDeviceLiveActivity(data: data);
+    }
+  }
+
+  Future<void> _updateDeviceLiveActivity({
+    required String deviceId,
+    required LiveActivityModel data,
+  }) async {
     try {
       debugPrint(
-          'Live Activity update requested${deviceId != null ? ' for device: $deviceId' : ''} with connection: ${data.isConnected}');
+          'Live Activity update requested for device: $deviceId with connection: ${data.isConnected}');
 
-      // Store the data regardless of device settings for potential future use
-      if (deviceId != null) {
-        _lastLiveActivityData[deviceId] = data;
+      // Store the data
+      _lastLiveActivityData[deviceId] = data;
+
+      // Check if we can add this device (max 3 devices)
+      if (_activeDeviceIds.length >= maxActiveDevices &&
+          !_activeDeviceIds.contains(deviceId)) {
+        debugPrint(
+            'Maximum number of active devices ($maxActiveDevices) reached, cannot add device: $deviceId');
+        return;
       }
 
-      // Track which device is updating the Live Activity
-      if (deviceId != null) {
-        setActiveDevice(deviceId);
+      // Check if device already has a notification (update vs add)
+      final isNewDevice = !_activeDeviceIds.contains(deviceId);
+
+      // Add device to active devices
+      _activeDeviceIds.add(deviceId);
+
+      // Update Android home widget
+      _updateAndroidHomeWidget(data).ignore();
+
+      // Update the specific device's Live Activity
+      if (Platform.isAndroid) {
+        if (isNewDevice) {
+          // Add new notification
+          await platform.invokeMethod('addDeviceNotification', {
+            'deviceId': deviceId,
+            'data': data.toJson(),
+          });
+        } else {
+          // Update existing notification with new data
+          await platform.invokeMethod('updateDeviceNotification', {
+            'deviceId': deviceId,
+            'data': data.toJson(),
+          });
+        }
+      } else if (Platform.isIOS) {
+        await platform.invokeMethod('updateLiveActivity', data.toJson());
       }
+
+      debugPrint(
+          'Live Activity updated successfully for device: $deviceId - Connection: ${data.isConnected ? "Connected" : "Disconnected"}');
+    } on PlatformException catch (e) {
+      debugPrint(
+          "Failed to update live activity for device $deviceId: '${e.message}'.");
+
+      // If update fails and device is disconnected, ensure we still show disconnected state
+      if (!data.isConnected) {
+        debugPrint(
+            "Update failed for disconnected device, attempting to restart Live Activity with disconnected state");
+        try {
+          if (Platform.isAndroid) {
+            await platform.invokeMethod('addDeviceNotification', {
+              'deviceId': deviceId,
+              'data': data.toJson(),
+            });
+          } else if (Platform.isIOS) {
+            await platform.invokeMethod('startLiveActivity', data.toJson());
+          }
+        } catch (retryError) {
+          debugPrint(
+              "Failed to restart Live Activity with disconnected state: $retryError");
+        }
+      }
+    } catch (e) {
+      debugPrint(
+          "Unexpected error updating live activity for device $deviceId: $e");
+    }
+  }
+
+  Future<void> _updateSingleDeviceLiveActivity(
+      {required LiveActivityModel data}) async {
+    try {
+      debugPrint(
+          'Live Activity update requested (legacy single device) with connection: ${data.isConnected}');
+
       _updateAndroidHomeWidget(data).ignore();
 
       await platform.invokeMethod(
@@ -361,22 +439,9 @@ class LiveActivityService {
         data.toJson(),
       );
       debugPrint(
-          'Live Activity updated successfully${deviceId != null ? ' for device: $deviceId' : ''} - Connection: ${data.isConnected ? "Connected" : "Disconnected"}');
+          'Live Activity updated successfully (legacy) - Connection: ${data.isConnected ? "Connected" : "Disconnected"}');
     } on PlatformException catch (e) {
       debugPrint("Failed to update live activity: '${e.message}'.");
-
-      // If update fails and device is disconnected, ensure we still show disconnected state
-      if (!data.isConnected && deviceId != null) {
-        debugPrint(
-            "Update failed for disconnected device, attempting to restart Live Activity with disconnected state");
-        try {
-          // Try to create a new Live Activity with the disconnected state
-          await platform.invokeMethod('startLiveActivity', data.toJson());
-        } catch (retryError) {
-          debugPrint(
-              "Failed to restart Live Activity with disconnected state: $retryError");
-        }
-      }
     } catch (e) {
       debugPrint("Unexpected error updating live activity: $e");
     }
@@ -409,10 +474,34 @@ class LiveActivityService {
         debugPrint('Android Foreground Notification ended successfully');
       }
 
-      _activeDeviceId = null; // Clear active device when ending
+      _activeDeviceIds.clear(); // Clear all active devices when ending
       _lastLiveActivityData.clear(); // Clear all stored data when ending
     } on PlatformException catch (e) {
       debugPrint("Failed to end live activity: '${e.message}'.");
+    }
+  }
+
+  Future<void> removeDeviceLiveActivity(String deviceId) async {
+    try {
+      debugPrint('Removing Live Activity for device: $deviceId');
+
+      if (Platform.isAndroid) {
+        await platform
+            .invokeMethod('removeDeviceNotification', {'deviceId': deviceId});
+      } else if (Platform.isIOS) {
+        // For iOS, we'll end all Live Activities since iOS doesn't support multiple
+        await platform.invokeMethod('endLiveActivity');
+      }
+
+      _activeDeviceIds.remove(deviceId);
+      _lastLiveActivityData.remove(deviceId);
+      debugPrint('Live Activity removed successfully for device: $deviceId');
+    } on PlatformException catch (e) {
+      debugPrint(
+          "Failed to remove live activity for device $deviceId: '${e.message}'.");
+    } catch (e) {
+      debugPrint(
+          "Unexpected error removing live activity for device $deviceId: $e");
     }
   }
 
@@ -460,6 +549,9 @@ class LiveActivityService {
 
       if (deviceSettings?.showLiveActivity == true) {
         await updateLiveActivity(deviceId: deviceId, data: liveActivityData);
+      } else {
+        // If Live Activity is disabled, remove the device notification
+        await removeDeviceLiveActivity(deviceId);
       }
     } catch (e) {
       debugPrint('LiveActivity: Error processing CO2 data update: $e');
@@ -493,17 +585,9 @@ class LiveActivityService {
       }
 
       // Only update if this device currently has an active Live Activity
-      final isActive = await isLiveActivityActive();
-      if (!isActive) {
+      if (!_activeDeviceIds.contains(deviceId)) {
         debugPrint(
-            'LiveActivity: No active Live Activity found, skipping disconnected state update');
-        return;
-      }
-
-      // Check if this device is the one with the active Live Activity
-      if (_activeDeviceId != deviceId) {
-        debugPrint(
-            'LiveActivity: Device $deviceId is not the active Live Activity device ($_activeDeviceId), skipping update');
+            'LiveActivity: Device $deviceId is not in active devices, skipping disconnected state update');
         return;
       }
 
@@ -515,10 +599,15 @@ class LiveActivityService {
 
       // Force update even if settings say not to show Live Activity
       // This ensures the disconnected state is shown immediately
-      await platform.invokeMethod(
-        'updateLiveActivity',
-        disconnectedData.toJson(),
-      );
+      if (Platform.isAndroid) {
+        await platform.invokeMethod('addDeviceNotification', {
+          'deviceId': deviceId,
+          'data': disconnectedData.toJson(),
+        });
+      } else if (Platform.isIOS) {
+        await platform.invokeMethod(
+            'updateLiveActivity', disconnectedData.toJson());
+      }
 
       // Update Android home widget as well
       await _updateAndroidHomeWidget(disconnectedData);
@@ -563,13 +652,13 @@ class LiveActivityService {
       // Wait a moment for clean transition
       await Future.delayed(const Duration(milliseconds: 500));
 
-      // Find the device with active Live Activity and restart it
-      if (_activeDeviceId != null) {
-        final lastData = _lastLiveActivityData[_activeDeviceId];
+      // Restart Live Activities for all active devices
+      for (final deviceId in _activeDeviceIds) {
+        final lastData = _lastLiveActivityData[deviceId];
         if (lastData != null) {
           debugPrint(
-              'LiveActivity: Restarting with last known data for device: $_activeDeviceId');
-          await updateLiveActivity(data: lastData, deviceId: _activeDeviceId);
+              'LiveActivity: Restarting with last known data for device: $deviceId');
+          await updateLiveActivity(data: lastData, deviceId: deviceId);
         }
       }
     } catch (e) {
@@ -581,12 +670,16 @@ class LiveActivityService {
   Future<void> refreshIfNeeded() async {
     try {
       final isActive = await isLiveActivityActive();
-      if (!isActive && _activeDeviceId != null) {
-        final lastData = _lastLiveActivityData[_activeDeviceId];
-        if (lastData != null && lastData.isConnected) {
-          debugPrint(
-              'LiveActivity: No active Live Activity found but should be active, restarting');
-          await updateLiveActivity(data: lastData, deviceId: _activeDeviceId);
+      if (!isActive && _activeDeviceIds.isNotEmpty) {
+        debugPrint(
+            'LiveActivity: No active Live Activity found but should be active, restarting for ${_activeDeviceIds.length} devices');
+
+        // Restart Live Activities for all active devices
+        for (final deviceId in _activeDeviceIds) {
+          final lastData = _lastLiveActivityData[deviceId];
+          if (lastData != null && lastData.isConnected) {
+            await updateLiveActivity(data: lastData, deviceId: deviceId);
+          }
         }
       }
     } catch (e) {
