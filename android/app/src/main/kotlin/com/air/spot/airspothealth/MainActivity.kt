@@ -52,6 +52,32 @@ class MainActivity: FlutterActivity() {
                     updateForegroundNotificationService()
                     result.success(null)
                 }
+                "addDeviceNotification" -> {
+                    // Add device-specific notification
+                    val deviceId = call.argument<String>("deviceId")
+                    val data = call.argument<Map<String, Any>>("data")
+                    if (deviceId != null && data != null) {
+                        addDeviceNotification(deviceId, data)
+                    }
+                    result.success(null)
+                }
+                "updateDeviceNotification" -> {
+                    // Update device-specific notification
+                    val deviceId = call.argument<String>("deviceId")
+                    val data = call.argument<Map<String, Any>>("data")
+                    if (deviceId != null) {
+                        updateDeviceNotification(deviceId, data)
+                    }
+                    result.success(null)
+                }
+                "removeDeviceNotification" -> {
+                    // Remove device-specific notification
+                    val deviceId = call.argument<String>("deviceId")
+                    if (deviceId != null) {
+                        removeDeviceNotification(deviceId)
+                    }
+                    result.success(null)
+                }
                 "endLiveActivity" -> {
                     // Stop Android foreground notification service
                     stopForegroundNotificationService()
@@ -160,5 +186,32 @@ class MainActivity: FlutterActivity() {
     
     private fun isNotificationServiceRunning(): Boolean {
         return ForegroundNotificationService.isServiceRunning(this)
+    }
+    
+    private fun addDeviceNotification(deviceId: String, data: Map<String, Any>) {
+        try {
+            Log.d(TAG, "Adding device notification for: $deviceId")
+            ForegroundNotificationService.addDeviceNotification(this, deviceId, data)
+        } catch (e: Exception) {
+            Log.e(TAG, "Error adding device notification for $deviceId: ${e.message}")
+        }
+    }
+    
+    private fun updateDeviceNotification(deviceId: String, data: Map<String, Any>?) {
+        try {
+            Log.d(TAG, "Updating device notification for: $deviceId")
+            ForegroundNotificationService.updateDeviceNotification(this, deviceId, data)
+        } catch (e: Exception) {
+            Log.e(TAG, "Error updating device notification for $deviceId: ${e.message}")
+        }
+    }
+    
+    private fun removeDeviceNotification(deviceId: String) {
+        try {
+            Log.d(TAG, "Removing device notification for: $deviceId")
+            ForegroundNotificationService.removeDeviceNotification(this, deviceId)
+        } catch (e: Exception) {
+            Log.e(TAG, "Error removing device notification for $deviceId: ${e.message}")
+        }
     }
 }

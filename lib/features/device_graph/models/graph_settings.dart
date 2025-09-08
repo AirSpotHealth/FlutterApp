@@ -1,22 +1,33 @@
+enum BreathPercentageDisplayMode {
+  none,
+  percentage,
+  oneInX,
+  both,
+}
+
 class GraphSettings {
   final bool showZoomSlider;
   final bool showAreaFill;
   final bool showMarkLines;
-  final bool showRebreathePercentage;
+  final BreathPercentageDisplayMode breathPercentageDisplayMode;
 
   const GraphSettings({
     this.showZoomSlider = false,
     this.showAreaFill = false,
     this.showMarkLines = true,
-    this.showRebreathePercentage = false,
+    this.breathPercentageDisplayMode = BreathPercentageDisplayMode.none,
   });
+
+  // Convenience getter for backward compatibility
+  bool get showRebreathePercentage =>
+      breathPercentageDisplayMode != BreathPercentageDisplayMode.none;
 
   factory GraphSettings.defaults() {
     return GraphSettings(
       showZoomSlider: false,
       showAreaFill: true,
       showMarkLines: false,
-      showRebreathePercentage: false,
+      breathPercentageDisplayMode: BreathPercentageDisplayMode.none,
     );
   }
 
@@ -24,14 +35,14 @@ class GraphSettings {
     bool? showZoomSlider,
     bool? showAreaFill,
     bool? showMarkLines,
-    bool? showRebreathePercentage,
+    BreathPercentageDisplayMode? breathPercentageDisplayMode,
   }) {
     return GraphSettings(
       showZoomSlider: showZoomSlider ?? this.showZoomSlider,
       showAreaFill: showAreaFill ?? this.showAreaFill,
       showMarkLines: showMarkLines ?? this.showMarkLines,
-      showRebreathePercentage:
-          showRebreathePercentage ?? this.showRebreathePercentage,
+      breathPercentageDisplayMode:
+          breathPercentageDisplayMode ?? this.breathPercentageDisplayMode,
     );
   }
 
@@ -43,7 +54,7 @@ class GraphSettings {
         other.showZoomSlider == showZoomSlider &&
         other.showAreaFill == showAreaFill &&
         other.showMarkLines == showMarkLines &&
-        other.showRebreathePercentage == showRebreathePercentage;
+        other.breathPercentageDisplayMode == breathPercentageDisplayMode;
   }
 
   @override
@@ -51,10 +62,10 @@ class GraphSettings {
     return showZoomSlider.hashCode ^
         showAreaFill.hashCode ^
         showMarkLines.hashCode ^
-        showRebreathePercentage.hashCode;
+        breathPercentageDisplayMode.hashCode;
   }
 
   @override
   String toString() =>
-      'GraphSettings(showZoomSlider: $showZoomSlider, showAreaFill: $showAreaFill, showMarkLines: $showMarkLines, showRebreathePercentage: $showRebreathePercentage)';
+      'GraphSettings(showZoomSlider: $showZoomSlider, showAreaFill: $showAreaFill, showMarkLines: $showMarkLines, breathPercentageDisplayMode: $breathPercentageDisplayMode)';
 }

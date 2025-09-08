@@ -111,6 +111,48 @@ class DataGraphWidget extends ConsumerStatefulWidget {
 
     return 0; // Fallback
   }
+
+  // Calculate the "1 in X breaths" value from CO2 level with precise interpolation
+  static double? calculateOneInXBreathsPrecise(num co2Value) {
+    // For values below first entry
+    if (co2Value <= rebreatheTable[0].co2) return null;
+
+    // Find the appropriate interval in the table
+    for (int i = 0; i < rebreatheTable.length - 1; i++) {
+      if (co2Value >= rebreatheTable[i].co2 &&
+          co2Value < rebreatheTable[i + 1].co2) {
+        final co2Lower = rebreatheTable[i].co2;
+        final co2Upper = rebreatheTable[i + 1].co2;
+        final breathsLower = rebreatheTable[i].oneInXBreaths;
+        final breathsUpper = rebreatheTable[i + 1].oneInXBreaths;
+
+        // If either value is null, use the non-null one
+        if (breathsLower == null) return breathsUpper?.toDouble();
+        if (breathsUpper == null) return breathsLower.toDouble();
+
+        // Linear interpolation between points - keep precise value
+        final interpolated = breathsLower +
+            (co2Value - co2Lower) *
+                (breathsUpper - breathsLower) /
+                (co2Upper - co2Lower);
+
+        return interpolated.toDouble();
+      }
+    }
+
+    // For values above last entry
+    if (co2Value >= rebreatheTable.last.co2) {
+      return rebreatheTable.last.oneInXBreaths?.toDouble();
+    }
+
+    return null; // Fallback
+  }
+
+  // Keep the original function for backward compatibility (rounded values)
+  static int? calculateOneInXBreaths(num co2Value) {
+    final precise = calculateOneInXBreathsPrecise(co2Value);
+    return precise?.round();
+  }
 }
 
 class _DataGraphWidgetState extends ConsumerState<DataGraphWidget> {
@@ -153,18 +195,14 @@ class _DataGraphWidgetState extends ConsumerState<DataGraphWidget> {
 
     final seriesData = _generateSeriesData(currentDataList);
 
-    // Calculate rebreathed data and max percentage
+    // Calculate rebreathed data and max percentage (always calculated for tooltips)
     double maxRebreathePercentage = 4; // Default minimum range
-    final rebreatheData = settings.showRebreathePercentage
-        ? seriesData.map((data) {
-            final co2Value = data[1] as num;
-            final percentage =
-                DataGraphWidget.calculateRebreathePercentage(co2Value);
-            maxRebreathePercentage =
-                math.max(maxRebreathePercentage, percentage);
-            return [data[0], percentage];
-          }).toList()
-        : [];
+    final rebreatheData = seriesData.map((data) {
+      final co2Value = data[1] as num;
+      final percentage = DataGraphWidget.calculateRebreathePercentage(co2Value);
+      maxRebreathePercentage = math.max(maxRebreathePercentage, percentage);
+      return [data[0], percentage];
+    }).toList();
 
     // Round up to the next multiple of 2 for clean intervals
     maxRebreathePercentage = (maxRebreathePercentage / 2).ceil() * 2;
@@ -207,13 +245,59 @@ class _DataGraphWidgetState extends ConsumerState<DataGraphWidget> {
         : ((hours < 10 ? '0' : '') + hours + ':' + (minutes < 10 ? '0' : '') + minutes + ':' + (seconds < 10 ? '0' : '') + seconds);
       
       var result = date.toLocaleDateString() + ' ' + timeStr + '<br/>';
+      var co2Value = null;
       
+      // Helper function to calculate "1 in X breaths" from CO2 value
+      function calculateOneInXBreaths(co2Val) {
+        var rebreatheTable = ${jsonEncode(rebreatheTable.map((r) => {
+              'co2': r.co2,
+              'rebreathed': r.rebreathed,
+              'oneInXBreaths': r.oneInXBreaths
+            }).toList())};
+        
+        if (co2Val <= rebreatheTable[0].co2) return null;
+        
+        for (var i = 0; i < rebreatheTable.length - 1; i++) {
+          if (co2Val >= rebreatheTable[i].co2 && co2Val < rebreatheTable[i + 1].co2) {
+            var co2Lower = rebreatheTable[i].co2;
+            var co2Upper = rebreatheTable[i + 1].co2;
+            var breathsLower = rebreatheTable[i].oneInXBreaths;
+            var breathsUpper = rebreatheTable[i + 1].oneInXBreaths;
+
+            if (breathsLower === null) return breathsUpper;
+            if (breathsUpper === null) return breathsLower;
+
+            var interpolated = breathsLower + (co2Val - co2Lower) * (breathsUpper - breathsLower) / (co2Upper - co2Lower);
+            // Return precise value, rounded to nearest whole number for display
+            return Math.round(interpolated);
+          }
+        }
+
+        if (co2Val >= rebreatheTable[rebreatheTable.length - 1].co2) {
+          return rebreatheTable[rebreatheTable.length - 1].oneInXBreaths;
+        }
+        return null;
+      }
+      
+      // First pass: find CO2 value
       for (var i = 0; i < params.length; i++) {
         var param = params[i];
         if (param.seriesName === 'CO₂') {
+          co2Value = param.value[1];
           result += 'CO₂: ' + param.value[1] + ' ppm<br/>';
-        } else if (param.seriesName === 'Rebreathed Air' && param.value[1] != null) {
+          break;
+        }
+      }
+      
+      // Second pass: handle other series
+      for (var i = 0; i < params.length; i++) {
+        var param = params[i];
+        if (param.seriesName === 'Rebreathed Air' && param.value[1] != null) {
+          var oneInX = co2Value ? calculateOneInXBreaths(co2Value) : null;
           result += 'Rebreathed: ' + param.value[1].toFixed(1) + '%';
+          if (oneInX && oneInX > 0) {
+            result += ' (1 in ' + oneInX + ' breaths)';
+          }
         }
       }
       
@@ -302,7 +386,7 @@ class _DataGraphWidgetState extends ConsumerState<DataGraphWidget> {
         },
         showMinLabel: false,
       }
-    }${settings.showRebreathePercentage ? ''',
+    },
     {
       type: 'value',
       name: '',
@@ -310,10 +394,60 @@ class _DataGraphWidgetState extends ConsumerState<DataGraphWidget> {
       min: 0,
       max: $maxRebreathePercentage,
       interval: ${maxRebreathePercentage <= 6 ? 1 : 2},
+      show: ${settings.breathPercentageDisplayMode != BreathPercentageDisplayMode.none ? 'true' : 'false'},
       axisLabel: {
-        formatter: '{value}%'
+        formatter: function(value) {
+          var displayMode = '${settings.breathPercentageDisplayMode}';
+          
+          if (displayMode === 'BreathPercentageDisplayMode.percentage') {
+            return value + '%';
+          } else if (displayMode === 'BreathPercentageDisplayMode.oneInX') {
+            // Find corresponding "1 in X" value for this percentage
+            var rebreatheTable = ${jsonEncode(rebreatheTable.map((r) => {
+              'co2': r.co2,
+              'rebreathed': r.rebreathed,
+              'oneInXBreaths': r.oneInXBreaths
+            }).toList())};
+            
+            var oneInX = null;
+            for (var i = 0; i < rebreatheTable.length; i++) {
+              if (Math.abs(rebreatheTable[i].rebreathed - value) < 0.1) {
+                oneInX = rebreatheTable[i].oneInXBreaths;
+                break;
+              }
+            }
+            
+            if (oneInX && value > 0) {
+              return '1 in ' + oneInX;
+            }
+            return '';
+          } else if (displayMode === 'BreathPercentageDisplayMode.both') {
+            // Find corresponding "1 in X" value for this percentage
+            var rebreatheTable = ${jsonEncode(rebreatheTable.map((r) => {
+              'co2': r.co2,
+              'rebreathed': r.rebreathed,
+              'oneInXBreaths': r.oneInXBreaths
+            }).toList())};
+            
+            var oneInX = null;
+            for (var i = 0; i < rebreatheTable.length; i++) {
+              if (Math.abs(rebreatheTable[i].rebreathed - value) < 0.1) {
+                oneInX = rebreatheTable[i].oneInXBreaths;
+                break;
+              }
+            }
+            
+            if (oneInX && value > 0) {
+              return value + '% (1 in ' + oneInX + ')';
+            }
+            return value + '%';
+          }
+          
+          return '';
+        },
+        fontSize: 10
       }
-    }''' : ''}
+    }
   ],
   dataZoom: [
     {
@@ -328,7 +462,7 @@ class _DataGraphWidgetState extends ConsumerState<DataGraphWidget> {
   ],
   grid: {
     left: 40,
-    right: ${settings.showRebreathePercentage ? '40' : '20'},
+    right: ${_getRightAxisSpace(settings)},
     top: 50,
     bottom: ${settings.showZoomSlider ? 80 : 50}
   },
@@ -369,7 +503,7 @@ class _DataGraphWidgetState extends ConsumerState<DataGraphWidget> {
         ]
       }
     ''' : 'null'}
-    }${settings.showRebreathePercentage ? ''',
+    },
     {
       name: 'Rebreathed Air',
       type: 'line',
@@ -381,7 +515,7 @@ class _DataGraphWidgetState extends ConsumerState<DataGraphWidget> {
         color: '#666',
         width: 0
       }
-    }''' : ''},
+    },
     {
       name: '< $greenThreshold',
       type: 'line',
@@ -487,6 +621,19 @@ class _DataGraphWidgetState extends ConsumerState<DataGraphWidget> {
     }
 
     return fakeData;
+  }
+
+  String _getRightAxisSpace(GraphSettings settings) {
+    switch (settings.breathPercentageDisplayMode) {
+      case BreathPercentageDisplayMode.none:
+        return '20'; // No space needed
+      case BreathPercentageDisplayMode.percentage:
+        return '50'; // Moderate space for percentage only (e.g., "5%")
+      case BreathPercentageDisplayMode.oneInX:
+        return '60'; // Slightly more space for "1 in X" format (e.g., "1 in 20")
+      case BreathPercentageDisplayMode.both:
+        return '80'; // Full space for both formats (e.g., "5% (1 in 20)")
+    }
   }
 
   dynamic _calculateYMax() {

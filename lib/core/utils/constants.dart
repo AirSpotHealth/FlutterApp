@@ -4,7 +4,7 @@ import 'package:intl/intl.dart';
 class Constants {
   static const String baseUrl = 'https://update.airspothealth.com/api';
 
-  // static const String mapUrl = 'http://10.37.9.202:3000/';
+  // static const String mapUrl = 'http://192.168.1.6:3000/';
   static const String mapUrl = 'https://map.airspothealth.com/';
 
   // UUIDs for the service and characteristics

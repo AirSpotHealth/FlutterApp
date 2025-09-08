@@ -71,6 +71,35 @@ import ActivityKit
             liveActivityManager.startRefreshState()
             result(true)
             break
+        case "resetDismissalState":
+            liveActivityManager.resetDismissalState()
+            result(true)
+            break
+        case "forceCleanupAndRestart":
+            liveActivityManager.forceCleanupAndRestart(data: call.arguments as? Dictionary<String,Any>)
+            result(true)
+            break
+        case "addDeviceNotification":
+            if let liveActivityManager = liveActivityManager as? LiveActivityManager,
+               let arguments = call.arguments as? Dictionary<String, Any> {
+                let deviceId = arguments["deviceId"] as? String
+                let data = arguments["data"] as? Dictionary<String,Any>
+                if let deviceId = deviceId, let data = data {
+                    liveActivityManager.addDeviceData(deviceId: deviceId, data: data)
+                }
+            }
+            result(true)
+            break
+        case "removeDeviceNotification":
+            if let liveActivityManager = liveActivityManager as? LiveActivityManager,
+               let arguments = call.arguments as? Dictionary<String, Any> {
+                let deviceId = arguments["deviceId"] as? String
+                if let deviceId = deviceId {
+                    liveActivityManager.removeDeviceData(deviceId: deviceId)
+                }
+            }
+            result(true)
+            break
         default:
             result(FlutterMethodNotImplemented)
         }
