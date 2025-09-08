@@ -35,15 +35,64 @@ class GraphSettingsWidget extends ConsumerWidget {
               () => ref.read(graphSettingsProvider.notifier).setSettings(
                   settings.copyWith(showMarkLines: !settings.showMarkLines))),
           _buildPopupMenuItem(
-              'Breaths from Others',
-              settings.showRebreathePercentage,
-              () => ref.read(graphSettingsProvider.notifier).setSettings(
-                  settings.copyWith(
-                      showRebreathePercentage:
-                          !settings.showRebreathePercentage))),
+            'Breath Percentage',
+            settings.breathPercentageDisplayMode ==
+                    BreathPercentageDisplayMode.percentage ||
+                settings.breathPercentageDisplayMode ==
+                    BreathPercentageDisplayMode.both,
+            () => _toggleBreathPercentageMode(
+                settings, ref, BreathPercentageDisplayMode.percentage),
+          ),
+          _buildPopupMenuItem(
+            'Breath 1 in X',
+            settings.breathPercentageDisplayMode ==
+                    BreathPercentageDisplayMode.oneInX ||
+                settings.breathPercentageDisplayMode ==
+                    BreathPercentageDisplayMode.both,
+            () => _toggleBreathPercentageMode(
+                settings, ref, BreathPercentageDisplayMode.oneInX),
+          ),
         ];
       },
     );
+  }
+
+  void _toggleBreathPercentageMode(
+      GraphSettings settings, WidgetRef ref, BreathPercentageDisplayMode mode) {
+    BreathPercentageDisplayMode newMode;
+
+    if (mode == BreathPercentageDisplayMode.percentage) {
+      if (settings.breathPercentageDisplayMode ==
+          BreathPercentageDisplayMode.percentage) {
+        newMode = BreathPercentageDisplayMode.none;
+      } else if (settings.breathPercentageDisplayMode ==
+          BreathPercentageDisplayMode.oneInX) {
+        newMode = BreathPercentageDisplayMode.both;
+      } else if (settings.breathPercentageDisplayMode ==
+          BreathPercentageDisplayMode.both) {
+        newMode = BreathPercentageDisplayMode.oneInX;
+      } else {
+        newMode = BreathPercentageDisplayMode.percentage;
+      }
+    } else {
+      // oneInX
+      if (settings.breathPercentageDisplayMode ==
+          BreathPercentageDisplayMode.oneInX) {
+        newMode = BreathPercentageDisplayMode.none;
+      } else if (settings.breathPercentageDisplayMode ==
+          BreathPercentageDisplayMode.percentage) {
+        newMode = BreathPercentageDisplayMode.both;
+      } else if (settings.breathPercentageDisplayMode ==
+          BreathPercentageDisplayMode.both) {
+        newMode = BreathPercentageDisplayMode.percentage;
+      } else {
+        newMode = BreathPercentageDisplayMode.oneInX;
+      }
+    }
+
+    ref.read(graphSettingsProvider.notifier).setSettings(
+          settings.copyWith(breathPercentageDisplayMode: newMode),
+        );
   }
 
   PopupMenuItem _buildPopupMenuItem(
