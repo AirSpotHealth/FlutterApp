@@ -38,10 +38,6 @@ Future<void> _initializeHomeWidget() async {
     await HomeWidget.setAppGroupId(Constants.appGroupId);
     debugPrint(
         '✅ Home Widget initialized with App Group: ${Constants.appGroupId}');
-
-    // Test saving some data to verify App Group works
-    await HomeWidget.saveWidgetData<String>('test_key', 'test_value');
-    debugPrint('✅ Home Widget test data saved');
   } catch (e) {
     debugPrint('❌ Failed to initialize Home Widget: $e');
   }

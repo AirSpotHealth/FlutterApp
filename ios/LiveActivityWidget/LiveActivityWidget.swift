@@ -39,13 +39,6 @@ struct Co2WidgetProvider: TimelineProvider {
     func getTimeline(in context: Context, completion: @escaping (Timeline<Entry>) -> ()) {
         let currentDate = Date()
         
-        // Test App Group access
-        if let userDefaults = UserDefaults(suiteName: "group.com.airspot.lohas") {
-            let testValue = userDefaults.string(forKey: "test_key")
-            print("🧪 Widget: Test value from App Group: \(testValue ?? "nil")")
-        } else {
-            print("❌ Widget: Cannot access App Group at all!")
-        }
         
         let entry = getWidgetData() ?? placeholder(in: context)
         
@@ -216,7 +209,7 @@ struct SmallWidgetView: View {
 // 2x4 Medium Widget View (Like Live Activity)
 struct MediumWidgetView: View {
     var entry: Co2WidgetProvider.Entry
-    
+
     var body: some View {
         VStack(spacing: 4) {
             if entry.deviceId.isEmpty || !entry.isConnected {
@@ -282,7 +275,7 @@ struct MediumWidgetView: View {
                                 .foregroundColor(.white)
                                 .offset(y: -4)
                         }
-                        .padding(.leading, 28)
+                        .padding(.leading, 8)
                     }
                     .frame(maxWidth: .infinity, alignment: .leading)
                     
@@ -430,7 +423,7 @@ struct LargeWidgetView: View {
                                 .foregroundColor(.white)
                                 .offset(y: -4)
                         }
-                        .padding(.leading, 28)
+                        .padding(.leading, 12)
                     }
                     .frame(maxWidth: .infinity, alignment: .leading)
                     
