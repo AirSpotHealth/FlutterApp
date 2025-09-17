@@ -75,9 +75,14 @@ import ActivityKit
             liveActivityManager.resetDismissalState()
             result(true)
             break
-        case "forceCleanupAndRestart":
-            liveActivityManager.forceCleanupAndRestart(data: call.arguments as? Dictionary<String,Any>)
-            result(true)
+        case "getLiveActivityState":
+            if let arguments = call.arguments as? [String: Any],
+               let deviceId = arguments["deviceId"] as? String {
+                let state = liveActivityManager.getLiveActivityState(deviceId: deviceId)
+                result(state)
+            } else {
+                result(FlutterError(code: "INVALID_ARGUMENTS", message: "Missing deviceId for getLiveActivityState", details: nil))
+            }
             break
         case "addDeviceNotification":
             if let liveActivityManager = liveActivityManager as? LiveActivityManager,
