@@ -374,8 +374,8 @@ class LiveActivityService {
       // Add device to active devices
       _activeDeviceIds.add(deviceId);
 
-      // Update Android home widget
-      _updateAndroidHomeWidget(data).ignore();
+      // Update home widgets (both Android and iOS)
+      _updateHomeWidgets(data).ignore();
 
       // Update the specific device's Live Activity
       if (Platform.isAndroid) {
@@ -432,7 +432,7 @@ class LiveActivityService {
       debugPrint(
           'Live Activity update requested (legacy single device) with connection: ${data.isConnected}');
 
-      _updateAndroidHomeWidget(data).ignore();
+      _updateHomeWidgets(data).ignore();
 
       await platform.invokeMethod(
         'updateLiveActivity',
@@ -447,19 +447,30 @@ class LiveActivityService {
     }
   }
 
-  Future<void> _updateAndroidHomeWidget(LiveActivityModel data) async {
-    // Update Android Home Widget via home_widget plugin
+  Future<void> _updateHomeWidgets(LiveActivityModel data) async {
+    // Update both Android and iOS Home Widgets via home_widget plugin
     final widgetData = data.toJson();
+    final jsonString = jsonEncode(widgetData);
 
-    // Store data for widget
-    await HomeWidget.saveWidgetData<String>(
-        'widget_data_json', jsonEncode(widgetData));
+    debugPrint('🏠 Widget: Saving data with CO2 value: ${data.co2Value}');
+    debugPrint(
+        '🏠 Widget: JSON data: ${jsonString.substring(0, jsonString.length > 200 ? 200 : jsonString.length)}...');
 
-    // Update the widget
-    await HomeWidget.updateWidget(
-      name: Constants.androidWidgetName,
-      androidName: Constants.androidWidgetName,
-    );
+    try {
+      // Store data for widgets
+      await HomeWidget.saveWidgetData<String>('widget_data_json', jsonString);
+      debugPrint('✅ Widget: Data saved successfully');
+
+      // Update widgets on both platforms
+      await HomeWidget.updateWidget(
+        name: Constants.androidWidgetName,
+        androidName: Constants.androidWidgetName,
+        iOSName: Constants.iOSWidgetName,
+      );
+      debugPrint('✅ Widget: Widget update triggered');
+    } catch (e) {
+      debugPrint('❌ Widget: Error updating widgets: $e');
+    }
   }
 
   Future<void> endLiveActivity() async {
@@ -609,8 +620,8 @@ class LiveActivityService {
             'updateLiveActivity', disconnectedData.toJson());
       }
 
-      // Update Android home widget as well
-      await _updateAndroidHomeWidget(disconnectedData);
+      // Update home widgets as well (both Android and iOS)
+      await _updateHomeWidgets(disconnectedData);
 
       // Store the disconnected state as the latest data
       _lastLiveActivityData[deviceId] = disconnectedData;
