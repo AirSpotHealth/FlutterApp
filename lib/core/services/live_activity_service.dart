@@ -4,7 +4,7 @@ import 'dart:io';
 import 'package:airspothealth/core/models/device_settings.dart';
 import 'package:airspothealth/core/models/live_activity_model.dart';
 import 'package:airspothealth/core/utils/constants.dart';
-import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:home_widget/home_widget.dart';
 
@@ -97,6 +97,9 @@ class LiveActivityService {
   // Store the last Live Activity data for each device
   final Map<String, LiveActivityModel> _lastLiveActivityData = {};
 
+  // Track activity start times for each device
+  final Map<String, DateTime> _activityStartTimes = {};
+
   // Set up method call handler to listen for refresh requests and dismissal events
   void _setupMethodCallHandler() {
     platform.setMethodCallHandler((call) async {
@@ -115,6 +118,13 @@ class LiveActivityService {
               : null;
           debugPrint('🆔 Device ID from dismissal: $deviceId');
           _handleDismissalEvent(deviceId);
+          break;
+        case 'onRestartLiveActivityRequested':
+          debugPrint('🔄 Live Activity restart requested');
+          final String? deviceId = call.arguments != null
+              ? call.arguments['deviceId'] as String?
+              : null;
+          _handleRestartRequest(deviceId!);
           break;
         default:
           debugPrint('❓ Unknown method call: ${call.method}');
@@ -167,6 +177,7 @@ class LiveActivityService {
         // Remove from active devices and clear data
         _activeDeviceIds.remove(deviceId);
         _lastLiveActivityData.remove(deviceId);
+        _activityStartTimes.remove(deviceId);
         debugPrint('🗑️ Removed device from active devices: $deviceId');
         return;
       } else {
@@ -187,11 +198,34 @@ class LiveActivityService {
           }
         }
         _lastLiveActivityData.remove(activeDeviceId);
+        _activityStartTimes.remove(activeDeviceId);
       }
       _activeDeviceIds.clear();
       debugPrint('🗑️ Cleared all active devices');
     } else {
       debugPrint('⚠️ Target device not found in callbacks: $deviceId');
+    }
+  }
+
+  void _handleRestartRequest(String deviceId) {
+    debugPrint('🔄 Restart requested for device: $deviceId');
+
+    if (_lastLiveActivityData.containsKey(deviceId)) {
+      // Reset start time for the device
+      _activityStartTimes[deviceId] = DateTime.now();
+
+      final lastData = _lastLiveActivityData[deviceId]!;
+      final restartedData = lastData.copyWith(
+        activityStartTime: _activityStartTimes[deviceId],
+      );
+
+      // Restart the Live Activity with fresh start time
+      updateLiveActivity(data: restartedData, deviceId: deviceId);
+
+      debugPrint('✅ Live Activity restarted for device: $deviceId');
+    } else {
+      debugPrint(
+          '❌ Cannot restart Live Activity - no data found for device: $deviceId');
     }
   }
 
@@ -371,11 +405,21 @@ class LiveActivityService {
       // Check if device already has a notification (update vs add)
       final isNewDevice = !_activeDeviceIds.contains(deviceId);
 
+      // Track activity start time for new devices
+      if (isNewDevice) {
+        _activityStartTimes[deviceId] = DateTime.now();
+      }
+
       // Add device to active devices
       _activeDeviceIds.add(deviceId);
 
+      // Update data with activity start time
+      final updatedData = data.copyWith(
+        activityStartTime: _activityStartTimes[deviceId],
+      );
+
       // Update home widgets (both Android and iOS)
-      _updateHomeWidgets(data).ignore();
+      _updateHomeWidgets(updatedData).ignore();
 
       // Update the specific device's Live Activity
       if (Platform.isAndroid) {
@@ -383,17 +427,17 @@ class LiveActivityService {
           // Add new notification
           await platform.invokeMethod('addDeviceNotification', {
             'deviceId': deviceId,
-            'data': data.toJson(),
+            'data': updatedData.toJson(),
           });
         } else {
           // Update existing notification with new data
           await platform.invokeMethod('updateDeviceNotification', {
             'deviceId': deviceId,
-            'data': data.toJson(),
+            'data': updatedData.toJson(),
           });
         }
       } else if (Platform.isIOS) {
-        await platform.invokeMethod('updateLiveActivity', data.toJson());
+        await platform.invokeMethod('updateLiveActivity', updatedData.toJson());
       }
 
       debugPrint(
@@ -558,6 +602,10 @@ class LiveActivityService {
       // Store the data for potential disconnection updates
       _lastLiveActivityData[deviceId] = liveActivityData;
 
+      // Always update home widgets (Android and iOS), independent of Live Activity toggle
+      await _updateHomeWidgets(liveActivityData);
+
+      // Handle Live Activity based on toggle
       if (deviceSettings?.showLiveActivity == true) {
         await updateLiveActivity(deviceId: deviceId, data: liveActivityData);
       } else {

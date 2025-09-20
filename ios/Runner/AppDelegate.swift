@@ -44,6 +44,14 @@ import ActivityKit
         name: Notification.Name("MapClicked"),
         object: nil
     )
+
+    // Setup notification listener for Live Activity restart requests
+    NotificationCenter.default.addObserver(
+        self,
+        selector: #selector(handleNavigateToDeviceSettings(_:)),
+        name: Notification.Name("NavigateToDeviceSettings"),
+        object: nil
+    )
     
     liveActivityChannel?.setMethodCallHandler { [weak self] (call: FlutterMethodCall, result: @escaping FlutterResult) in
         guard #available(iOS 16.2, *), let liveActivityManager = self?.liveActivityManager as? LiveActivityManager else {
@@ -146,6 +154,21 @@ import ActivityKit
       print("🔄 Map clicked")
       // Open the map in the browser
       UIApplication.shared.open(URL(string: "https://map.airspothealth.com/")!)
+  }
+
+  @objc func handleNavigateToDeviceSettings(_ notification: Notification) {
+      print("🔄 Navigate to device settings requested")
+      
+      guard let userInfo = notification.userInfo,
+            let deviceId = userInfo["deviceId"] as? String else {
+          print("❌ No device ID found in navigation notification")
+          return
+      }
+      
+      print("📱 Navigating to device settings for: \(deviceId)")
+      
+      // Call Flutter method to navigate to device settings
+      liveActivityChannel?.invokeMethod("onRestartLiveActivityRequested", arguments: ["deviceId": deviceId])
   }
    
    deinit {

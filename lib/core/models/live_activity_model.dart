@@ -14,6 +14,7 @@ class LiveActivityModel {
   final int graphMaxValue;
   final int graphMinValue;
   final bool isRefreshing;
+  final DateTime? activityStartTime;
 
   LiveActivityModel({
     required this.deviceId,
@@ -31,6 +32,7 @@ class LiveActivityModel {
     required this.graphMaxValue,
     required this.graphMinValue,
     required this.isRefreshing,
+    this.activityStartTime,
   });
 
   Map<String, dynamic> toJson() {
@@ -50,6 +52,7 @@ class LiveActivityModel {
       'graphMaxValue': graphMaxValue,
       'graphMinValue': graphMinValue,
       'isRefreshing': isRefreshing,
+      'activityStartTime': activityStartTime?.millisecondsSinceEpoch,
     };
   }
 
@@ -69,6 +72,7 @@ class LiveActivityModel {
     int? graphMaxValue,
     int? graphMinValue,
     bool? isRefreshing,
+    DateTime? activityStartTime,
   }) {
     return LiveActivityModel(
       deviceId: deviceId ?? this.deviceId,
@@ -86,6 +90,7 @@ class LiveActivityModel {
       graphMaxValue: graphMaxValue ?? this.graphMaxValue,
       graphMinValue: graphMinValue ?? this.graphMinValue,
       isRefreshing: isRefreshing ?? this.isRefreshing,
+      activityStartTime: activityStartTime ?? this.activityStartTime,
     );
   }
 }

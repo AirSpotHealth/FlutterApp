@@ -65,6 +65,21 @@ class AppRouter {
         return null; // No redirect needed, we just open the URL
       }
 
+      // restart live activity: airspothealth://restart-live-activity?deviceId=...
+      if (uri.host.contains('restart-live-activity')) {
+        final deviceId = uri.queryParameters['deviceId'];
+        debugPrint(
+            '🔄 Restart Live Activity deep link detected for device: $deviceId');
+
+        if (deviceId != null && deviceId.isNotEmpty) {
+          // Navigate directly to the specific device's settings page with a flag
+          return '/devices/$deviceId/settings?from=restart';
+        } else {
+          // Fallback to devices page if no device ID
+          return '/devices';
+        }
+      }
+
       // new: airspothealth://map-handoff?deviceId=...
       if (uri.host.contains('map-handoff')) {
         final deviceId = uri.queryParameters['deviceId'];

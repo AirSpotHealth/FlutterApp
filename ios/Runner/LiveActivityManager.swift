@@ -64,10 +64,42 @@ class LiveActivityManager: LiveActivityManagerProtocol {
        
     init() {
         startActivityMonitoring()
+        setupNotificationObservers()
     }
     
     deinit {
         activityMonitorTask?.cancel()
+        NotificationCenter.default.removeObserver(self)
+    }
+    
+    private func setupNotificationObservers() {
+        // Listen for restart requests from Live Activity
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(handleRestartLiveActivityRequest(_:)),
+            name: Notification.Name("RestartLiveActivityRequested"),
+            object: nil
+        )
+    }
+    
+    @objc private func handleRestartLiveActivityRequest(_ notification: Notification) {
+        print("🔄 Received restart Live Activity request from widget")
+        
+        guard let userInfo = notification.userInfo,
+              let deviceId = userInfo["deviceId"] as? String else {
+            print("❌ No device ID found in restart notification")
+            return
+        }
+        
+        print("🔄 Restarting Live Activity for device: \(deviceId)")
+        
+        // Navigate to device settings in Flutter
+        let navigationInfo: [String: Any] = ["deviceId": deviceId]
+        NotificationCenter.default.post(
+            name: Notification.Name("NavigateToDeviceSettings"),
+            object: nil,
+            userInfo: navigationInfo
+        )
     }
     
     private func startActivityMonitoring() {
@@ -143,6 +175,8 @@ class LiveActivityManager: LiveActivityManagerProtocol {
     }
     
     private func createContentState(from data: [String: Any]?) -> LiveActivityWidgetAttributes.ContentState {
+        let currentTime = Date()
+        
         guard let info = data else {
             return LiveActivityWidgetAttributes.ContentState(
                 deviceId: "1234567890",
@@ -160,9 +194,31 @@ class LiveActivityManager: LiveActivityManagerProtocol {
                 graphMinValue: 0,
                 isRefreshing: false,
                 isConnected: false,
-                lastUpdated: Date()
+                lastUpdated: currentTime,
+                activityStartTime: currentTime,
+                showStaleWarning: false
             )
         }
+        
+        // Get activity start time from data (milliseconds since epoch), or use current time if starting new
+        let activityStartTimeMs = info["activityStartTime"] as? Int64
+        let activityStartTime = activityStartTimeMs != nil ? Date(timeIntervalSince1970: Double(activityStartTimeMs!) / 1000.0) : currentTime
+        
+        // Calculate if we should show stale warning (last 10 minutes before 8 hours)
+        let timeElapsed = currentTime.timeIntervalSince(activityStartTime)
+        
+        // DEBUG MODE: Use shorter times for testing
+        // Production: 8 hours total, 10 minutes warning
+        // Debug: 2 minutes total, 30 seconds warning
+        #if DEBUG
+        let totalDurationInSeconds: TimeInterval = 2 * 60 // 2 minutes for testing
+        let warningTimeInSeconds: TimeInterval = 30 // 30 seconds warning
+        #else
+        let totalDurationInSeconds: TimeInterval = 8 * 60 * 60 // 8 hours
+        let warningTimeInSeconds: TimeInterval = 10 * 60 // 10 minutes
+        #endif
+        
+        let showStaleWarning = timeElapsed >= (totalDurationInSeconds - warningTimeInSeconds)
         
         return LiveActivityWidgetAttributes.ContentState(
             deviceId: info["deviceId"] as? String ?? "1234567890",
@@ -180,7 +236,9 @@ class LiveActivityManager: LiveActivityManagerProtocol {
             graphMinValue: info["graphMinValue"] as? Int ?? 0,
             isRefreshing: info["isRefreshing"] as? Bool ?? false,
             isConnected: info["isConnected"] as? Bool ?? false,
-            lastUpdated: Date()
+            lastUpdated: currentTime,
+            activityStartTime: activityStartTime,
+            showStaleWarning: showStaleWarning
         )
     }
     
