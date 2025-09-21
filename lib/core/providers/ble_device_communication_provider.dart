@@ -193,14 +193,16 @@ class _BleDeviceCommunicationNotifier extends FamilyNotifier<dynamic, String> {
     if (co2Data is DeviceData) {
       state = co2Data.value == 0 ? null : co2Data.value;
 
-      // Update home widget with new CO2 value
-      setHomeValue(co2Data);
-
+      // Store data in database FIRST (before calculating zone analysis)
       if (co2Data.isLiveCo2) {
         _isarService.write((isar) {
           isar.deviceDatas.put(co2Data);
         });
+        // Note: Zone cache will be invalidated automatically when data count changes
       }
+
+      // Update home widget with new CO2 value (after data is stored)
+      setHomeValue(co2Data);
     }
   }
 

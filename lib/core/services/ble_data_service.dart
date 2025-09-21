@@ -613,6 +613,7 @@ class ResponseCommandParser {
     isarService.write((isar) {
       isar.deviceDatas.putAll(dd);
     });
+    // Note: Zone cache will be invalidated automatically when data count changes
 
     return false;
   }

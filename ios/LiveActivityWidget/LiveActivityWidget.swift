@@ -26,7 +26,12 @@ struct Co2WidgetProvider: TimelineProvider {
             greenUpperLimit: 800,
             yellowUpperLimit: 1000,
             isConnected: true,
-            isRefreshing: false
+            isRefreshing: false,
+            greenZonePercentage: 75,
+            yellowZonePercentage: 20,
+            redZonePercentage: 5,
+            dominantZone: "green",
+            dominantZonePercentage: 75
         )
     }
 
@@ -104,7 +109,12 @@ struct Co2WidgetProvider: TimelineProvider {
             greenUpperLimit: json["greenUpperLimit"] as? Int ?? 800,
             yellowUpperLimit: json["yellowUpperLimit"] as? Int ?? 1000,
             isConnected: isConnected,
-            isRefreshing: hasValidDevice ? (json["isRefreshing"] as? Bool ?? false) : false
+            isRefreshing: hasValidDevice ? (json["isRefreshing"] as? Bool ?? false) : false,
+            greenZonePercentage: hasValidDevice ? (json["greenZonePercentage"] as? Int ?? 0) : 0,
+            yellowZonePercentage: hasValidDevice ? (json["yellowZonePercentage"] as? Int ?? 0) : 0,
+            redZonePercentage: hasValidDevice ? (json["redZonePercentage"] as? Int ?? 0) : 0,
+            dominantZone: hasValidDevice ? (json["dominantZone"] as? String ?? "none") : "none",
+            dominantZonePercentage: hasValidDevice ? (json["dominantZonePercentage"] as? Int ?? 0) : 0
         )
     }
 }
@@ -125,6 +135,156 @@ struct Co2WidgetEntry: TimelineEntry {
     let yellowUpperLimit: Int
     let isConnected: Bool
     let isRefreshing: Bool
+    let greenZonePercentage: Int
+    let yellowZonePercentage: Int
+    let redZonePercentage: Int
+    let dominantZone: String
+    let dominantZonePercentage: Int
+}
+
+// MARK: - Reusable Components
+
+// Pie chart component for zone visualization
+struct ZonePieChart: View {
+    let greenPercentage: Int
+    let yellowPercentage: Int
+    let redPercentage: Int
+    let size: CGFloat
+    
+    private var radius: CGFloat {
+        size / 2
+    }
+    
+    var body: some View {
+        ZStack {
+            // Background circle
+            Circle()
+                .fill(Color.gray.opacity(0.2))
+                .frame(width: size, height: size)
+            
+            // Pie slices
+            PieChartSlice(
+                startAngle: .degrees(0),
+                endAngle: .degrees(Double(greenPercentage) * 3.6),
+                color: .green,
+                radius: radius
+            )
+            
+            PieChartSlice(
+                startAngle: .degrees(Double(greenPercentage) * 3.6),
+                endAngle: .degrees(Double(greenPercentage + yellowPercentage) * 3.6),
+                color: .yellow,
+                radius: radius
+            )
+            
+            PieChartSlice(
+                startAngle: .degrees(Double(greenPercentage + yellowPercentage) * 3.6),
+                endAngle: .degrees(360),
+                color: .red,
+                radius: radius
+            )
+        }
+        .frame(width: size, height: size)
+    }
+}
+
+// Individual pie slice
+struct PieChartSlice: View {
+    let startAngle: Angle
+    let endAngle: Angle
+    let color: Color
+    let radius: CGFloat
+    
+    var body: some View {
+        Path { path in
+            let center = CGPoint(x: radius, y: radius)
+            path.move(to: center)
+            path.addArc(center: center, radius: radius, startAngle: startAngle, endAngle: endAngle, clockwise: false)
+            path.closeSubpath()
+        }
+        .fill(color)
+    }
+}
+
+// Reusable widget content view
+struct WidgetContentView: View {
+    let entry: Co2WidgetProvider.Entry
+    let fontSize: CGFloat
+    let co2FontSize: CGFloat
+    let iconSize: CGFloat
+    let textSize: CGFloat
+    
+    var body: some View {
+        HStack {
+            // Left: Device name and Time stacked
+            VStack(alignment: .center, spacing: 2) {
+                if !entry.deviceName.isEmpty {
+                    Text(entry.deviceName)
+                        .font(.system(size: fontSize, weight: .medium))
+                        .foregroundColor(.gray)
+                        .lineLimit(1)
+                }
+                Text("at \(entry.date.formatted(date: .omitted, time: .shortened))")
+                    .font(.system(size: fontSize - 2, weight: .medium))
+                    .foregroundColor(.gray)
+            }
+            
+            Spacer()
+            
+            // Center: CO2 value
+            VStack(spacing: 2) {
+                Text(entry.co2Value > 0 ? "\(entry.co2Value)" : "----")
+                    .font(.system(size: co2FontSize, weight: .bold))
+                    .foregroundColor(co2Color(for: entry.co2Value))
+                Text("CO₂ ppm")
+                    .font(.system(size: textSize, weight: .medium))
+                    .foregroundColor(.white)
+            }
+            
+            Spacer()
+            
+            // Right: 2x2 grid of icons
+            VStack(spacing: 2) {
+                // Row 1: Battery+% and Alarm icon
+                HStack(spacing: 8) {
+                    // Col 1: Battery and percentage
+                    HStack(spacing: 2) {
+                        Image(systemName: batteryIcon(for: entry.batteryLevel, isCharging: entry.isCharging))
+                            .foregroundColor(batteryColor(for: entry.batteryLevel, isCharging: entry.isCharging))
+                            .font(.system(size: iconSize))
+                        Text(batteryText(for: entry.batteryLevel, isCharging: entry.isCharging))
+                            .font(.system(size: textSize, weight: .medium))
+                            .foregroundColor(.white)
+                            .lineLimit(1)
+                    }
+                    
+                    // Col 2: Alarm icon
+                    Image(systemName: entry.alarmEnabled ? "bell.fill" : "bell.slash.fill")
+                        .foregroundColor(entry.alarmEnabled ? .blue : .gray)
+                        .font(.system(size: iconSize))
+                }
+                
+                // Row 2: Timer+mode and Vibration icon
+                HStack(spacing: 8) {
+                    // Col 1: Timer and mode
+                    HStack(spacing: 2) {
+                        Image(systemName: "timer")
+                            .foregroundColor(.blue)
+                            .font(.system(size: iconSize))
+                        Text(entry.powerMode)
+                            .font(.system(size: textSize, weight: .medium))
+                            .foregroundColor(.white)
+                            .lineLimit(1)
+                    }
+                    
+                    // Col 2: Vibration icon
+                    Image(systemName: entry.vibrationEnabled ? "iphone.radiowaves.left.and.right" : "iphone.slash")
+                        .foregroundColor(entry.vibrationEnabled ? .blue : .gray)
+                        .font(.system(size: iconSize))
+                }
+            }
+        }
+    }
 }
 
 // MARK: - Widget Views
@@ -132,6 +292,7 @@ struct Co2WidgetEntry: TimelineEntry {
 // 2x2 Small Widget View
 struct SmallWidgetView: View {
     var entry: Co2WidgetProvider.Entry
+    @Environment(\.widgetContentMargins) var margins
     
     var body: some View {
         VStack(spacing: 2) {
@@ -154,20 +315,20 @@ struct SmallWidgetView: View {
                 // Top: Status icons only (no logo, no button)
                 HStack {
                     Spacer()
-                    HStack(spacing: 4) {
+                    HStack(spacing: 6) {
                         // Bluetooth connection status
                         Image(systemName: "bluetooth")
                             .foregroundColor(entry.isConnected ? .blue : .gray)
-                            .font(.system(size: 10, weight: .medium))
+                            .font(.system(size: 12, weight: .medium))
                         Image(systemName: batteryIcon(for: entry.batteryLevel, isCharging: entry.isCharging))
                             .foregroundColor(entry.isConnected ? batteryColor(for: entry.batteryLevel, isCharging: entry.isCharging) : .gray)
-                            .font(.system(size: 8))
+                            .font(.system(size: 10))
                         Image(systemName: entry.alarmEnabled ? "bell.fill" : "bell.slash.fill")
                             .foregroundColor(entry.isConnected ? (entry.alarmEnabled ? .blue : .gray) : .gray)
-                            .font(.system(size: 8))
+                            .font(.system(size: 10))
                         Image(systemName: entry.vibrationEnabled ? "iphone.radiowaves.left.and.right" : "iphone.slash")
                             .foregroundColor(entry.isConnected ? (entry.vibrationEnabled ? .blue : .gray) : .gray)
-                            .font(.system(size: 8))
+                            .font(.system(size: 10))
                     }
                 }
                 
@@ -176,27 +337,34 @@ struct SmallWidgetView: View {
                 // CO2 Value (vertically centered)
                 VStack(spacing: -2) {
                     Text(entry.co2Value > 0 ? "\(entry.co2Value)" : "----")
-                        .font(.system(size: 28, weight: .bold))
+                        .font(.system(size: 32, weight: .bold))
                         .foregroundColor(co2Color(for: entry.co2Value))
                         .minimumScaleFactor(0.7)
                     Text("CO₂ ppm")
-                        .font(.system(size: 10, weight: .medium))
+                        .font(.system(size: 12, weight: .medium))
                         .foregroundColor(.white.opacity(0.8))
                 }
                 
                 // Device name below CO2 value
                 if !entry.deviceName.isEmpty {
                     Text(entry.deviceName)
-                        .font(.system(size: 9, weight: .medium))
+                        .font(.system(size: 11, weight: .medium))
                         .foregroundColor(.gray)
                         .multilineTextAlignment(.center)
                         .lineLimit(1)
                 }
                 
+                // Last updated time at bottom
+                Text("at \(entry.date.formatted(date: .omitted, time: .shortened))")
+                    .font(.system(size: 10, weight: .medium))
+                    .foregroundColor(.gray.opacity(0.7))
+                    .multilineTextAlignment(.center)
+                    .lineLimit(1)
+                
                 Spacer()
             }
         }
-        .padding(8)
+        .padding(4)
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(
             RoundedRectangle(cornerRadius: 16)
@@ -209,6 +377,7 @@ struct SmallWidgetView: View {
 // 2x4 Medium Widget View (Like Live Activity)
 struct MediumWidgetView: View {
     var entry: Co2WidgetProvider.Entry
+    @Environment(\.widgetContentMargins) var margins
 
     var body: some View {
         VStack(spacing: 4) {
@@ -226,125 +395,36 @@ struct MediumWidgetView: View {
                 }
                 Spacer()
             } else {
-                // Top section with map, CO2, button, status, graph (matches Live Activity)
-                ZStack {
-                // Center refresh button (matches Live Activity style)
-                ZStack {
-                    if entry.isRefreshing && entry.isConnected {
-                        ProgressView()
-                            .progressViewStyle(CircularProgressViewStyle(tint: .white))
-                            .scaleEffect(0.8)
-                            .frame(width: 32, height: 32)
-                    } else if entry.isConnected {
-                        ZStack {
-                            Circle()
-                                .strokeBorder(.white.opacity(0.8), lineWidth: 1)
-                                .fill(.secondary.opacity(0.3))
-                                .frame(width: 32, height: 32)
-                                .shadow(color: .secondary.opacity(0.2), radius: 1, x: 0, y: 0)
-                            Circle()
-                                .fill(.white)
-                                .frame(width: 6, height: 6)
-                        }
-                    } else {
-                        Circle()
-                            .fill(.gray.opacity(0.5))
-                            .frame(width: 32, height: 32)
-                    }
-                }
+                // Reusable widget content
+                WidgetContentView(
+                    entry: entry,
+                    fontSize: 11,
+                    co2FontSize: 24,
+                    iconSize: 10,
+                    textSize: 10
+                )
+                .padding(.bottom, 8)
                 
-                // Full width layout
-                HStack {
-                    // Left: Map + CO2
-                    HStack(spacing: 6) {
-                        // Map icon with navigation
-                        Link(destination: URL(string: "airspothealth://map-handoff?deviceId=\(entry.deviceId)")!) {
-                            Image("ic_map")
-                                .resizable()
-                                .aspectRatio(contentMode: .fit)
-                                .frame(width: 24, height: 24)
-                        }
-                        .buttonStyle(.plain)
-                        
-                        VStack(alignment: .center, spacing: 2) {
-                            Text(entry.co2Value > 0 ? "\(entry.co2Value)" : "----")
-                                .font(.system(size: 24, weight: .bold))
-                                .foregroundColor(co2Color(for: entry.co2Value))
-                            Text("CO₂ ppm")
-                                .font(.system(size: 10, weight: .medium))
-                                .foregroundColor(.white)
-                                .offset(y: -4)
-                        }
-                        .padding(.leading, 8)
-                    }
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    
-                    // Right: Status + Graph
-                    HStack(spacing: 6) {
-                        VStack(alignment: .trailing, spacing: 6) {
-                            HStack(spacing: 6) {
-                                HStack(spacing: 2) {
-                                    Image(systemName: batteryIcon(for: entry.batteryLevel, isCharging: entry.isCharging))
-                                        .foregroundColor(batteryColor(for: entry.batteryLevel, isCharging: entry.isCharging))
-                                        .font(.system(size: 10))
-                                    Text(batteryText(for: entry.batteryLevel, isCharging: entry.isCharging))
-                                        .font(.system(size: 8, weight: .medium))
-                                        .foregroundColor(.white)
-                                        .lineLimit(1)
-                                        .minimumScaleFactor(0.8)
-                                }
-                                Image(systemName: entry.alarmEnabled ? "bell.fill" : "bell.slash.fill")
-                                    .foregroundColor(entry.alarmEnabled ? .blue : .gray)
-                                    .font(.system(size: 10))
-                            }
-                            .frame(maxWidth: .infinity, alignment: .trailing)
-                            .padding(.trailing, 4)
-                            
-                            HStack(spacing: 6) {
-                                HStack(spacing: 2) {
-                                    Image(systemName: "timer")
-                                        .foregroundColor(.blue)
-                                        .font(.system(size: 10))
-                                    Text(entry.powerMode)
-                                        .font(.system(size: 8, weight: .medium))
-                                        .foregroundColor(.white)
-                                        .lineLimit(1)
-                                        .minimumScaleFactor(0.7)
-                                }
-                                Image(systemName: entry.vibrationEnabled ? "iphone.radiowaves.left.and.right" : "iphone.slash")
-                                    .foregroundColor(entry.vibrationEnabled ? .blue : .gray)
-                                    .font(.system(size: 10))
-                            }
-                            .frame(maxWidth: .infinity, alignment: .trailing)
-                        }
-                        .padding()
-                        
-                        // Graph icon with navigation
-                        Link(destination: URL(string: "airspothealth://devices/\(entry.deviceId)/graph")!) {
-                            Image("ic_graph2")
-                                .resizable()
-                                .aspectRatio(contentMode: .fit)
-                                .frame(width: 24, height: 24)
-                        }
-                        .buttonStyle(.plain)
-                    }
-                    .frame(maxWidth: .infinity, alignment: .trailing)
-                }
-            }
-            
-                // Device name
-                if !entry.deviceName.isEmpty {
-                    Text(entry.deviceName)
-                        .font(.system(size: 11, weight: .medium))
+                // CO2 History Graph
+                if !entry.co2History.isEmpty {
+                    Co2GraphView(
+                        co2History: entry.co2History,
+                        greenUpperLimit: entry.greenUpperLimit,
+                        yellowUpperLimit: entry.yellowUpperLimit,
+                        graphMaxValue: entry.co2History.max() ?? 1600,
+                        graphMinValue: entry.co2History.min() ?? 400
+                    )
+                    .frame(height: 70)
+                } else {
+                    Text("No data available")
+                        .font(.system(size: 10))
                         .foregroundColor(.gray)
-                        .frame(maxWidth: .infinity, alignment: .center)
-                        .padding(.top, -4)
-                        .padding(.bottom, -4)
+                        .frame(height: 70)
                 }
             }
         }
-        .padding(.horizontal, 16)
-        .padding(.vertical, 16)
+        .padding(.horizontal, 6)
+        .padding(.vertical, 4)
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(
             RoundedRectangle(cornerRadius: 16)
@@ -357,9 +437,10 @@ struct MediumWidgetView: View {
 // 4x4 Large Widget View (Extended with Graph)
 struct LargeWidgetView: View {
     var entry: Co2WidgetProvider.Entry
+    @Environment(\.widgetContentMargins) var margins
 
     var body: some View {
-        VStack(spacing: 12) {
+        VStack(spacing: 10) {
             if entry.deviceId.isEmpty || !entry.isConnected {
                 // No device connected state
                 Spacer()
@@ -374,121 +455,15 @@ struct LargeWidgetView: View {
                 }
                 Spacer()
             } else {
-                // Top section with map, CO2, button, status, graph (matches Live Activity)
-                ZStack {
-                // Center refresh button (matches Live Activity style)
-                ZStack {
-                    if entry.isRefreshing && entry.isConnected {
-                        ProgressView()
-                            .progressViewStyle(CircularProgressViewStyle(tint: .white))
-                            .scaleEffect(1.0)
-                            .frame(width: 36, height: 36)
-                    } else if entry.isConnected {
-                        ZStack {
-                            Circle()
-                                .strokeBorder(.white.opacity(0.8), lineWidth: 1)
-                                .fill(.secondary.opacity(0.3))
-                                .frame(width: 36, height: 36)
-                                .shadow(color: .secondary.opacity(0.2), radius: 1, x: 0, y: 0)
-                            Circle()
-                                .fill(.white)
-                                .frame(width: 7, height: 7)
-                        }
-                    } else {
-                        Circle()
-                            .fill(.gray.opacity(0.5))
-                            .frame(width: 36, height: 36)
-                    }
-                }
-                
-                // Full width layout
-                HStack {
-                    // Left: Map + CO2
-                    HStack(spacing: 6) {
-                        // Map icon with navigation
-                        Link(destination: URL(string: "airspothealth://map-handoff?deviceId=\(entry.deviceId)")!) {
-                            Image("ic_map")
-                                .resizable()
-                                .aspectRatio(contentMode: .fit)
-                                .frame(width: 32, height: 32)
-                        }
-                        .buttonStyle(.plain)
-                        
-                        VStack(alignment: .center, spacing: 2) {
-                            Text(entry.co2Value > 0 ? "\(entry.co2Value)" : "----")
-                                .font(.system(size: 28, weight: .bold))
-                                .foregroundColor(co2Color(for: entry.co2Value))
-                            Text("CO₂ ppm")
-                                .font(.system(size: 12, weight: .medium))
-                                .foregroundColor(.white)
-                                .offset(y: -4)
-                        }
-                        .padding(.leading, 12)
-                    }
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    
-                    // Right: Status + Graph
-                    HStack(spacing: 6) {
-                        VStack(alignment: .trailing, spacing: 6) {
-                            HStack(spacing: 6) {
-                                HStack(spacing: 2) {
-                                    Image(systemName: batteryIcon(for: entry.batteryLevel, isCharging: entry.isCharging))
-                                        .foregroundColor(batteryColor(for: entry.batteryLevel, isCharging: entry.isCharging))
-                                        .font(.system(size: 12))
-                                    Text(batteryText(for: entry.batteryLevel, isCharging: entry.isCharging))
-                                        .font(.system(size: 10, weight: .medium))
-                                        .foregroundColor(.white)
-                                        .lineLimit(1)
-                                        .minimumScaleFactor(0.8)
-                                }
-                                Image(systemName: entry.alarmEnabled ? "bell.fill" : "bell.slash.fill")
-                                    .foregroundColor(entry.alarmEnabled ? .blue : .gray)
-                                    .font(.system(size: 12))
-                            }
-                            .frame(maxWidth: .infinity, alignment: .trailing)
-                            .padding(.trailing, 4)
-                            
-                            HStack(spacing: 6) {
-                                HStack(spacing: 2) {
-                                    Image(systemName: "timer")
-                                        .foregroundColor(.blue)
-                                        .font(.system(size: 12))
-                                    Text(entry.powerMode)
-                                        .font(.system(size: 10, weight: .medium))
-                                        .foregroundColor(.white)
-                                        .lineLimit(1)
-                                        .minimumScaleFactor(0.7)
-                                }
-                                Image(systemName: entry.vibrationEnabled ? "iphone.radiowaves.left.and.right" : "iphone.slash")
-                                    .foregroundColor(entry.vibrationEnabled ? .blue : .gray)
-                                    .font(.system(size: 12))
-                            }
-                            .frame(maxWidth: .infinity, alignment: .trailing)
-                        }
-                        .padding()
-                        
-                        // Graph icon with navigation
-                        Link(destination: URL(string: "airspothealth://devices/\(entry.deviceId)/graph")!) {
-                            Image("ic_graph2")
-                                .resizable()
-                                .aspectRatio(contentMode: .fit)
-                                .frame(width: 32, height: 32)
-                        }
-                        .buttonStyle(.plain)
-                    }
-                    .frame(maxWidth: .infinity, alignment: .trailing)
-                }
-            }
-            
-                // Device name
-                if !entry.deviceName.isEmpty {
-                    Text(entry.deviceName)
-                        .font(.system(size: 13, weight: .medium))
-                        .foregroundColor(.gray)
-                        .frame(maxWidth: .infinity, alignment: .center)
-                        .padding(.top, -4)
-                        .padding(.bottom, -4)
-                }
+                // Reusable widget content
+                WidgetContentView(
+                    entry: entry,
+                    fontSize: 13,
+                    co2FontSize: 28,
+                    iconSize: 12,
+                    textSize: 12
+                )
+                .padding(.bottom, 8)
                 
                 // CO2 History Graph
                 if !entry.co2History.isEmpty {
@@ -499,16 +474,44 @@ struct LargeWidgetView: View {
                         graphMaxValue: entry.co2History.max() ?? 1600,
                         graphMinValue: entry.co2History.min() ?? 400
                     )
-                    .frame(height: 80)
+                    .frame(height: 76)
                 } else {
                     Text("No data available")
                         .font(.system(size: 12))
                         .foregroundColor(.gray)
-                        .frame(height: 80)
+                        .frame(height: 76)
                 }
+                
+                // Zone Analysis - Two equal halves
+                HStack(spacing: 0) {
+                    // Left half - Pie Chart (centered)
+                    HStack {
+                        Spacer()
+                        ZonePieChart(
+                            greenPercentage: entry.greenZonePercentage,
+                            yellowPercentage: entry.yellowZonePercentage,
+                            redPercentage: entry.redZonePercentage,
+                            size: 100
+                        )
+                        Spacer()
+                    }
+                    .frame(maxWidth: .infinity)
+                    
+                    // Right half - Text (centered)
+                    HStack {
+                        Spacer()
+                        Text("\(entry.dominantZonePercentage)% \(entry.dominantZone) zone air environment today")
+                            .font(.system(size: 12, weight: .medium))
+                            .foregroundColor(.white)
+                            .multilineTextAlignment(.center)
+                            .lineLimit(3)
+                        Spacer()
+                    }
+                    .frame(maxWidth: .infinity)
+                }.padding(.top, 12)
             }
         }
-        .padding(16)
+        .padding(6)
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(
             RoundedRectangle(cornerRadius: 16)
@@ -545,16 +548,18 @@ struct Co2Widget: Widget {
         StaticConfiguration(kind: kind, provider: Co2WidgetProvider()) { entry in
             if #available(iOS 17.0, *) {
                 Co2WidgetEntryView(entry: entry)
-                    .containerBackground(.fill.tertiary, for: .widget)
+                    .containerBackground(Color.black, for: .widget)
+                    .padding(.all, 12)
             } else {
                 Co2WidgetEntryView(entry: entry)
-                    .padding()
-                    .background()
+                    .padding(.all, 12)
+                    .background(Color.black)
             }
         }
         .configurationDisplayName("AirSpot CO₂ Monitor")
         .description("Monitor your CO₂ levels and device status")
         .supportedFamilies([.systemSmall, .systemMedium, .systemLarge])
+        .contentMarginsDisabled()
     }
 }
 
@@ -605,7 +610,12 @@ private func batteryText(for level: Int, isCharging: Bool) -> String {
         greenUpperLimit: 800,
         yellowUpperLimit: 1000,
         isConnected: true,
-        isRefreshing: false
+        isRefreshing: false,
+        greenZonePercentage: 75,
+        yellowZonePercentage: 20,
+        redZonePercentage: 5,
+        dominantZone: "green",
+        dominantZonePercentage: 75
     )
 }
 
@@ -626,7 +636,12 @@ private func batteryText(for level: Int, isCharging: Bool) -> String {
         greenUpperLimit: 800,
         yellowUpperLimit: 1000,
         isConnected: true,
-        isRefreshing: false
+        isRefreshing: false,
+        greenZonePercentage: 75,
+        yellowZonePercentage: 20,
+        redZonePercentage: 5,
+        dominantZone: "green",
+        dominantZonePercentage: 75
     )
 }
 
@@ -647,6 +662,11 @@ private func batteryText(for level: Int, isCharging: Bool) -> String {
         greenUpperLimit: 800,
         yellowUpperLimit: 1000,
         isConnected: true,
-        isRefreshing: false
+        isRefreshing: false,
+        greenZonePercentage: 75,
+        yellowZonePercentage: 20,
+        redZonePercentage: 5,
+        dominantZone: "green",
+        dominantZonePercentage: 75
     )
 }

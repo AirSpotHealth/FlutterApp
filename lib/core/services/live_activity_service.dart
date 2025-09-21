@@ -3,6 +3,7 @@ import 'dart:io';
 
 import 'package:airspothealth/core/models/device_settings.dart';
 import 'package:airspothealth/core/models/live_activity_model.dart';
+import 'package:airspothealth/core/services/zone_analysis_service.dart';
 import 'package:airspothealth/core/utils/constants.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
@@ -578,6 +579,16 @@ class LiveActivityService {
       final bool alarmEnabled = deviceSettings?.alarmEnabled ?? false;
       final bool vibrationEnabled = deviceSettings?.vibrationEnabled ?? false;
 
+      // Calculate zone percentages for today
+      final zoneAnalysisService = ZoneAnalysisService();
+      final zoneResult = await zoneAnalysisService.calculateZonePercentages(
+        deviceId: deviceId,
+        greenUpperLimit: deviceSettings?.thresholds.greenUpperLimit ??
+            Constants.defaultGreenUpperLimit,
+        yellowUpperLimit: deviceSettings?.thresholds.yellowUpperLimit ??
+            Constants.defaultYellowUpperLimit,
+      );
+
       // Create unified data model
       final liveActivityData = LiveActivityModel(
         deviceId: deviceId,
@@ -597,6 +608,11 @@ class LiveActivityService {
         graphMaxValue: deviceSettings?.graphMaxValue ?? 1600,
         graphMinValue: deviceSettings?.graphMinValue ?? 0,
         isRefreshing: false,
+        greenZonePercentage: zoneResult.greenZonePercentage,
+        yellowZonePercentage: zoneResult.yellowZonePercentage,
+        redZonePercentage: zoneResult.redZonePercentage,
+        dominantZone: zoneResult.dominantZone,
+        dominantZonePercentage: zoneResult.dominantZonePercentage,
       );
 
       // Store the data for potential disconnection updates
