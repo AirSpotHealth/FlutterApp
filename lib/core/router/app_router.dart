@@ -1,6 +1,5 @@
+import 'package:airspothealth/core/router/redirect_handler.dart';
 import 'package:airspothealth/core/router/route_names.dart';
-import 'package:airspothealth/core/services/map_handoff_service.dart';
-import 'package:airspothealth/core/utils/constants.dart';
 import 'package:airspothealth/features/add_device/add_device_page.dart';
 import 'package:airspothealth/features/advanced_alarm_settings/advanced_alarm_settings_page.dart';
 import 'package:airspothealth/features/app_setup/app_setup_page.dart';
@@ -24,7 +23,6 @@ import 'package:airspothealth/features/home/homepage.dart';
 import 'package:airspothealth/features/solutions/solutions_page.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import 'package:url_launcher/url_launcher_string.dart';
 
 class AppRouter {
   static final navigatorKey = GlobalKey<NavigatorState>();
@@ -33,76 +31,7 @@ class AppRouter {
     navigatorKey: navigatorKey,
     initialLocation: RouteNames.home,
     debugLogDiagnostics: true,
-    redirect: (context, state) {
-      debugPrint(
-          'Redirecting to: ${state.uri}, Paths: ${state.uri.pathSegments}');
-      final uri = Uri.parse(state.uri.toString());
-
-      // Redirect malformed paths missing "/devices"
-      if (uri.pathSegments.length == 2 &&
-          uri.pathSegments[1] == 'graph' &&
-          !uri.pathSegments.contains('devices')) {
-        final deviceId = uri.pathSegments[0];
-        return '/devices/$deviceId/graph';
-      }
-
-      // legacy: airspothealth://open_map
-      if (uri.host.contains('open_map')) {
-        WidgetsBinding.instance.addPostFrameCallback((_) {
-          debugPrint('Opening map URL');
-          // Open the map URL in an external browser
-          launchUrlString(Constants.mapUrl,
-                  mode: LaunchMode.externalApplication)
-              .then((success) {
-            if (!success) {
-              debugPrint('Failed to open map URL: ${Constants.mapUrl}');
-            }
-          }).catchError((error) {
-            debugPrint('Error opening map URL: $error');
-          });
-        });
-        // Return null to indicate no redirect is needed
-        return null; // No redirect needed, we just open the URL
-      }
-
-      // restart live activity: airspothealth://restart-live-activity?deviceId=...
-      if (uri.host.contains('restart-live-activity')) {
-        final deviceId = uri.queryParameters['deviceId'];
-        debugPrint(
-            '🔄 Restart Live Activity deep link detected for device: $deviceId');
-
-        if (deviceId != null && deviceId.isNotEmpty) {
-          // Navigate directly to the specific device's settings page with a flag
-          return '/devices/$deviceId/settings?from=restart';
-        } else {
-          // Fallback to devices page if no device ID
-          return '/devices';
-        }
-      }
-
-      // new: airspothealth://map-handoff?deviceId=...
-      if (uri.host.contains('map-handoff')) {
-        final deviceId = uri.queryParameters['deviceId'];
-        WidgetsBinding.instance.addPostFrameCallback((_) async {
-          try {
-            // Build signed URL and open externally
-            final service = MapHandoffService();
-            final url = await service.buildSignedMapUrl(
-              deviceId: deviceId ?? '',
-              recordLimit: 500,
-              useFragment: true,
-            );
-            await launchUrlString(url.toString(),
-                mode: LaunchMode.externalApplication);
-          } catch (e) {
-            debugPrint('Failed to build/open map handoff URL: $e');
-          }
-        });
-        return null;
-      }
-
-      return null; // No redirect
-    },
+    redirect: RedirectHandler.handleRedirect,
     routes: [
       // Map handoff internal route (optional: for manual triggering)
       GoRoute(
