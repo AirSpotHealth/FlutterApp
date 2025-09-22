@@ -17,14 +17,26 @@ class MapHandoffService {
 
   final IsarService _isarService;
 
-  static const String _kid = String.fromEnvironment('MAP_HMAC_KID');
-  static const String _secretB64 = String.fromEnvironment('MAP_HMAC_KEY');
+  static const String _kid =
+      String.fromEnvironment('MAP_HMAC_KID', defaultValue: '');
+  static const String _secretB64 =
+      String.fromEnvironment('MAP_HMAC_KEY', defaultValue: '');
 
   Future<Uri> buildSignedMapUrl({
     required String deviceId,
     int recordLimit = 500,
     bool useFragment = true,
   }) async {
+    // Validate environment variables
+    if (_secretB64.isEmpty) {
+      throw Exception(
+          'MAP_HMAC_KEY environment variable is required for map handoff');
+    }
+    if (_kid.isEmpty) {
+      throw Exception(
+          'MAP_HMAC_KID environment variable is required for map handoff');
+    }
+
     final bleName = _readBleName(deviceId);
     final canonicalId = bleName?.isNotEmpty == true ? bleName! : deviceId;
     final records =
