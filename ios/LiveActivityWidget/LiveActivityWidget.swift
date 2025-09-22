@@ -221,12 +221,12 @@ struct WidgetContentView: View {
                 if !entry.deviceName.isEmpty {
                     Text(entry.deviceName)
                         .font(.system(size: fontSize, weight: .medium))
-                        .foregroundColor(.gray)
+                        .foregroundColor(.white)
                         .lineLimit(1)
                 }
                 Text("at \(entry.date.formatted(date: .omitted, time: .shortened))")
                     .font(.system(size: fontSize - 2, weight: .medium))
-                    .foregroundColor(.gray)
+                    .foregroundColor(.white)
             }
             
             Spacer()
@@ -349,7 +349,7 @@ struct SmallWidgetView: View {
                 if !entry.deviceName.isEmpty {
                     Text(entry.deviceName)
                         .font(.system(size: 11, weight: .medium))
-                        .foregroundColor(.gray)
+                        .foregroundColor(.white)
                         .multilineTextAlignment(.center)
                         .lineLimit(1)
                 }
@@ -357,7 +357,7 @@ struct SmallWidgetView: View {
                 // Last updated time at bottom
                 Text("at \(entry.date.formatted(date: .omitted, time: .shortened))")
                     .font(.system(size: 10, weight: .medium))
-                    .foregroundColor(.gray.opacity(0.7))
+                    .foregroundColor(.white.opacity(0.7))
                     .multilineTextAlignment(.center)
                     .lineLimit(1)
                 
@@ -390,7 +390,7 @@ struct MediumWidgetView: View {
                         .font(.system(size: 28, weight: .medium))
                     Text("No Device Connected")
                         .font(.system(size: 14, weight: .medium))
-                        .foregroundColor(.gray)
+                        .foregroundColor(.white)
                         .multilineTextAlignment(.center)
                 }
                 Spacer()
@@ -418,7 +418,7 @@ struct MediumWidgetView: View {
                 } else {
                     Text("No data available")
                         .font(.system(size: 10))
-                        .foregroundColor(.gray)
+                        .foregroundColor(.white)
                         .frame(height: 70)
                 }
             }
@@ -450,7 +450,7 @@ struct LargeWidgetView: View {
                         .font(.system(size: 36, weight: .medium))
                     Text("No Device Connected")
                         .font(.system(size: 16, weight: .medium))
-                        .foregroundColor(.gray)
+                        .foregroundColor(.white)
                         .multilineTextAlignment(.center)
                 }
                 Spacer()
@@ -478,7 +478,7 @@ struct LargeWidgetView: View {
                 } else {
                     Text("No data available")
                         .font(.system(size: 12))
-                        .foregroundColor(.gray)
+                        .foregroundColor(.white)
                         .frame(height: 76)
                 }
                 

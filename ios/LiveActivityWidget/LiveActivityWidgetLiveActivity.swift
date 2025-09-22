@@ -355,7 +355,7 @@ struct LiveActivityWidgetLiveActivity: Widget {
                         if !context.state.deviceName.isEmpty {
                             Text(context.state.deviceName)
                                 .font(.system(size: 10, weight: .medium))
-                                .foregroundColor(.gray)
+                                .foregroundColor(.white)
                         }
 
                         HStack(alignment: .bottom, spacing: 2) {
@@ -645,7 +645,7 @@ struct LiveActivityWidgetLiveActivity: Widget {
                     .font(.system(size: 18, weight: .bold))
                     .foregroundColor(.orange)
 
-                Text("Live Activity will expire soon")
+                Text("Live Activity expired")
                     .font(.system(size: 14, weight: .semibold))
                     .foregroundColor(.white)
                     .lineLimit(1)
@@ -675,7 +675,7 @@ struct LiveActivityWidgetLiveActivity: Widget {
                     .foregroundColor(.white)
                     .padding(.horizontal, 14)
                     .padding(.vertical, 8)
-                    .background(Color.blue)
+                    .background(Color.accentColor)
                     .clipShape(Capsule())
                 }
                 .buttonStyle(.plain)
@@ -691,11 +691,7 @@ struct LiveActivityWidgetLiveActivity: Widget {
         .background(
             RoundedRectangle(cornerRadius: 14)
                 .fill(
-                    LinearGradient(
-                        gradient: Gradient(colors: [Color.orange.opacity(0.85), Color.red.opacity(0.7)]),
-                        startPoint: .topLeading,
-                        endPoint: .bottomTrailing
-                    )
+                    .black.opacity(0.8)
                 )
         )
         .overlay(
