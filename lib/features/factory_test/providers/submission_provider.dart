@@ -167,12 +167,15 @@ class SubmissionNotifier extends FamilyNotifier<SubmissionState, String> {
       debugPrint('Submitting factory test results: ${payload.toString()}');
 
       // Get API key from environment
-      const apiKey = String.fromEnvironment('API_KEY');
+      const apiKey = String.fromEnvironment('API_KEY', defaultValue: '');
 
       // Prepare headers
       final headers = <String, String>{};
       if (apiKey.isNotEmpty) {
         headers['x-api-key'] = apiKey;
+      } else {
+        debugPrint(
+            'Warning: API_KEY environment variable not set. Factory test submission may fail.');
       }
 
       // Submit to API with headers and retry logic

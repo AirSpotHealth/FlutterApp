@@ -35,6 +35,36 @@ struct RefreshDataIntent: LiveActivityIntent {
     }
 }
 
+@available(iOS 17.0, *)
+struct RestartLiveActivityIntent: LiveActivityIntent {
+    static var title: LocalizedStringResource = "Restart Live Activity"
+    static var description = IntentDescription("Restarts the live activity to extend its duration")
+    
+    @Parameter(title: "Device ID")
+    var deviceId: String
+    
+    init(deviceId: String) {
+        self.deviceId = deviceId
+    }
+    
+    init() {
+        self.deviceId = ""
+    }
+
+    func perform() async throws -> some IntentResult {
+        print("Live Activity restart requested via LiveActivityIntent (iOS 17+) for device: \(deviceId)")
+        
+        // Post notification (for when app/extension is active); opening the app is handled via widgetURL
+        NotificationCenter.default.post(
+            name: Notification.Name("RestartLiveActivityRequested"),
+            object: nil,
+            userInfo: ["deviceId": deviceId]
+        )
+        
+        return .result()
+    }
+}
+
 
 #endif
 
@@ -70,6 +100,10 @@ struct LiveActivityWidgetAttributes: ActivityAttributes {
         var isConnected: Bool
         // Last Updated
         var lastUpdated: Date
+        // Activity Started Time (to calculate remaining time)
+        var activityStartTime: Date
+        // Show stale warning (when approaching 8 hours)
+        var showStaleWarning: Bool
     }
 }
 
@@ -285,193 +319,23 @@ struct CompactRefreshButton: View {
 @available(iOS 16.2, *)
 struct LiveActivityWidgetLiveActivity: Widget {
     var body: some WidgetConfiguration {
-        ActivityConfiguration(for: LiveActivityWidgetAttributes.self) {
-            context in
+        ActivityConfiguration(for: LiveActivityWidgetAttributes.self) { context in
             // Lock screen/banner UI goes here
-            VStack(spacing: 4) {
-                // Top section with CO2 value and status
-                ZStack {
-                    // Center refresh button – visually centered
-                    CompactRefreshButton(
-                        size: context.state.isRefreshing ? 32 : 36,
-                        isRefreshing: context.state.isRefreshing,
-                        isConnected: context.state.isConnected
-                    )
-
-                    // Full width HStack to layout left and right sections
-                    HStack {
-                        // Left Section (Map + CO2)
-                        HStack(spacing: 6) {
-                            Link(
-                                destination: URL(
-                                    string: "airspothealth://map-handoff?deviceId=\(context.state.deviceId)"
-                                )!
-                            ) {
-                                Image("ic_map")
-                                    .resizable()
-                                    .aspectRatio(contentMode: .fit)
-                                    .frame(width: 32, height: 32)
-                            }
-                            .buttonStyle(.plain)
-
-
-                            VStack(alignment: .center, spacing: 2) {
-                                Co2ValueView(
-                                    co2Value: context.state.co2Value,
-                                    greenUpperLimit: context.state
-                                        .greenUpperLimit,
-                                    yellowUpperLimit: context.state
-                                        .yellowUpperLimit,
-                                    isRefreshing: context.state.isRefreshing,
-                                    isConnected: context.state.isConnected,
-                                    fontSize: 24
-                                )
-                                Text("CO₂ ppm")
-                                    .font(.system(size: 10, weight: .medium))
-                                    .foregroundColor(.white)
-                                    .offset(y: -4)
-                            }
-                            .padding(.leading, 28)
-                        }
-                        .frame(maxWidth: .infinity, alignment: .leading)
-
-                        // Right Section (Status + Graph icon)
-                        HStack(spacing: 6) {
-                            VStack(alignment: .trailing, spacing: 6) {
-                                HStack(alignment: .top, spacing: 6) {
-                                    HStack(spacing: 3) {
-                                        Image(
-                                            systemName: batteryIcon(
-                                                for: context.state.batteryLevel,
-                                                isCharging: context.state
-                                                    .isCharging
-                                            )
-                                        )
-                                        .foregroundColor(
-                                            batteryColor(
-                                                for: context.state.batteryLevel,
-                                                isCharging: context.state
-                                                    .isCharging
-                                            )
-                                        )
-                                        .font(
-                                            .system(size: 12, weight: .medium)
-                                        )
-                                        Text(
-                                            batteryText(
-                                                for: context.state.batteryLevel,
-                                                isCharging: context.state
-                                                    .isCharging
-                                            )
-                                        )
-                                        .font(
-                                            .system(size: 10, weight: .medium)
-                                        )
-                                        .foregroundColor(.white)
-                                    }
-                                    Image(
-                                        systemName: context.state.alarmEnabled
-                                            ? "bell.fill" : "bell.slash.fill"
-                                    )
-                                    .foregroundColor(
-                                        context.state.alarmEnabled
-                                            ? .blue : .gray
-                                    )
-                                    .font(.system(size: 12, weight: .medium))
-                                }
-                                .frame(
-                                    maxWidth: .infinity,
-                                    alignment: .trailing,
-                                ).padding(.trailing, 4)
-
-                                HStack(alignment: .top, spacing: 6) {
-                                    HStack(spacing: 3) {
-                                        Image(systemName: "timer")
-                                            .foregroundColor(.blue)
-                                            .font(
-                                                .system(
-                                                    size: 12,
-                                                    weight: .medium
-                                                )
-                                            )
-                                        Text(context.state.powerMode)
-                                            .font(
-                                                .system(
-                                                    size: 10,
-                                                    weight: .medium
-                                                )
-                                            )
-                                            .foregroundColor(.white)
-                                    }
-                                    Image(
-                                        systemName: context.state
-                                            .vibrationEnabled
-                                            ? "iphone.radiowaves.left.and.right"
-                                            : "iphone.slash"
-                                    )
-                                    .foregroundColor(
-                                        context.state.vibrationEnabled
-                                            ? .blue : .gray
-                                    )
-                                    .font(.system(size: 12, weight: .medium))
-                                }
-                                .frame(
-                                    maxWidth: .infinity,
-                                    alignment: .trailing
-                                )
-                            }.padding()
-
-                            Link(
-                                destination: URL(
-                                    string:
-                                        "airspothealth://devices/\(context.state.deviceId)/graph"
-                                )!
-                            ) {
-                                Image("ic_graph2")
-                                    .resizable()
-                                    .aspectRatio(contentMode: .fit)
-                                    .frame(width: 32, height: 32)
-                            }
-                            .buttonStyle(.plain)
-                        }
-                        .frame(maxWidth: .infinity, alignment: .trailing)
-                    }
-                }
-
-                // Device Name Section
-                if !context.state.deviceName.isEmpty {
-                    Text(context.state.deviceName)
-                        .font(.system(size: 11, weight: .medium))
-                        .foregroundColor(.gray)
-                        .frame(maxWidth: .infinity, alignment: .center)
-                        .padding(.top, -4) // Reduce spacing from top section
-                        .padding(.bottom, -4) // Reduce spacing to bottom section
-                }
-
-                // Graph Section
-                if !context.state.co2History.isEmpty {
-                    Co2GraphView(
-                        co2History: context.state.co2History,
-                        greenUpperLimit: context.state.greenUpperLimit,
-                        yellowUpperLimit: context.state.yellowUpperLimit,
-                        graphMaxValue: context.state.graphMaxValue,
-                        graphMinValue: context.state.graphMinValue
-                    )
+            let shouldShow = shouldShowStaleWarning(state: context.state)
+            Group {
+                if shouldShow {
+                    staleWarningBannerView(context: context)
+                } else {
+                    normalLiveActivityBannerView(context: context)
                 }
             }
-            .padding(.horizontal, 16)
-            .padding(.vertical, 16)
-            .background(
-                RoundedRectangle(cornerRadius: 16)
-                    .fill(Color.black.opacity(0.1))
-                    .background(
-                        RoundedRectangle(cornerRadius: 16)
-                            .fill(.ultraThinMaterial)
-                    )
+            .widgetURL(
+                URL(
+                    string: shouldShow
+                        ? "airspothealth://restart-live-activity?deviceId=\(context.state.deviceId)"
+                        : "airspothealth://devices"
+                )
             )
-            .activityBackgroundTint(Color.clear)
-            .activitySystemActionForegroundColor(Color.primary)
-
         } dynamicIsland: { context in
             DynamicIsland {
                 // Expanded UI goes here
@@ -491,7 +355,7 @@ struct LiveActivityWidgetLiveActivity: Widget {
                         if !context.state.deviceName.isEmpty {
                             Text(context.state.deviceName)
                                 .font(.system(size: 10, weight: .medium))
-                                .foregroundColor(.gray)
+                                .foregroundColor(.white)
                         }
 
                         HStack(alignment: .bottom, spacing: 2) {
@@ -556,43 +420,89 @@ struct LiveActivityWidgetLiveActivity: Widget {
                 }
 
                 DynamicIslandExpandedRegion(.bottom) {
-                    HStack(spacing: 16) {
-                        HStack(spacing: 6) {
-                            Image(
-                                systemName: context.state.alarmEnabled
-                                    ? "bell.fill" : "bell.slash.fill"
-                            )
-                            .foregroundColor(
-                                context.state.alarmEnabled ? .blue : .gray
-                            )
-                            .font(.system(size: 12, weight: .medium))
-                            Text("Alarm")
-                                .font(.system(size: 10, weight: .medium))
+                    if context.state.showStaleWarning {
+                        // Show stale warning with restart button
+                        VStack(spacing: 8) {
+                            HStack {
+                                Image(systemName: "exclamationmark.triangle.fill")
+                                    .foregroundColor(.orange)
+                                    .font(.system(size: 12, weight: .medium))
+                                Text("Live Activity expires soon")
+                                    .font(.system(size: 11, weight: .medium))
+                                    .foregroundColor(.orange)
+                                Spacer()
+                            }
+                            
+                            if #available(iOS 17.0, *) {
+                                Button(intent: RestartLiveActivityIntent(deviceId: context.state.deviceId)) {
+                                    HStack(spacing: 6) {
+                                        Image(systemName: "arrow.clockwise")
+                                            .font(.system(size: 10, weight: .medium))
+                                        Text("Tap to restart")
+                                            .font(.system(size: 10, weight: .medium))
+                                    }
+                                    .foregroundColor(.white)
+                                    .padding(.horizontal, 12)
+                                    .padding(.vertical, 6)
+                                    .background(Color.blue)
+                                    .cornerRadius(12)
+                                }
+                                .buttonStyle(.plain)
+                            } else {
+                                // Fallback for iOS 16.x - just show text message
+                                HStack(spacing: 6) {
+                                    Image(systemName: "arrow.clockwise")
+                                        .font(.system(size: 10, weight: .medium))
+                                    Text("Restart in app")
+                                        .font(.system(size: 10, weight: .medium))
+                                }
                                 .foregroundColor(.white)
+                                .padding(.horizontal, 12)
+                                .padding(.vertical, 6)
+                                .background(Color.gray)
+                                .cornerRadius(12)
+                            }
                         }
+                    } else {
+                        // Normal status display
+                        HStack(spacing: 16) {
+                            HStack(spacing: 6) {
+                                Image(
+                                    systemName: context.state.alarmEnabled
+                                        ? "bell.fill" : "bell.slash.fill"
+                                )
+                                .foregroundColor(
+                                    context.state.alarmEnabled ? .blue : .gray
+                                )
+                                .font(.system(size: 12, weight: .medium))
+                                Text("Alarm")
+                                    .font(.system(size: 10, weight: .medium))
+                                    .foregroundColor(.white)
+                            }
 
-                        HStack(spacing: 6) {
-                            Image(
-                                systemName: context.state.vibrationEnabled
-                                    ? "iphone.radiowaves.left.and.right"
-                                    : "iphone.slash"
+                            HStack(spacing: 6) {
+                                Image(
+                                    systemName: context.state.vibrationEnabled
+                                        ? "iphone.radiowaves.left.and.right"
+                                        : "iphone.slash"
+                                )
+                                .foregroundColor(
+                                    context.state.vibrationEnabled ? .blue : .gray
+                                )
+                                .font(.system(size: 12, weight: .medium))
+                                Text("Vibration")
+                                    .font(.system(size: 10, weight: .medium))
+                                    .foregroundColor(.white)
+                            }
+
+                            Spacer()
+
+                            Text(
+                                "Updated \(context.state.lastUpdated.formatted(date: .omitted, time: .shortened))"
                             )
-                            .foregroundColor(
-                                context.state.vibrationEnabled ? .blue : .gray
-                            )
-                            .font(.system(size: 12, weight: .medium))
-                            Text("Vibration")
-                                .font(.system(size: 10, weight: .medium))
-                                .foregroundColor(.white)
+                            .font(.system(size: 9, weight: .medium))
+                            .foregroundColor(.white)
                         }
-
-                        Spacer()
-
-                        Text(
-                            "Updated \(context.state.lastUpdated.formatted(date: .omitted, time: .shortened))"
-                        )
-                        .font(.system(size: 9, weight: .medium))
-                        .foregroundColor(.white)
                     }
                 }
             } compactLeading: {
@@ -655,7 +565,17 @@ struct LiveActivityWidgetLiveActivity: Widget {
         }
     }
 
-    // Helper functions for dynamic colors and icons
+    // Compute stale warning based on start time and build mode
+    private func shouldShowStaleWarning(state: LiveActivityWidgetAttributes.ContentState) -> Bool {
+        let start = state.activityStartTime
+        let total: TimeInterval = 8 * 60 * 60 // 8 hours
+        let warn: TimeInterval = 10 * 60      // last 10 minutes
+        let elapsed = Date().timeIntervalSince(start)
+        return elapsed >= (total - warn) || state.showStaleWarning
+    }
+
+    // MARK: - Helper functions for dynamic colors and icons
+
     private func co2Color(for value: Int, green: Int, yellow: Int, isConnected: Bool = true) -> Color {
         // Show grey when disconnected
         if !isConnected {
@@ -713,6 +633,261 @@ struct LiveActivityWidgetLiveActivity: Widget {
             return "\(level)%"
         }
     }
+
+    // MARK: - Helper Views for Live Activity Banner
+
+    @available(iOS 16.2, *)
+    @ViewBuilder
+    private func staleWarningBannerView(context: ActivityViewContext<LiveActivityWidgetAttributes>) -> some View {
+        VStack(spacing: 12) {
+            HStack(spacing: 10) {
+                Image(systemName: "exclamationmark.triangle.fill")
+                    .font(.system(size: 18, weight: .bold))
+                    .foregroundColor(.orange)
+
+                Text("Live Activity expired")
+                    .font(.system(size: 14, weight: .semibold))
+                    .foregroundColor(.white)
+                    .lineLimit(1)
+            }
+            .frame(maxWidth: .infinity, alignment: .center)
+
+            if !context.state.deviceName.isEmpty {
+                Text(context.state.deviceName)
+                    .font(.system(size: 12, weight: .medium))
+                    .foregroundColor(.white.opacity(0.9))
+                    .lineLimit(1)
+            }
+
+            Text("To keep receiving live updates, please restart the Live Activity.")
+                .font(.system(size: 12))
+                .foregroundColor(.white.opacity(0.9))
+                .multilineTextAlignment(.center)
+                .fixedSize(horizontal: false, vertical: true)
+
+            if #available(iOS 17.0, *) {
+                Button(intent: RestartLiveActivityIntent(deviceId: context.state.deviceId)) {
+                    HStack(spacing: 8) {
+                        Image(systemName: "arrow.clockwise")
+                        Text("Restart from Settings")
+                    }
+                    .font(.system(size: 13, weight: .semibold))
+                    .foregroundColor(.white)
+                    .padding(.horizontal, 14)
+                    .padding(.vertical, 8)
+                    .background(Color.accentColor)
+                    .clipShape(Capsule())
+                }
+                .buttonStyle(.plain)
+            } else {
+                Text("Open the app and restart from the device settings")
+                    .font(.system(size: 12, weight: .medium))
+                    .foregroundColor(.white.opacity(0.85))
+                    .multilineTextAlignment(.center)
+            }
+        }
+        .padding(.horizontal, 16)
+        .padding(.vertical, 14)
+        .background(
+            RoundedRectangle(cornerRadius: 14)
+                .fill(
+                    .black.opacity(0.8)
+                )
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: 14)
+                .stroke(Color.white.opacity(0.15), lineWidth: 1)
+        )
+        .activityBackgroundTint(Color.clear)
+        .activitySystemActionForegroundColor(Color.primary)
+    }
+
+    @available(iOS 16.2, *)
+    @ViewBuilder
+    private func normalLiveActivityBannerView(context: ActivityViewContext<LiveActivityWidgetAttributes>) -> some View {
+        VStack(spacing: 4) {
+            // Top section with CO2 value and status
+            ZStack {
+                // Center refresh button – visually centered
+                CompactRefreshButton(
+                    size: context.state.isRefreshing ? 32 : 36,
+                    isRefreshing: context.state.isRefreshing,
+                    isConnected: context.state.isConnected
+                )
+
+                // Full width HStack to layout left and right sections
+                HStack {
+                    // Left Section (Map + CO2)
+                    HStack(spacing: 6) {
+                        Link(
+                            destination: URL(
+                                string: "airspothealth://map-handoff?deviceId=\(context.state.deviceId)"
+                            )!
+                        ) {
+                            Image("ic_map")
+                                .resizable()
+                                .aspectRatio(contentMode: .fit)
+                                .frame(width: 32, height: 32)
+                        }
+                        .buttonStyle(.plain)
+
+
+                        VStack(alignment: .center, spacing: 2) {
+                            Co2ValueView(
+                                co2Value: context.state.co2Value,
+                                greenUpperLimit: context.state
+                                    .greenUpperLimit,
+                                yellowUpperLimit: context.state
+                                    .yellowUpperLimit,
+                                isRefreshing: context.state.isRefreshing,
+                                isConnected: context.state.isConnected,
+                                fontSize: 24
+                            )
+                            Text("CO₂ ppm")
+                                .font(.system(size: 10, weight: .medium))
+                                .foregroundColor(.white)
+                                .offset(y: -4)
+                        }
+                        .padding(.leading, 28)
+                    }
+                    .frame(maxWidth: .infinity, alignment: .leading)
+
+                    // Right Section (Status + Graph icon)
+                    HStack(spacing: 6) {
+                        VStack(alignment: .trailing, spacing: 6) {
+                            HStack(alignment: .top, spacing: 6) {
+                                HStack(spacing: 3) {
+                                    Image(
+                                        systemName: batteryIcon(
+                                            for: context.state.batteryLevel,
+                                            isCharging: context.state
+                                                .isCharging
+                                        )
+                                    )
+                                    .foregroundColor(
+                                        batteryColor(
+                                            for: context.state.batteryLevel,
+                                            isCharging: context.state
+                                                .isCharging
+                                        )
+                                    )
+                                    .font(
+                                        .system(size: 12, weight: .medium)
+                                    )
+                                    Text(
+                                        batteryText(
+                                            for: context.state.batteryLevel,
+                                            isCharging: context.state
+                                                .isCharging
+                                        )
+                                    )
+                                    .font(.system(size: 10, weight: .medium))
+                                    .foregroundColor(.white)
+                                }
+                                 Image(
+                                     systemName: context.state.alarmEnabled
+                                         ? "bell.fill" : "bell.slash.fill"
+                                 )
+                                 .foregroundColor(
+                                     context.state.alarmEnabled
+                                         ? .blue : .gray
+                                 )
+                                 .font(.system(size: 12, weight: .medium))
+                             }
+                             .frame(
+                                 maxWidth: .infinity,
+                                 alignment: .trailing,
+                             ).padding(.trailing, 4)
+
+                             HStack(alignment: .top, spacing: 6) {
+                                 HStack(spacing: 3) {
+                                     Image(systemName: "timer")
+                                         .foregroundColor(.blue)
+                                         .font(
+                                             .system(
+                                                 size: 12,
+                                                 weight: .medium
+                                             )
+                                         )
+                                     Text(context.state.powerMode)
+                                         .font(
+                                             .system(
+                                                 size: 10,
+                                                 weight: .medium
+                                             )
+                                         )
+                                         .foregroundColor(.white)
+                                 }
+                                 Image(
+                                     systemName: context.state
+                                         .vibrationEnabled
+                                         ? "iphone.radiowaves.left.and.right"
+                                         : "iphone.slash"
+                                 )
+                                 .foregroundColor(
+                                     context.state.vibrationEnabled
+                                         ? .blue : .gray
+                                 )
+                                 .font(.system(size: 12, weight: .medium))
+                             }
+                             .frame(
+                                 maxWidth: .infinity,
+                                 alignment: .trailing
+                             )
+
+                        }.padding()
+
+                        Link(
+                            destination: URL(
+                                string:
+                                    "airspothealth://devices/\(context.state.deviceId)/graph"
+                            )!
+                        ) {
+                            Image("ic_graph2")
+                                .resizable()
+                                .aspectRatio(contentMode: .fit)
+                                .frame(width: 32, height: 32)
+                        }
+                        .buttonStyle(.plain)
+                    }
+                    .frame(maxWidth: .infinity, alignment: .trailing)
+                }
+            }
+
+            // Device Name Section
+            if !context.state.deviceName.isEmpty {
+                Text(context.state.deviceName)
+                    .font(.system(size: 11, weight: .medium))
+                    .foregroundColor(.gray)
+                    .frame(maxWidth: .infinity, alignment: .center)
+                    .padding(.top, -4) // Reduce spacing from top section
+                    .padding(.bottom, -4) // Reduce spacing to bottom section
+            }
+
+            // Graph Section
+            if !context.state.co2History.isEmpty {
+                Co2GraphView(
+                    co2History: context.state.co2History,
+                    greenUpperLimit: context.state.greenUpperLimit,
+                    yellowUpperLimit: context.state.yellowUpperLimit,
+                    graphMaxValue: context.state.graphMaxValue,
+                    graphMinValue: context.state.graphMinValue
+                )
+            }
+        }
+        .padding(.horizontal, 16)
+        .padding(.vertical, 16)
+        .background(
+            RoundedRectangle(cornerRadius: 16)
+                .fill(Color.black.opacity(0.1))
+                .background(
+                    RoundedRectangle(cornerRadius: 16)
+                        .fill(.ultraThinMaterial)
+                )
+        )
+        .activityBackgroundTint(Color.clear)
+        .activitySystemActionForegroundColor(Color.primary)
+    }
 }
 
 extension LiveActivityWidgetAttributes {
@@ -747,7 +922,9 @@ extension LiveActivityWidgetAttributes.ContentState {
             graphMinValue: 0,
             isRefreshing: false,
             isConnected: true,
-            lastUpdated: Date()
+            lastUpdated: Date(),
+            activityStartTime: Date(),
+            showStaleWarning: false
         )
     }
 
@@ -770,7 +947,9 @@ extension LiveActivityWidgetAttributes.ContentState {
             graphMinValue: 0,
             isRefreshing: false,
             isConnected: true,
-            lastUpdated: Date()
+            lastUpdated: Date(),
+            activityStartTime: Date(),
+            showStaleWarning: false
         )
     }
 
@@ -793,7 +972,9 @@ extension LiveActivityWidgetAttributes.ContentState {
             graphMinValue: 0,
             isRefreshing: true,
             isConnected: true,
-            lastUpdated: Date()
+            lastUpdated: Date(),
+            activityStartTime: Date(),
+            showStaleWarning: false
         )
     }
 
@@ -816,7 +997,34 @@ extension LiveActivityWidgetAttributes.ContentState {
             graphMinValue: 0,
             isRefreshing: false,
             isConnected: false,
-            lastUpdated: Date()
+            lastUpdated: Date(),
+            activityStartTime: Date(),
+            showStaleWarning: false
+        )
+    }
+
+    fileprivate static var staleWarningData:
+        LiveActivityWidgetAttributes.ContentState
+    {
+        LiveActivityWidgetAttributes.ContentState(
+            deviceId: "1234567890",
+            deviceName: "Living Room",
+            co2Value: 850,
+            powerMode: "3 Min",
+            batteryLevel: 75,
+            isCharging: false,
+            alarmEnabled: true,
+            vibrationEnabled: true,
+            co2History: [800, 820, 840, 860, 850, 845, 840, 835],
+            greenUpperLimit: 800,
+            yellowUpperLimit: 1000,
+            graphMaxValue: 1600,
+            graphMinValue: 0,
+            isRefreshing: false,
+            isConnected: true,
+            lastUpdated: Date(),
+            activityStartTime: Date().addingTimeInterval(-7.5 * 60 * 60), // 7.5 hours ago (triggers warning)
+            showStaleWarning: true
         )
     }
 }
@@ -833,4 +1041,5 @@ extension LiveActivityWidgetAttributes.ContentState {
     LiveActivityWidgetAttributes.ContentState.lowBatteryData
     LiveActivityWidgetAttributes.ContentState.refreshingData
     LiveActivityWidgetAttributes.ContentState.disconnectedData
+    LiveActivityWidgetAttributes.ContentState.staleWarningData
 }

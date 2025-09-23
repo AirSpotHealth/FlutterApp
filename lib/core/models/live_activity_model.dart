@@ -14,6 +14,12 @@ class LiveActivityModel {
   final int graphMaxValue;
   final int graphMinValue;
   final bool isRefreshing;
+  final DateTime? activityStartTime;
+  final int greenZonePercentage;
+  final int yellowZonePercentage;
+  final int redZonePercentage;
+  final String dominantZone;
+  final int dominantZonePercentage;
 
   LiveActivityModel({
     required this.deviceId,
@@ -31,6 +37,12 @@ class LiveActivityModel {
     required this.graphMaxValue,
     required this.graphMinValue,
     required this.isRefreshing,
+    this.activityStartTime,
+    required this.greenZonePercentage,
+    required this.yellowZonePercentage,
+    required this.redZonePercentage,
+    required this.dominantZone,
+    required this.dominantZonePercentage,
   });
 
   Map<String, dynamic> toJson() {
@@ -50,6 +62,12 @@ class LiveActivityModel {
       'graphMaxValue': graphMaxValue,
       'graphMinValue': graphMinValue,
       'isRefreshing': isRefreshing,
+      'activityStartTime': activityStartTime?.millisecondsSinceEpoch,
+      'greenZonePercentage': greenZonePercentage,
+      'yellowZonePercentage': yellowZonePercentage,
+      'redZonePercentage': redZonePercentage,
+      'dominantZone': dominantZone,
+      'dominantZonePercentage': dominantZonePercentage,
     };
   }
 
@@ -69,6 +87,12 @@ class LiveActivityModel {
     int? graphMaxValue,
     int? graphMinValue,
     bool? isRefreshing,
+    DateTime? activityStartTime,
+    int? greenZonePercentage,
+    int? yellowZonePercentage,
+    int? redZonePercentage,
+    String? dominantZone,
+    int? dominantZonePercentage,
   }) {
     return LiveActivityModel(
       deviceId: deviceId ?? this.deviceId,
@@ -86,6 +110,13 @@ class LiveActivityModel {
       graphMaxValue: graphMaxValue ?? this.graphMaxValue,
       graphMinValue: graphMinValue ?? this.graphMinValue,
       isRefreshing: isRefreshing ?? this.isRefreshing,
+      activityStartTime: activityStartTime ?? this.activityStartTime,
+      greenZonePercentage: greenZonePercentage ?? this.greenZonePercentage,
+      yellowZonePercentage: yellowZonePercentage ?? this.yellowZonePercentage,
+      redZonePercentage: redZonePercentage ?? this.redZonePercentage,
+      dominantZone: dominantZone ?? this.dominantZone,
+      dominantZonePercentage:
+          dominantZonePercentage ?? this.dominantZonePercentage,
     );
   }
 }

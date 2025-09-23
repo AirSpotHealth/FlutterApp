@@ -1,0 +1,4 @@
+# Ignore any .env files in scripts folder
+.env
+.env.local
+.env.production

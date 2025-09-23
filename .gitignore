@@ -50,3 +50,26 @@ app.*.map.json
 
 .vscode/launch.json
 .generator.sh
+
+# Sensitive files - DO NOT COMMIT
+android/key.properties
+android/upload-keystore.jks
+android/local.properties
+.env
+.env.local
+.env.production
+
+# Development files
+scripts/.env
+
+# iOS sensitive files
+ios/Pods/
+ios/.symlinks/
+ios/Flutter/Flutter.framework
+ios/Flutter/Flutter.podspec
+ios/Flutter/Generated.xcconfig
+ios/Flutter/app.flx
+ios/Flutter/app.zip
+ios/Flutter/flutter_assets/
+ios/ServiceDefinitions.json
+ios/Runner/GeneratedPluginRegistrant.*

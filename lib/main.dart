@@ -3,11 +3,13 @@ import 'package:airspothealth/core/services/isar_service.dart';
 import 'package:airspothealth/core/services/notification_service.dart';
 import 'package:airspothealth/core/services/prefs_service.dart';
 import 'package:airspothealth/core/theme/app_theme.dart';
+import 'package:airspothealth/core/utils/constants.dart';
 import 'package:airspothealth/core/utils/local_date_format.dart';
 import 'package:airspothealth/core/utils/storage_keys.dart';
 import 'package:airspothealth/features/home/widgets/services_banner.dart';
 import 'package:flutter/material.dart' hide DateUtils;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:home_widget/home_widget.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 
 void main() async {
@@ -18,6 +20,7 @@ void main() async {
     PrefsService().initialize(),
     LocalDateFormat().initialize(),
     NotificationService.initNotification(),
+    _initializeHomeWidget(),
   ].wait;
 
   await _checkVersion();
@@ -27,6 +30,17 @@ void main() async {
       child: const AirspotApp(),
     ),
   );
+}
+
+Future<void> _initializeHomeWidget() async {
+  try {
+    // Configure Home Widget with App Group
+    await HomeWidget.setAppGroupId(Constants.appGroupId);
+    debugPrint(
+        '✅ Home Widget initialized with App Group: ${Constants.appGroupId}');
+  } catch (e) {
+    debugPrint('❌ Failed to initialize Home Widget: $e');
+  }
 }
 
 Future<void> _checkVersion() async {
