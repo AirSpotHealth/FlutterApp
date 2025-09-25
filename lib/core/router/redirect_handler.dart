@@ -64,9 +64,9 @@ class RedirectHandler {
         // Check if this is from an expired live activity
         final fromExpired = uri.queryParameters['from'] == 'expired';
         if (fromExpired) {
-          // Navigate to device settings page with expired parameter
+          // Route directly to the device route (which renders settings)
           final query = uri.hasQuery ? '?${uri.query}' : '';
-          return '/devices/$deviceId/settings$query';
+          return '/devices/$deviceId$query';
         }
 
         return '/devices/$deviceId';
@@ -94,6 +94,22 @@ class RedirectHandler {
 
   /// Redirects malformed paths missing "/devices"
   static String? _handleMalformedPathRedirect(Uri uri) {
+    // Handle malformed device ID paths (missing /devices prefix)
+    if (uri.pathSegments.length == 1 &&
+        !uri.pathSegments.contains('devices') &&
+        uri.pathSegments[0].contains('-')) {
+      // Device IDs typically contain hyphens
+      final deviceId = uri.pathSegments[0];
+      // Check if this is from an expired live activity
+      final fromExpired = uri.queryParameters['from'] == 'expired';
+      if (fromExpired) {
+        final query = uri.hasQuery ? '?${uri.query}' : '';
+        return '/devices/$deviceId$query';
+      }
+      return '/devices/$deviceId';
+    }
+
+    // Handle graph paths
     if (uri.pathSegments.length == 2 &&
         uri.pathSegments[1] == 'graph' &&
         !uri.pathSegments.contains('devices')) {
@@ -134,9 +150,8 @@ class RedirectHandler {
           '🔄 Restart Live Activity deep link detected for device: $deviceId');
 
       if (deviceId != null && deviceId.isNotEmpty) {
-        // The auto-disable logic should be handled by LiveActivityService
-        // when the notification is received, not in the UI
-        return '/devices/$deviceId/settings?from=restart';
+        // Route directly to the device route (which renders settings)
+        return '/devices/$deviceId?from=restart';
       } else {
         // Fallback to devices page if no device ID
         return '/devices';

@@ -221,7 +221,12 @@ class _BleDeviceCommunicationNotifier extends FamilyNotifier<dynamic, String> {
       // 2. Get device settings
       DeviceSettings? deviceSettings;
       try {
-        deviceSettings = ref.read(deviceSettingsProvider(deviceId));
+        deviceSettings = IsarService().read<DeviceSettings?>((isar) {
+          return isar.deviceSettings
+              .where()
+              .deviceIdEqualTo(deviceId)
+              .findFirst();
+        });
       } catch (e) {
         debugPrint('BLE: Could not read device settings: $e');
       }
