@@ -3,11 +3,13 @@ import 'dart:io';
 
 import 'package:airspothealth/core/models/device_settings.dart';
 import 'package:airspothealth/core/models/live_activity_model.dart';
+import 'package:airspothealth/core/services/isar_service.dart';
 import 'package:airspothealth/core/services/zone_analysis_service.dart';
 import 'package:airspothealth/core/utils/constants.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:home_widget/home_widget.dart';
+import 'package:isar/isar.dart';
 
 /// Enum for different types of device callbacks
 enum CallbackType {
@@ -127,6 +129,13 @@ class LiveActivityService {
               : null;
           _handleRestartRequest(deviceId!);
           break;
+        case 'onAutoDisableLiveActivity':
+          debugPrint('🔄 Auto-disable Live Activity requested');
+          final String? deviceId = call.arguments != null
+              ? call.arguments['deviceId'] as String?
+              : null;
+          _handleAutoDisableRequest(deviceId!);
+          break;
         default:
           debugPrint('❓ Unknown method call: ${call.method}');
       }
@@ -227,6 +236,51 @@ class LiveActivityService {
     } else {
       debugPrint(
           '❌ Cannot restart Live Activity - no data found for device: $deviceId');
+    }
+  }
+
+  void _handleAutoDisableRequest(String deviceId) {
+    debugPrint('🔄 Handling auto-disable request for device: $deviceId');
+    // Add the device to the auto-disable list
+    _devicesToAutoDisable.add(deviceId);
+
+    // Also immediately disable the setting if possible
+    // This ensures the setting is disabled even if the provider isn't accessed
+    _immediatelyDisableLiveActivitySetting(deviceId);
+  }
+
+  /// Immediately disable the live activity setting for a device
+  void _immediatelyDisableLiveActivitySetting(String deviceId) {
+    try {
+      debugPrint(
+          'LiveActivity: Immediately disabling live activity setting for device: $deviceId');
+
+      // We need to access the device settings directly
+      // This is a bit of a hack but ensures immediate disabling
+      final currentSettings = IsarService().read<DeviceSettings?>((isar) {
+        return isar.deviceSettings
+            .where()
+            .deviceIdEqualTo(deviceId)
+            .findFirst();
+      });
+
+      if (currentSettings != null && currentSettings.showLiveActivity) {
+        final updatedSettings =
+            currentSettings.copyWith(showLiveActivity: false);
+
+        IsarService().write((isar) {
+          isar.deviceSettings.put(updatedSettings);
+        });
+
+        debugPrint(
+            'LiveActivity: Successfully disabled live activity setting for device: $deviceId');
+
+        // Also end the live activity
+        endLiveActivity();
+      }
+    } catch (e) {
+      debugPrint(
+          'LiveActivity: Error immediately disabling setting for device $deviceId: $e');
     }
   }
 
@@ -418,6 +472,9 @@ class LiveActivityService {
       final updatedData = data.copyWith(
         activityStartTime: _activityStartTimes[deviceId],
       );
+
+      // Check if live activity is about to expire and auto-disable if needed
+      _checkAndHandleExpiry(deviceId, updatedData);
 
       // Update home widgets (both Android and iOS)
       _updateHomeWidgets(updatedData).ignore();
@@ -760,5 +817,82 @@ class LiveActivityService {
     } catch (e) {
       debugPrint('LiveActivity: Error checking refresh status: $e');
     }
+  }
+
+  /// Check if live activity is about to expire and auto-disable the setting
+  void _checkAndHandleExpiry(String deviceId, LiveActivityModel data) {
+    try {
+      final activityStartTime = _activityStartTimes[deviceId];
+      if (activityStartTime == null) return;
+
+      final now = DateTime.now();
+      final timeElapsed = now.difference(activityStartTime);
+
+      // DEBUG MODE: Use shorter times for testing
+      // Production: 8 hours total, 10 minutes warning
+      // Debug: 2 minutes total, 30 seconds warning
+      const bool isDebugMode = bool.fromEnvironment('dart.vm.product') == false;
+
+      final Duration totalDuration =
+          isDebugMode ? const Duration(minutes: 2) : const Duration(hours: 8);
+      final Duration warningDuration = isDebugMode
+          ? const Duration(seconds: 30)
+          : const Duration(minutes: 10);
+
+      final Duration timeUntilExpiry = totalDuration - timeElapsed;
+
+      // If we're in the warning period (last 30 seconds in debug, last 10 minutes in production)
+      if (timeUntilExpiry <= warningDuration &&
+          timeUntilExpiry > Duration.zero) {
+        debugPrint(
+            'LiveActivity: Device $deviceId is approaching expiry in ${timeUntilExpiry.inSeconds} seconds');
+
+        // Auto-disable the live activity setting
+        _autoDisableLiveActivitySetting(deviceId);
+      }
+    } catch (e) {
+      debugPrint(
+          'LiveActivity: Error checking expiry for device $deviceId: $e');
+    }
+  }
+
+  /// Automatically disable the live activity setting for a device
+  void _autoDisableLiveActivitySetting(String deviceId) {
+    try {
+      // Import the provider here to avoid circular dependencies
+      // We'll use a different approach - send a notification that the provider can listen to
+      debugPrint(
+          'LiveActivity: Auto-disabling live activity setting for device: $deviceId');
+
+      // Send a notification that the device settings provider can listen to
+      // This avoids circular dependency issues
+      _notifyAutoDisable(deviceId);
+    } catch (e) {
+      debugPrint(
+          'LiveActivity: Error auto-disabling setting for device $deviceId: $e');
+    }
+  }
+
+  /// Notify that a device's live activity setting should be auto-disabled
+  void _notifyAutoDisable(String deviceId) {
+    // This will be handled by the device settings provider
+    // We'll use a simple callback approach
+    debugPrint('LiveActivity: Notifying auto-disable for device: $deviceId');
+
+    // Store the device ID that should be auto-disabled
+    // The device settings provider can check this when needed
+    _devicesToAutoDisable.add(deviceId);
+  }
+
+  // Track devices that should have their live activity setting auto-disabled
+  final Set<String> _devicesToAutoDisable = <String>{};
+
+  /// Check if a device should be auto-disabled and clear it from the list
+  bool shouldAutoDisableDevice(String deviceId) {
+    final shouldDisable = _devicesToAutoDisable.contains(deviceId);
+    if (shouldDisable) {
+      _devicesToAutoDisable.remove(deviceId);
+    }
+    return shouldDisable;
   }
 }

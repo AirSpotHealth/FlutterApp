@@ -2,6 +2,7 @@ import 'package:airspothealth/core/models/ble_device.dart';
 import 'package:airspothealth/core/models/device_settings.dart';
 import 'package:airspothealth/core/providers/ble_device_communication_provider.dart';
 import 'package:airspothealth/core/services/isar_service.dart';
+import 'package:airspothealth/core/services/live_activity_service.dart';
 import 'package:airspothealth/core/utils/device_cmd_utils.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -25,6 +26,12 @@ class _DeviceSettingsNotifier extends FamilyNotifier<DeviceSettings, String> {
     }
 
     debugPrint('SETTING: ${setting.toJson()}');
+
+    // Check if this device should have its live activity auto-disabled
+    // This handles the case where the live activity has expired
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      checkForAutoDisable();
+    });
 
     return setting;
   }
@@ -124,5 +131,27 @@ class _DeviceSettingsNotifier extends FamilyNotifier<DeviceSettings, String> {
     _isarService.write((isar) {
       _isarService.bleDevices.put(device);
     });
+  }
+
+  /// Check if this device should have its live activity setting auto-disabled
+  /// This is called when the device settings are accessed to handle expiry
+  void checkForAutoDisable() {
+    final liveActivityService = LiveActivityService();
+    if (liveActivityService.shouldAutoDisableDevice(arg)) {
+      debugPrint(
+          'DeviceSettings: Auto-disabling live activity for device: $arg');
+
+      // Update the setting to disable live activity
+      final currentSettings = state;
+      if (currentSettings.showLiveActivity) {
+        updateSettings(
+          currentSettings.copyWith(showLiveActivity: false),
+          sendCommands: false, // Don't send BLE commands for auto-disable
+        );
+
+        // Also end any active live activity
+        liveActivityService.endLiveActivity();
+      }
+    }
   }
 }

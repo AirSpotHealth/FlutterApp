@@ -52,6 +52,14 @@ import ActivityKit
         name: Notification.Name("NavigateToDeviceSettings"),
         object: nil
     )
+
+    // Setup notification listener for auto-disable live activity
+    NotificationCenter.default.addObserver(
+        self,
+        selector: #selector(handleAutoDisableLiveActivity(_:)),
+        name: Notification.Name("AutoDisableLiveActivity"),
+        object: nil
+    )
     
     liveActivityChannel?.setMethodCallHandler { [weak self] (call: FlutterMethodCall, result: @escaping FlutterResult) in
         guard #available(iOS 16.2, *), let liveActivityManager = self?.liveActivityManager as? LiveActivityManager else {
@@ -169,6 +177,23 @@ import ActivityKit
       
       // Call Flutter method to navigate to device settings
       liveActivityChannel?.invokeMethod("onRestartLiveActivityRequested", arguments: ["deviceId": deviceId])
+  }
+
+  @objc func handleAutoDisableLiveActivity(_ notification: Notification) {
+      print("🔄 Auto-disable live activity requested")
+      
+      guard let userInfo = notification.userInfo,
+            let deviceId = userInfo["deviceId"] as? String else {
+          print("❌ No device ID found in auto-disable notification")
+          return
+      }
+      
+      print("📱 Auto-disabling live activity for device: \(deviceId)")
+      
+      // Call Flutter method to auto-disable the live activity setting on main thread
+      DispatchQueue.main.async { [weak self] in
+          self?.liveActivityChannel?.invokeMethod("onAutoDisableLiveActivity", arguments: ["deviceId": deviceId])
+      }
   }
    
    deinit {

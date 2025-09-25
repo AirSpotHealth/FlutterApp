@@ -6,7 +6,6 @@ import 'package:airspothealth/core/providers/ble_saved_devices_provider.dart';
 import 'package:airspothealth/core/providers/device_settings_provider.dart';
 import 'package:airspothealth/core/providers/isar_service_provider.dart';
 import 'package:airspothealth/core/router/route_names.dart';
-import 'package:airspothealth/core/services/live_activity_service.dart';
 import 'package:airspothealth/core/utils/assets.dart';
 import 'package:airspothealth/core/utils/constants.dart';
 import 'package:airspothealth/core/utils/device_cmd_utils.dart';
@@ -87,20 +86,6 @@ class DeviceSettingsPage extends ConsumerWidget {
       ref.context.showSnackBar('Device with id $deviceId not found');
       context.pop();
       return const SizedBox();
-    }
-
-    // If navigated from restart link, ensure switch is turned off so user can re-enable cleanly
-    final fromRestart =
-        GoRouterState.of(context).uri.queryParameters['from'] == 'restart';
-    if (fromRestart) {
-      final settings = ref.read(deviceSettingsProvider(deviceId));
-      if (settings.showLiveActivity) {
-        ref
-            .read(deviceSettingsProvider(deviceId).notifier)
-            .updateSettings(settings.copyWith(showLiveActivity: false));
-        // Also end any lingering Live Activity instance
-        LiveActivityService().endLiveActivity();
-      }
     }
 
     return Scaffold(

@@ -276,8 +276,12 @@ class LiveActivityManager: LiveActivityManagerProtocol {
         let attributes = LiveActivityWidgetAttributes()
         let state = createContentState(from: data)
         
-        // Set stale date to 8 hours (iOS will handle this automatically)
-        let staleDate = Date().addingTimeInterval(8 * 60 * 60)
+        // Set stale date based on debug/production mode
+        #if DEBUG
+        let staleDate = Date().addingTimeInterval(2 * 60) // 2 minutes for testing
+        #else
+        let staleDate = Date().addingTimeInterval(8 * 60 * 60) // 8 hours
+        #endif
         
         do {
             liveActivity = try Activity<LiveActivityWidgetAttributes>.request(
@@ -321,8 +325,12 @@ class LiveActivityManager: LiveActivityManagerProtocol {
         let attributes = LiveActivityWidgetAttributes()
         let state = createContentState(from: data)
         
-        // Set stale date to 8 hours (iOS will handle this automatically)
-        let staleDate = Date().addingTimeInterval(8 * 60 * 60)
+        // Set stale date based on debug/production mode
+        #if DEBUG
+        let staleDate = Date().addingTimeInterval(2 * 60) // 2 minutes for testing
+        #else
+        let staleDate = Date().addingTimeInterval(8 * 60 * 60) // 8 hours
+        #endif
         
         do {
             let activity = try Activity<LiveActivityWidgetAttributes>.request(

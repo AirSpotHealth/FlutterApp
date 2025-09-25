@@ -60,6 +60,15 @@ class RedirectHandler {
       if (segments.length == 1) {
         final deviceId = segments.first;
         if (deviceId.isEmpty) return '/devices';
+
+        // Check if this is from an expired live activity
+        final fromExpired = uri.queryParameters['from'] == 'expired';
+        if (fromExpired) {
+          // Navigate to device settings page with expired parameter
+          final query = uri.hasQuery ? '?${uri.query}' : '';
+          return '/devices/$deviceId/settings$query';
+        }
+
         return '/devices/$deviceId';
       }
 
@@ -125,7 +134,8 @@ class RedirectHandler {
           '🔄 Restart Live Activity deep link detected for device: $deviceId');
 
       if (deviceId != null && deviceId.isNotEmpty) {
-        // Navigate directly to the specific device's settings page with a flag
+        // The auto-disable logic should be handled by LiveActivityService
+        // when the notification is received, not in the UI
         return '/devices/$deviceId/settings?from=restart';
       } else {
         // Fallback to devices page if no device ID

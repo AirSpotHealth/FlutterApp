@@ -332,7 +332,7 @@ struct LiveActivityWidgetLiveActivity: Widget {
             .widgetURL(
                 URL(
                     string: shouldShow
-                        ? "airspothealth://restart-live-activity?deviceId=\(context.state.deviceId)"
+                        ? "airspothealth://devices/\(context.state.deviceId)?from=expired"
                         : "airspothealth://devices"
                 )
             )
@@ -433,35 +433,11 @@ struct LiveActivityWidgetLiveActivity: Widget {
                                 Spacer()
                             }
                             
-                            if #available(iOS 17.0, *) {
-                                Button(intent: RestartLiveActivityIntent(deviceId: context.state.deviceId)) {
-                                    HStack(spacing: 6) {
-                                        Image(systemName: "arrow.clockwise")
-                                            .font(.system(size: 10, weight: .medium))
-                                        Text("Tap to restart")
-                                            .font(.system(size: 10, weight: .medium))
-                                    }
-                                    .foregroundColor(.white)
-                                    .padding(.horizontal, 12)
-                                    .padding(.vertical, 6)
-                                    .background(Color.blue)
-                                    .cornerRadius(12)
-                                }
-                                .buttonStyle(.plain)
-                            } else {
-                                // Fallback for iOS 16.x - just show text message
-                                HStack(spacing: 6) {
-                                    Image(systemName: "arrow.clockwise")
-                                        .font(.system(size: 10, weight: .medium))
-                                    Text("Restart in app")
-                                        .font(.system(size: 10, weight: .medium))
-                                }
-                                .foregroundColor(.white)
-                                .padding(.horizontal, 12)
-                                .padding(.vertical, 6)
-                                .background(Color.gray)
-                                .cornerRadius(12)
-                            }
+                            // Auto-disable handles this, just show info message
+                            Text("Will auto-disable - tap to open settings")
+                                .font(.system(size: 10, weight: .medium))
+                                .foregroundColor(.white.opacity(0.8))
+                                .multilineTextAlignment(.center)
                         }
                     } else {
                         // Normal status display
@@ -568,10 +544,35 @@ struct LiveActivityWidgetLiveActivity: Widget {
     // Compute stale warning based on start time and build mode
     private func shouldShowStaleWarning(state: LiveActivityWidgetAttributes.ContentState) -> Bool {
         let start = state.activityStartTime
-        let total: TimeInterval = 8 * 60 * 60 // 8 hours
-        let warn: TimeInterval = 10 * 60      // last 10 minutes
         let elapsed = Date().timeIntervalSince(start)
-        return elapsed >= (total - warn) || state.showStaleWarning
+        
+        // DEBUG MODE: Use shorter times for testing
+        // Production: 8 hours total, 10 minutes warning
+        // Debug: 2 minutes total, 30 seconds warning
+        #if DEBUG
+        let total: TimeInterval = 2 * 60 // 2 minutes for testing
+        let warn: TimeInterval = 30 // 30 seconds warning
+        #else
+        let total: TimeInterval = 8 * 60 * 60 // 8 hours
+        let warn: TimeInterval = 10 * 60 // 10 minutes
+        #endif
+        
+        let shouldShow = elapsed >= (total - warn) || state.showStaleWarning
+        
+        // If we should show stale warning, trigger auto-disable notification
+        if shouldShow && !state.showStaleWarning {
+            // Send notification to auto-disable the live activity setting
+            // Use DispatchQueue.main to ensure it's on the main thread
+            DispatchQueue.main.async {
+                NotificationCenter.default.post(
+                    name: Notification.Name("AutoDisableLiveActivity"),
+                    object: nil,
+                    userInfo: ["deviceId": state.deviceId]
+                )
+            }
+        }
+        
+        return shouldShow
     }
 
     // MARK: - Helper functions for dynamic colors and icons
@@ -659,32 +660,11 @@ struct LiveActivityWidgetLiveActivity: Widget {
                     .lineLimit(1)
             }
 
-            Text("To keep receiving live updates, please restart the Live Activity.")
+            Text("Live Activity will auto-disable. Tap to open settings and restart if needed.")
                 .font(.system(size: 12))
                 .foregroundColor(.white.opacity(0.9))
                 .multilineTextAlignment(.center)
                 .fixedSize(horizontal: false, vertical: true)
-
-            if #available(iOS 17.0, *) {
-                Button(intent: RestartLiveActivityIntent(deviceId: context.state.deviceId)) {
-                    HStack(spacing: 8) {
-                        Image(systemName: "arrow.clockwise")
-                        Text("Restart from Settings")
-                    }
-                    .font(.system(size: 13, weight: .semibold))
-                    .foregroundColor(.white)
-                    .padding(.horizontal, 14)
-                    .padding(.vertical, 8)
-                    .background(Color.accentColor)
-                    .clipShape(Capsule())
-                }
-                .buttonStyle(.plain)
-            } else {
-                Text("Open the app and restart from the device settings")
-                    .font(.system(size: 12, weight: .medium))
-                    .foregroundColor(.white.opacity(0.85))
-                    .multilineTextAlignment(.center)
-            }
         }
         .padding(.horizontal, 16)
         .padding(.vertical, 14)
