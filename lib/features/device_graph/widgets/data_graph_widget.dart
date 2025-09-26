@@ -71,12 +71,18 @@ class DataGraphWidget extends ConsumerStatefulWidget {
 
   final GraphDataDuration duration;
 
+  final void Function(int tsMs, int co2)? onMapHandoff;
+
+  final String? mapIconDataUrl;
+
   const DataGraphWidget({
     super.key,
     required this.deviceDataList,
     required this.deviceSettings,
     required this.duration,
     this.loading = false,
+    this.onMapHandoff,
+    this.mapIconDataUrl,
   });
 
   @override
@@ -180,7 +186,10 @@ class _DataGraphWidgetState extends ConsumerState<DataGraphWidget> {
 
     final String currentOption = _buildOption(settings, duration.dateTimeRange);
 
-    return EChart(option: currentOption);
+    return EChart(
+      option: currentOption,
+      onMapHandoff: widget.onMapHandoff,
+    );
   }
 
   String _buildOption(GraphSettings settings, DateTimeRange range) {
@@ -233,6 +242,13 @@ class _DataGraphWidgetState extends ConsumerState<DataGraphWidget> {
 {
   tooltip: {
     trigger: 'axis',
+    enterable: true,
+    triggerOn: 'mousemove|click',
+    extraCssText: 'pointer-events:auto;',
+    renderMode: 'html',
+    hideDelay: 1200,
+    confine: true,
+    appendToBody: true,
     formatter: function(params) {
       if (!params || params.length === 0) return '';
       
@@ -245,7 +261,9 @@ class _DataGraphWidgetState extends ConsumerState<DataGraphWidget> {
         : ((hours < 10 ? '0' : '') + hours + ':' + (minutes < 10 ? '0' : '') + minutes + ':' + (seconds < 10 ? '0' : '') + seconds);
       
       var result = date.toLocaleDateString() + ' ' + timeStr + '<br/>';
+      var tsMsSel = date.getTime();
       var co2Value = null;
+      var dataContent = '';
       
       // Helper function to calculate "1 in X breaths" from CO2 value
       function calculateOneInXBreaths(co2Val) {
@@ -284,7 +302,7 @@ class _DataGraphWidgetState extends ConsumerState<DataGraphWidget> {
         var param = params[i];
         if (param.seriesName === 'CO₂') {
           co2Value = param.value[1];
-          result += 'CO₂: ' + param.value[1] + ' ppm<br/>';
+          dataContent += 'CO₂: ' + param.value[1] + ' ppm<br/>';
           break;
         }
       }
@@ -294,11 +312,38 @@ class _DataGraphWidgetState extends ConsumerState<DataGraphWidget> {
         var param = params[i];
         if (param.seriesName === 'Rebreathed Air' && param.value[1] != null) {
           var oneInX = co2Value ? calculateOneInXBreaths(co2Value) : null;
-          result += 'Rebreathed: ' + param.value[1].toFixed(1) + '%';
+          dataContent += 'Rebreathed: ' + param.value[1].toFixed(1) + '%';
           if (oneInX && oneInX > 0) {
-            result += ' (1 in ' + oneInX + ' breaths)';
+            dataContent += ' (1 in ' + oneInX + ' breaths)';
           }
         }
+      }
+      
+      // Add map handoff icon to the right side
+      var mapIconHtml = '';
+      if (co2Value != null) {
+        var tsParam = encodeURIComponent(tsMsSel);
+        var co2Param = encodeURIComponent(co2Value);
+        var deepLink = 'airspothealth://chart-map-handoff?ts=' + tsParam + '&co2=' + co2Param;
+
+        var iconUrl = ${jsonEncode(widget.mapIconDataUrl ?? '')};
+        var iconHtml = (iconUrl && iconUrl.length > 0)
+          ? ('<img src="' + iconUrl + '" alt="map" style="width:24px;height:24px;display:block;"/>')
+          : ('<span style="display:inline-block;width:24px;height:24px;background:#1e88e5;border-radius:4px"></span>');
+
+        mapIconHtml = '<a href="' + deepLink + '" style="text-decoration:none;display:flex;align-items:center;margin-left:12px;">'
+          + iconHtml
+          + '</a>';
+      }
+      
+      // Combine everything in a flex row
+      if (mapIconHtml) {
+        result += '<div style="display:flex;align-items:flex-start;justify-content:space-between;margin-top:4px;">'
+          + '<div style="flex:1;">' + dataContent + '</div>'
+          + mapIconHtml
+          + '</div>';
+      } else {
+        result += dataContent;
       }
       
       return result;

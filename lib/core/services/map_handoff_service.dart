@@ -8,6 +8,7 @@ import 'package:airspothealth/core/models/device_data.dart';
 import 'package:airspothealth/core/models/device_data_type.dart';
 import 'package:airspothealth/core/services/isar_service.dart';
 import 'package:airspothealth/core/utils/constants.dart';
+import 'package:flutter/material.dart';
 import 'package:isar/isar.dart';
 import 'package:pointycastle/export.dart';
 
@@ -26,6 +27,8 @@ class MapHandoffService {
     required String deviceId,
     int recordLimit = 500,
     bool useFragment = true,
+    int? tsMs,
+    int? selectedCo2,
   }) async {
     // Validate environment variables
     if (_secretB64.isEmpty) {
@@ -41,15 +44,17 @@ class MapHandoffService {
     final canonicalId = bleName?.isNotEmpty == true ? bleName! : deviceId;
     final records =
         await _fetchLastCo2Records(deviceId: deviceId, limit: recordLimit);
-    final currentCo2 = records.isNotEmpty ? records.last['co2'] : 0;
+    final fallbackCo2 = records.isNotEmpty ? records.last['co2'] as int : 0;
+    final co2ToSend = selectedCo2 ?? fallbackCo2;
 
     final secret = _base64UrlDecode(_secretB64);
 
     // 1. Encrypt device ID using AES-256-GCM
     final encryptedDeviceId = _encryptAES256GCM(canonicalId, secret);
 
-    // 2. Encrypt CO2 value using AES-256-GCM
-    final encryptedCo2 = _encryptAES256GCM(currentCo2.toString(), secret);
+    // 2. Encrypt CO2 value using AES-256-GCM. If a specific selection is provided,
+    //    that value is used; otherwise we default to the most recent value.
+    final encryptedCo2 = _encryptAES256GCM(co2ToSend.toString(), secret);
 
     // 3. Compress records
     final recordsJson = json.encode(records);
@@ -63,6 +68,19 @@ class MapHandoffService {
       'co2': encryptedCo2,
       'records': encodedRecords,
     };
+
+    // Optionally include the selected timestamp as ISO string for the point.
+    if (tsMs != null) {
+      final dateTime = DateTime.fromMillisecondsSinceEpoch(tsMs, isUtc: false);
+      params['ts'] = _encryptAES256GCM(dateTime.toIso8601String(), secret);
+    }
+
+    debugPrint('Map handoff params: $params');
+    debugPrint('tsMs passed: $tsMs');
+    debugPrint('ts param present: ${params.containsKey('ts')}');
+    if (params.containsKey('ts')) {
+      debugPrint('ts param length: ${params['ts']?.length}');
+    }
 
     final base = Uri.parse(Constants.mapUrl);
     if (useFragment) {
