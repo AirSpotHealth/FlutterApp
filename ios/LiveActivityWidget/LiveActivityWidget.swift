@@ -173,7 +173,7 @@ struct ZonePieChart: View {
             PieChartSlice(
                 startAngle: .degrees(Double(greenPercentage) * 3.6),
                 endAngle: .degrees(Double(greenPercentage + yellowPercentage) * 3.6),
-                color: .yellow,
+                color: .orange,
                 radius: radius
             )
             
@@ -225,7 +225,7 @@ struct WidgetContentView: View {
                         .lineLimit(1)
                 }
                 Text("at \(entry.date.formatted(date: .omitted, time: .shortened))")
-                    .font(.system(size: fontSize - 2, weight: .medium))
+                    .font(.system(size: fontSize + 1, weight: .semibold))
                     .foregroundColor(.white)
             }
             
@@ -237,9 +237,10 @@ struct WidgetContentView: View {
                     .font(.system(size: co2FontSize, weight: .bold))
                     .foregroundColor(co2Color(for: entry.co2Value))
                 Text("CO₂ ppm")
-                    .font(.system(size: textSize, weight: .medium))
+                    .font(.system(size: textSize + 2, weight: .medium))
                     .foregroundColor(.white)
             }
+            .frame(maxHeight: .infinity, alignment: .center)
             
             Spacer()
             
@@ -500,7 +501,7 @@ struct LargeWidgetView: View {
                     // Right half - Text (centered)
                     HStack {
                         Spacer()
-                        Text("\(entry.dominantZonePercentage)% \(entry.dominantZone) zone air environment today")
+                        Text("\(entry.greenZonePercentage)% green zone air environment today")
                             .font(.system(size: 12, weight: .medium))
                             .foregroundColor(.white)
                             .multilineTextAlignment(.center)
@@ -567,7 +568,7 @@ struct Co2Widget: Widget {
 private func co2Color(for value: Int) -> Color {
     if value == 0 { return .white }
     if value <= 800 { return .green }
-    if value <= 1000 { return .yellow }
+    if value <= 1000 { return .orange }
     return .red
 }
 
