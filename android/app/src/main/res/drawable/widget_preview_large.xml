@@ -1,0 +1,100 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="250dp"
+    android:height="250dp"
+    android:viewportWidth="250"
+    android:viewportHeight="250">
+    <rect
+        android:width="250dp"
+        android:height="250dp"
+        android:fillColor="#000000"
+        android:radius="16dp"/>
+    <rect
+        android:width="238dp"
+        android:height="238dp"
+        android:x="6dp"
+        android:y="6dp"
+        android:fillColor="#1A1A1A"
+        android:radius="12dp"/>
+    <text
+        android:x="60dp"
+        android:y="25dp"
+        android:text="AirSpot Device"
+        android:textColor="#9CA3AF"
+        android:textSize="13sp"
+        android:textAlignment="center"/>
+    <text
+        android:x="60dp"
+        android:y="40dp"
+        android:text="at 12:15 PM"
+        android:textColor="#9CA3AF"
+        android:textSize="11sp"
+        android:textAlignment="center"/>
+    <text
+        android:x="125dp"
+        android:y="50dp"
+        android:text="450"
+        android:textColor="#4CAF50"
+        android:textSize="28sp"
+        android:textAlignment="center"
+        android:textStyle="bold"/>
+    <text
+        android:x="125dp"
+        android:y="70dp"
+        android:text="CO₂ ppm"
+        android:textColor="#FFFFFF"
+        android:textSize="12sp"
+        android:textAlignment="center"/>
+    <text
+        android:x="190dp"
+        android:y="30dp"
+        android:text="🔋85% 🔔"
+        android:textColor="#FFFFFF"
+        android:textSize="10sp"
+        android:textAlignment="center"/>
+    <text
+        android:x="190dp"
+        android:y="50dp"
+        android:text="⏱️3Min 📳"
+        android:textColor="#FFFFFF"
+        android:textSize="10sp"
+        android:textAlignment="center"/>
+    <rect
+        android:width="230dp"
+        android:height="50dp"
+        android:x="10dp"
+        android:y="90dp"
+        android:fillColor="#2A2A2A"
+        android:radius="4dp"/>
+    <text
+        android:x="125dp"
+        android:y="115dp"
+        android:text="CO₂ History Graph"
+        android:textColor="#666666"
+        android:textSize="10sp"
+        android:textAlignment="center"/>
+    <path
+        android:fillColor="#4CAF50"
+        android:pathData="M60,155 A25,25 0 1,1 59.9,155 Z"/>
+    <text
+        android:x="60dp"
+        android:y="185dp"
+        android:text="75%"
+        android:textColor="#FFFFFF"
+        android:textSize="8sp"
+        android:textAlignment="center"/>
+    <text
+        android:x="150dp"
+        android:y="180dp"
+        android:text="75% green zone"
+        android:textColor="#FFFFFF"
+        android:textSize="12sp"
+        android:textAlignment="center"/>
+    <text
+        android:x="150dp"
+        android:y="200dp"
+        android:text="air environment today"
+        android:textColor="#FFFFFF"
+        android:textSize="10sp"
+        android:textAlignment="center"/>
+</vector>

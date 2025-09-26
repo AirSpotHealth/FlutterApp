@@ -272,10 +272,17 @@ class _BleDeviceCommunicationNotifier extends FamilyNotifier<dynamic, String> {
       // Fallback for Android home widget only
       if (Platform.isAndroid) {
         await HomeWidget.saveWidgetData(Constants.homeWidgetKey, '----');
-        await HomeWidget.updateWidget(
-          iOSName: Constants.iOSWidgetName,
-          androidName: Constants.androidWidgetName,
-        );
+        // Update all Android widget providers
+
+        await Future.wait([
+          HomeWidget.updateWidget(
+              iOSName: Constants.iOSWidgetName,
+              androidName: Constants.androidWidgetCo2Value),
+          HomeWidget.updateWidget(androidName: Constants.androidWidgetCo2Small),
+          HomeWidget.updateWidget(
+              androidName: Constants.androidWidgetCo2Medium),
+          HomeWidget.updateWidget(androidName: Constants.androidWidgetCo2Large),
+        ]);
       }
     }
   }

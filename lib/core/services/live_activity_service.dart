@@ -563,12 +563,16 @@ class LiveActivityService {
       await HomeWidget.saveWidgetData<String>('widget_data_json', jsonString);
       debugPrint('✅ Widget: Data saved successfully');
 
-      // Update widgets on both platforms
-      await HomeWidget.updateWidget(
-        name: Constants.androidWidgetName,
-        androidName: Constants.androidWidgetName,
-        iOSName: Constants.iOSWidgetName,
-      );
+      await Future.wait([
+        // Update widgets on both platforms
+        // Trigger updates for all Android widget providers explicitly
+        HomeWidget.updateWidget(
+            iOSName: Constants.iOSWidgetName,
+            androidName: Constants.androidWidgetCo2Value),
+        HomeWidget.updateWidget(androidName: Constants.androidWidgetCo2Small),
+        HomeWidget.updateWidget(androidName: Constants.androidWidgetCo2Medium),
+        HomeWidget.updateWidget(androidName: Constants.androidWidgetCo2Large),
+      ]);
       debugPrint('✅ Widget: Widget update triggered');
     } catch (e) {
       debugPrint('❌ Widget: Error updating widgets: $e');
@@ -693,8 +697,14 @@ class LiveActivityService {
         await HomeWidget.saveWidgetData(Constants.homeWidgetKey, '----');
         await HomeWidget.updateWidget(
           iOSName: Constants.iOSWidgetName,
-          androidName: Constants.androidWidgetName,
+          androidName: Constants.androidWidgetCo2Value,
         );
+        await HomeWidget.updateWidget(
+            androidName: Constants.androidWidgetCo2Small);
+        await HomeWidget.updateWidget(
+            androidName: Constants.androidWidgetCo2Medium);
+        await HomeWidget.updateWidget(
+            androidName: Constants.androidWidgetCo2Large);
       }
     }
   }

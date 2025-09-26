@@ -67,6 +67,42 @@
                 android:resource="@xml/co2_value_widget_info" />
         </receiver>
 
+        <receiver
+            android:name="com.air.spot.airspothealth.Co2SmallWidget"
+            android:exported="true"
+            android:label="AirSpot CO2 Small Widget">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/co2_small_widget_info" />
+        </receiver>
+
+        <receiver
+            android:name="com.air.spot.airspothealth.Co2MediumWidget"
+            android:exported="true"
+            android:label="AirSpot CO2 Medium Widget">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/co2_medium_widget_info" />
+        </receiver>
+
+        <receiver
+            android:name="com.air.spot.airspothealth.Co2LargeWidget"
+            android:exported="true"
+            android:label="AirSpot CO2 Large Widget">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/co2_large_widget_info" />
+        </receiver>
+
         <receiver android:name="es.antonborri.home_widget.HomeWidgetBackgroundReceiver"  android:exported="true">
             <intent-filter>
                 <action android:name="es.antonborri.home_widget.action.BACKGROUND" />

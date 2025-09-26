@@ -65,7 +65,11 @@ class Constants {
   static const String homeWidgetKey = 'airspot_home_widget';
   static const String appGroupId = 'group.com.airspot.lohas';
   static const String iOSWidgetName = 'Co2Widget';
-  static const String androidWidgetName = 'airspothealth.Co2ValueWidget';
+  // Fully-qualified Android widget provider names
+  static const String androidWidgetCo2Value = 'airspothealth.Co2ValueWidget';
+  static const String androidWidgetCo2Small = 'airspothealth.Co2SmallWidget';
+  static const String androidWidgetCo2Medium = 'airspothealth.Co2MediumWidget';
+  static const String androidWidgetCo2Large = 'airspothealth.Co2LargeWidget';
 
   static const String subscript2 = '₂';
 

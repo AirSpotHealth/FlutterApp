@@ -1,0 +1,193 @@
+package com.air.spot.airspothealth;
+
+import android.app.PendingIntent;
+import android.appwidget.AppWidgetManager;
+import android.appwidget.AppWidgetProvider;
+import android.content.Context;
+import android.content.Intent;
+import android.graphics.Bitmap;
+import android.graphics.Canvas;
+import android.graphics.Color;
+import android.graphics.Paint;
+import android.graphics.RectF;
+import android.net.Uri;
+import android.os.Bundle;
+import android.util.Log;
+import android.view.View;
+import android.widget.RemoteViews;
+
+import java.util.Calendar;
+import java.util.Locale;
+import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.List;
+
+import org.json.JSONObject;
+import org.json.JSONArray;
+import org.json.JSONException;
+
+import es.antonborri.home_widget.HomeWidgetBackgroundIntent;
+import es.antonborri.home_widget.HomeWidgetPlugin;
+
+/**
+ * Implementation of App Widget functionality for Small CO2 monitoring widget.
+ */
+public class Co2SmallWidget extends AppWidgetProvider {
+
+    private static final String TAG = "Co2SmallWidget";
+    private static final String WIDGET_DATA_KEY = "widget_data_json";
+
+    static void updateAppWidget(Context context, AppWidgetManager appWidgetManager, int appWidgetId) {
+        Log.d(TAG, "Updating small widget: " + appWidgetId);
+        
+        RemoteViews views = new RemoteViews(context.getPackageName(), R.layout.co2_small_widget);
+        
+        try {
+            // Get the single JSON payload
+            String widgetDataJson = HomeWidgetPlugin.Companion.getData(context).getString(WIDGET_DATA_KEY, "{}");
+            JSONObject widgetData = new JSONObject(widgetDataJson);
+            
+            // Extract all values from JSON with fallbacks
+            int co2Int = widgetData.optInt("co2Value", 0);
+            String co2Value = co2Int == 0 ? "----" : String.valueOf(co2Int);
+            String deviceId = widgetData.optString("deviceId", "");
+            String deviceName = widgetData.optString("deviceName", "AirSpot Device");
+            String powerMode = widgetData.optString("powerMode", "Now");
+            String batteryLevel = String.valueOf(widgetData.optInt("batteryLevel", 0));
+            boolean isCharging = widgetData.optBoolean("isCharging", false);
+            boolean alarmEnabled = widgetData.optBoolean("alarmEnabled", false);
+            boolean vibrationEnabled = widgetData.optBoolean("vibrationEnabled", false);
+            boolean isConnected = widgetData.optBoolean("isConnected", false);
+
+            // Check if we have a valid device connection
+            boolean hasValidDevice = !deviceId.isEmpty() && isConnected;
+            
+            if (hasValidDevice) {
+                // Device name and time
+                views.setTextViewText(R.id.device_name, deviceName);
+                views.setTextViewText(R.id.last_updated, getCurrentTime());
+                
+                // CO2 value with color coding
+                views.setTextViewText(R.id.co2_value, co2Value);
+                int co2Color = co2Int == 0 ? Color.GRAY : getCo2Color(co2Int, 800, 1000);
+                views.setTextColor(R.id.co2_value, co2Color);
+                
+                // Status icons
+                updateStatusIcons(views, batteryLevel, isCharging, alarmEnabled, vibrationEnabled, powerMode, isConnected);
+                
+            } else {
+                // No device connected state
+                views.setTextViewText(R.id.device_name, "");
+                views.setTextViewText(R.id.last_updated, "");
+                views.setTextViewText(R.id.co2_value, "----");
+                views.setTextColor(R.id.co2_value, Color.GRAY);
+
+                views.setViewVisibility(R.id.battery_icon, View.GONE);
+                views.setViewVisibility(R.id.alarm_icon, View.GONE);
+                views.setViewVisibility(R.id.vibration_icon, View.GONE);
+            }
+            
+            // Set up click intent
+            Intent intent = new Intent(context, MainActivity.class);
+            intent.putExtra("navigate_to", "devices");
+            PendingIntent pendingIntent = PendingIntent.getActivity(context, 0, intent, PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
+            views.setOnClickPendingIntent(R.id.widget_container, pendingIntent);
+            
+        } catch (JSONException e) {
+            Log.e(TAG, "Error parsing widget data", e);
+            // Set fallback values
+            views.setTextViewText(R.id.device_name, "AirSpot Device");
+            views.setTextViewText(R.id.co2_value, "----");
+            views.setTextColor(R.id.co2_value, Color.GRAY);
+        }
+        
+        // Update the widget
+        appWidgetManager.updateAppWidget(appWidgetId, views);
+    }
+
+    private static void updateStatusIcons(RemoteViews views, String batteryLevel, boolean isCharging, 
+                                        boolean alarmEnabled, boolean vibrationEnabled, String powerMode, boolean isConnected) {
+        // Battery icon (no percentage text in small widget)
+        views.setViewVisibility(R.id.battery_icon, View.VISIBLE);
+        int batteryLevelInt = Integer.parseInt(batteryLevel);
+        int batteryIcon = getBatteryIcon(batteryLevelInt, isCharging);
+        views.setImageViewResource(R.id.battery_icon, batteryIcon);
+        
+        // Alarm icon
+        views.setViewVisibility(R.id.alarm_icon, View.VISIBLE);
+        views.setImageViewResource(R.id.alarm_icon, alarmEnabled ? R.drawable.ic_bell : R.drawable.ic_bell_slash);
+        
+        
+        // Vibration icon
+        views.setViewVisibility(R.id.vibration_icon, View.VISIBLE);
+        views.setImageViewResource(R.id.vibration_icon, vibrationEnabled ? R.drawable.ic_iphone_radiowaves : R.drawable.ic_iphone_slash);
+    }
+
+    private static int getCo2Color(int co2Value, int greenUpperLimit, int yellowUpperLimit) {
+        if (co2Value <= greenUpperLimit) {
+            return Color.parseColor("#63A103"); // Brand Green
+        } else if (co2Value <= yellowUpperLimit) {
+            return Color.parseColor("#FE9A23"); // Brand Amber
+        } else {
+            return Color.parseColor("#D9001B"); // Brand Red
+        }
+    }
+
+    private static int getBatteryIcon(int level, boolean isCharging) {
+        if (isCharging) {
+            return R.drawable.battery_100percent_bolt;
+        } else if (level > 75) {
+            return R.drawable.battery_100percent;
+        } else if (level > 50) {
+            return R.drawable.battery_75percent;
+        } else if (level > 25) {
+            return R.drawable.battery_50percent;
+        } else if (level > 10) {
+            return R.drawable.battery_25percent;
+        } else {
+            return R.drawable.battery_0percent;
+        }
+    }
+
+    private static String getCurrentTime() {
+        Calendar calendar = Calendar.getInstance();
+        SimpleDateFormat timeFormat = new SimpleDateFormat("h:mm a", Locale.getDefault());
+        return "at " + timeFormat.format(calendar.getTime());
+    }
+
+    @Override
+    public void onUpdate(Context context, AppWidgetManager appWidgetManager, int[] appWidgetIds) {
+        // There may be multiple widgets active, so update all of them
+        for (int appWidgetId : appWidgetIds) {
+            updateAppWidget(context, appWidgetManager, appWidgetId);
+        }
+    }
+
+    @Override
+    public void onEnabled(Context context) {
+        // Enter relevant functionality for when the first widget is created
+        Log.d(TAG, "Small widget enabled");
+    }
+
+    @Override
+    public void onDisabled(Context context) {
+        // Enter relevant functionality for when the last widget is disabled
+        Log.d(TAG, "Small widget disabled");
+    }
+
+    @Override
+    public void onReceive(Context context, Intent intent) {
+        super.onReceive(context, intent);
+        if ("com.air.spot.airspothealth.REFRESH_DATA".equals(intent.getAction())) {
+            // Send the broadcast to MainActivity (which will forward to Flutter)
+            sendRefreshBroadcast(context);
+        }
+    }
+
+    // Add a static method to send the REFRESH_DATA broadcast
+    public static void sendRefreshBroadcast(Context context) {
+        Intent broadcastIntent = new Intent("com.air.spot.airspothealth.REFRESH_DATA");
+        context.sendBroadcast(broadcastIntent);
+        Log.d(TAG, "Sent REFRESH_DATA broadcast from Co2SmallWidget");
+    }
+}
