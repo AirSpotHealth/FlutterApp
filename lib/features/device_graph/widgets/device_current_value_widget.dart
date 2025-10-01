@@ -2,6 +2,7 @@ import 'package:airspothealth/core/models/device_settings.dart';
 import 'package:airspothealth/core/providers/ble_device_communication_provider.dart';
 import 'package:airspothealth/core/providers/device_settings_provider.dart';
 import 'package:airspothealth/core/theme/app_colors.dart';
+import 'package:airspothealth/core/utils/app_utils.dart';
 import 'package:airspothealth/core/utils/constants.dart';
 import 'package:airspothealth/core/utils/extensions.dart';
 import 'package:airspothealth/features/devices/providers/device_battery_level_provider.dart';
@@ -25,7 +26,7 @@ class DeviceCurrentValueWidget extends ConsumerWidget {
     final value = !powerState.isCharging && powerState.level == 0
         ? '----'
         : deviceValue != null
-            ? "$deviceValue"
+            ? "${AppUtils.getDisplayCO2Value(deviceValue!)}"
             : '0000';
 
     return Card(

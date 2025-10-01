@@ -650,18 +650,23 @@ class LiveActivityService {
             Constants.defaultYellowUpperLimit,
       );
 
-      // Create unified data model
+      // Create unified data model with display CO2 value (minimum 400 for user-facing components)
+      final actualCO2Value = int.parse(co2Value);
+      final displayCO2Value = actualCO2Value < 400 ? 400 : actualCO2Value;
+      final displayCO2History =
+          co2History.map((value) => value < 400 ? 400 : value).toList();
+
       final liveActivityData = LiveActivityModel(
         deviceId: deviceId,
         deviceName: deviceName,
-        co2Value: int.parse(co2Value),
+        co2Value: displayCO2Value,
         powerMode: powerMode,
         batteryLevel: int.parse(batteryLevel),
         isCharging: isCharging,
         isConnected: isConnected,
         alarmEnabled: alarmEnabled,
         vibrationEnabled: vibrationEnabled,
-        co2History: co2History,
+        co2History: displayCO2History,
         greenUpperLimit: deviceSettings?.thresholds.greenUpperLimit ??
             Constants.defaultGreenUpperLimit,
         yellowUpperLimit: deviceSettings?.thresholds.yellowUpperLimit ??

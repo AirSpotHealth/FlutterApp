@@ -1,6 +1,7 @@
 import 'package:airspothealth/core/models/device_settings.dart';
 import 'package:airspothealth/core/providers/ble_device_communication_provider.dart';
 import 'package:airspothealth/core/providers/device_settings_provider.dart';
+import 'package:airspothealth/core/utils/app_utils.dart';
 import 'package:airspothealth/core/utils/constants.dart';
 import 'package:airspothealth/core/utils/extensions.dart';
 import 'package:flutter/material.dart';
@@ -33,7 +34,9 @@ class DeviceValueWidget extends ConsumerWidget {
             return ScaleTransition(scale: animation, child: child);
           },
           child: Text(
-            deviceValue != null ? "$deviceValue ppm" : '------',
+            deviceValue != null
+                ? "${AppUtils.getDisplayCO2Value(deviceValue!)} ppm"
+                : '------',
             key: ValueKey<String>(deviceValue?.toString() ?? '------'),
             style: context.textTheme.titleLarge?.copyWith(
               color: deviceSettings.getValueColor(deviceValue),

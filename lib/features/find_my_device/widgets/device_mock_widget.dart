@@ -83,10 +83,12 @@ class DeviceMockWidget extends ConsumerWidget {
   }
 
   Align _buildCo2Value(dynamic co2Value) {
+    final displayValue =
+        co2Value != null ? AppUtils.getDisplayCO2Value(co2Value) : null;
     return Align(
       alignment: Alignment.center,
       child: Text(
-        co2Value?.toString() ?? "----",
+        displayValue?.toString() ?? "----",
         style: TextStyle(
             color: co2Value == null
                 ? Colors.white
@@ -179,10 +181,13 @@ class DeviceMockWidget extends ConsumerWidget {
   }
 
   Align _buildActiveIndicator(dynamic co2Value, DeviceSettings deviceSettings) {
+    // Use display value for positioning but actual value for color logic
+    final displayValue =
+        co2Value != null ? AppUtils.getDisplayCO2Value(co2Value) : 0;
     return Align(
-      alignment: (co2Value ?? 0) < deviceSettings.greenUpperLimit
+      alignment: displayValue < deviceSettings.greenUpperLimit
           ? Alignment.topLeft
-          : (co2Value ?? 0) < deviceSettings.yellowUpperLimit
+          : displayValue < deviceSettings.yellowUpperLimit
               ? Alignment.topCenter
               : Alignment.topRight,
       child: const Icon(
