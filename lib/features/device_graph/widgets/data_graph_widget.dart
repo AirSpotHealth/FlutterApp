@@ -536,7 +536,7 @@ class _DataGraphWidgetState extends ConsumerState<DataGraphWidget> {
       width: 1
     },'''}
 
-    markLine: ${settings.showMarkLines && !settings.showAreaFill ? '''
+    markLine: ${settings.showMarkLines ? '''
       {
         symbol: ['none', 'none'],
         label: { show: false },
