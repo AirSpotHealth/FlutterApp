@@ -75,7 +75,7 @@ public class Co2MediumWidget extends AppWidgetProvider {
                 
                 // CO2 value with color coding
                 views.setTextViewText(R.id.co2_value, co2Value);
-                int co2Color = co2Int == 0 ? Color.GRAY : getCo2Color(co2Int, greenUpperLimit, yellowUpperLimit);
+                int co2Color = co2Int == 0 ? Color.GRAY : getDynamicColorForCO2Value(co2Int, greenUpperLimit, yellowUpperLimit);
                 views.setTextColor(R.id.co2_value, co2Color);
                 
                 // Status icons
@@ -195,7 +195,7 @@ public class Co2MediumWidget extends AppWidgetProvider {
             float left = padding + (barIndex * (barWidth + barSpacing));
             float top = height - padding - barHeight;
             android.graphics.RectF r = new android.graphics.RectF(left, top, left + barWidth, height - padding);
-            int color = value <= greenUpperLimit ? Color.parseColor("#63A103") : (value <= yellowUpperLimit ? Color.parseColor("#FE9A23") : Color.parseColor("#D9001B"));
+            int color = getDynamicColorForCO2Value(value, greenUpperLimit, yellowUpperLimit);
             bar.setColor(color);
             canvas.drawRoundRect(r, 2 * density, 2 * density, bar);
         }
@@ -216,13 +216,13 @@ public class Co2MediumWidget extends AppWidgetProvider {
         return list;
     }
 
-    private static int getCo2Color(int co2Value, int greenUpperLimit, int yellowUpperLimit) {
+    private static int getDynamicColorForCO2Value(int co2Value, int greenUpperLimit, int yellowUpperLimit) {
         if (co2Value <= greenUpperLimit) {
-            return Color.parseColor("#63A103"); // Brand Green
+            return Color.parseColor("#4CAF50"); // Green
         } else if (co2Value <= yellowUpperLimit) {
-            return Color.parseColor("#FE9A23"); // Brand Amber
+            return Color.parseColor("#FF9800"); // Orange  
         } else {
-            return Color.parseColor("#D9001B"); // Brand Red
+            return Color.parseColor("#F44336"); // Red
         }
     }
 

@@ -213,7 +213,7 @@ public class Co2LargeWidget extends AppWidgetProvider {
             float left = padding + (barIndex * (barWidth + barSpacing));
             float top = height - padding - barHeight;
             android.graphics.RectF r = new android.graphics.RectF(left, top, left + barWidth, height - padding);
-            int color = value <= greenUpperLimit ? Color.parseColor("#63A103") : (value <= yellowUpperLimit ? Color.parseColor("#FE9A23") : Color.parseColor("#D9001B"));
+            int color = getDynamicColorForCO2Value(value, greenUpperLimit, yellowUpperLimit);
             bar.setColor(color);
             canvas.drawRoundRect(r, 2 * density, 2 * density, bar);
         }
@@ -241,7 +241,7 @@ public class Co2LargeWidget extends AppWidgetProvider {
         
         // Green slice
         if (greenPercentage > 0) {
-            paint.setColor(Color.parseColor("#63A103"));
+            paint.setColor(Color.parseColor("#4CAF50"));
             float sweepAngle = (greenPercentage * 360f) / 100f;
             canvas.drawArc(rect, startAngle, sweepAngle, true, paint);
             startAngle += sweepAngle;
@@ -249,7 +249,7 @@ public class Co2LargeWidget extends AppWidgetProvider {
         
         // Yellow slice
         if (yellowPercentage > 0) {
-            paint.setColor(Color.parseColor("#FE9A23"));
+            paint.setColor(Color.parseColor("#FF9800"));
             float sweepAngle = (yellowPercentage * 360f) / 100f;
             canvas.drawArc(rect, startAngle, sweepAngle, true, paint);
             startAngle += sweepAngle;
@@ -257,7 +257,7 @@ public class Co2LargeWidget extends AppWidgetProvider {
         
         // Red slice
         if (redPercentage > 0) {
-            paint.setColor(Color.parseColor("#D9001B"));
+            paint.setColor(Color.parseColor("#F44336"));
             float sweepAngle = (redPercentage * 360f) / 100f;
             canvas.drawArc(rect, startAngle, sweepAngle, true, paint);
         }

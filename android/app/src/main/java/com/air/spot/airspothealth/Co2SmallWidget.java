@@ -69,7 +69,7 @@ public class Co2SmallWidget extends AppWidgetProvider {
                 
                 // CO2 value with color coding
                 views.setTextViewText(R.id.co2_value, co2Value);
-                int co2Color = co2Int == 0 ? Color.GRAY : getCo2Color(co2Int, 800, 1000);
+                int co2Color = co2Int == 0 ? Color.GRAY : getDynamicColorForCO2Value(co2Int, 800, 1000);
                 views.setTextColor(R.id.co2_value, co2Color);
                 
                 // Status icons
@@ -123,13 +123,13 @@ public class Co2SmallWidget extends AppWidgetProvider {
         views.setImageViewResource(R.id.vibration_icon, vibrationEnabled ? R.drawable.ic_iphone_radiowaves : R.drawable.ic_iphone_slash);
     }
 
-    private static int getCo2Color(int co2Value, int greenUpperLimit, int yellowUpperLimit) {
+    private static int getDynamicColorForCO2Value(int co2Value, int greenUpperLimit, int yellowUpperLimit) {
         if (co2Value <= greenUpperLimit) {
-            return Color.parseColor("#63A103"); // Brand Green
+            return Color.parseColor("#4CAF50"); // Brand Green
         } else if (co2Value <= yellowUpperLimit) {
-            return Color.parseColor("#FE9A23"); // Brand Amber
+            return Color.parseColor("#FF9800"); // Brand Amber
         } else {
-            return Color.parseColor("#D9001B"); // Brand Red
+            return Color.parseColor("#F44336"); // Brand Red
         }
     }
 
