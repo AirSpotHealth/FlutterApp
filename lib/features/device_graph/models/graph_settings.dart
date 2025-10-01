@@ -46,6 +46,24 @@ class GraphSettings {
     );
   }
 
+  Map<String, dynamic> toJson() {
+    return {
+      'showZoomSlider': showZoomSlider,
+      'showAreaFill': showAreaFill,
+      'showMarkLines': showMarkLines,
+      'breathPercentageDisplayMode': breathPercentageDisplayMode.name,
+    };
+  }
+
+  factory GraphSettings.fromJson(Map<String, dynamic> json) {
+    return GraphSettings(
+      showZoomSlider: json['showZoomSlider'],
+      showAreaFill: json['showAreaFill'],
+      showMarkLines: json['showMarkLines'],
+      breathPercentageDisplayMode: json['breathPercentageDisplayMode'],
+    );
+  }
+
   @override
   bool operator ==(Object other) {
     if (identical(this, other)) return true;
