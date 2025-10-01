@@ -646,9 +646,9 @@ public class ForegroundNotificationService extends Service {
         PendingIntent mapPendingIntent = PendingIntent.getActivity(this, 102, mapIntent, PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
         views.setOnClickPendingIntent(R.id.ic_map, mapPendingIntent);
 
-        // Graph icon click action - deep link to graph
+        // Graph icon click action - deep link to graph with notification flag
         Intent graphIntent = new Intent(this, MainActivity.class);
-        graphIntent.setData(Uri.parse("airspothealth://devices/" + deviceId + "/graph"));
+        graphIntent.setData(Uri.parse("airspothealth://devices/" + deviceId + "/graph?from=notification"));
         graphIntent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TOP);
         PendingIntent graphPendingIntent = PendingIntent.getActivity(this, 101, graphIntent, PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
         views.setOnClickPendingIntent(R.id.ic_graph, graphPendingIntent);

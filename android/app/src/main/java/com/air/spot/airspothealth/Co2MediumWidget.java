@@ -109,9 +109,10 @@ public class Co2MediumWidget extends AppWidgetProvider {
                 views.setImageViewResource(R.id.co2_graph, R.drawable.no_data_graph);
             }
             
-            // Set up click intent
+            // Set up click intent using deep link with widget flag
             Intent intent = new Intent(context, MainActivity.class);
-            intent.putExtra("navigate_to", "devices");
+            intent.setData(Uri.parse("airspothealth://devices?from=widget"));
+            intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TOP);
             PendingIntent pendingIntent = PendingIntent.getActivity(context, 0, intent, PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
             views.setOnClickPendingIntent(R.id.widget_container, pendingIntent);
             

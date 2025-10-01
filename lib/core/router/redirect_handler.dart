@@ -1,3 +1,5 @@
+import 'package:airspothealth/core/router/app_router.dart';
+import 'package:airspothealth/core/router/route_names.dart';
 import 'package:airspothealth/core/services/map_handoff_service.dart';
 import 'package:airspothealth/core/utils/constants.dart';
 import 'package:flutter/material.dart';
@@ -53,6 +55,19 @@ class RedirectHandler {
 
       // airspothealth://devices or airspothealth://devices/
       if (segments.isEmpty) {
+        // Check if this is from a widget click
+        final fromWidget = uri.queryParameters['from'] == 'widget';
+        if (fromWidget) {
+          // For widget clicks, start at home and navigate programmatically
+          // This preserves the navigation stack so users can go back
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            final context = AppRouter.navigatorKey.currentContext;
+            if (context != null) {
+              context.pushNamed(RouteNames.devices);
+            }
+          });
+          return RouteNames.home; // Start at home page
+        }
         return '/devices';
       }
 
@@ -64,9 +79,16 @@ class RedirectHandler {
         // Check if this is from an expired live activity
         final fromExpired = uri.queryParameters['from'] == 'expired';
         if (fromExpired) {
-          // Route directly to the device route (which renders settings)
-          final query = uri.hasQuery ? '?${uri.query}' : '';
-          return '/devices/$deviceId$query';
+          // For expired live activity clicks, start at home and navigate programmatically
+          // This preserves the navigation stack so users can go back
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            final context = AppRouter.navigatorKey.currentContext;
+            if (context != null) {
+              final query = uri.hasQuery ? '?${uri.query}' : '';
+              context.push('/devices/$deviceId$query');
+            }
+          });
+          return RouteNames.home; // Start at home page
         }
 
         return '/devices/$deviceId';
@@ -75,6 +97,20 @@ class RedirectHandler {
       // airspothealth://devices/<deviceId>/graph
       if (segments.length >= 2 && segments[1] == 'graph') {
         final deviceId = segments[0];
+        // Check if this is from a notification click
+        final fromNotification = uri.queryParameters['from'] == 'notification';
+        if (fromNotification) {
+          // For notification clicks, start at home and navigate programmatically
+          // This preserves the navigation stack so users can go back
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            final context = AppRouter.navigatorKey.currentContext;
+            if (context != null) {
+              context.pushNamed(RouteNames.deviceGraph,
+                  pathParameters: {'deviceId': deviceId});
+            }
+          });
+          return RouteNames.home; // Start at home page
+        }
         return '/devices/$deviceId/graph';
       }
 

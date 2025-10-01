@@ -333,7 +333,7 @@ struct LiveActivityWidgetLiveActivity: Widget {
                 URL(
                     string: shouldShow
                         ? "airspothealth://devices/\(context.state.deviceId)?from=expired"
-                        : "airspothealth://devices"
+                        : "airspothealth://devices?from=widget"
                 )
             )
         } dynamicIsland: { context in
