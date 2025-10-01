@@ -58,6 +58,7 @@ public class Co2LargeWidget extends AppWidgetProvider {
             boolean alarmEnabled = widgetData.optBoolean("alarmEnabled", false);
             boolean vibrationEnabled = widgetData.optBoolean("vibrationEnabled", false);
             boolean isConnected = widgetData.optBoolean("isConnected", false);
+            boolean isRefreshing = widgetData.optBoolean("isRefreshing", false);
             
             // Graph data
             JSONArray co2HistoryArray = widgetData.optJSONArray("co2History");
@@ -98,6 +99,10 @@ public class Co2LargeWidget extends AppWidgetProvider {
                 
                 String zoneSummary = greenZonePercentage + "% green zone air environment today";
                 views.setTextViewText(R.id.zone_summary, zoneSummary);
+                
+                // Handle refresh state and setup refresh button
+                setupRefreshState(views, isRefreshing, isConnected);
+                setupRefreshButton(context, views, appWidgetId, deviceId);
                 
             } else {
                 // No device connected state
@@ -263,6 +268,44 @@ public class Co2LargeWidget extends AppWidgetProvider {
         }
         
         return bitmap;
+    }
+
+    private static void setupRefreshState(RemoteViews views, boolean isRefreshing, boolean isConnected) {
+        Log.d(TAG, "Setting up refresh state - isRefreshing: " + isRefreshing + ", isConnected: " + isConnected);
+        
+        if (isRefreshing && isConnected) {
+            // Show progress bar, hide refresh button
+            Log.d(TAG, "Showing refresh animation");
+            views.setViewVisibility(R.id.progress_refresh, View.VISIBLE);
+            views.setViewVisibility(R.id.refresh_button, View.GONE);
+        } else {
+            // Hide progress bar, show refresh button
+            Log.d(TAG, "Hiding refresh animation");
+            views.setViewVisibility(R.id.progress_refresh, View.GONE);
+            views.setViewVisibility(R.id.refresh_button, View.VISIBLE);
+            
+            // Set appropriate refresh button icon based on connection state
+            if (isConnected && !isRefreshing) {
+                // Show normal refresh icon when connected
+                views.setImageViewResource(R.id.refresh_button, R.drawable.refresh_button_widget);
+            } else {
+                // Show disabled/disconnected icon when not connected
+                views.setImageViewResource(R.id.refresh_button, R.drawable.ic_bt_off);
+            }
+        }
+    }
+
+    private static void setupRefreshButton(Context context, RemoteViews views, int appWidgetId, String deviceId) {
+        // When the refresh button is clicked, send the REFRESH_DATA broadcast
+        Intent intent = new Intent(context, Co2LargeWidget.class);
+        intent.setAction("com.air.spot.airspothealth.REFRESH_DATA");
+        // Optionally, add deviceId as extra if needed
+        if (deviceId != null && !deviceId.isEmpty()) {
+            intent.putExtra("deviceId", deviceId);
+        }
+        PendingIntent refreshPendingIntent = PendingIntent.getBroadcast(context, appWidgetId, intent, PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
+        views.setOnClickPendingIntent(R.id.refresh_button, refreshPendingIntent);
+        Log.d(TAG, "Refresh button setup to send REFRESH_DATA broadcast");
     }
 
     private static List<Integer> parseJsonArrayToIntList(JSONArray jsonArray) {
