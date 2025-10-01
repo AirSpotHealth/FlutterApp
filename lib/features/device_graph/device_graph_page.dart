@@ -22,6 +22,8 @@ class DeviceGraphPage extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final BleDevice device = ref.read(bleDeviceProvider(deviceId));
+    final isLandscape =
+        MediaQuery.of(context).orientation == Orientation.landscape;
 
     return Scaffold(
       appBar: AppBar(
@@ -34,26 +36,70 @@ class DeviceGraphPage extends ConsumerWidget {
       ),
       body: SafeArea(
         bottom: true,
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const SizedBox(height: 12),
-            Align(
-              alignment: Alignment.center,
-              child: Text(
-                device.alias ?? device.name,
-                style: context.textTheme.bodyMedium?.weight600,
-              ),
-            ),
-            const SizedBox(height: 12),
-            DeviceCurrentValueWidget(deviceId: device.deviceId),
-            const SizedBox(height: 12),
-            DeviceDataAggregateCard(deviceId: device.deviceId),
-            const SizedBox(height: 12),
-            Flexible(child: DataGraphWrapper(deviceId: device.deviceId)),
-          ],
-        ),
+        child: isLandscape
+            ? _buildLandscapeLayout(context, device)
+            : _buildPortraitLayout(context, device),
       ),
+    );
+  }
+
+  Widget _buildPortraitLayout(BuildContext context, BleDevice device) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const SizedBox(height: 12),
+        Align(
+          alignment: Alignment.center,
+          child: Text(
+            device.alias ?? device.name,
+            style: context.textTheme.bodyMedium?.weight600,
+          ),
+        ),
+        const SizedBox(height: 12),
+        DeviceCurrentValueWidget(deviceId: device.deviceId),
+        const SizedBox(height: 12),
+        DeviceDataAggregateCard(deviceId: device.deviceId),
+        const SizedBox(height: 12),
+        Flexible(child: DataGraphWrapper(deviceId: device.deviceId)),
+      ],
+    );
+  }
+
+  Widget _buildLandscapeLayout(BuildContext context, BleDevice device) {
+    return Column(
+      children: [
+        // Device name at top
+        const SizedBox(height: 8),
+        Text(
+          device.alias ?? device.name,
+          style: context.textTheme.bodyMedium?.weight600,
+        ),
+        const SizedBox(height: 8),
+        // Main content in row layout
+        Expanded(
+          child: Row(
+            children: [
+              // Left side: Stats panel
+              SizedBox(
+                width: 320, // Fixed width for stats
+                child: Column(
+                  children: [
+                    DeviceCurrentValueWidget(deviceId: device.deviceId),
+                    const SizedBox(height: 12),
+                    DeviceDataAggregateCard(deviceId: device.deviceId),
+                    const Spacer(), // Push content to top
+                  ],
+                ),
+              ),
+              const SizedBox(width: 16),
+              // Right side: Graph
+              Expanded(
+                child: DataGraphWrapper(deviceId: device.deviceId),
+              ),
+            ],
+          ),
+        ),
+      ],
     );
   }
 }
