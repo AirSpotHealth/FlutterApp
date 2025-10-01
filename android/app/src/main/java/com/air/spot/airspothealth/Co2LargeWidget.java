@@ -82,7 +82,7 @@ public class Co2LargeWidget extends AppWidgetProvider {
                 
                 // CO2 value with color coding
                 views.setTextViewText(R.id.co2_value, co2Value);
-                int co2Color = co2Int == 0 ? Color.GRAY : getCo2Color(co2Int, greenUpperLimit, yellowUpperLimit);
+                int co2Color = co2Int == 0 ? Color.GRAY : getDynamicColorForCO2Value(co2Int, greenUpperLimit, yellowUpperLimit);
                 views.setTextColor(R.id.co2_value, co2Color);
                 
                 // Status icons
@@ -279,7 +279,7 @@ public class Co2LargeWidget extends AppWidgetProvider {
         return list;
     }
 
-    private static int getCo2Color(int co2Value, int greenUpperLimit, int yellowUpperLimit) {
+    private static int getDynamicColorForCO2Value(int co2Value, int greenUpperLimit, int yellowUpperLimit) {
         if (co2Value <= greenUpperLimit) {
             return Color.parseColor("#4CAF50"); // Green
         } else if (co2Value <= yellowUpperLimit) {
