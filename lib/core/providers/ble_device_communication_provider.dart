@@ -212,11 +212,28 @@ class _BleDeviceCommunicationNotifier extends FamilyNotifier<dynamic, String> {
 
     try {
       // 1. Get device name (prefer alias over advertised name)
-      final BleDevice? bleDevice = ref.read(bleDeviceProvider(deviceId));
-      final String deviceName = bleDevice?.alias ??
-          device?.advName ??
-          bleDevice?.name ??
-          'AirSpot Device';
+      BleDevice? bleDevice;
+      try {
+        bleDevice = ref.read(bleDeviceProvider(deviceId));
+      } catch (e) {
+        debugPrint('BLE: Error reading bleDeviceProvider: $e');
+        bleDevice = null;
+      }
+
+      String deviceName = 'AirSpot Device';
+
+      // Prefer alias if it exists and is not empty
+      if (bleDevice?.alias?.isNotEmpty == true) {
+        deviceName = bleDevice!.alias!;
+      }
+      // Fall back to advertised name if available
+      else if (device?.advName.isNotEmpty == true) {
+        deviceName = device!.advName;
+      }
+      // Fall back to device name if available
+      else if (bleDevice?.name.isNotEmpty == true) {
+        deviceName = bleDevice!.name;
+      }
 
       // 2. Get device settings
       DeviceSettings? deviceSettings;
