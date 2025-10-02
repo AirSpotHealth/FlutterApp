@@ -57,10 +57,14 @@ class GraphSettings {
 
   factory GraphSettings.fromJson(Map<String, dynamic> json) {
     return GraphSettings(
-      showZoomSlider: json['showZoomSlider'],
-      showAreaFill: json['showAreaFill'],
-      showMarkLines: json['showMarkLines'],
-      breathPercentageDisplayMode: json['breathPercentageDisplayMode'],
+      showZoomSlider: json['showZoomSlider'] ?? false,
+      showAreaFill: json['showAreaFill'] ?? true,
+      showMarkLines: json['showMarkLines'] ?? false,
+      breathPercentageDisplayMode:
+          BreathPercentageDisplayMode.values.firstWhere(
+        (e) => e.name == json['breathPercentageDisplayMode'],
+        orElse: () => BreathPercentageDisplayMode.none,
+      ),
     );
   }
 
