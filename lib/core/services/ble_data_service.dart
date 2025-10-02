@@ -98,6 +98,14 @@ class BleDataService {
             .read(recalibrationTimeProvider(deviceId).notifier)
             .setRecalibrationTime(value);
         break;
+      case ResponseCommand.calibrateSensors:
+        // If value is an int (not bool), it's the calibration done message
+        if (value is int) {
+          ref
+              .read(recalibrationTimeProvider(deviceId).notifier)
+              .setRecalibrationDone(value);
+        }
+        break;
       case ResponseCommand.recalibrationConfirm:
         if (value != null) {
           ref
@@ -627,7 +635,22 @@ class ResponseCommandParser {
     return result;
   }
 
-  bool parseCalibrateSensors(List<int> data) => _parseBoolean(data, 4);
+  dynamic parseCalibrateSensors(List<int> data) {
+    // Check if this is a calibration done message (byte[3] == 0x01)
+    if (data.length >= 8 && data[3] == 0x01) {
+      // Parse correction value from bytes 4-5
+      int frc = (data[4] << 8) | data[5];
+
+      // Check sign in byte 6 (0x00 = positive, 0x01 = negative)
+      if (data[6] == 0x01) {
+        frc = -frc;
+      }
+
+      return frc;
+    }
+    // Otherwise it's a start command, return boolean
+    return _parseBoolean(data, 4);
+  }
 
   bool parseSetContinuosDisplay(List<int> data) => _parseBoolean(data, 4);
 
