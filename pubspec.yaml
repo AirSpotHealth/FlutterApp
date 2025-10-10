@@ -2,7 +2,7 @@ name: airspothealth
 description: App for Airspot Health
 publish_to: none # Remove this line if you wish to publish to pub.dev
 
-version: 3.6.4+135
+version: 3.6.5+136
 
 environment:
   sdk: ^3.5.3
@@ -15,7 +15,7 @@ dependencies:
   go_router: ^16.2.1
   flutter_riverpod: ^2.6.1
   permission_handler: ^12.0.1
-  flutter_blue_plus: ^1.35.10
+  flutter_blue_plus: ^2.0.0
   path_provider: ^2.1.5
   webview_flutter: ^4.13.0
   url_launcher: ^6.3.2

@@ -34,7 +34,7 @@ final bleDeviceCommunicationProvider =
 class _BleDeviceCommunicationNotifier extends FamilyNotifier<dynamic, String> {
   final IsarService _isarService = IsarService();
 
-  late final BleDeviceCommunicator _communicator;
+  late BleDeviceCommunicator _communicator;
 
   BluetoothDevice? get device => ref
       .read(bleConnectedDevicesProvider)

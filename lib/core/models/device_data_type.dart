@@ -102,6 +102,10 @@ const sensorErrorMap = {
   0x06: 'Sensor Variant Check Error',
   0x07: 'Sensor Measurement Stop Error',
   0x08: 'Invalid CO2 Reading',
+  0x09: 'I2C Communication Failure',
+  0x0A: 'CRC Checksum Failure',
+  0x0B: 'Sensor Not Ready',
+  0x0C: 'CO2 Reading Too High (>50000 ppm)',
 };
 
 const deviceDataOrder = [

@@ -130,10 +130,23 @@ class RedirectHandler {
 
   /// Redirects malformed paths missing "/devices"
   static String? _handleMalformedPathRedirect(Uri uri) {
+    // Define known app routes that should not be treated as device IDs
+    const knownAppRoutes = {
+      'app-setup',
+      'solutions',
+      'latest-news',
+      'app-updates',
+      'privacy-policy',
+      'factory-test',
+      'map-handoff',
+      'find-my-device',
+    };
+
     // Handle malformed device ID paths (missing /devices prefix)
     if (uri.pathSegments.length == 1 &&
         !uri.pathSegments.contains('devices') &&
-        uri.pathSegments[0].contains('-')) {
+        uri.pathSegments[0].contains('-') &&
+        !knownAppRoutes.contains(uri.pathSegments[0])) {
       // Device IDs typically contain hyphens
       final deviceId = uri.pathSegments[0];
       // Check if this is from an expired live activity

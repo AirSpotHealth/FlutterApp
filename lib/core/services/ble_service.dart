@@ -55,7 +55,7 @@ class BLEService {
 
   /// Method to connect to a Bluetooth device.
   Future<void> connect(BluetoothDevice device) async =>
-      device.connect(autoConnect: true, mtu: null);
+      device.connect(license: License.free, autoConnect: true, mtu: null);
 
   /// Method to disconnect from a Bluetooth device.
   Future<void> disconnect(BluetoothDevice device) => device.disconnect();
