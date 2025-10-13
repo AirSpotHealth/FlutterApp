@@ -292,9 +292,6 @@ class _BleDeviceCommunicationNotifier extends FamilyNotifier<dynamic, String> {
         // Update all Android widget providers
 
         await Future.wait([
-          HomeWidget.updateWidget(
-              iOSName: Constants.iOSWidgetName,
-              androidName: Constants.androidWidgetCo2Value),
           HomeWidget.updateWidget(androidName: Constants.androidWidgetCo2Small),
           HomeWidget.updateWidget(
               androidName: Constants.androidWidgetCo2Medium),

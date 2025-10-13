@@ -563,16 +563,19 @@ class LiveActivityService {
       await HomeWidget.saveWidgetData<String>('widget_data_json', jsonString);
       debugPrint('✅ Widget: Data saved successfully');
 
-      await Future.wait([
-        // Update widgets on both platforms
-        // Trigger updates for all Android widget providers explicitly
-        HomeWidget.updateWidget(
-            iOSName: Constants.iOSWidgetName,
-            androidName: Constants.androidWidgetCo2Value),
-        HomeWidget.updateWidget(androidName: Constants.androidWidgetCo2Small),
-        HomeWidget.updateWidget(androidName: Constants.androidWidgetCo2Medium),
-        HomeWidget.updateWidget(androidName: Constants.androidWidgetCo2Large),
-      ]);
+      // Platform-specific widget updates
+      if (Platform.isIOS) {
+        // iOS only has one widget type
+        await HomeWidget.updateWidget(iOSName: Constants.iOSWidgetName);
+      } else if (Platform.isAndroid) {
+        // Android has multiple widget sizes - update all of them
+        await Future.wait([
+          HomeWidget.updateWidget(androidName: Constants.androidWidgetCo2Small),
+          HomeWidget.updateWidget(
+              androidName: Constants.androidWidgetCo2Medium),
+          HomeWidget.updateWidget(androidName: Constants.androidWidgetCo2Large),
+        ]);
+      }
       debugPrint('✅ Widget: Widget update triggered');
     } catch (e) {
       debugPrint('❌ Widget: Error updating widgets: $e');
@@ -700,16 +703,12 @@ class LiveActivityService {
       // Fallback for Android home widget
       if (Platform.isAndroid) {
         await HomeWidget.saveWidgetData(Constants.homeWidgetKey, '----');
-        await HomeWidget.updateWidget(
-          iOSName: Constants.iOSWidgetName,
-          androidName: Constants.androidWidgetCo2Value,
-        );
-        await HomeWidget.updateWidget(
-            androidName: Constants.androidWidgetCo2Small);
-        await HomeWidget.updateWidget(
-            androidName: Constants.androidWidgetCo2Medium);
-        await HomeWidget.updateWidget(
-            androidName: Constants.androidWidgetCo2Large);
+        await Future.wait([
+          HomeWidget.updateWidget(androidName: Constants.androidWidgetCo2Small),
+          HomeWidget.updateWidget(
+              androidName: Constants.androidWidgetCo2Medium),
+          HomeWidget.updateWidget(androidName: Constants.androidWidgetCo2Large),
+        ]);
       }
     }
   }

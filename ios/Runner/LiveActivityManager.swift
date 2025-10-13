@@ -326,11 +326,11 @@ class LiveActivityManager: LiveActivityManagerProtocol {
         let state = createContentState(from: data)
         
         // Set stale date based on debug/production mode
-        #if DEBUG
-        let staleDate = Date().addingTimeInterval(2 * 60) // 2 minutes for testing
-        #else
+        // #if DEBUG
+        // let staleDate = Date().addingTimeInterval(2 * 60) // 2 minutes for testing
+        // #else
         let staleDate = Date().addingTimeInterval(8 * 60 * 60) // 8 hours
-        #endif
+        // #endif
         
         do {
             let activity = try Activity<LiveActivityWidgetAttributes>.request(
@@ -369,10 +369,24 @@ class LiveActivityManager: LiveActivityManagerProtocol {
         // Update the specific device's Live Activity
         let updatedState = createContentState(from: data)
         
+        // CRITICAL: Update staleDate with each update to prevent auto-dismissal in iOS 18
+        // iOS 18 strictly enforces staleDate and will auto-dismiss if not refreshed
+        // #if DEBUG
+        // let newStaleDate = Date().addingTimeInterval(2 * 60) // 2 minutes for testing
+        // #else
+        let newStaleDate = Date().addingTimeInterval(8 * 60 * 60) // 8 hours
+        // #endif
+        
         Task {
             do {
-                await activity.update(using: updatedState)
-                print("Live Activity updated successfully for device: \(deviceId)")
+                // Update with new state AND new staleDate to extend Live Activity lifetime
+                await activity.update(
+                    ActivityContent<LiveActivityWidgetAttributes.ContentState>(
+                        state: updatedState,
+                        staleDate: newStaleDate
+                    )
+                )
+                print("Live Activity updated successfully for device: \(deviceId) with new staleDate: \(newStaleDate)")
             } catch {
                 print("Error updating Live Activity for device \(deviceId): \(error)")
                 // If update fails, the activity might be stale, clean it up
