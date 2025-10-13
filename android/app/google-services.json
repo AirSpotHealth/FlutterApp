@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "1041325410797",
+    "project_id": "airspothealth-7c87d",
+    "storage_bucket": "airspothealth-7c87d.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1041325410797:android:1166cb605c2a1e4e7a3fe4",
+        "android_client_info": {
+          "package_name": "com.air.spot"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAmXaVa4ZybZMTbP0lv34enrOLgQPUKIgg"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

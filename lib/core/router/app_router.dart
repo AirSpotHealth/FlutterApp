@@ -20,6 +20,7 @@ import 'package:airspothealth/features/devices/devices_page.dart';
 import 'package:airspothealth/features/factory_test/factory_test_wrapper.dart';
 import 'package:airspothealth/features/find_my_device/find_my_device_page.dart';
 import 'package:airspothealth/features/home/homepage.dart';
+import 'package:airspothealth/features/notification_settings/notification_settings_page.dart';
 import 'package:airspothealth/features/solutions/solutions_page.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
@@ -186,6 +187,19 @@ class AppRouter {
                             'Device ID is required for advanced alarms');
                       }
                       return AdvancedAlarmSettingsPage(deviceId: deviceId);
+                    },
+                  ),
+                  // Route for notification settings within device settings
+                  GoRoute(
+                    path: 'notification-settings',
+                    name: RouteNames.notificationSettings,
+                    builder: (context, state) {
+                      final deviceId = state.pathParameters['deviceId'];
+                      if (deviceId == null) {
+                        throw ErrorDescription(
+                            'Device ID is required for notification settings');
+                      }
+                      return NotificationSettingsPage(deviceId: deviceId);
                     },
                   ),
                   // Route for find my device settings within device settings

@@ -7,9 +7,11 @@ import 'package:airspothealth/core/models/device_data_type.dart';
 import 'package:airspothealth/core/models/device_settings.dart';
 import 'package:airspothealth/core/providers/ble_connected_devices_provider.dart';
 import 'package:airspothealth/core/providers/device_settings_provider.dart';
+import 'package:airspothealth/core/providers/notification_preferences_provider.dart';
 import 'package:airspothealth/core/services/ble_communicator_service.dart';
 import 'package:airspothealth/core/services/ble_data_service.dart';
 import 'package:airspothealth/core/services/ble_device_communicator.dart';
+import 'package:airspothealth/core/services/co2_monitoring_service.dart';
 import 'package:airspothealth/core/services/data_logger_service.dart';
 import 'package:airspothealth/core/services/isar_service.dart';
 import 'package:airspothealth/core/services/live_activity_service.dart';
@@ -273,7 +275,26 @@ class _BleDeviceCommunicationNotifier extends FamilyNotifier<dynamic, String> {
       // 5. Include current value as the latest
       final co2History = [...historicalData, co2Data.value];
 
-      // 6. Delegate to unified LiveActivityService
+      // 6. Check CO2 levels and trigger notifications if needed
+      try {
+        final notificationPrefs =
+            ref.read(notificationPreferencesProvider(deviceId));
+        await Co2MonitoringService.checkAndNotify(
+          deviceId: deviceId,
+          deviceName: deviceName,
+          co2Value: co2Data.value,
+          preferences: notificationPrefs,
+        );
+
+        // Update last notification time if needed
+        if (notificationPrefs.smartphoneNotificationsEnabled) {
+          // This will be handled by the monitoring service
+        }
+      } catch (e) {
+        debugPrint('BLE: Error checking CO2 notifications: $e');
+      }
+
+      // 7. Delegate to unified LiveActivityService
       await LiveActivityService().updateWithCO2Data(
         deviceId: deviceId,
         co2Value: co2Data.value.toString(),

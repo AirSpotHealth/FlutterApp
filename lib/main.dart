@@ -7,14 +7,28 @@ import 'package:airspothealth/core/utils/constants.dart';
 import 'package:airspothealth/core/utils/local_date_format.dart';
 import 'package:airspothealth/core/utils/storage_keys.dart';
 import 'package:airspothealth/features/home/widgets/services_banner.dart';
+import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart' hide DateUtils;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:home_widget/home_widget.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 
+import 'firebase_options.dart';
+
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
+  // Initialize Firebase first (required by NotificationService)
+  try {
+    await Firebase.initializeApp(
+      options: DefaultFirebaseOptions.currentPlatform,
+    );
+    debugPrint('✅ Firebase initialized successfully');
+  } catch (e) {
+    debugPrint('❌ Firebase initialization failed: $e');
+  }
+
+  // Initialize other services in parallel
   await [
     IsarService().initialize(),
     PrefsService().initialize(),

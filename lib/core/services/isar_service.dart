@@ -1,6 +1,7 @@
 import 'package:airspothealth/core/models/ble_device.dart';
 import 'package:airspothealth/core/models/device_data.dart';
 import 'package:airspothealth/core/models/device_settings.dart';
+import 'package:airspothealth/core/models/notification_preferences.dart';
 import 'package:isar/isar.dart';
 import 'package:path_provider/path_provider.dart';
 
@@ -20,7 +21,12 @@ class IsarService {
   Future<void> initialize() async {
     final dir = await getApplicationDocumentsDirectory();
     _isar = Isar.open(
-      schemas: [BleDeviceSchema, DeviceDataSchema, DeviceSettingsSchema],
+      schemas: [
+        BleDeviceSchema,
+        DeviceDataSchema,
+        DeviceSettingsSchema,
+        NotificationPreferencesSchema,
+      ],
       directory: dir.path,
     );
   }

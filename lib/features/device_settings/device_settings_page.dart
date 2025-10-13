@@ -81,6 +81,11 @@ class _DeviceSettingsPageState extends ConsumerState<DeviceSettingsPage> {
       route: RouteNames.screenSettings,
     ),
     SettingItem(
+      title: 'Notification Settings',
+      assetIcon: Assets.alarmSettings,
+      route: RouteNames.notificationSettings,
+    ),
+    SettingItem(
       title: 'Do Not Disturb',
       assetIcon: Assets.doNotDisturbSettings,
       route: RouteNames.doNotDisturbSettings,

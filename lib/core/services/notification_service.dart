@@ -1,10 +1,15 @@
 import 'package:airspothealth/core/theme/app_colors.dart';
 import 'package:airspothealth/core/utils/extensions.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 
 class NotificationService {
   static final FlutterLocalNotificationsPlugin _notificationsPlugin =
       FlutterLocalNotificationsPlugin();
+
+  static final FirebaseMessaging _firebaseMessaging =
+      FirebaseMessaging.instance;
 
   static void checkNotificationPermission() async {
     // For iOS, permission is requested during initialization or first notification.
@@ -37,8 +42,8 @@ class NotificationService {
       macOS: darwinInitializationSettings,
     );
 
-    // Create Android Notification Channel (equivalent to AwesomeNotifications channel)
-    const AndroidNotificationChannel channel = AndroidNotificationChannel(
+    // Create Android Notification Channels
+    const AndroidNotificationChannel alertsChannel = AndroidNotificationChannel(
       'alerts', // id
       'Alerts', // name
       description: 'Notification tests as alerts', // description
@@ -48,16 +53,39 @@ class NotificationService {
       enableVibration: true,
     );
 
+    const AndroidNotificationChannel co2Channel = AndroidNotificationChannel(
+      'co2_alerts', // id
+      'CO₂ Alerts', // name
+      description: 'High CO₂ level notifications', // description
+      importance: Importance.high,
+      playSound: true,
+      ledColor: AppColors.brandColorRed,
+      enableVibration: true,
+    );
+
     await _notificationsPlugin
         .resolvePlatformSpecificImplementation<
             AndroidFlutterLocalNotificationsPlugin>()
-        ?.createNotificationChannel(channel);
+        ?.createNotificationChannel(alertsChannel);
+
+    await _notificationsPlugin
+        .resolvePlatformSpecificImplementation<
+            AndroidFlutterLocalNotificationsPlugin>()
+        ?.createNotificationChannel(co2Channel);
 
     // Request permission for Android 13+
     await _notificationsPlugin
         .resolvePlatformSpecificImplementation<
             AndroidFlutterLocalNotificationsPlugin>()
         ?.requestNotificationsPermission();
+
+    // Initialize Firebase Messaging
+    try {
+      await initFirebaseMessaging();
+    } catch (e) {
+      debugPrint('Firebase initialization failed: $e');
+      // Continue even if Firebase fails
+    }
 
     // For iOS, permissions are requested via DarwinInitializationSettings.
     // For older Android versions, permissions are granted at install time.
@@ -67,6 +95,47 @@ class NotificationService {
           // onDidReceiveNotificationResponse: onDidReceiveNotificationResponse, // Optional callback
         ) ??
         false;
+  }
+
+  static Future<void> initFirebaseMessaging() async {
+    // Request permission for iOS
+    NotificationSettings settings = await _firebaseMessaging.requestPermission(
+      alert: true,
+      badge: true,
+      sound: true,
+      provisional: false,
+    );
+
+    debugPrint('User granted permission: ${settings.authorizationStatus}');
+
+    // Get FCM token
+    String? token = await _firebaseMessaging.getToken();
+    debugPrint('FCM Token: $token');
+
+    // Handle foreground messages
+    FirebaseMessaging.onMessage.listen((RemoteMessage message) {
+      debugPrint('Got a message whilst in the foreground!');
+      debugPrint('Message data: ${message.data}');
+
+      if (message.notification != null) {
+        debugPrint(
+            'Message also contained a notification: ${message.notification}');
+        // Show local notification for foreground messages
+        showNotification(
+          title: message.notification!.title ?? 'Notification',
+          body: message.notification!.body ?? '',
+        );
+      }
+    });
+
+    // Handle background messages
+    FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
+
+    // Handle notification taps
+    FirebaseMessaging.onMessageOpenedApp.listen((RemoteMessage message) {
+      debugPrint('A message opened the app: ${message.messageId}');
+      // Handle navigation based on notification data
+    });
   }
 
   static Future<void> showNotification({
@@ -142,4 +211,96 @@ class NotificationService {
   //   //   MaterialPageRoute<void>(builder: (context) => SecondScreen(payload)),
   //   // );
   // }
+
+  /// Show CO2 notification based on preferences
+  static Future<void> showCO2Notification({
+    required String deviceName,
+    required int co2Value,
+    required int threshold,
+    String? customMessage,
+    bool playSound = true,
+    bool vibrate = true,
+  }) async {
+    final message = customMessage ?? 'CO₂ level is $co2Value ppm';
+
+    AndroidNotificationDetails androidNotificationDetails =
+        AndroidNotificationDetails(
+      'co2_alerts', // Channel ID
+      'CO₂ Alerts', // Channel name
+      channelDescription: 'High CO₂ level notifications',
+      importance: Importance.high,
+      priority: Priority.high,
+      playSound: playSound,
+      enableVibration: vibrate,
+      color: AppColors.brandColorRed,
+      ledColor: AppColors.brandColorRed,
+      ledOnMs: 1000,
+      ledOffMs: 500,
+      styleInformation: BigTextStyleInformation(
+        message,
+        contentTitle: '⚠️ $deviceName - High CO₂',
+        summaryText: 'Threshold: $threshold ppm',
+      ),
+    );
+
+    DarwinNotificationDetails darwinNotificationDetails =
+        DarwinNotificationDetails(
+      presentAlert: true,
+      presentBadge: true,
+      presentSound: playSound,
+      sound: playSound ? 'default' : null,
+      interruptionLevel: InterruptionLevel.timeSensitive,
+    );
+
+    NotificationDetails notificationDetails = NotificationDetails(
+      android: androidNotificationDetails,
+      iOS: darwinNotificationDetails,
+      macOS: darwinNotificationDetails,
+    );
+
+    await _notificationsPlugin.show(
+      co2Value.hashCode, // Use co2Value hashCode as unique ID
+      '⚠️ $deviceName - High CO₂',
+      message,
+      notificationDetails,
+      payload: 'co2_alert:$deviceName:$co2Value',
+    );
+  }
+
+  /// Get FCM token for remote notifications
+  static Future<String?> getFCMToken() async {
+    try {
+      return await _firebaseMessaging.getToken();
+    } catch (e) {
+      debugPrint('Error getting FCM token: $e');
+      return null;
+    }
+  }
+
+  /// Subscribe to a topic for remote notifications
+  static Future<void> subscribeToTopic(String topic) async {
+    try {
+      await _firebaseMessaging.subscribeToTopic(topic);
+      debugPrint('Subscribed to topic: $topic');
+    } catch (e) {
+      debugPrint('Error subscribing to topic: $e');
+    }
+  }
+
+  /// Unsubscribe from a topic
+  static Future<void> unsubscribeFromTopic(String topic) async {
+    try {
+      await _firebaseMessaging.unsubscribeFromTopic(topic);
+      debugPrint('Unsubscribed from topic: $topic');
+    } catch (e) {
+      debugPrint('Error unsubscribing from topic: $e');
+    }
+  }
+}
+
+/// Background message handler - must be a top-level function
+@pragma('vm:entry-point')
+Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
+  debugPrint('Handling a background message: ${message.messageId}');
+  // Handle the message here
 }
