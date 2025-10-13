@@ -86,10 +86,6 @@ public class Co2MediumWidget extends AppWidgetProvider {
                 Bitmap graphBitmap = createBarGraph(context, co2History, greenUpperLimit, yellowUpperLimit);
                 views.setImageViewBitmap(R.id.co2_graph, graphBitmap);
                 
-                // Handle refresh state and setup refresh button
-                setupRefreshState(views, isRefreshing, isConnected);
-                setupRefreshButton(context, views, appWidgetId, deviceId);
-                
             } else {
                 // No device connected state
                 views.setTextViewText(R.id.device_name, "");
@@ -108,6 +104,10 @@ public class Co2MediumWidget extends AppWidgetProvider {
                 // Show no data graph
                 views.setImageViewResource(R.id.co2_graph, R.drawable.no_data_graph);
             }
+            
+            // ALWAYS handle refresh state and setup refresh button (regardless of device connection)
+            setupRefreshState(views, isRefreshing, isConnected);
+            setupRefreshButton(context, views, appWidgetId, deviceId);
             
             // Set up click intent using deep link with widget flag
             Intent intent = new Intent(context, MainActivity.class);
@@ -218,18 +218,23 @@ public class Co2MediumWidget extends AppWidgetProvider {
             views.setViewVisibility(R.id.refresh_button, View.GONE);
         } else {
             // Hide progress bar, show refresh button
-            Log.d(TAG, "Hiding refresh animation");
+            Log.d(TAG, "Hiding refresh animation, showing refresh button");
             views.setViewVisibility(R.id.progress_refresh, View.GONE);
             views.setViewVisibility(R.id.refresh_button, View.VISIBLE);
             
             // Set appropriate refresh button icon based on connection state
             if (isConnected && !isRefreshing) {
                 // Show normal refresh icon when connected
+                Log.d(TAG, "Setting refresh button icon (connected)");
                 views.setImageViewResource(R.id.refresh_button, R.drawable.refresh_button_widget);
             } else {
                 // Show disabled/disconnected icon when not connected
+                Log.d(TAG, "Setting refresh button icon (disconnected)");
                 views.setImageViewResource(R.id.refresh_button, R.drawable.ic_bt_off);
             }
+            
+            // Ensure button is properly enabled/clickable
+            views.setBoolean(R.id.refresh_button, "setEnabled", true);
         }
     }
 
