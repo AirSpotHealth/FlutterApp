@@ -207,16 +207,9 @@ class LiveActivityManager: LiveActivityManagerProtocol {
         // Calculate if we should show stale warning (last 10 minutes before 8 hours)
         let timeElapsed = currentTime.timeIntervalSince(activityStartTime)
         
-        // DEBUG MODE: Use shorter times for testing
         // Production: 8 hours total, 10 minutes warning
-        // Debug: 2 minutes total, 30 seconds warning
-        #if DEBUG
-        let totalDurationInSeconds: TimeInterval = 2 * 60 // 2 minutes for testing
-        let warningTimeInSeconds: TimeInterval = 30 // 30 seconds warning
-        #else
         let totalDurationInSeconds: TimeInterval = 8 * 60 * 60 // 8 hours
         let warningTimeInSeconds: TimeInterval = 10 * 60 // 10 minutes
-        #endif
         
         let showStaleWarning = timeElapsed >= (totalDurationInSeconds - warningTimeInSeconds)
         
@@ -276,12 +269,8 @@ class LiveActivityManager: LiveActivityManagerProtocol {
         let attributes = LiveActivityWidgetAttributes()
         let state = createContentState(from: data)
         
-        // Set stale date based on debug/production mode
-        #if DEBUG
-        let staleDate = Date().addingTimeInterval(2 * 60) // 2 minutes for testing
-        #else
+        // Set stale date - 8 hours from now
         let staleDate = Date().addingTimeInterval(8 * 60 * 60) // 8 hours
-        #endif
         
         do {
             liveActivity = try Activity<LiveActivityWidgetAttributes>.request(
@@ -325,12 +314,8 @@ class LiveActivityManager: LiveActivityManagerProtocol {
         let attributes = LiveActivityWidgetAttributes()
         let state = createContentState(from: data)
         
-        // Set stale date based on debug/production mode
-        // #if DEBUG
-        // let staleDate = Date().addingTimeInterval(2 * 60) // 2 minutes for testing
-        // #else
+        // Set stale date - 8 hours from now
         let staleDate = Date().addingTimeInterval(8 * 60 * 60) // 8 hours
-        // #endif
         
         do {
             let activity = try Activity<LiveActivityWidgetAttributes>.request(
@@ -371,11 +356,7 @@ class LiveActivityManager: LiveActivityManagerProtocol {
         
         // CRITICAL: Update staleDate with each update to prevent auto-dismissal in iOS 18
         // iOS 18 strictly enforces staleDate and will auto-dismiss if not refreshed
-        // #if DEBUG
-        // let newStaleDate = Date().addingTimeInterval(2 * 60) // 2 minutes for testing
-        // #else
         let newStaleDate = Date().addingTimeInterval(8 * 60 * 60) // 8 hours
-        // #endif
         
         Task {
             do {

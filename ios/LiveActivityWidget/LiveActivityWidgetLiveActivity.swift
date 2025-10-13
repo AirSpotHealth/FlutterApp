@@ -358,20 +358,25 @@ struct LiveActivityWidgetLiveActivity: Widget {
                                 .foregroundColor(.white)
                         }
 
-                        HStack(alignment: .bottom, spacing: 2) {
-                            Co2ValueView(
-                                co2Value: context.state.co2Value,
-                                greenUpperLimit: context.state.greenUpperLimit,
-                                yellowUpperLimit: context.state
-                                    .yellowUpperLimit,
-                                isRefreshing: context.state.isRefreshing,
-                                isConnected: context.state.isConnected,
-                                fontSize: 20
-                            )
-                            Text("CO₂ ppm")
-                                .font(.system(size: 10, weight: .medium))
-                                .foregroundColor(.white)
-                                .offset(y: -2)
+                        VStack(alignment: .leading, spacing: 2) {
+                            HStack(alignment: .bottom, spacing: 2) {
+                                Co2ValueView(
+                                    co2Value: context.state.co2Value,
+                                    greenUpperLimit: context.state.greenUpperLimit,
+                                    yellowUpperLimit: context.state
+                                        .yellowUpperLimit,
+                                    isRefreshing: context.state.isRefreshing,
+                                    isConnected: context.state.isConnected,
+                                    fontSize: 20
+                                )
+                                Text("CO₂ ppm")
+                                    .font(.system(size: 10, weight: .medium))
+                                    .foregroundColor(.white)
+                                    .offset(y: -2)
+                            }
+                            Text("at \(context.state.lastUpdated.formatted(date: .omitted, time: .shortened))")
+                                .font(.system(size: 8, weight: .regular))
+                                .foregroundColor(.white.opacity(0.8))
                         }
                     }
                 }
@@ -541,21 +546,14 @@ struct LiveActivityWidgetLiveActivity: Widget {
         }
     }
 
-    // Compute stale warning based on start time and build mode
+    // Compute stale warning based on start time
     private func shouldShowStaleWarning(state: LiveActivityWidgetAttributes.ContentState) -> Bool {
         let start = state.activityStartTime
         let elapsed = Date().timeIntervalSince(start)
         
-        // DEBUG MODE: Use shorter times for testing
         // Production: 8 hours total, 10 minutes warning
-        // Debug: 2 minutes total, 30 seconds warning
-        #if DEBUG
-        let total: TimeInterval = 2 * 60 // 2 minutes for testing
-        let warn: TimeInterval = 30 // 30 seconds warning
-        #else
         let total: TimeInterval = 8 * 60 * 60 // 8 hours
         let warn: TimeInterval = 10 * 60 // 10 minutes
-        #endif
         
         let shouldShow = elapsed >= (total - warn) || state.showStaleWarning
         
@@ -685,7 +683,7 @@ struct LiveActivityWidgetLiveActivity: Widget {
     @available(iOS 16.2, *)
     @ViewBuilder
     private func normalLiveActivityBannerView(context: ActivityViewContext<LiveActivityWidgetAttributes>) -> some View {
-        VStack(spacing: 4) {
+        VStack(spacing: 0) {
             // Top section with CO2 value and status
             ZStack {
                 // Center refresh button – visually centered
@@ -726,6 +724,10 @@ struct LiveActivityWidgetLiveActivity: Widget {
                             Text("CO₂ ppm")
                                 .font(.system(size: 10, weight: .medium))
                                 .foregroundColor(.white)
+                                .offset(y: -4)
+                            Text("at \(context.state.lastUpdated.formatted(date: .omitted, time: .shortened))")
+                                .font(.system(size: 9, weight: .regular))
+                                .foregroundColor(.white.opacity(0.8))
                                 .offset(y: -4)
                         }
                         .padding(.leading, 28)
@@ -840,8 +842,8 @@ struct LiveActivityWidgetLiveActivity: Widget {
                     .font(.system(size: 11, weight: .medium))
                     .foregroundColor(.gray)
                     .frame(maxWidth: .infinity, alignment: .center)
-                    .padding(.top, -4) // Reduce spacing from top section
-                    .padding(.bottom, -4) // Reduce spacing to bottom section
+                    .padding(.top, -10) // Move closer to top section
+                    .padding(.bottom, 0) // Normal spacing to bottom section
             }
 
             // Graph Section
