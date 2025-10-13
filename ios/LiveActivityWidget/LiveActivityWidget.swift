@@ -215,23 +215,71 @@ struct WidgetContentView: View {
     let textSize: CGFloat
     
     var body: some View {
-        HStack {
-            // Left: Device name and Time stacked
-            VStack(alignment: .center, spacing: 2) {
-                if !entry.deviceName.isEmpty {
-                    Text(entry.deviceName)
-                        .font(.system(size: fontSize, weight: .medium))
-                        .foregroundColor(.white)
+        ZStack {
+            // Left and Right sections in HStack
+            HStack {
+                // Left: Device name
+                VStack(alignment: .center, spacing: 2) {
+                    if !entry.deviceName.isEmpty {
+                        Text(entry.deviceName)
+                            .font(.system(size: fontSize, weight: .medium))
+                            .foregroundColor(.white)
+                            .lineLimit(1)
+                    }
+                    // Update interval note
+                    Text("Updates every 15 min")
+                        .font(.system(size: fontSize - 2, weight: .regular))
+                        .foregroundColor(.white.opacity(0.5))
                         .lineLimit(1)
                 }
-                Text("at \(entry.date.formatted(date: .omitted, time: .shortened))")
-                    .font(.system(size: fontSize + 1, weight: .semibold))
-                    .foregroundColor(.white)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                
+                Spacer()
+                
+                // Right: 2x2 grid of icons
+                VStack(spacing: 2) {
+                    // Row 1: Battery+% and Alarm icon
+                    HStack(spacing: 8) {
+                        // Col 1: Battery and percentage
+                        HStack(spacing: 2) {
+                            Image(systemName: batteryIcon(for: entry.batteryLevel, isCharging: entry.isCharging))
+                                .foregroundColor(batteryColor(for: entry.batteryLevel, isCharging: entry.isCharging))
+                                .font(.system(size: iconSize))
+                            Text(batteryText(for: entry.batteryLevel, isCharging: entry.isCharging))
+                                .font(.system(size: textSize, weight: .medium))
+                                .foregroundColor(.white)
+                                .lineLimit(1)
+                        }
+                        
+                        // Col 2: Alarm icon
+                        Image(systemName: entry.alarmEnabled ? "bell.fill" : "bell.slash.fill")
+                            .foregroundColor(entry.alarmEnabled ? .blue : .gray)
+                            .font(.system(size: iconSize))
+                    }
+                    
+                    // Row 2: Timer+mode and Vibration icon
+                    HStack(spacing: 8) {
+                        // Col 1: Timer and mode
+                        HStack(spacing: 2) {
+                            Image(systemName: "timer")
+                                .foregroundColor(.blue)
+                                .font(.system(size: iconSize))
+                            Text(entry.powerMode)
+                                .font(.system(size: textSize, weight: .medium))
+                                .foregroundColor(.white)
+                                .lineLimit(1)
+                        }
+                        
+                        // Col 2: Vibration icon
+                        Image(systemName: entry.vibrationEnabled ? "iphone.radiowaves.left.and.right" : "iphone.slash")
+                            .foregroundColor(entry.vibrationEnabled ? .blue : .gray)
+                            .font(.system(size: iconSize))
+                    }
+                }
+                .frame(maxWidth: .infinity, alignment: .trailing)
             }
             
-            Spacer()
-            
-            // Center: CO2 value
+            // Center: CO2 value with time directly underneath - Absolutely centered
             VStack(spacing: 2) {
                 Text(entry.co2Value > 0 ? "\(entry.co2Value)" : "----")
                     .font(.system(size: co2FontSize, weight: .bold))
@@ -239,51 +287,14 @@ struct WidgetContentView: View {
                 Text("CO₂ ppm")
                     .font(.system(size: textSize + 2, weight: .medium))
                     .foregroundColor(.white)
+                // Last updated time directly under PPM
+                Text("at \(entry.date.formatted(date: .omitted, time: .shortened))")
+                    .font(.system(size: textSize, weight: .semibold))
+                    .foregroundColor(.white)
+                    .lineLimit(1)
+                    .padding(.top, 2)
             }
-            .frame(maxHeight: .infinity, alignment: .center)
-            
-            Spacer()
-            
-            // Right: 2x2 grid of icons
-            VStack(spacing: 2) {
-                // Row 1: Battery+% and Alarm icon
-                HStack(spacing: 8) {
-                    // Col 1: Battery and percentage
-                    HStack(spacing: 2) {
-                        Image(systemName: batteryIcon(for: entry.batteryLevel, isCharging: entry.isCharging))
-                            .foregroundColor(batteryColor(for: entry.batteryLevel, isCharging: entry.isCharging))
-                            .font(.system(size: iconSize))
-                        Text(batteryText(for: entry.batteryLevel, isCharging: entry.isCharging))
-                            .font(.system(size: textSize, weight: .medium))
-                            .foregroundColor(.white)
-                            .lineLimit(1)
-                    }
-                    
-                    // Col 2: Alarm icon
-                    Image(systemName: entry.alarmEnabled ? "bell.fill" : "bell.slash.fill")
-                        .foregroundColor(entry.alarmEnabled ? .blue : .gray)
-                        .font(.system(size: iconSize))
-                }
-                
-                // Row 2: Timer+mode and Vibration icon
-                HStack(spacing: 8) {
-                    // Col 1: Timer and mode
-                    HStack(spacing: 2) {
-                        Image(systemName: "timer")
-                            .foregroundColor(.blue)
-                            .font(.system(size: iconSize))
-                        Text(entry.powerMode)
-                            .font(.system(size: textSize, weight: .medium))
-                            .foregroundColor(.white)
-                            .lineLimit(1)
-                    }
-                    
-                    // Col 2: Vibration icon
-                    Image(systemName: entry.vibrationEnabled ? "iphone.radiowaves.left.and.right" : "iphone.slash")
-                        .foregroundColor(entry.vibrationEnabled ? .blue : .gray)
-                        .font(.system(size: iconSize))
-                }
-            }
+            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .center)
         }
     }
 }
@@ -336,7 +347,7 @@ struct SmallWidgetView: View {
                 Spacer()
                 
                 // CO2 Value (vertically centered)
-                VStack(spacing: -2) {
+                VStack(spacing: 2) {
                     Text(entry.co2Value > 0 ? "\(entry.co2Value)" : "----")
                         .font(.system(size: 32, weight: .bold))
                         .foregroundColor(co2Color(for: entry.co2Value))
@@ -344,21 +355,28 @@ struct SmallWidgetView: View {
                     Text("CO₂ ppm")
                         .font(.system(size: 12, weight: .medium))
                         .foregroundColor(.white.opacity(0.8))
+                    // Last updated time directly under PPM
+                    Text("at \(entry.date.formatted(date: .omitted, time: .shortened))")
+                        .font(.system(size: 10, weight: .semibold))
+                        .foregroundColor(.white)
+                        .multilineTextAlignment(.center)
+                        .lineLimit(1)
+                        .padding(.top, 2)
                 }
                 
-                // Device name below CO2 value
+                // Device name below time
                 if !entry.deviceName.isEmpty {
                     Text(entry.deviceName)
-                        .font(.system(size: 11, weight: .medium))
-                        .foregroundColor(.white)
+                        .font(.system(size: 10, weight: .medium))
+                        .foregroundColor(.white.opacity(0.7))
                         .multilineTextAlignment(.center)
                         .lineLimit(1)
                 }
                 
-                // Last updated time at bottom
-                Text("at \(entry.date.formatted(date: .omitted, time: .shortened))")
-                    .font(.system(size: 10, weight: .medium))
-                    .foregroundColor(.white.opacity(0.7))
+                // Update interval note at bottom
+                Text("Updates every 15 min")
+                    .font(.system(size: 9, weight: .regular))
+                    .foregroundColor(.white.opacity(0.5))
                     .multilineTextAlignment(.center)
                     .lineLimit(1)
                 
