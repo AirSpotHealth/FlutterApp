@@ -46,7 +46,9 @@ class NotificationSettingsPage extends ConsumerWidget {
                 await ref
                     .read(notificationPreferencesProvider(deviceId).notifier)
                     .resetToDefaults();
-                context.showSnackBar('Settings reset to defaults');
+                if (context.mounted) {
+                  context.showSnackBar('Settings reset to defaults');
+                }
               }
             },
           ),
@@ -154,15 +156,32 @@ class NotificationSettingsPage extends ConsumerWidget {
   Widget _buildCooldownCard(BuildContext context, WidgetRef ref,
       NotificationPreferences preferences) {
     return Card(
-      child: ListTile(
-        title: const Text('Notification Cooldown'),
-        subtitle: Text(
-          'Minimum ${preferences.cooldownMinutes} minutes between notifications',
-        ),
-        trailing: const Icon(Icons.chevron_right),
-        onTap: () {
-          _showCooldownPicker(context, ref, preferences);
-        },
+      child: Column(
+        children: [
+          ListTile(
+            title: const Text('Notification Cooldown'),
+            subtitle: Text(
+              preferences.cooldownMode == 'once'
+                  ? 'Notify once per threshold crossing'
+                  : 'Minimum ${preferences.cooldownMinutes} minutes between notifications',
+            ),
+            trailing: const Icon(Icons.chevron_right),
+            onTap: () {
+              _showCooldownModePicker(context, ref, preferences);
+            },
+          ),
+          if (preferences.cooldownMode == 'time') ...[
+            const Divider(height: 1),
+            ListTile(
+              title: const Text('Cooldown Duration'),
+              subtitle: Text('${preferences.cooldownMinutes} minutes'),
+              trailing: const Icon(Icons.chevron_right),
+              onTap: () {
+                _showCooldownPicker(context, ref, preferences);
+              },
+            ),
+          ],
+        ],
       ),
     );
   }
@@ -328,6 +347,67 @@ class NotificationSettingsPage extends ConsumerWidget {
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  void _showCooldownModePicker(BuildContext context, WidgetRef ref,
+      NotificationPreferences preferences) {
+    showModalBottomSheet(
+      context: context,
+      builder: (context) => Container(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              'Notification Cooldown Mode',
+              style: Theme.of(context).textTheme.titleLarge,
+            ),
+            const SizedBox(height: 16),
+            ListTile(
+              title: const Text('Once Per Crossing'),
+              subtitle: const Text(
+                'Notify only when CO₂ crosses above a threshold, then again only when it goes below and crosses above again',
+              ),
+              leading: Icon(
+                preferences.cooldownMode == 'once'
+                    ? Icons.radio_button_checked
+                    : Icons.radio_button_unchecked,
+                color: preferences.cooldownMode == 'once'
+                    ? Theme.of(context).primaryColor
+                    : null,
+              ),
+              onTap: () {
+                ref
+                    .read(notificationPreferencesProvider(deviceId).notifier)
+                    .updateCooldownMode('once');
+                Navigator.pop(context);
+              },
+            ),
+            ListTile(
+              title: const Text('Time-Based'),
+              subtitle: const Text(
+                'Notify based on time intervals between notifications',
+              ),
+              leading: Icon(
+                preferences.cooldownMode == 'time'
+                    ? Icons.radio_button_checked
+                    : Icons.radio_button_unchecked,
+                color: preferences.cooldownMode == 'time'
+                    ? Theme.of(context).primaryColor
+                    : null,
+              ),
+              onTap: () {
+                ref
+                    .read(notificationPreferencesProvider(deviceId).notifier)
+                    .updateCooldownMode('time');
+                Navigator.pop(context);
+              },
+            ),
+            const SizedBox(height: 16),
+          ],
+        ),
       ),
     );
   }

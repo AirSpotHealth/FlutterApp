@@ -70,7 +70,14 @@ class NotificationPreferencesNotifier
     }
   }
 
-  /// Update cooldown period
+  /// Update cooldown mode
+  Future<void> updateCooldownMode(String mode) async {
+    await updatePreferences(
+      (prefs) => prefs.copyWith(cooldownMode: mode),
+    );
+  }
+
+  /// Update cooldown period (only used for time-based cooldown)
   Future<void> updateCooldown(int minutes) async {
     await updatePreferences(
       (prefs) => prefs.copyWith(cooldownMinutes: minutes),

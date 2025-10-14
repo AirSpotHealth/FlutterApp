@@ -20,8 +20,9 @@ class Co2MonitoringService {
       return;
     }
 
-    // Check cooldown period
-    if (!preferences.canSendNotification) {
+    // Check cooldown period (only for time-based cooldown)
+    if (preferences.cooldownMode == 'time' &&
+        !preferences.canSendNotification) {
       debugPrint(
           'Notification cooldown active for device: $deviceId. Minutes remaining: ${preferences.cooldownMinutes - DateTime.now().difference(preferences.lastNotificationTime!).inMinutes}');
       return;
@@ -57,10 +58,15 @@ class Co2MonitoringService {
       // Already triggered, don't send notification again unless value went down and came back up
       if (lastValue < thresholdToTrigger.co2Threshold &&
           co2Value >= thresholdToTrigger.co2Threshold) {
-        // Value went down below threshold and came back up
+        // Value went down below threshold and came back up - re-trigger notification
         debugPrint(
             'CO2 came back above threshold ${thresholdToTrigger.co2Threshold}, re-triggering notification');
+        // Remove from triggered set so it can be triggered again
+        _triggeredThresholds[deviceId]!.remove(thresholdId);
       } else {
+        // Still above threshold or didn't cross from below - no notification
+        debugPrint(
+            'Threshold ${thresholdToTrigger.co2Threshold} already triggered, skipping notification');
         return;
       }
     }

@@ -23,10 +23,13 @@ class NotificationPreferences {
   /// Show notification even when app is in foreground
   final bool showInForeground;
 
-  /// Minimum time between notifications (in minutes) to avoid spam
+  /// Cooldown mode: 'time' for time-based cooldown, 'once' for once-per-crossing
+  final String cooldownMode;
+
+  /// Minimum time between notifications (in minutes) to avoid spam (only used when cooldownMode is 'time')
   final int cooldownMinutes;
 
-  /// Last notification time (to implement cooldown)
+  /// Last notification time (to implement time-based cooldown)
   final DateTime? lastNotificationTime;
 
   const NotificationPreferences({
@@ -36,6 +39,7 @@ class NotificationPreferences {
     this.notificationSoundEnabled = true,
     this.notificationVibrationEnabled = true,
     this.showInForeground = true,
+    this.cooldownMode = 'once',
     this.cooldownMinutes = 5,
     this.lastNotificationTime,
   });
@@ -46,6 +50,7 @@ class NotificationPreferences {
         notificationSoundEnabled = true,
         notificationVibrationEnabled = true,
         showInForeground = true,
+        cooldownMode = 'once',
         cooldownMinutes = 5,
         lastNotificationTime = null;
 
@@ -56,6 +61,7 @@ class NotificationPreferences {
     bool? notificationSoundEnabled,
     bool? notificationVibrationEnabled,
     bool? showInForeground,
+    String? cooldownMode,
     int? cooldownMinutes,
     DateTime? lastNotificationTime,
   }) {
@@ -70,6 +76,7 @@ class NotificationPreferences {
       notificationVibrationEnabled:
           notificationVibrationEnabled ?? this.notificationVibrationEnabled,
       showInForeground: showInForeground ?? this.showInForeground,
+      cooldownMode: cooldownMode ?? this.cooldownMode,
       cooldownMinutes: cooldownMinutes ?? this.cooldownMinutes,
       lastNotificationTime: lastNotificationTime ?? this.lastNotificationTime,
     );
@@ -77,6 +84,10 @@ class NotificationPreferences {
 
   /// Check if cooldown period has passed
   bool get canSendNotification {
+    // For 'once' mode, cooldown is handled by the monitoring service
+    if (cooldownMode == 'once') return true;
+
+    // For 'time' mode, check time-based cooldown
     if (lastNotificationTime == null) return true;
     final now = DateTime.now();
     final difference = now.difference(lastNotificationTime!);
