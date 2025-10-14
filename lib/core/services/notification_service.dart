@@ -1,8 +1,13 @@
+import 'dart:io';
+
 import 'package:airspothealth/core/theme/app_colors.dart';
 import 'package:airspothealth/core/utils/extensions.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
+import 'package:http/http.dart' as http;
+import 'package:path_provider/path_provider.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class NotificationService {
   static final FlutterLocalNotificationsPlugin _notificationsPlugin =
@@ -92,7 +97,7 @@ class NotificationService {
 
     return await _notificationsPlugin.initialize(
           initializationSettings,
-          // onDidReceiveNotificationResponse: onDidReceiveNotificationResponse, // Optional callback
+          onDidReceiveNotificationResponse: onDidReceiveNotificationResponse,
         ) ??
         false;
   }
@@ -121,21 +126,26 @@ class NotificationService {
         debugPrint(
             'Message also contained a notification: ${message.notification}');
         // Show local notification for foreground messages
-        showNotification(
-          title: message.notification!.title ?? 'Notification',
-          body: message.notification!.body ?? '',
-        );
+        showNotificationFromFCM(message);
       }
     });
 
     // Handle background messages
     FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
 
-    // Handle notification taps
+    // Handle notification taps when app is in background/terminated
     FirebaseMessaging.onMessageOpenedApp.listen((RemoteMessage message) {
       debugPrint('A message opened the app: ${message.messageId}');
-      // Handle navigation based on notification data
+      _handleNotificationTap(message.data);
     });
+
+    // Check if app was opened from a notification (when app was terminated)
+    RemoteMessage? initialMessage =
+        await _firebaseMessaging.getInitialMessage();
+    if (initialMessage != null) {
+      debugPrint('App opened from terminated state via notification');
+      _handleNotificationTap(initialMessage.data);
+    }
   }
 
   static Future<void> showNotification({
@@ -193,24 +203,138 @@ class NotificationService {
     );
   }
 
-  // Optional: Callback for when a notification is tapped and the app is in the foreground (iOS)
-  // static void onDidReceiveLocalNotification(
-  //     int id, String? title, String? body, String? payload) async {
-  //   // display a dialog with the notification details, tap ok to go to another page
-  // }
+  /// Callback for when a notification is tapped (for local notifications)
+  static void onDidReceiveNotificationResponse(
+      NotificationResponse notificationResponse) async {
+    final String? payload = notificationResponse.payload;
+    if (payload != null) {
+      debugPrint('notification payload: $payload');
+      // If payload is a URL, open it
+      if (payload.startsWith('http://') || payload.startsWith('https://')) {
+        _openUrl(payload);
+      }
+      // You can add more payload handling logic here
+    }
+  }
 
-  // Optional: Callback for when a notification is tapped
-  // static void onDidReceiveNotificationResponse(NotificationResponse notificationResponse) async {
-  //   final String? payload = notificationResponse.payload;
-  //   if (notificationResponse.payload != null) {
-  //     debugPrint('notification payload: $payload');
-  //   }
-  //   // Example: navigate to a specific screen
-  //   // await Navigator.push(
-  //   //   context,
-  //   //   MaterialPageRoute<void>(builder: (context) => SecondScreen(payload)),
-  //   // );
-  // }
+  /// Handle notification tap with FCM data
+  static void _handleNotificationTap(Map<String, dynamic> data) {
+    debugPrint('Handling notification tap with data: $data');
+
+    // Check if there's a URL in the data payload
+    if (data.containsKey('url')) {
+      final String url = data['url'];
+      _openUrl(url);
+    }
+  }
+
+  /// Open URL in browser
+  static Future<void> _openUrl(String url) async {
+    try {
+      final Uri uri = Uri.parse(url);
+      if (await canLaunchUrl(uri)) {
+        await launchUrl(
+          uri,
+          mode: LaunchMode.externalApplication, // Opens in external browser
+        );
+        debugPrint('Opened URL: $url');
+      } else {
+        debugPrint('Could not launch URL: $url');
+      }
+    } catch (e) {
+      debugPrint('Error launching URL: $e');
+    }
+  }
+
+  /// Show notification from FCM message with image support
+  static Future<void> showNotificationFromFCM(RemoteMessage message) async {
+    final notification = message.notification;
+    final data = message.data;
+
+    if (notification == null) return;
+
+    final String title = notification.title ?? 'Notification';
+    final String body = notification.body ?? '';
+    final String? imageUrl = notification.android?.imageUrl ??
+        notification.apple?.imageUrl ??
+        data['image']; // Fallback to data payload
+    final String? url = data['url']; // URL to open on tap
+
+    // Download image if available
+    String? imagePath;
+    if (imageUrl != null && imageUrl.isNotEmpty) {
+      imagePath = await _downloadAndSaveImage(imageUrl);
+    }
+
+    // Prepare notification details
+    AndroidNotificationDetails androidDetails = AndroidNotificationDetails(
+      'alerts',
+      'Alerts',
+      channelDescription: 'Notification alerts',
+      importance: Importance.high,
+      priority: Priority.high,
+      playSound: true,
+      color: AppColors.primaryColor,
+      styleInformation: imagePath != null
+          ? BigPictureStyleInformation(
+              FilePathAndroidBitmap(imagePath),
+              contentTitle: title,
+              summaryText: body,
+              htmlFormatContentTitle: true,
+              htmlFormatSummaryText: true,
+            )
+          : BigTextStyleInformation(
+              body,
+              htmlFormatBigText: true,
+              contentTitle: title,
+              htmlFormatContentTitle: true,
+            ),
+    );
+
+    DarwinNotificationDetails iosDetails = DarwinNotificationDetails(
+      presentAlert: true,
+      presentBadge: true,
+      presentSound: true,
+      attachments:
+          imagePath != null ? [DarwinNotificationAttachment(imagePath)] : null,
+    );
+
+    NotificationDetails notificationDetails = NotificationDetails(
+      android: androidDetails,
+      iOS: iosDetails,
+      macOS: iosDetails,
+    );
+
+    await _notificationsPlugin.show(
+      DateTime.now().millisecondsSinceEpoch.limitToBitSize(31),
+      title,
+      body,
+      notificationDetails,
+      payload: url, // Pass URL as payload for tap handling
+    );
+  }
+
+  /// Download and save image from URL for notification
+  static Future<String?> _downloadAndSaveImage(String url) async {
+    try {
+      final http.Response response = await http.get(Uri.parse(url));
+      if (response.statusCode == 200) {
+        final Directory tempDir = await getTemporaryDirectory();
+        final String fileName =
+            'notification_${DateTime.now().millisecondsSinceEpoch}.jpg';
+        final File file = File('${tempDir.path}/$fileName');
+        await file.writeAsBytes(response.bodyBytes);
+        debugPrint('Image downloaded and saved: ${file.path}');
+        return file.path;
+      } else {
+        debugPrint('Failed to download image: ${response.statusCode}');
+        return null;
+      }
+    } catch (e) {
+      debugPrint('Error downloading image: $e');
+      return null;
+    }
+  }
 
   /// Show CO2 notification based on preferences
   static Future<void> showCO2Notification({

@@ -1,0 +1,179 @@
+{
+  "examples": {
+    "1_basic_text_notification": {
+      "description": "Simple text notification without image or URL",
+      "payload": {
+        "notification": {
+          "title": "Your Notification Title",
+          "body": "Your notification message body"
+        },
+        "data": {},
+        "token": "USER_FCM_TOKEN"
+      }
+    },
+
+    "2_image_notification": {
+      "description": "Notification with a large image (BigPicture on Android, attachment on iOS)",
+      "payload": {
+        "notification": {
+          "title": "Check out this update!",
+          "body": "We have something exciting to show you",
+          "image": "https://picsum.photos/1200/628"
+        },
+        "data": {
+          "image": "https://picsum.photos/1200/628"
+        },
+        "token": "USER_FCM_TOKEN",
+        "android": {
+          "notification": {
+            "imageUrl": "https://picsum.photos/1200/628"
+          }
+        },
+        "apns": {
+          "payload": {
+            "aps": {
+              "mutable-content": 1
+            }
+          },
+          "fcm_options": {
+            "image": "https://picsum.photos/1200/628"
+          }
+        }
+      }
+    },
+
+    "3_url_click_notification": {
+      "description": "Notification that opens a URL when tapped",
+      "payload": {
+        "notification": {
+          "title": "New Article Available",
+          "body": "Tap to read the latest health tips"
+        },
+        "data": {
+          "url": "https://airspothealth.com/articles/latest"
+        },
+        "token": "USER_FCM_TOKEN"
+      }
+    },
+
+    "4_image_and_url_notification": {
+      "description": "Notification with both image and URL click action",
+      "payload": {
+        "notification": {
+          "title": "New Product Launch! 🎉",
+          "body": "Check out our latest CO₂ monitor",
+          "image": "https://example.com/products/co2-monitor.jpg"
+        },
+        "data": {
+          "url": "https://shop.airspothealth.com/co2-monitor",
+          "image": "https://example.com/products/co2-monitor.jpg"
+        },
+        "token": "USER_FCM_TOKEN",
+        "android": {
+          "notification": {
+            "imageUrl": "https://example.com/products/co2-monitor.jpg"
+          }
+        },
+        "apns": {
+          "payload": {
+            "aps": {
+              "mutable-content": 1
+            }
+          },
+          "fcm_options": {
+            "image": "https://example.com/products/co2-monitor.jpg"
+          }
+        }
+      }
+    },
+
+    "5_topic_based_notification": {
+      "description": "Send to all users subscribed to a topic",
+      "payload": {
+        "notification": {
+          "title": "Important Update",
+          "body": "New features available now!",
+          "image": "https://example.com/update.jpg"
+        },
+        "data": {
+          "url": "https://airspothealth.com/updates",
+          "image": "https://example.com/update.jpg"
+        },
+        "topic": "all_users"
+      }
+    },
+
+    "6_promotional_with_all_features": {
+      "description": "Full-featured promotional notification",
+      "payload": {
+        "notification": {
+          "title": "🎁 Special 30% Off Sale!",
+          "body": "Limited time offer on all air quality monitors",
+          "image": "https://example.com/promo/sale-banner.jpg"
+        },
+        "data": {
+          "url": "https://shop.airspothealth.com/sale",
+          "image": "https://example.com/promo/sale-banner.jpg",
+          "campaign_id": "summer_sale_2025",
+          "discount_code": "SUMMER30"
+        },
+        "token": "USER_FCM_TOKEN",
+        "android": {
+          "notification": {
+            "imageUrl": "https://example.com/promo/sale-banner.jpg",
+            "sound": "default",
+            "priority": "high"
+          }
+        },
+        "apns": {
+          "payload": {
+            "aps": {
+              "alert": {
+                "title": "🎁 Special 30% Off Sale!",
+                "body": "Limited time offer on all air quality monitors"
+              },
+              "sound": "default",
+              "mutable-content": 1
+            }
+          },
+          "fcm_options": {
+            "image": "https://example.com/promo/sale-banner.jpg"
+          }
+        }
+      }
+    }
+  },
+
+  "admin_panel_fields": {
+    "required": {
+      "title": "string - Notification title",
+      "body": "string - Notification body text",
+      "target": "string - FCM token or topic name"
+    },
+    "optional": {
+      "imageUrl": "string - Public URL to image (JPEG, PNG, WebP)",
+      "clickUrl": "string - URL to open when tapped (must start with http:// or https://)",
+      "customData": "object - Any additional custom data"
+    }
+  },
+
+  "image_specifications": {
+    "formats": ["JPEG", "PNG", "WebP"],
+    "recommended_size": {
+      "android": "1200 x 628 px (16:9 aspect ratio)",
+      "ios": "1200 x 600 px"
+    },
+    "max_file_size": "< 1 MB for faster loading",
+    "url_requirements": [
+      "Must be publicly accessible (HTTPS)",
+      "No authentication required",
+      "Proper CORS headers"
+    ]
+  },
+
+  "available_topics": [
+    "all_users - All app users",
+    "alerts - Users with alert notifications enabled",
+    "co2_alerts - Users with CO₂ notifications enabled"
+  ]
+}
