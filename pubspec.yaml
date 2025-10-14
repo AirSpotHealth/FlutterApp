@@ -43,6 +43,7 @@ dependencies:
   system_date_time_format: ^1.2.2
   bottom_picker: ^4.1.1
   pointycastle: ^4.0.0
+  vibration: ^3.1.4
   isar:
     version: ^4.0.3
     hosted: https://pub.isar-community.dev

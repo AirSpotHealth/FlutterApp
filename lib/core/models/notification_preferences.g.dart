@@ -165,7 +165,13 @@ NotificationPreferences deserializeNotificationPreferences(IsarReader reader) {
     }
   }
   final bool _showInForeground;
-  _showInForeground = IsarCore.readBool(reader, 6);
+  {
+    if (IsarCore.readNull(reader, 6)) {
+      _showInForeground = true;
+    } else {
+      _showInForeground = IsarCore.readBool(reader, 6);
+    }
+  }
   final String _cooldownMode;
   _cooldownMode = IsarCore.readString(reader, 7) ?? 'once';
   final int _cooldownMinutes;
@@ -264,7 +270,13 @@ dynamic deserializeNotificationPreferencesProp(
         }
       }
     case 6:
-      return IsarCore.readBool(reader, 6);
+      {
+        if (IsarCore.readNull(reader, 6)) {
+          return true;
+        } else {
+          return IsarCore.readBool(reader, 6);
+        }
+      }
     case 7:
       return IsarCore.readString(reader, 7) ?? 'once';
     case 8:

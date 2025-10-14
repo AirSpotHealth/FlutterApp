@@ -1,5 +1,6 @@
 import 'dart:io';
 
+import 'package:airspothealth/core/services/vibration_pattern_service.dart';
 import 'package:airspothealth/core/theme/app_colors.dart';
 import 'package:airspothealth/core/utils/extensions.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
@@ -55,17 +56,17 @@ class NotificationService {
       importance: Importance.high,
       playSound: true,
       ledColor: AppColors.primaryColorDark,
-      enableVibration: true,
+      enableVibration: false,
     );
 
     const AndroidNotificationChannel co2Channel = AndroidNotificationChannel(
       'co2_alerts', // id
       'CO₂ Alerts', // name
       description: 'High CO₂ level notifications', // description
-      importance: Importance.high,
+      importance: Importance.max,
       playSound: true,
       ledColor: AppColors.brandColorRed,
-      enableVibration: true,
+      enableVibration: false,
     );
 
     await _notificationsPlugin
@@ -347,6 +348,9 @@ class NotificationService {
   }) async {
     final message = customMessage ?? 'CO₂ level is $co2Value ppm';
 
+    // Note: Vibration patterns are now handled by the vibration package
+    // instead of AndroidNotificationDetails.vibrationPattern
+
     AndroidNotificationDetails androidNotificationDetails =
         AndroidNotificationDetails(
       'co2_alerts', // Channel ID
@@ -355,7 +359,9 @@ class NotificationService {
       importance: Importance.high,
       priority: Priority.high,
       playSound: playSound,
-      enableVibration: vibrate,
+      enableVibration: Platform.isAndroid && vibrate
+          ? false
+          : vibrate, // Disable default vibration - we use custom patterns
       color: AppColors.brandColorRed,
       ledColor: AppColors.brandColorRed,
       ledOnMs: 1000,
@@ -389,6 +395,11 @@ class NotificationService {
       notificationDetails,
       payload: 'co2_alert:$deviceName:$co2Value',
     );
+
+    // Trigger vibration pattern if vibration is enabled
+    if (vibrate && Platform.isAndroid) {
+      await VibrationPatternService.triggerVibrationPattern(threshold);
+    }
   }
 
   /// Get FCM token for remote notifications
