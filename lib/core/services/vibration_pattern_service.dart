@@ -5,50 +5,50 @@ import 'package:vibration/vibration.dart';
 class VibrationPatternService {
   /// Get vibration pattern based on CO2 threshold
   /// Returns a list of durations in milliseconds for vibration pattern
-  /// Pattern matches device: [ON_duration, OFF_duration, ON_duration, OFF_duration, ...]
+  /// Pattern format: [wait, vibrate, wait, vibrate, ...]
   static List<int> getVibrationPattern(int threshold) {
     switch (threshold) {
       case 800:
-        return [250, 250]; // 1 pulse: 250ms on, 250ms off
+        return [0, 400]; // 1 pulse: no wait, vibrate 400ms
       case 1000:
         return [
-          250,
-          250,
-          250,
-          250
-        ]; // 2 pulses: 250ms on, 250ms off, 250ms on, 250ms off
+          0,
+          400,
+          200,
+          400
+        ]; // 2 pulses: no wait, vibrate 400ms, wait 200ms, vibrate 400ms
       case 1200:
         return [
-          250,
-          250,
-          250,
-          250,
-          250,
-          250
-        ]; // 3 pulses: 250ms on, 250ms off, 250ms on, 250ms off, 250ms on, 250ms off
+          0,
+          400,
+          200,
+          400,
+          200,
+          400
+        ]; // 3 pulses: no wait, vibrate 400ms, wait 200ms, vibrate 400ms, wait 200ms, vibrate 400ms
       case 1500:
         return [
-          250,
-          250,
-          250,
-          250,
-          250,
-          250,
-          250,
-          250,
-          250,
-          250
-        ]; // 5 pulses: 250ms on, 250ms off, 250ms on, 250ms off, 250ms on, 250ms off, 250ms on, 250ms off, 250ms on, 250ms off
+          0,
+          400,
+          200,
+          400,
+          200,
+          400,
+          200,
+          400,
+          200,
+          400
+        ]; // 5 pulses: no wait, vibrate 400ms, wait 200ms, vibrate 400ms, wait 200ms, vibrate 400ms, wait 200ms, vibrate 400ms, wait 200ms, vibrate 400ms
       default:
         // For any other threshold, use a default pattern
         if (threshold < 1000) {
-          return [250, 250]; // 1 pulse for lower thresholds
+          return [0, 400]; // 1 pulse for lower thresholds
         } else if (threshold < 1200) {
-          return [250, 250, 250, 250]; // 2 pulses
+          return [0, 400, 200, 400]; // 2 pulses
         } else if (threshold < 1500) {
-          return [250, 250, 250, 250, 250, 250]; // 3 pulses
+          return [0, 400, 200, 400, 200, 400]; // 3 pulses
         } else {
-          return [250, 250, 250, 250, 250, 250, 250, 250, 250, 250]; // 5 pulses
+          return [0, 400, 200, 400, 200, 400, 200, 400, 200, 400]; // 5 pulses
         }
     }
   }
@@ -67,18 +67,9 @@ class VibrationPatternService {
       debugPrint(
           'Triggering vibration pattern for threshold $threshold: $pattern');
 
-      // Use the vibration package to trigger the pattern
-      // Pattern is [ON, OFF, ON, OFF, ...] - alternate between vibrate and pause
-      for (int i = 0; i < pattern.length; i += 2) {
-        if (i < pattern.length) {
-          // Vibrate for the ON duration
-          await Vibration.vibrate(duration: pattern[i]);
-          // Wait for the OFF duration (if there's a next element)
-          if (i + 1 < pattern.length) {
-            await Future.delayed(Duration(milliseconds: pattern[i + 1]));
-          }
-        }
-      }
+      // Use the vibration package's built-in pattern support
+      // Pattern format: [wait, vibrate, wait, vibrate, ...]
+      await Vibration.vibrate(pattern: pattern);
     } catch (e) {
       debugPrint('Error triggering vibration pattern: $e');
     }
@@ -88,22 +79,22 @@ class VibrationPatternService {
   static String getVibrationPatternDescription(int threshold) {
     switch (threshold) {
       case 800:
-        return '1 pulse (250ms on/off)';
+        return '1 pulse (400ms)';
       case 1000:
-        return '2 pulses (250ms on/off)';
+        return '2 pulses (400ms each, 200ms apart)';
       case 1200:
-        return '3 pulses (250ms on/off)';
+        return '3 pulses (400ms each, 200ms apart)';
       case 1500:
-        return '5 pulses (250ms on/off)';
+        return '5 pulses (400ms each, 200ms apart)';
       default:
         if (threshold < 1000) {
-          return '1 pulse (250ms on/off)';
+          return '1 pulse (400ms)';
         } else if (threshold < 1200) {
-          return '2 pulses (250ms on/off)';
+          return '2 pulses (400ms each, 200ms apart)';
         } else if (threshold < 1500) {
-          return '3 pulses (250ms on/off)';
+          return '3 pulses (400ms each, 200ms apart)';
         } else {
-          return '5 pulses (250ms on/off)';
+          return '5 pulses (400ms each, 200ms apart)';
         }
     }
   }
