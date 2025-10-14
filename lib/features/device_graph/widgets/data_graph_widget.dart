@@ -314,7 +314,7 @@ class _DataGraphWidgetState extends ConsumerState<DataGraphWidget> {
           var oneInX = co2Value ? calculateOneInXBreaths(co2Value) : null;
           dataContent += 'Rebreathed: ' + param.value[1].toFixed(1) + '%';
           if (oneInX && oneInX > 0) {
-            dataContent += ' (1 in ' + oneInX + ' breaths)';
+            dataContent += '<br/>1 in ' + oneInX + ' breaths';
           }
         }
       }
