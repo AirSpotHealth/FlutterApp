@@ -55,7 +55,10 @@ class _DeviceSettingsPageState extends ConsumerState<DeviceSettingsPage> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final from = GoRouterState.of(context).uri.queryParameters['from'];
       if (from == 'expired') {
-        LiveActivityService().endLiveActivity().ignore();
+        // Remove only this device's Live Activity (not all devices)
+        LiveActivityService()
+            .removeDeviceLiveActivity(widget.deviceId)
+            .ignore();
         // toggle live activity setting to false
         ref
             .read(deviceSettingsProvider(widget.deviceId).notifier)

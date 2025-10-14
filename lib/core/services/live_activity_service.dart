@@ -275,8 +275,8 @@ class LiveActivityService {
         debugPrint(
             'LiveActivity: Successfully disabled live activity setting for device: $deviceId');
 
-        // Also end the live activity
-        endLiveActivity();
+        // Remove only this device's Live Activity notification
+        removeDeviceLiveActivity(deviceId);
       }
     } catch (e) {
       debugPrint(
@@ -657,17 +657,19 @@ class LiveActivityService {
         // If multiple devices have Live Activity enabled, the most recently
         // updated device will be shown. This is an iOS platform limitation.
       } else {
-        // If Live Activity is disabled, handle platform-specifically
-        if (Platform.isAndroid) {
-          // Android: Can remove specific device notification without affecting others
-          await removeDeviceLiveActivity(deviceId);
-        } else if (Platform.isIOS) {
-          // iOS: Skip removal to preserve other active devices
-          // iOS only supports 1 Live Activity per app, so calling removeDeviceLiveActivity
-          // would end ALL Live Activities, affecting other devices that have it enabled.
-          _activeDeviceIds.remove(deviceId);
-          debugPrint(
-              'iOS: Skipped Live Activity removal for $deviceId to preserve other active devices');
+        // If Live Activity is disabled, only remove if it's actually active
+        if (_activeDeviceIds.contains(deviceId)) {
+          if (Platform.isAndroid) {
+            // Android: Can remove specific device notification without affecting others
+            await removeDeviceLiveActivity(deviceId);
+          } else if (Platform.isIOS) {
+            // iOS: Skip removal to preserve other active devices
+            // iOS only supports 1 Live Activity per app, so calling removeDeviceLiveActivity
+            // would end ALL Live Activities, affecting other devices that have it enabled.
+            _activeDeviceIds.remove(deviceId);
+            debugPrint(
+                'iOS: Skipped Live Activity removal for $deviceId to preserve other active devices');
+          }
         }
       }
     } catch (e) {

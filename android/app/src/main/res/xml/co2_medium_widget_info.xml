@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <appwidget-provider xmlns:android="http://schemas.android.com/apk/res/android"
+    android:configure="com.air.spot.airspothealth.WidgetConfigurationActivity"
     android:description="@string/app_widget_medium_description"
     android:initialKeyguardLayout="@layout/co2_medium_widget"
     android:initialLayout="@layout/co2_medium_widget"

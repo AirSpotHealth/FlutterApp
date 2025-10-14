@@ -36,6 +36,7 @@ public class Co2SmallWidget extends AppWidgetProvider {
 
     private static final String TAG = "Co2SmallWidget";
     private static final String WIDGET_DATA_KEY = "widget_data_json";
+    private static final String WIDGET_DEVICES_DATA_KEY = "widget_devices_data";
 
     static void updateAppWidget(Context context, AppWidgetManager appWidgetManager, int appWidgetId) {
         Log.d(TAG, "Updating small widget: " + appWidgetId);
@@ -43,9 +44,31 @@ public class Co2SmallWidget extends AppWidgetProvider {
         RemoteViews views = new RemoteViews(context.getPackageName(), R.layout.co2_small_widget);
         
         try {
-            // Get the single JSON payload
-            String widgetDataJson = HomeWidgetPlugin.Companion.getData(context).getString(WIDGET_DATA_KEY, "{}");
-            JSONObject widgetData = new JSONObject(widgetDataJson);
+            // Get the configured device ID for this widget instance
+            String configuredDeviceId = WidgetConfigurationActivity.loadDeviceIdPref(context, appWidgetId);
+            Log.d(TAG, "Widget " + appWidgetId + " configured for device: " + configuredDeviceId);
+            
+            JSONObject widgetData;
+            
+            if (configuredDeviceId != null) {
+                // Load multi-device data and extract the specific device's data
+                String allDevicesJson = HomeWidgetPlugin.Companion.getData(context).getString(WIDGET_DEVICES_DATA_KEY, "{}");
+                JSONObject allDevices = new JSONObject(allDevicesJson);
+                
+                if (allDevices.has(configuredDeviceId)) {
+                    widgetData = allDevices.getJSONObject(configuredDeviceId);
+                    Log.d(TAG, "Loaded data for configured device: " + configuredDeviceId);
+                } else {
+                    // Configured device not found in data - use fallback
+                    Log.w(TAG, "Configured device " + configuredDeviceId + " not found in data");
+                    widgetData = new JSONObject();
+                }
+            } else {
+                // No device configured - use legacy single device data for backward compatibility
+                Log.d(TAG, "No device configured, using legacy data");
+                String widgetDataJson = HomeWidgetPlugin.Companion.getData(context).getString(WIDGET_DATA_KEY, "{}");
+                widgetData = new JSONObject(widgetDataJson);
+            }
             
             // Extract all values from JSON with fallbacks
             int co2Int = widgetData.optInt("co2Value", 0);
@@ -217,6 +240,15 @@ public class Co2SmallWidget extends AppWidgetProvider {
     public void onDisabled(Context context) {
         // Enter relevant functionality for when the last widget is disabled
         Log.d(TAG, "Small widget disabled");
+    }
+
+    @Override
+    public void onDeleted(Context context, int[] appWidgetIds) {
+        // Clean up preferences when widgets are deleted
+        for (int appWidgetId : appWidgetIds) {
+            WidgetConfigurationActivity.deleteDeviceIdPref(context, appWidgetId);
+            Log.d(TAG, "Cleaned up preferences for widget: " + appWidgetId);
+        }
     }
 
     @Override

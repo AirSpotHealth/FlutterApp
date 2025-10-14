@@ -56,7 +56,6 @@ public class ForegroundNotificationService extends Service {
     // Track active device notifications (max 3)
     private final Map<String, Integer> deviceNotificationIds = new HashMap<>();
     private final Map<String, JSONObject> deviceData = new HashMap<>();
-    private int nextNotificationId = BASE_NOTIFICATION_ID;
 
     // Broadcast receiver for notification dismissal
     private BroadcastReceiver dismissalReceiver = new BroadcastReceiver() {
@@ -125,6 +124,18 @@ public class ForegroundNotificationService extends Service {
                 String deviceId = intent.getStringExtra("deviceId");
                 String dataJson = intent.getStringExtra("data");
                 if (deviceId != null && dataJson != null) {
+                    // If service is not running, start it first
+                    if (!isServiceRunning) {
+                        Log.d(TAG, "Service not running, starting foreground service first");
+                        startForegroundService();
+                        
+                        // Check if service actually started (might fail due to background restrictions)
+                        if (!isServiceRunning) {
+                            Log.w(TAG, "Failed to start foreground service, cannot add device notification");
+                            return START_NOT_STICKY;
+                        }
+                    }
+                    
                     try {
                         JSONObject data = new JSONObject(dataJson);
                         addDeviceNotification(deviceId, data);
@@ -142,6 +153,12 @@ public class ForegroundNotificationService extends Service {
                     if (!isServiceRunning) {
                         Log.d(TAG, "Service not running, starting foreground service first");
                         startForegroundService();
+                        
+                        // Check if service actually started (might fail due to background restrictions)
+                        if (!isServiceRunning) {
+                            Log.w(TAG, "Failed to start foreground service, cannot update device notification");
+                            return START_NOT_STICKY;
+                        }
                     }
                     
                     if (dataJson != null) {
@@ -162,7 +179,9 @@ public class ForegroundNotificationService extends Service {
                         }
                     } else {
                         // If no data provided, just try to update existing notification
-                        updateDeviceNotification(deviceId, deviceNotificationIds.get(deviceId));
+                        if (deviceNotificationIds.containsKey(deviceId)) {
+                            updateDeviceNotification(deviceId, deviceNotificationIds.get(deviceId));
+                        }
                     }
                 }
                 return START_STICKY;
@@ -275,7 +294,13 @@ public class ForegroundNotificationService extends Service {
             try {
                 Notification notification = createDeviceNotification(deviceId);
                 if (notification != null) {
-                    notificationManager.notify(notificationId, notification);
+                    // If this is the foreground notification, use startForeground to update it
+                    if (notificationId == BASE_NOTIFICATION_ID) {
+                        Log.d(TAG, "Updating foreground notification for device: " + deviceId);
+                        startForeground(notificationId, notification);
+                    } else {
+                        notificationManager.notify(notificationId, notification);
+                    }
                     Log.d(TAG, "Device notification updated successfully for: " + deviceId);
                 } else {
                     Log.w(TAG, "Failed to create notification for device: " + deviceId);
@@ -292,14 +317,15 @@ public class ForegroundNotificationService extends Service {
         Log.d(TAG, "addDeviceNotification called for device: " + deviceId);
         
         // Check if we've reached the maximum number of devices
-        if (deviceNotificationIds.size() >= MAX_DEVICES) {
+        if (deviceNotificationIds.size() >= MAX_DEVICES && !deviceNotificationIds.containsKey(deviceId)) {
             Log.w(TAG, "Maximum number of devices (" + MAX_DEVICES + ") reached, cannot add device: " + deviceId);
             return;
         }
         
         // Check if device already has a notification
         if (deviceNotificationIds.containsKey(deviceId)) {
-            Log.d(TAG, "Device " + deviceId + " already has a notification, updating instead");
+            Log.d(TAG, "Device " + deviceId + " already has a notification, updating data and notification");
+            deviceData.put(deviceId, data);
             updateDeviceNotification(deviceId, deviceNotificationIds.get(deviceId));
             return;
         }
@@ -308,15 +334,32 @@ public class ForegroundNotificationService extends Service {
             // Store device data
             deviceData.put(deviceId, data);
             
-            // Assign notification ID
-            int notificationId = nextNotificationId++;
+            // Use a fixed notification ID scheme: find first available slot
+            // This ensures consistent IDs and makes cleanup easier
+            int notificationId = BASE_NOTIFICATION_ID;
+            for (int i = 0; i < MAX_DEVICES; i++) {
+                int testId = BASE_NOTIFICATION_ID + i;
+                if (!deviceNotificationIds.containsValue(testId)) {
+                    notificationId = testId;
+                    break;
+                }
+            }
+            
+            Log.d(TAG, "Assigning notification ID " + notificationId + " to device: " + deviceId);
             deviceNotificationIds.put(deviceId, notificationId);
             
             // Create and show notification
             Notification notification = createDeviceNotification(deviceId);
             if (notification != null) {
-                notificationManager.notify(notificationId, notification);
-                Log.d(TAG, "Device notification added successfully for: " + deviceId + " with ID: " + notificationId);
+                // If this is the first device (using BASE_NOTIFICATION_ID), update the foreground notification
+                if (notificationId == BASE_NOTIFICATION_ID) {
+                    Log.d(TAG, "First device notification, updating foreground notification");
+                    startForeground(notificationId, notification);
+                } else {
+                    // For subsequent devices, just add as regular notification
+                    notificationManager.notify(notificationId, notification);
+                }
+                Log.d(TAG, "Device notification added successfully for: " + deviceId + " with ID: " + notificationId + ", total devices: " + deviceNotificationIds.size());
             } else {
                 Log.w(TAG, "Failed to create notification for device: " + deviceId);
                 // Clean up if notification creation failed
@@ -333,18 +376,50 @@ public class ForegroundNotificationService extends Service {
         
         if (deviceNotificationIds.containsKey(deviceId)) {
             int notificationId = deviceNotificationIds.get(deviceId);
-            notificationManager.cancel(notificationId);
+            
+            // Check if this is the foreground notification
+            boolean isForegroundNotification = (notificationId == BASE_NOTIFICATION_ID);
+            
             deviceNotificationIds.remove(deviceId);
             deviceData.remove(deviceId);
-            Log.d(TAG, "Device notification removed for: " + deviceId);
+            Log.d(TAG, "Device notification removed for: " + deviceId + ", remaining devices: " + deviceNotificationIds.size());
             
-            // If no more device notifications, stop the service
-            if (deviceNotificationIds.isEmpty()) {
+            // If there are remaining devices, we need to update the foreground notification
+            if (!deviceNotificationIds.isEmpty()) {
+                if (isForegroundNotification) {
+                    // This was the foreground notification, promote another device to foreground
+                    Log.d(TAG, "Removed device was foreground notification, promoting another device");
+                    String nextDeviceId = deviceNotificationIds.keySet().iterator().next();
+                    int nextNotificationId = deviceNotificationIds.get(nextDeviceId);
+                    
+                    // Create notification for the next device
+                    Notification nextNotification = createDeviceNotification(nextDeviceId);
+                    if (nextNotification != null) {
+                        // Update to be the new foreground notification
+                        startForeground(BASE_NOTIFICATION_ID, nextNotification);
+                        
+                        // Cancel the old notification at the different ID
+                        notificationManager.cancel(nextNotificationId);
+                        
+                        // Update the mapping to use BASE_NOTIFICATION_ID for this device
+                        deviceNotificationIds.put(nextDeviceId, BASE_NOTIFICATION_ID);
+                        
+                        Log.d(TAG, "Promoted device " + nextDeviceId + " to foreground notification");
+                    }
+                } else {
+                    // This was not the foreground notification, just cancel it
+                    notificationManager.cancel(notificationId);
+                }
+            } else {
+                // No more devices, cancel notification and stop service
+                notificationManager.cancel(notificationId);
                 Log.d(TAG, "No more device notifications, stopping service");
                 stopForegroundService();
             }
         } else {
-            Log.w(TAG, "Device " + deviceId + " not found in active notifications");
+            Log.w(TAG, "Device " + deviceId + " not found in active notifications, cannot remove");
+            // Still clean up device data in case it exists
+            deviceData.remove(deviceId);
         }
     }
 
@@ -810,9 +885,15 @@ public class ForegroundNotificationService extends Service {
         sendBroadcast(broadcastIntent);
         Log.d(TAG, "Dismissal event sent to Flutter via broadcast for device: " + deviceId);
 
-        // Stop the service when notification is dismissed to avoid system killing it
-        Log.d(TAG, "Stopping foreground service due to notification dismissal");
-        stopForegroundService();
+        // Remove only the specific device's notification, not all of them
+        if (deviceId != null) {
+            Log.d(TAG, "Removing notification for specific device: " + deviceId);
+            removeDeviceNotification(deviceId);
+        } else {
+            // If no deviceId, stop the entire service (fallback for legacy behavior)
+            Log.d(TAG, "No deviceId provided, stopping entire foreground service");
+            stopForegroundService();
+        }
     }
 
     // Static methods to control the service from outside

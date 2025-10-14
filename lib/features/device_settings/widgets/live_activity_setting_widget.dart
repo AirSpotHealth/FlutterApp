@@ -42,8 +42,8 @@ class LiveActivitySettingWidget extends ConsumerWidget {
                     .sendCommand(DeviceCmdUtils
                         .getCO2()); // Get CO2 command to trigger live activity update
               } else {
-                // User toggled OFF - end the live activity/notification
-                LiveActivityService().endLiveActivity();
+                // User toggled OFF - remove only this device's live activity/notification
+                LiveActivityService().removeDeviceLiveActivity(deviceId);
               }
             },
           ),
