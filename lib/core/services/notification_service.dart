@@ -362,7 +362,7 @@ class NotificationService {
       ledOffMs: 500,
       styleInformation: BigTextStyleInformation(
         message,
-        contentTitle: '⚠️ $deviceName - High CO₂',
+        contentTitle: '$deviceName - High CO₂',
         summaryText: 'Threshold: $threshold ppm',
       ),
     );
@@ -384,7 +384,7 @@ class NotificationService {
 
     await _notificationsPlugin.show(
       co2Value.hashCode, // Use co2Value hashCode as unique ID
-      '⚠️ $deviceName - High CO₂',
+      '$deviceName - High CO₂',
       message,
       notificationDetails,
       payload: 'co2_alert:$deviceName:$co2Value',

@@ -47,6 +47,10 @@ const NotificationPreferencesSchema = IsarGeneratedSchema(
         type: IsarType.bool,
       ),
       IsarPropertySchema(
+        name: 'cooldownMode',
+        type: IsarType.string,
+      ),
+      IsarPropertySchema(
         name: 'cooldownMinutes',
         type: IsarType.long,
       ),
@@ -90,13 +94,14 @@ int serializeNotificationPreferences(
   IsarCore.writeBool(writer, 4, object.notificationSoundEnabled);
   IsarCore.writeBool(writer, 5, object.notificationVibrationEnabled);
   IsarCore.writeBool(writer, 6, object.showInForeground);
-  IsarCore.writeLong(writer, 7, object.cooldownMinutes);
+  IsarCore.writeString(writer, 7, object.cooldownMode);
+  IsarCore.writeLong(writer, 8, object.cooldownMinutes);
   IsarCore.writeLong(
       writer,
-      8,
+      9,
       object.lastNotificationTime?.toUtc().microsecondsSinceEpoch ??
           -9223372036854775808);
-  IsarCore.writeBool(writer, 9, object.canSendNotification);
+  IsarCore.writeBool(writer, 10, object.canSendNotification);
   return Isar.fastHash(object.deviceId);
 }
 
@@ -160,16 +165,12 @@ NotificationPreferences deserializeNotificationPreferences(IsarReader reader) {
     }
   }
   final bool _showInForeground;
-  {
-    if (IsarCore.readNull(reader, 6)) {
-      _showInForeground = true;
-    } else {
-      _showInForeground = IsarCore.readBool(reader, 6);
-    }
-  }
+  _showInForeground = IsarCore.readBool(reader, 6);
+  final String _cooldownMode;
+  _cooldownMode = IsarCore.readString(reader, 7) ?? 'once';
   final int _cooldownMinutes;
   {
-    final value = IsarCore.readLong(reader, 7);
+    final value = IsarCore.readLong(reader, 8);
     if (value == -9223372036854775808) {
       _cooldownMinutes = 5;
     } else {
@@ -178,7 +179,7 @@ NotificationPreferences deserializeNotificationPreferences(IsarReader reader) {
   }
   final DateTime? _lastNotificationTime;
   {
-    final value = IsarCore.readLong(reader, 8);
+    final value = IsarCore.readLong(reader, 9);
     if (value == -9223372036854775808) {
       _lastNotificationTime = null;
     } else {
@@ -193,6 +194,7 @@ NotificationPreferences deserializeNotificationPreferences(IsarReader reader) {
     notificationSoundEnabled: _notificationSoundEnabled,
     notificationVibrationEnabled: _notificationVibrationEnabled,
     showInForeground: _showInForeground,
+    cooldownMode: _cooldownMode,
     cooldownMinutes: _cooldownMinutes,
     lastNotificationTime: _lastNotificationTime,
   );
@@ -262,25 +264,21 @@ dynamic deserializeNotificationPreferencesProp(
         }
       }
     case 6:
-      {
-        if (IsarCore.readNull(reader, 6)) {
-          return true;
-        } else {
-          return IsarCore.readBool(reader, 6);
-        }
-      }
+      return IsarCore.readBool(reader, 6);
     case 7:
+      return IsarCore.readString(reader, 7) ?? 'once';
+    case 8:
       {
-        final value = IsarCore.readLong(reader, 7);
+        final value = IsarCore.readLong(reader, 8);
         if (value == -9223372036854775808) {
           return 5;
         } else {
           return value;
         }
       }
-    case 8:
+    case 9:
       {
-        final value = IsarCore.readLong(reader, 8);
+        final value = IsarCore.readLong(reader, 9);
         if (value == -9223372036854775808) {
           return null;
         } else {
@@ -288,8 +286,8 @@ dynamic deserializeNotificationPreferencesProp(
               .toLocal();
         }
       }
-    case 9:
-      return IsarCore.readBool(reader, 9);
+    case 10:
+      return IsarCore.readBool(reader, 10);
     default:
       throw ArgumentError('Unknown property: $property');
   }
@@ -302,6 +300,7 @@ sealed class _NotificationPreferencesUpdate {
     bool? notificationSoundEnabled,
     bool? notificationVibrationEnabled,
     bool? showInForeground,
+    String? cooldownMode,
     int? cooldownMinutes,
     DateTime? lastNotificationTime,
     bool? canSendNotification,
@@ -321,6 +320,7 @@ class _NotificationPreferencesUpdateImpl
     Object? notificationSoundEnabled = ignore,
     Object? notificationVibrationEnabled = ignore,
     Object? showInForeground = ignore,
+    Object? cooldownMode = ignore,
     Object? cooldownMinutes = ignore,
     Object? lastNotificationTime = ignore,
     Object? canSendNotification = ignore,
@@ -335,10 +335,11 @@ class _NotificationPreferencesUpdateImpl
           if (notificationVibrationEnabled != ignore)
             5: notificationVibrationEnabled as bool?,
           if (showInForeground != ignore) 6: showInForeground as bool?,
-          if (cooldownMinutes != ignore) 7: cooldownMinutes as int?,
+          if (cooldownMode != ignore) 7: cooldownMode as String?,
+          if (cooldownMinutes != ignore) 8: cooldownMinutes as int?,
           if (lastNotificationTime != ignore)
-            8: lastNotificationTime as DateTime?,
-          if (canSendNotification != ignore) 9: canSendNotification as bool?,
+            9: lastNotificationTime as DateTime?,
+          if (canSendNotification != ignore) 10: canSendNotification as bool?,
         }) >
         0;
   }
@@ -351,6 +352,7 @@ sealed class _NotificationPreferencesUpdateAll {
     bool? notificationSoundEnabled,
     bool? notificationVibrationEnabled,
     bool? showInForeground,
+    String? cooldownMode,
     int? cooldownMinutes,
     DateTime? lastNotificationTime,
     bool? canSendNotification,
@@ -370,6 +372,7 @@ class _NotificationPreferencesUpdateAllImpl
     Object? notificationSoundEnabled = ignore,
     Object? notificationVibrationEnabled = ignore,
     Object? showInForeground = ignore,
+    Object? cooldownMode = ignore,
     Object? cooldownMinutes = ignore,
     Object? lastNotificationTime = ignore,
     Object? canSendNotification = ignore,
@@ -382,9 +385,10 @@ class _NotificationPreferencesUpdateAllImpl
       if (notificationVibrationEnabled != ignore)
         5: notificationVibrationEnabled as bool?,
       if (showInForeground != ignore) 6: showInForeground as bool?,
-      if (cooldownMinutes != ignore) 7: cooldownMinutes as int?,
-      if (lastNotificationTime != ignore) 8: lastNotificationTime as DateTime?,
-      if (canSendNotification != ignore) 9: canSendNotification as bool?,
+      if (cooldownMode != ignore) 7: cooldownMode as String?,
+      if (cooldownMinutes != ignore) 8: cooldownMinutes as int?,
+      if (lastNotificationTime != ignore) 9: lastNotificationTime as DateTime?,
+      if (canSendNotification != ignore) 10: canSendNotification as bool?,
     });
   }
 }
@@ -404,6 +408,7 @@ sealed class _NotificationPreferencesQueryUpdate {
     bool? notificationSoundEnabled,
     bool? notificationVibrationEnabled,
     bool? showInForeground,
+    String? cooldownMode,
     int? cooldownMinutes,
     DateTime? lastNotificationTime,
     bool? canSendNotification,
@@ -423,6 +428,7 @@ class _NotificationPreferencesQueryUpdateImpl
     Object? notificationSoundEnabled = ignore,
     Object? notificationVibrationEnabled = ignore,
     Object? showInForeground = ignore,
+    Object? cooldownMode = ignore,
     Object? cooldownMinutes = ignore,
     Object? lastNotificationTime = ignore,
     Object? canSendNotification = ignore,
@@ -435,9 +441,10 @@ class _NotificationPreferencesQueryUpdateImpl
       if (notificationVibrationEnabled != ignore)
         5: notificationVibrationEnabled as bool?,
       if (showInForeground != ignore) 6: showInForeground as bool?,
-      if (cooldownMinutes != ignore) 7: cooldownMinutes as int?,
-      if (lastNotificationTime != ignore) 8: lastNotificationTime as DateTime?,
-      if (canSendNotification != ignore) 9: canSendNotification as bool?,
+      if (cooldownMode != ignore) 7: cooldownMode as String?,
+      if (cooldownMinutes != ignore) 8: cooldownMinutes as int?,
+      if (lastNotificationTime != ignore) 9: lastNotificationTime as DateTime?,
+      if (canSendNotification != ignore) 10: canSendNotification as bool?,
     });
   }
 }
@@ -466,6 +473,7 @@ class _NotificationPreferencesQueryBuilderUpdateImpl
     Object? notificationSoundEnabled = ignore,
     Object? notificationVibrationEnabled = ignore,
     Object? showInForeground = ignore,
+    Object? cooldownMode = ignore,
     Object? cooldownMinutes = ignore,
     Object? lastNotificationTime = ignore,
     Object? canSendNotification = ignore,
@@ -480,10 +488,11 @@ class _NotificationPreferencesQueryBuilderUpdateImpl
         if (notificationVibrationEnabled != ignore)
           5: notificationVibrationEnabled as bool?,
         if (showInForeground != ignore) 6: showInForeground as bool?,
-        if (cooldownMinutes != ignore) 7: cooldownMinutes as int?,
+        if (cooldownMode != ignore) 7: cooldownMode as String?,
+        if (cooldownMinutes != ignore) 8: cooldownMinutes as int?,
         if (lastNotificationTime != ignore)
-          8: lastNotificationTime as DateTime?,
-        if (canSendNotification != ignore) 9: canSendNotification as bool?,
+          9: lastNotificationTime as DateTime?,
+        if (canSendNotification != ignore) 10: canSendNotification as bool?,
       });
     } finally {
       q.close();
@@ -755,13 +764,195 @@ extension NotificationPreferencesQueryFilter on QueryBuilder<
   }
 
   QueryBuilder<NotificationPreferences, NotificationPreferences,
+      QAfterFilterCondition> cooldownModeEqualTo(
+    String value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        EqualCondition(
+          property: 7,
+          value: value,
+          caseSensitive: caseSensitive,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<NotificationPreferences, NotificationPreferences,
+      QAfterFilterCondition> cooldownModeGreaterThan(
+    String value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        GreaterCondition(
+          property: 7,
+          value: value,
+          caseSensitive: caseSensitive,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<NotificationPreferences, NotificationPreferences,
+      QAfterFilterCondition> cooldownModeGreaterThanOrEqualTo(
+    String value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        GreaterOrEqualCondition(
+          property: 7,
+          value: value,
+          caseSensitive: caseSensitive,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<NotificationPreferences, NotificationPreferences,
+      QAfterFilterCondition> cooldownModeLessThan(
+    String value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        LessCondition(
+          property: 7,
+          value: value,
+          caseSensitive: caseSensitive,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<NotificationPreferences, NotificationPreferences,
+      QAfterFilterCondition> cooldownModeLessThanOrEqualTo(
+    String value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        LessOrEqualCondition(
+          property: 7,
+          value: value,
+          caseSensitive: caseSensitive,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<NotificationPreferences, NotificationPreferences,
+      QAfterFilterCondition> cooldownModeBetween(
+    String lower,
+    String upper, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        BetweenCondition(
+          property: 7,
+          lower: lower,
+          upper: upper,
+          caseSensitive: caseSensitive,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<NotificationPreferences, NotificationPreferences,
+      QAfterFilterCondition> cooldownModeStartsWith(
+    String value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        StartsWithCondition(
+          property: 7,
+          value: value,
+          caseSensitive: caseSensitive,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<NotificationPreferences, NotificationPreferences,
+      QAfterFilterCondition> cooldownModeEndsWith(
+    String value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        EndsWithCondition(
+          property: 7,
+          value: value,
+          caseSensitive: caseSensitive,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<NotificationPreferences, NotificationPreferences,
+          QAfterFilterCondition>
+      cooldownModeContains(String value, {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        ContainsCondition(
+          property: 7,
+          value: value,
+          caseSensitive: caseSensitive,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<NotificationPreferences, NotificationPreferences,
+          QAfterFilterCondition>
+      cooldownModeMatches(String pattern, {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        MatchesCondition(
+          property: 7,
+          wildcard: pattern,
+          caseSensitive: caseSensitive,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<NotificationPreferences, NotificationPreferences,
+      QAfterFilterCondition> cooldownModeIsEmpty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        const EqualCondition(
+          property: 7,
+          value: '',
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<NotificationPreferences, NotificationPreferences,
+      QAfterFilterCondition> cooldownModeIsNotEmpty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        const GreaterCondition(
+          property: 7,
+          value: '',
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<NotificationPreferences, NotificationPreferences,
       QAfterFilterCondition> cooldownMinutesEqualTo(
     int value,
   ) {
     return QueryBuilder.apply(this, (query) {
       return query.addFilterCondition(
         EqualCondition(
-          property: 7,
+          property: 8,
           value: value,
         ),
       );
@@ -775,7 +966,7 @@ extension NotificationPreferencesQueryFilter on QueryBuilder<
     return QueryBuilder.apply(this, (query) {
       return query.addFilterCondition(
         GreaterCondition(
-          property: 7,
+          property: 8,
           value: value,
         ),
       );
@@ -789,7 +980,7 @@ extension NotificationPreferencesQueryFilter on QueryBuilder<
     return QueryBuilder.apply(this, (query) {
       return query.addFilterCondition(
         GreaterOrEqualCondition(
-          property: 7,
+          property: 8,
           value: value,
         ),
       );
@@ -803,7 +994,7 @@ extension NotificationPreferencesQueryFilter on QueryBuilder<
     return QueryBuilder.apply(this, (query) {
       return query.addFilterCondition(
         LessCondition(
-          property: 7,
+          property: 8,
           value: value,
         ),
       );
@@ -817,7 +1008,7 @@ extension NotificationPreferencesQueryFilter on QueryBuilder<
     return QueryBuilder.apply(this, (query) {
       return query.addFilterCondition(
         LessOrEqualCondition(
-          property: 7,
+          property: 8,
           value: value,
         ),
       );
@@ -832,7 +1023,7 @@ extension NotificationPreferencesQueryFilter on QueryBuilder<
     return QueryBuilder.apply(this, (query) {
       return query.addFilterCondition(
         BetweenCondition(
-          property: 7,
+          property: 8,
           lower: lower,
           upper: upper,
         ),
@@ -843,14 +1034,14 @@ extension NotificationPreferencesQueryFilter on QueryBuilder<
   QueryBuilder<NotificationPreferences, NotificationPreferences,
       QAfterFilterCondition> lastNotificationTimeIsNull() {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(const IsNullCondition(property: 8));
+      return query.addFilterCondition(const IsNullCondition(property: 9));
     });
   }
 
   QueryBuilder<NotificationPreferences, NotificationPreferences,
       QAfterFilterCondition> lastNotificationTimeIsNotNull() {
     return QueryBuilder.apply(not(), (query) {
-      return query.addFilterCondition(const IsNullCondition(property: 8));
+      return query.addFilterCondition(const IsNullCondition(property: 9));
     });
   }
 
@@ -861,7 +1052,7 @@ extension NotificationPreferencesQueryFilter on QueryBuilder<
     return QueryBuilder.apply(this, (query) {
       return query.addFilterCondition(
         EqualCondition(
-          property: 8,
+          property: 9,
           value: value,
         ),
       );
@@ -875,7 +1066,7 @@ extension NotificationPreferencesQueryFilter on QueryBuilder<
     return QueryBuilder.apply(this, (query) {
       return query.addFilterCondition(
         GreaterCondition(
-          property: 8,
+          property: 9,
           value: value,
         ),
       );
@@ -889,7 +1080,7 @@ extension NotificationPreferencesQueryFilter on QueryBuilder<
     return QueryBuilder.apply(this, (query) {
       return query.addFilterCondition(
         GreaterOrEqualCondition(
-          property: 8,
+          property: 9,
           value: value,
         ),
       );
@@ -903,7 +1094,7 @@ extension NotificationPreferencesQueryFilter on QueryBuilder<
     return QueryBuilder.apply(this, (query) {
       return query.addFilterCondition(
         LessCondition(
-          property: 8,
+          property: 9,
           value: value,
         ),
       );
@@ -917,7 +1108,7 @@ extension NotificationPreferencesQueryFilter on QueryBuilder<
     return QueryBuilder.apply(this, (query) {
       return query.addFilterCondition(
         LessOrEqualCondition(
-          property: 8,
+          property: 9,
           value: value,
         ),
       );
@@ -932,7 +1123,7 @@ extension NotificationPreferencesQueryFilter on QueryBuilder<
     return QueryBuilder.apply(this, (query) {
       return query.addFilterCondition(
         BetweenCondition(
-          property: 8,
+          property: 9,
           lower: lower,
           upper: upper,
         ),
@@ -947,7 +1138,7 @@ extension NotificationPreferencesQueryFilter on QueryBuilder<
     return QueryBuilder.apply(this, (query) {
       return query.addFilterCondition(
         EqualCondition(
-          property: 9,
+          property: 10,
           value: value,
         ),
       );
@@ -1038,44 +1229,65 @@ extension NotificationPreferencesQuerySortBy
   }
 
   QueryBuilder<NotificationPreferences, NotificationPreferences, QAfterSortBy>
+      sortByCooldownMode({bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(
+        7,
+        caseSensitive: caseSensitive,
+      );
+    });
+  }
+
+  QueryBuilder<NotificationPreferences, NotificationPreferences, QAfterSortBy>
+      sortByCooldownModeDesc({bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(
+        7,
+        sort: Sort.desc,
+        caseSensitive: caseSensitive,
+      );
+    });
+  }
+
+  QueryBuilder<NotificationPreferences, NotificationPreferences, QAfterSortBy>
       sortByCooldownMinutes() {
-    return QueryBuilder.apply(this, (query) {
-      return query.addSortBy(7);
-    });
-  }
-
-  QueryBuilder<NotificationPreferences, NotificationPreferences, QAfterSortBy>
-      sortByCooldownMinutesDesc() {
-    return QueryBuilder.apply(this, (query) {
-      return query.addSortBy(7, sort: Sort.desc);
-    });
-  }
-
-  QueryBuilder<NotificationPreferences, NotificationPreferences, QAfterSortBy>
-      sortByLastNotificationTime() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(8);
     });
   }
 
   QueryBuilder<NotificationPreferences, NotificationPreferences, QAfterSortBy>
-      sortByLastNotificationTimeDesc() {
+      sortByCooldownMinutesDesc() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(8, sort: Sort.desc);
     });
   }
 
   QueryBuilder<NotificationPreferences, NotificationPreferences, QAfterSortBy>
-      sortByCanSendNotification() {
+      sortByLastNotificationTime() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(9);
     });
   }
 
   QueryBuilder<NotificationPreferences, NotificationPreferences, QAfterSortBy>
-      sortByCanSendNotificationDesc() {
+      sortByLastNotificationTimeDesc() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(9, sort: Sort.desc);
+    });
+  }
+
+  QueryBuilder<NotificationPreferences, NotificationPreferences, QAfterSortBy>
+      sortByCanSendNotification() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(10);
+    });
+  }
+
+  QueryBuilder<NotificationPreferences, NotificationPreferences, QAfterSortBy>
+      sortByCanSendNotificationDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(10, sort: Sort.desc);
     });
   }
 }
@@ -1153,44 +1365,58 @@ extension NotificationPreferencesQuerySortThenBy on QueryBuilder<
   }
 
   QueryBuilder<NotificationPreferences, NotificationPreferences, QAfterSortBy>
+      thenByCooldownMode({bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(7, caseSensitive: caseSensitive);
+    });
+  }
+
+  QueryBuilder<NotificationPreferences, NotificationPreferences, QAfterSortBy>
+      thenByCooldownModeDesc({bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(7, sort: Sort.desc, caseSensitive: caseSensitive);
+    });
+  }
+
+  QueryBuilder<NotificationPreferences, NotificationPreferences, QAfterSortBy>
       thenByCooldownMinutes() {
-    return QueryBuilder.apply(this, (query) {
-      return query.addSortBy(7);
-    });
-  }
-
-  QueryBuilder<NotificationPreferences, NotificationPreferences, QAfterSortBy>
-      thenByCooldownMinutesDesc() {
-    return QueryBuilder.apply(this, (query) {
-      return query.addSortBy(7, sort: Sort.desc);
-    });
-  }
-
-  QueryBuilder<NotificationPreferences, NotificationPreferences, QAfterSortBy>
-      thenByLastNotificationTime() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(8);
     });
   }
 
   QueryBuilder<NotificationPreferences, NotificationPreferences, QAfterSortBy>
-      thenByLastNotificationTimeDesc() {
+      thenByCooldownMinutesDesc() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(8, sort: Sort.desc);
     });
   }
 
   QueryBuilder<NotificationPreferences, NotificationPreferences, QAfterSortBy>
-      thenByCanSendNotification() {
+      thenByLastNotificationTime() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(9);
     });
   }
 
   QueryBuilder<NotificationPreferences, NotificationPreferences, QAfterSortBy>
-      thenByCanSendNotificationDesc() {
+      thenByLastNotificationTimeDesc() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(9, sort: Sort.desc);
+    });
+  }
+
+  QueryBuilder<NotificationPreferences, NotificationPreferences, QAfterSortBy>
+      thenByCanSendNotification() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(10);
+    });
+  }
+
+  QueryBuilder<NotificationPreferences, NotificationPreferences, QAfterSortBy>
+      thenByCanSendNotificationDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(10, sort: Sort.desc);
     });
   }
 }
@@ -1226,23 +1452,30 @@ extension NotificationPreferencesQueryWhereDistinct on QueryBuilder<
   }
 
   QueryBuilder<NotificationPreferences, NotificationPreferences, QAfterDistinct>
-      distinctByCooldownMinutes() {
+      distinctByCooldownMode({bool caseSensitive = true}) {
     return QueryBuilder.apply(this, (query) {
-      return query.addDistinctBy(7);
+      return query.addDistinctBy(7, caseSensitive: caseSensitive);
     });
   }
 
   QueryBuilder<NotificationPreferences, NotificationPreferences, QAfterDistinct>
-      distinctByLastNotificationTime() {
+      distinctByCooldownMinutes() {
     return QueryBuilder.apply(this, (query) {
       return query.addDistinctBy(8);
     });
   }
 
   QueryBuilder<NotificationPreferences, NotificationPreferences, QAfterDistinct>
-      distinctByCanSendNotification() {
+      distinctByLastNotificationTime() {
     return QueryBuilder.apply(this, (query) {
       return query.addDistinctBy(9);
+    });
+  }
+
+  QueryBuilder<NotificationPreferences, NotificationPreferences, QAfterDistinct>
+      distinctByCanSendNotification() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addDistinctBy(10);
     });
   }
 }
@@ -1291,24 +1524,31 @@ extension NotificationPreferencesQueryProperty1 on QueryBuilder<
     });
   }
 
+  QueryBuilder<NotificationPreferences, String, QAfterProperty>
+      cooldownModeProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addProperty(7);
+    });
+  }
+
   QueryBuilder<NotificationPreferences, int, QAfterProperty>
       cooldownMinutesProperty() {
     return QueryBuilder.apply(this, (query) {
-      return query.addProperty(7);
+      return query.addProperty(8);
     });
   }
 
   QueryBuilder<NotificationPreferences, DateTime?, QAfterProperty>
       lastNotificationTimeProperty() {
     return QueryBuilder.apply(this, (query) {
-      return query.addProperty(8);
+      return query.addProperty(9);
     });
   }
 
   QueryBuilder<NotificationPreferences, bool, QAfterProperty>
       canSendNotificationProperty() {
     return QueryBuilder.apply(this, (query) {
-      return query.addProperty(9);
+      return query.addProperty(10);
     });
   }
 }
@@ -1357,24 +1597,31 @@ extension NotificationPreferencesQueryProperty2<R>
     });
   }
 
+  QueryBuilder<NotificationPreferences, (R, String), QAfterProperty>
+      cooldownModeProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addProperty(7);
+    });
+  }
+
   QueryBuilder<NotificationPreferences, (R, int), QAfterProperty>
       cooldownMinutesProperty() {
     return QueryBuilder.apply(this, (query) {
-      return query.addProperty(7);
+      return query.addProperty(8);
     });
   }
 
   QueryBuilder<NotificationPreferences, (R, DateTime?), QAfterProperty>
       lastNotificationTimeProperty() {
     return QueryBuilder.apply(this, (query) {
-      return query.addProperty(8);
+      return query.addProperty(9);
     });
   }
 
   QueryBuilder<NotificationPreferences, (R, bool), QAfterProperty>
       canSendNotificationProperty() {
     return QueryBuilder.apply(this, (query) {
-      return query.addProperty(9);
+      return query.addProperty(10);
     });
   }
 }
@@ -1423,24 +1670,31 @@ extension NotificationPreferencesQueryProperty3<R1, R2>
     });
   }
 
+  QueryBuilder<NotificationPreferences, (R1, R2, String), QOperations>
+      cooldownModeProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addProperty(7);
+    });
+  }
+
   QueryBuilder<NotificationPreferences, (R1, R2, int), QOperations>
       cooldownMinutesProperty() {
     return QueryBuilder.apply(this, (query) {
-      return query.addProperty(7);
+      return query.addProperty(8);
     });
   }
 
   QueryBuilder<NotificationPreferences, (R1, R2, DateTime?), QOperations>
       lastNotificationTimeProperty() {
     return QueryBuilder.apply(this, (query) {
-      return query.addProperty(8);
+      return query.addProperty(9);
     });
   }
 
   QueryBuilder<NotificationPreferences, (R1, R2, bool), QOperations>
       canSendNotificationProperty() {
     return QueryBuilder.apply(this, (query) {
-      return query.addProperty(9);
+      return query.addProperty(10);
     });
   }
 }

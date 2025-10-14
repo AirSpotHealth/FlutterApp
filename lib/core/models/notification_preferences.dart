@@ -38,7 +38,7 @@ class NotificationPreferences {
     this.notificationThresholds = defaultNotificationThresholds,
     this.notificationSoundEnabled = true,
     this.notificationVibrationEnabled = true,
-    this.showInForeground = true,
+    this.showInForeground = false,
     this.cooldownMode = 'once',
     this.cooldownMinutes = 5,
     this.lastNotificationTime,
@@ -49,7 +49,7 @@ class NotificationPreferences {
         notificationThresholds = defaultNotificationThresholds,
         notificationSoundEnabled = true,
         notificationVibrationEnabled = true,
-        showInForeground = true,
+        showInForeground = false,
         cooldownMode = 'once',
         cooldownMinutes = 5,
         lastNotificationTime = null;

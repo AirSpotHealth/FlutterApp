@@ -52,6 +52,15 @@ class Co2MonitoringService {
       return;
     }
 
+    // Only trigger notification if CO2 is crossing ABOVE the threshold (not falling)
+    // This prevents notifications when CO2 is falling from a higher level
+    if (lastValue >= thresholdToTrigger.co2Threshold) {
+      // CO2 was already above this threshold, no notification needed
+      debugPrint(
+          'CO2 already above threshold ${thresholdToTrigger.co2Threshold}, no notification needed');
+      return;
+    }
+
     // Check if this threshold has already been triggered
     final thresholdId = thresholdToTrigger.id;
     if (_triggeredThresholds[deviceId]!.contains(thresholdId)) {
