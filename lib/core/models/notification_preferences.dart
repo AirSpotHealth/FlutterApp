@@ -14,9 +14,6 @@ class NotificationPreferences {
   /// Custom CO2 thresholds for notifications (can use alarm levels or custom)
   final List<NotificationThreshold> notificationThresholds;
 
-  /// Notification sound enabled
-  final bool notificationSoundEnabled;
-
   /// Notification vibration enabled
   final bool notificationVibrationEnabled;
 
@@ -36,8 +33,7 @@ class NotificationPreferences {
     required this.deviceId,
     this.smartphoneNotificationsEnabled = false,
     this.notificationThresholds = defaultNotificationThresholds,
-    this.notificationSoundEnabled = true,
-    this.notificationVibrationEnabled = true,
+    this.notificationVibrationEnabled = true, // Vibration enabled by default
     this.showInForeground = true,
     this.cooldownMode = 'once',
     this.cooldownMinutes = 5,
@@ -47,8 +43,7 @@ class NotificationPreferences {
   NotificationPreferences.empty({required this.deviceId})
       : smartphoneNotificationsEnabled = false,
         notificationThresholds = defaultNotificationThresholds,
-        notificationSoundEnabled = true,
-        notificationVibrationEnabled = true,
+        notificationVibrationEnabled = true, // Vibration enabled by default
         showInForeground = true,
         cooldownMode = 'once',
         cooldownMinutes = 5,
@@ -58,7 +53,6 @@ class NotificationPreferences {
     String? deviceId,
     bool? smartphoneNotificationsEnabled,
     List<NotificationThreshold>? notificationThresholds,
-    bool? notificationSoundEnabled,
     bool? notificationVibrationEnabled,
     bool? showInForeground,
     String? cooldownMode,
@@ -71,8 +65,6 @@ class NotificationPreferences {
           smartphoneNotificationsEnabled ?? this.smartphoneNotificationsEnabled,
       notificationThresholds:
           notificationThresholds ?? this.notificationThresholds,
-      notificationSoundEnabled:
-          notificationSoundEnabled ?? this.notificationSoundEnabled,
       notificationVibrationEnabled:
           notificationVibrationEnabled ?? this.notificationVibrationEnabled,
       showInForeground: showInForeground ?? this.showInForeground,

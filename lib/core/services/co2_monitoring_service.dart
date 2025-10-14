@@ -82,12 +82,14 @@ class Co2MonitoringService {
 
     // Send notification
     try {
+      debugPrint(
+          'CO2 Monitoring - Sound: always on, Vibration enabled: ${preferences.notificationVibrationEnabled}');
+
       await NotificationService.showCO2Notification(
         deviceName: deviceName,
         co2Value: co2Value,
         threshold: thresholdToTrigger.co2Threshold,
         customMessage: thresholdToTrigger.message,
-        playSound: preferences.notificationSoundEnabled,
         vibrate: preferences.notificationVibrationEnabled,
       );
 

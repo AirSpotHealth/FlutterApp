@@ -112,18 +112,6 @@ class NotificationSettingsPage extends ConsumerWidget {
             ),
           ),
           SwitchListTile(
-            title: const Text('Sound'),
-            subtitle: const Text('Play sound with notification'),
-            value: preferences.notificationSoundEnabled,
-            onChanged: (value) {
-              ref
-                  .read(notificationPreferencesProvider(deviceId).notifier)
-                  .updatePreferences(
-                    (prefs) => prefs.copyWith(notificationSoundEnabled: value),
-                  );
-            },
-          ),
-          SwitchListTile(
             title: const Text('Vibration'),
             subtitle: const Text('Vibrate with notification'),
             value: preferences.notificationVibrationEnabled,

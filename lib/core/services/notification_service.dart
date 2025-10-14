@@ -52,7 +52,7 @@ class NotificationService {
     const AndroidNotificationChannel alertsChannel = AndroidNotificationChannel(
       'alerts', // id
       'Alerts', // name
-      description: 'Notification tests as alerts', // description
+      description: 'Notification for announcements & blogs', // description
       importance: Importance.high,
       playSound: true,
       ledColor: AppColors.primaryColorDark,
@@ -60,13 +60,14 @@ class NotificationService {
     );
 
     const AndroidNotificationChannel co2Channel = AndroidNotificationChannel(
-      'co2_alerts', // id
-      'CO₂ Alerts', // name
+      'co2_notifications', // id - separate from FCM
+      'CO₂ Notifications', // name
       description: 'High CO₂ level notifications', // description
       importance: Importance.max,
-      playSound: true,
+      playSound:
+          true, // Enable sound by default - mobile ring settings will control it
       ledColor: AppColors.brandColorRed,
-      enableVibration: false,
+      enableVibration: false, // We use custom vibration patterns
     );
 
     await _notificationsPlugin
@@ -343,22 +344,23 @@ class NotificationService {
     required int co2Value,
     required int threshold,
     String? customMessage,
-    bool playSound = true,
     bool vibrate = true,
   }) async {
     final message = customMessage ?? 'CO₂ level is $co2Value ppm';
+
+    debugPrint('CO2 Notification - sound: always on, vibrate: $vibrate');
 
     // Note: Vibration patterns are now handled by the vibration package
     // instead of AndroidNotificationDetails.vibrationPattern
 
     AndroidNotificationDetails androidNotificationDetails =
         AndroidNotificationDetails(
-      'co2_alerts', // Channel ID
-      'CO₂ Alerts', // Channel name
+      'co2_notifications', // Channel ID - separate from FCM
+      'CO₂ Notifications', // Channel name
       channelDescription: 'High CO₂ level notifications',
       importance: Importance.high,
       priority: Priority.high,
-      playSound: playSound,
+      playSound: true, // Always on - controlled by mobile ring settings
       enableVibration: Platform.isAndroid && vibrate
           ? false
           : vibrate, // Disable default vibration - we use custom patterns
@@ -377,8 +379,8 @@ class NotificationService {
         DarwinNotificationDetails(
       presentAlert: true,
       presentBadge: true,
-      presentSound: playSound,
-      sound: playSound ? 'default' : null,
+      presentSound: true, // Always on - controlled by mobile ring settings
+      sound: 'default',
       interruptionLevel: InterruptionLevel.timeSensitive,
     );
 
