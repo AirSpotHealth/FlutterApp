@@ -5,6 +5,7 @@ import 'package:airspothealth/core/models/ble_device.dart';
 import 'package:airspothealth/core/models/device_data.dart';
 import 'package:airspothealth/core/models/device_data_type.dart';
 import 'package:airspothealth/core/models/device_settings.dart';
+import 'package:airspothealth/core/models/live_activity_model.dart';
 import 'package:airspothealth/core/providers/ble_connected_devices_provider.dart';
 import 'package:airspothealth/core/providers/device_settings_provider.dart';
 import 'package:airspothealth/core/providers/notification_preferences_provider.dart';
@@ -15,7 +16,8 @@ import 'package:airspothealth/core/services/co2_monitoring_service.dart';
 import 'package:airspothealth/core/services/data_logger_service.dart';
 import 'package:airspothealth/core/services/isar_service.dart';
 import 'package:airspothealth/core/services/live_activity_service.dart';
-import 'package:airspothealth/core/utils/constants.dart';
+import 'package:airspothealth/core/services/widget_service.dart';
+import 'package:airspothealth/core/services/zone_analysis_service.dart';
 import 'package:airspothealth/core/utils/device_cmd_utils.dart';
 import 'package:airspothealth/core/utils/extensions.dart';
 import 'package:airspothealth/core/utils/local_date_format.dart';
@@ -25,7 +27,6 @@ import 'package:airspothealth/features/devices/providers/device_battery_level_pr
 import 'package:flutter/material.dart';
 import 'package:flutter_blue_plus/flutter_blue_plus.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:home_widget/home_widget.dart';
 import 'package:isar/isar.dart';
 
 final bleDeviceCommunicationProvider =
@@ -294,7 +295,7 @@ class _BleDeviceCommunicationNotifier extends FamilyNotifier<dynamic, String> {
         debugPrint('BLE: Error checking CO2 notifications: $e');
       }
 
-      // 7. Delegate to unified LiveActivityService
+      // 7. Update LiveActivityService (for Live Activity notifications)
       await LiveActivityService().updateWithCO2Data(
         deviceId: deviceId,
         co2Value: co2Data.value.toString(),
@@ -305,21 +306,73 @@ class _BleDeviceCommunicationNotifier extends FamilyNotifier<dynamic, String> {
         isConnected: device?.isConnected ?? false,
         co2History: co2History,
       );
-    } catch (e) {
-      debugPrint('BLE: Error delegating to LiveActivityService: $e');
-      // Fallback for Android home widget only
-      if (Platform.isAndroid) {
-        await HomeWidget.saveWidgetData(Constants.homeWidgetKey, '----');
-        // Update all Android widget providers
 
-        await Future.wait([
-          HomeWidget.updateWidget(androidName: Constants.androidWidgetCo2Small),
-          HomeWidget.updateWidget(
-              androidName: Constants.androidWidgetCo2Medium),
-          HomeWidget.updateWidget(androidName: Constants.androidWidgetCo2Large),
-        ]);
-      }
+      // 8. Update WidgetService (for home screen widgets) - INDEPENDENT
+      final widgetData = await _buildLiveActivityModel(
+        deviceId: deviceId,
+        deviceName: deviceName,
+        co2Value: co2Data.value,
+        deviceSettings: deviceSettings,
+        batteryLevel: batteryLevel,
+        isCharging: isCharging,
+        isConnected: device?.isConnected ?? false,
+        co2History: co2History,
+      );
+
+      await WidgetService().updateWidgetData(
+        deviceId: deviceId,
+        data: widgetData,
+      );
+    } catch (e) {
+      debugPrint('BLE: Error updating services: $e');
     }
+  }
+
+  /// Helper method to build LiveActivityModel with zone calculations
+  Future<LiveActivityModel> _buildLiveActivityModel({
+    required String deviceId,
+    required String deviceName,
+    required int co2Value,
+    required DeviceSettings? deviceSettings,
+    required String batteryLevel,
+    required bool isCharging,
+    required bool isConnected,
+    required List<int> co2History,
+  }) async {
+    final displayCO2Value = co2Value < 400 ? 400 : co2Value;
+    final displayCO2History =
+        co2History.map((value) => value < 400 ? 400 : value).toList();
+
+    // Calculate zone percentages for today (same as LiveActivityService)
+    final zoneAnalysisService = ZoneAnalysisService();
+    final zoneResult = await zoneAnalysisService.calculateZonePercentages(
+      deviceId: deviceId,
+      greenUpperLimit: deviceSettings?.thresholds.greenUpperLimit ?? 800,
+      yellowUpperLimit: deviceSettings?.thresholds.yellowUpperLimit ?? 1000,
+    );
+
+    return LiveActivityModel(
+      deviceId: deviceId,
+      deviceName: deviceName,
+      co2Value: displayCO2Value,
+      powerMode: deviceSettings?.powerMode.name ?? 'Now',
+      batteryLevel: int.parse(batteryLevel),
+      isCharging: isCharging,
+      isConnected: isConnected,
+      alarmEnabled: deviceSettings?.alarmEnabled ?? false,
+      vibrationEnabled: deviceSettings?.vibrationEnabled ?? false,
+      co2History: displayCO2History,
+      greenUpperLimit: deviceSettings?.thresholds.greenUpperLimit ?? 800,
+      yellowUpperLimit: deviceSettings?.thresholds.yellowUpperLimit ?? 1000,
+      graphMaxValue: deviceSettings?.graphMaxValue ?? 1600,
+      graphMinValue: deviceSettings?.graphMinValue ?? 0,
+      isRefreshing: false,
+      greenZonePercentage: zoneResult.greenZonePercentage,
+      yellowZonePercentage: zoneResult.yellowZonePercentage,
+      redZonePercentage: zoneResult.redZonePercentage,
+      dominantZone: zoneResult.dominantZone,
+      dominantZonePercentage: zoneResult.dominantZonePercentage,
+    );
   }
 
   Future<void> _getInitialData() async {

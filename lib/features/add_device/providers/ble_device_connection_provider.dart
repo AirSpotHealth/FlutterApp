@@ -9,6 +9,7 @@ import 'package:airspothealth/core/router/app_router.dart';
 import 'package:airspothealth/core/router/route_names.dart';
 import 'package:airspothealth/core/services/ble_service.dart';
 import 'package:airspothealth/core/services/live_activity_service.dart';
+import 'package:airspothealth/core/services/widget_service.dart';
 import 'package:airspothealth/core/utils/extensions.dart';
 import 'package:airspothealth/features/device_settings/models/progress_model.dart';
 import 'package:airspothealth/features/device_settings/providers/dfu_update_provider.dart';
@@ -153,11 +154,25 @@ class _BleDeviceConnectionNotifier
 
   void _updateLiveActivityOnDisconnect() async {
     try {
+      // Update Live Activity with disconnected state
       await LiveActivityService().updateWithDisconnectedState(
         deviceId: arg,
       );
+
+      // ALSO update widget with disconnected state
+      final widgetData = WidgetService().getWidgetData(arg);
+      if (widgetData != null) {
+        await WidgetService().updateWidgetData(
+          deviceId: arg,
+          data: widgetData.copyWith(
+            isConnected: false,
+            isRefreshing: false,
+          ),
+        );
+        debugPrint('✅ Widget updated with disconnected state for: $arg');
+      }
     } catch (e) {
-      debugPrint('Error updating Live Activity on disconnect: $e');
+      debugPrint('Error updating live activity/widget on disconnect: $e');
     }
   }
 }

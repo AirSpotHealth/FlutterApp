@@ -8,30 +8,72 @@
 import WidgetKit
 import SwiftUI
 import Charts
+import AppIntents
+
+// MARK: - Simple Device Entity
+@available(iOS 16.0, *)
+struct SimpleDeviceEntity: AppEntity {
+    let id: String
+    let displayName: String
+    
+    static var typeDisplayRepresentation: TypeDisplayRepresentation = "Device"
+    static var defaultQuery = SimpleDeviceQuery()
+    
+    var displayRepresentation: DisplayRepresentation {
+        DisplayRepresentation(title: "\(displayName)")
+    }
+}
+
+// MARK: - Simple Device Query
+@available(iOS 16.0, *)
+struct SimpleDeviceQuery: EntityQuery {
+    func entities(for identifiers: [SimpleDeviceEntity.ID]) async throws -> [SimpleDeviceEntity] {
+        let devices = WidgetConfigurationHelper.getAvailableDevices()
+        print("🔎 SimpleQuery.entities(): Looking for \(identifiers.count) identifiers")
+        return devices.filter { identifiers.contains($0.id) }
+            .map { SimpleDeviceEntity(id: $0.id, displayName: $0.name) }
+    }
+    
+    func suggestedEntities() async throws -> [SimpleDeviceEntity] {
+        let devices = WidgetConfigurationHelper.getAvailableDevices()
+        print("💡 SimpleQuery.suggestedEntities(): Returning \(devices.count) devices")
+        return devices.map { SimpleDeviceEntity(id: $0.id, displayName: $0.name) }
+    }
+}
+
+// MARK: - Device Configuration Intent
+@available(iOS 16.0, *)
+struct DeviceConfigurationIntent: WidgetConfigurationIntent {
+    static var title: LocalizedStringResource = "Select Device"
+    static var description = IntentDescription("Choose which device to display")
+    
+    @Parameter(title: "Device")
+    var selectedDevice: SimpleDeviceEntity?
+}
 
 // MARK: - Widget Data Provider
 struct Co2WidgetProvider: TimelineProvider {
     func placeholder(in context: Context) -> Co2WidgetEntry {
         Co2WidgetEntry(
             date: Date(),
-            deviceId: "1234567890",
-            deviceName: "AirSpot Device",
-            co2Value: 450,
-            powerMode: "3 Min",
-            batteryLevel: 85,
+            deviceId: "",
+            deviceName: "",
+            co2Value: 0,
+            powerMode: "",
+            batteryLevel: 0,
             isCharging: false,
-            alarmEnabled: true,
-            vibrationEnabled: true,
-            co2History: [400, 420, 450, 480, 470, 460, 450],
+            alarmEnabled: false,
+            vibrationEnabled: false,
+            co2History: [],
             greenUpperLimit: 800,
             yellowUpperLimit: 1000,
-            isConnected: true,
+            isConnected: false,
             isRefreshing: false,
-            greenZonePercentage: 75,
-            yellowZonePercentage: 20,
-            redZonePercentage: 5,
-            dominantZone: "green",
-            dominantZonePercentage: 75
+            greenZonePercentage: 0,
+            yellowZonePercentage: 0,
+            redZonePercentage: 0,
+            dominantZone: "none",
+            dominantZonePercentage: 0
         )
     }
 
@@ -52,70 +94,159 @@ struct Co2WidgetProvider: TimelineProvider {
         let timeline = Timeline(entries: [entry], policy: .after(nextUpdate))
         completion(timeline)
     }
+}
 
-    private func getWidgetData() -> Co2WidgetEntry? {
-        // Get data from shared UserDefaults (App Group)
-        guard let userDefaults = UserDefaults(suiteName: "group.com.airspot.lohas") else {
-            print("❌ Widget: Failed to access App Group UserDefaults")
-            return nil
+// MARK: - Shared Helper Functions (accessible to both providers)
+private func getWidgetData(for deviceId: String? = nil) -> Co2WidgetEntry? {
+    // Get data from shared UserDefaults (App Group)
+    guard let userDefaults = UserDefaults(suiteName: "group.com.airspot.lohas") else {
+        print("❌ Widget: Failed to access App Group UserDefaults")
+        return nil
+    }
+    
+    // Try to load multi-device data first
+    if let configuredDeviceId = deviceId {
+        print("📱 Widget: Loading data for configured device: \(configuredDeviceId)")
+        
+        guard let allDevicesJson = userDefaults.string(forKey: "widget_devices_data") else {
+            print("⚠️ Widget: No multi-device data found, falling back to legacy")
+            return loadLegacyWidgetData(userDefaults: userDefaults)
         }
         
-        guard let widgetDataJson = userDefaults.string(forKey: "widget_data_json") else {
-            print("❌ Widget: No data found for key 'widget_data_json'")
-            // List all keys to see what's available
-            let allKeys = Array(userDefaults.dictionaryRepresentation().keys)
-            print("📋 Widget: Available keys in UserDefaults: \(allKeys)")
-            return nil
-        }
-        
-        print("✅ Widget: Found data - \(widgetDataJson.prefix(100))...")
-        
-        guard let data = widgetDataJson.data(using: .utf8) else {
-            print("❌ Widget: Failed to convert JSON string to data")
+        guard let data = allDevicesJson.data(using: .utf8) else {
+            print("❌ Widget: Failed to convert multi-device JSON to data")
             return nil
         }
         
         do {
-            let json = try JSONSerialization.jsonObject(with: data) as? [String: Any]
-            print("✅ Widget: Successfully parsed JSON with co2Value: \(json?["co2Value"] ?? "nil")")
-            return parseWidgetData(from: json)
+            let allDevices = try JSONSerialization.jsonObject(with: data) as? [String: Any]
+            if let deviceData = allDevices?[configuredDeviceId] as? [String: Any] {
+                print("✅ Widget: Found data for device \(configuredDeviceId)")
+                return parseWidgetData(from: deviceData)
+            } else {
+                print("⚠️ Widget: Device \(configuredDeviceId) not found in multi-device data")
+                return nil
+            }
         } catch {
-            print("❌ Widget: Error parsing widget data: \(error)")
+            print("❌ Widget: Error parsing multi-device data: \(error)")
             return nil
         }
+    } else {
+        // No specific device configured - use legacy single device data
+        return loadLegacyWidgetData(userDefaults: userDefaults)
+    }
+}
+
+private func loadLegacyWidgetData(userDefaults: UserDefaults) -> Co2WidgetEntry? {
+    guard let widgetDataJson = userDefaults.string(forKey: "widget_data_json") else {
+        print("❌ Widget: No data found for key 'widget_data_json'")
+        return nil
     }
     
-    private func parseWidgetData(from json: [String: Any]?) -> Co2WidgetEntry? {
-        guard let json = json else { return nil }
-        
-        let co2HistoryArray = json["co2History"] as? [Int] ?? []
-        let deviceId = json["deviceId"] as? String ?? ""
-        let isConnected = json["isConnected"] as? Bool ?? false
-        
-        // Check if we have a valid device connection
-        let hasValidDevice = !deviceId.isEmpty && isConnected
-        
-        return Co2WidgetEntry(
+    print("✅ Widget: Found legacy data - \(widgetDataJson.prefix(100))...")
+    
+    guard let data = widgetDataJson.data(using: .utf8) else {
+        print("❌ Widget: Failed to convert JSON string to data")
+        return nil
+    }
+    
+    do {
+        let json = try JSONSerialization.jsonObject(with: data) as? [String: Any]
+        print("✅ Widget: Successfully parsed JSON with co2Value: \(json?["co2Value"] ?? "nil")")
+        return parseWidgetData(from: json)
+    } catch {
+        print("❌ Widget: Error parsing widget data: \(error)")
+        return nil
+    }
+}
+
+private func parseWidgetData(from json: [String: Any]?) -> Co2WidgetEntry? {
+    guard let json = json else { return nil }
+    
+    let co2HistoryArray = json["co2History"] as? [Int] ?? []
+    let deviceId = json["deviceId"] as? String ?? ""
+    let isConnected = json["isConnected"] as? Bool ?? false
+    
+    // Get device-specific last updated time
+    let lastUpdatedMs = json["lastUpdated"] as? Int64 ?? Int64(Date().timeIntervalSince1970 * 1000)
+    let lastUpdated = Date(timeIntervalSince1970: TimeInterval(lastUpdatedMs) / 1000.0)
+    
+    // Check if we have a valid device connection
+    let hasValidDevice = !deviceId.isEmpty && isConnected
+    
+    return Co2WidgetEntry(
+        date: lastUpdated,
+        deviceId: deviceId,
+        deviceName: hasValidDevice ? (json["deviceName"] as? String ?? "AirSpot Device") : "",
+        co2Value: hasValidDevice ? (json["co2Value"] as? Int ?? 0) : 0,
+        powerMode: hasValidDevice ? (json["powerMode"] as? String ?? "Now") : "",
+        batteryLevel: hasValidDevice ? (json["batteryLevel"] as? Int ?? 0) : 0,
+        isCharging: hasValidDevice ? (json["isCharging"] as? Bool ?? false) : false,
+        alarmEnabled: hasValidDevice ? (json["alarmEnabled"] as? Bool ?? false) : false,
+        vibrationEnabled: hasValidDevice ? (json["vibrationEnabled"] as? Bool ?? false) : false,
+        co2History: hasValidDevice ? co2HistoryArray : [],
+        greenUpperLimit: json["greenUpperLimit"] as? Int ?? 800,
+        yellowUpperLimit: json["yellowUpperLimit"] as? Int ?? 1000,
+        isConnected: isConnected,
+        isRefreshing: hasValidDevice ? (json["isRefreshing"] as? Bool ?? false) : false,
+        greenZonePercentage: hasValidDevice ? (json["greenZonePercentage"] as? Int ?? 0) : 0,
+        yellowZonePercentage: hasValidDevice ? (json["yellowZonePercentage"] as? Int ?? 0) : 0,
+        redZonePercentage: hasValidDevice ? (json["redZonePercentage"] as? Int ?? 0) : 0,
+        dominantZone: hasValidDevice ? (json["dominantZone"] as? String ?? "none") : "none",
+        dominantZonePercentage: hasValidDevice ? (json["dominantZonePercentage"] as? Int ?? 0) : 0
+    )
+}
+
+// MARK: - Intent-based Provider (iOS 16+)
+@available(iOS 16.0, *)
+struct Co2WidgetIntentProvider: AppIntentTimelineProvider {
+    func placeholder(in context: Context) -> Co2WidgetEntry {
+        Co2WidgetEntry(
             date: Date(),
-            deviceId: deviceId,
-            deviceName: hasValidDevice ? (json["deviceName"] as? String ?? "AirSpot Device") : "",
-            co2Value: hasValidDevice ? (json["co2Value"] as? Int ?? 0) : 0,
-            powerMode: hasValidDevice ? (json["powerMode"] as? String ?? "Now") : "",
-            batteryLevel: hasValidDevice ? (json["batteryLevel"] as? Int ?? 0) : 0,
-            isCharging: hasValidDevice ? (json["isCharging"] as? Bool ?? false) : false,
-            alarmEnabled: hasValidDevice ? (json["alarmEnabled"] as? Bool ?? false) : false,
-            vibrationEnabled: hasValidDevice ? (json["vibrationEnabled"] as? Bool ?? false) : false,
-            co2History: hasValidDevice ? co2HistoryArray : [],
-            greenUpperLimit: json["greenUpperLimit"] as? Int ?? 800,
-            yellowUpperLimit: json["yellowUpperLimit"] as? Int ?? 1000,
-            isConnected: isConnected,
-            isRefreshing: hasValidDevice ? (json["isRefreshing"] as? Bool ?? false) : false,
-            greenZonePercentage: hasValidDevice ? (json["greenZonePercentage"] as? Int ?? 0) : 0,
-            yellowZonePercentage: hasValidDevice ? (json["yellowZonePercentage"] as? Int ?? 0) : 0,
-            redZonePercentage: hasValidDevice ? (json["redZonePercentage"] as? Int ?? 0) : 0,
-            dominantZone: hasValidDevice ? (json["dominantZone"] as? String ?? "none") : "none",
-            dominantZonePercentage: hasValidDevice ? (json["dominantZonePercentage"] as? Int ?? 0) : 0
+            deviceId: "",
+            deviceName: "",
+            co2Value: 0,
+            powerMode: "",
+            batteryLevel: 0,
+            isCharging: false,
+            alarmEnabled: false,
+            vibrationEnabled: false,
+            co2History: [],
+            greenUpperLimit: 800,
+            yellowUpperLimit: 1000,
+            isConnected: false,
+            isRefreshing: false,
+            greenZonePercentage: 0,
+            yellowZonePercentage: 0,
+            redZonePercentage: 0,
+            dominantZone: "none",
+            dominantZonePercentage: 0
         )
+    }
+
+    func snapshot(for configuration: DeviceConfigurationIntent, in context: Context) async -> Co2WidgetEntry {
+        let deviceId = configuration.selectedDevice?.id
+        let deviceName = configuration.selectedDevice?.displayName ?? "None"
+        print("🔍 Widget Snapshot: deviceId=\(deviceId ?? "nil"), deviceName=\(deviceName)")
+        
+        let entry = getWidgetData(for: deviceId) ?? placeholder(in: context)
+        print("📊 Widget Snapshot: Returning entry for device '\(entry.deviceName)' with CO2: \(entry.co2Value)")
+        return entry
+    }
+    
+    func timeline(for configuration: DeviceConfigurationIntent, in context: Context) async -> Timeline<Co2WidgetEntry> {
+        let currentDate = Date()
+        let deviceId = configuration.selectedDevice?.id
+        let deviceName = configuration.selectedDevice?.displayName ?? "None"
+        
+        print("⏰ Widget Timeline: deviceId=\(deviceId ?? "nil"), deviceName=\(deviceName)")
+        
+        let entry = getWidgetData(for: deviceId) ?? placeholder(in: context)
+        print("📊 Widget Timeline: Returning entry for device '\(entry.deviceName)' with CO2: \(entry.co2Value)")
+        
+        // Update every 5 minutes
+        let nextUpdate = Calendar.current.date(byAdding: .minute, value: 5, to: currentDate)!
+        return Timeline(entries: [entry], policy: .after(nextUpdate))
     }
 }
 
@@ -227,10 +358,12 @@ struct WidgetContentView: View {
                             .lineLimit(1)
                     }
                     // Update interval note
-                    Text("Updates every 15 min")
+                    Text("Widget updates\nevery 15 min")
                         .font(.system(size: fontSize - 2, weight: .regular))
-                        .foregroundColor(.white.opacity(0.5))
-                        .lineLimit(1)
+                        .foregroundColor(.white)
+                        .minimumScaleFactor(0.8)
+                        .lineLimit(2)
+                        .multilineTextAlignment(.center)
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
                 
@@ -368,17 +501,18 @@ struct SmallWidgetView: View {
                 if !entry.deviceName.isEmpty {
                     Text(entry.deviceName)
                         .font(.system(size: 10, weight: .medium))
-                        .foregroundColor(.white.opacity(0.7))
+                        .foregroundColor(.white)
                         .multilineTextAlignment(.center)
                         .lineLimit(1)
                 }
                 
                 // Update interval note at bottom
-                Text("Updates every 15 min")
+                Text("Widget updates\nevery 15 min")
                     .font(.system(size: 9, weight: .regular))
-                    .foregroundColor(.white.opacity(0.5))
+                    .foregroundColor(.white)
                     .multilineTextAlignment(.center)
-                    .lineLimit(1)
+                    .lineLimit(2)
+                    .minimumScaleFactor(0.8)
                 
                 Spacer()
             }
@@ -389,7 +523,7 @@ struct SmallWidgetView: View {
             RoundedRectangle(cornerRadius: 16)
                 .fill(Color.black.opacity(0.8))
         )
-        .widgetURL(URL(string: "airspothealth://devices"))
+        .widgetURL(URL(string: "airspothealth://devices?from=widget"))
     }
 }
 
@@ -449,7 +583,7 @@ struct MediumWidgetView: View {
             RoundedRectangle(cornerRadius: 16)
                 .fill(Color.black.opacity(0.8))
         )
-        .widgetURL(URL(string: "airspothealth://devices"))
+        .widgetURL(URL(string: "airspothealth://devices?from=widget"))
     }
 }
 
@@ -536,7 +670,7 @@ struct LargeWidgetView: View {
             RoundedRectangle(cornerRadius: 16)
                 .fill(Color.black.opacity(0.8))
         )
-        .widgetURL(URL(string: "airspothealth://devices"))
+        .widgetURL(URL(string: "airspothealth://devices?from=widget"))
     }
 }
 
@@ -564,21 +698,39 @@ struct Co2Widget: Widget {
     let kind: String = "Co2Widget"
 
     var body: some WidgetConfiguration {
-        StaticConfiguration(kind: kind, provider: Co2WidgetProvider()) { entry in
-            if #available(iOS 17.0, *) {
-                Co2WidgetEntryView(entry: entry)
-                    .containerBackground(Color.black, for: .widget)
-                    .padding(.all, 12)
-            } else {
+        if #available(iOS 16.0, *) {
+            // iOS 16+ with device configuration support
+            return AppIntentConfiguration(
+                kind: kind,
+                intent: DeviceConfigurationIntent.self,
+                provider: Co2WidgetIntentProvider()
+            ) { entry in
+                if #available(iOS 17.0, *) {
+                    Co2WidgetEntryView(entry: entry)
+                        .containerBackground(Color.black, for: .widget)
+                        .padding(.all, 12)
+                } else {
+                    Co2WidgetEntryView(entry: entry)
+                        .padding(.all, 12)
+                        .background(Color.black)
+                }
+            }
+            .configurationDisplayName("AirSpot CO₂ Monitor")
+            .description("Monitor your CO₂ levels and device status. Configure to select a specific device.")
+            .supportedFamilies([.systemSmall, .systemMedium, .systemLarge])
+            .contentMarginsDisabled()
+        } else {
+            // iOS 15 fallback without configuration
+            return StaticConfiguration(kind: kind, provider: Co2WidgetProvider()) { entry in
                 Co2WidgetEntryView(entry: entry)
                     .padding(.all, 12)
                     .background(Color.black)
             }
+            .configurationDisplayName("AirSpot CO₂ Monitor")
+            .description("Monitor your CO₂ levels and device status")
+            .supportedFamilies([.systemSmall, .systemMedium, .systemLarge])
+            .contentMarginsDisabled()
         }
-        .configurationDisplayName("AirSpot CO₂ Monitor")
-        .description("Monitor your CO₂ levels and device status")
-        .supportedFamilies([.systemSmall, .systemMedium, .systemLarge])
-        .contentMarginsDisabled()
     }
 }
 

@@ -20,6 +20,7 @@ class LiveActivityModel {
   final int redZonePercentage;
   final String dominantZone;
   final int dominantZonePercentage;
+  final DateTime lastUpdated; // Device-specific last update timestamp
 
   LiveActivityModel({
     required this.deviceId,
@@ -43,7 +44,8 @@ class LiveActivityModel {
     required this.redZonePercentage,
     required this.dominantZone,
     required this.dominantZonePercentage,
-  });
+    DateTime? lastUpdated,
+  }) : lastUpdated = lastUpdated ?? DateTime.now();
 
   Map<String, dynamic> toJson() {
     return {
@@ -68,6 +70,7 @@ class LiveActivityModel {
       'redZonePercentage': redZonePercentage,
       'dominantZone': dominantZone,
       'dominantZonePercentage': dominantZonePercentage,
+      'lastUpdated': lastUpdated.millisecondsSinceEpoch,
     };
   }
 
@@ -93,6 +96,7 @@ class LiveActivityModel {
     int? redZonePercentage,
     String? dominantZone,
     int? dominantZonePercentage,
+    DateTime? lastUpdated,
   }) {
     return LiveActivityModel(
       deviceId: deviceId ?? this.deviceId,
@@ -117,6 +121,7 @@ class LiveActivityModel {
       dominantZone: dominantZone ?? this.dominantZone,
       dominantZonePercentage:
           dominantZonePercentage ?? this.dominantZonePercentage,
+      lastUpdated: lastUpdated ?? this.lastUpdated,
     );
   }
 }

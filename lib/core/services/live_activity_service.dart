@@ -1,14 +1,11 @@
-import 'dart:convert';
 import 'dart:io';
 
 import 'package:airspothealth/core/models/device_settings.dart';
 import 'package:airspothealth/core/models/live_activity_model.dart';
 import 'package:airspothealth/core/services/isar_service.dart';
-import 'package:airspothealth/core/services/zone_analysis_service.dart';
 import 'package:airspothealth/core/utils/constants.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
-import 'package:home_widget/home_widget.dart';
 import 'package:isar/isar.dart';
 
 /// Enum for different types of device callbacks
@@ -97,8 +94,10 @@ class LiveActivityService {
   final Set<String> _activeDeviceIds = <String>{};
   static const int maxActiveDevices = 3;
 
-  // Store the last Live Activity data for each device
-  final Map<String, LiveActivityModel> _lastLiveActivityData = {};
+  // Store the most recent Live Activity data for each active device
+  // This is ONLY for Live Activities (ephemeral, tied to notification lifecycle)
+  // Widgets use their own persistent storage via WidgetService
+  final Map<String, LiveActivityModel> _activeLiveActivities = {};
 
   // Track activity start times for each device
   final Map<String, DateTime> _activityStartTimes = {};
@@ -155,7 +154,7 @@ class LiveActivityService {
           refreshCallback.call();
 
           // Update the specific device's Live Activity with refreshing state
-          final deviceData = _lastLiveActivityData[deviceId];
+          final deviceData = _activeLiveActivities[deviceId];
           if (deviceData != null) {
             _updateDeviceLiveActivity(
               deviceId: deviceId,
@@ -184,11 +183,12 @@ class LiveActivityService {
         debugPrint('✅ Calling dismissal callback for device: $deviceId');
         dismissalCallback.call(deviceId);
 
-        // Remove from active devices and clear data
+        // Remove from active devices but keep data for widgets
         _activeDeviceIds.remove(deviceId);
-        _lastLiveActivityData.remove(deviceId);
+        // NOTE: We keep _activeLiveActivities for widgets to continue showing data
         _activityStartTimes.remove(deviceId);
-        debugPrint('🗑️ Removed device from active devices: $deviceId');
+        debugPrint(
+            '🗑️ Removed device from active devices: $deviceId (widget data retained)');
         return;
       } else {
         debugPrint('⚠️ No dismissal callback registered for device: $deviceId');
@@ -207,11 +207,11 @@ class LiveActivityService {
             dismissalCallback.call(activeDeviceId);
           }
         }
-        _lastLiveActivityData.remove(activeDeviceId);
+        // NOTE: We keep _activeLiveActivities for widgets to continue showing data
         _activityStartTimes.remove(activeDeviceId);
       }
       _activeDeviceIds.clear();
-      debugPrint('🗑️ Cleared all active devices');
+      debugPrint('🗑️ Cleared all active devices (widget data retained)');
     } else {
       debugPrint('⚠️ Target device not found in callbacks: $deviceId');
     }
@@ -220,11 +220,11 @@ class LiveActivityService {
   void _handleRestartRequest(String deviceId) {
     debugPrint('🔄 Restart requested for device: $deviceId');
 
-    if (_lastLiveActivityData.containsKey(deviceId)) {
+    if (_activeLiveActivities.containsKey(deviceId)) {
       // Reset start time for the device
       _activityStartTimes[deviceId] = DateTime.now();
 
-      final lastData = _lastLiveActivityData[deviceId]!;
+      final lastData = _activeLiveActivities[deviceId]!;
       final restartedData = lastData.copyWith(
         activityStartTime: _activityStartTimes[deviceId],
       );
@@ -335,9 +335,10 @@ class LiveActivityService {
       _deviceCallbacks.remove(deviceId);
 
       _activeDeviceIds.remove(deviceId);
-      _lastLiveActivityData.remove(deviceId);
+      // NOTE: We keep _activeLiveActivities for widgets to continue showing data
     }
-    debugPrint('All Live Activity callbacks cleared for device: $deviceId');
+    debugPrint(
+        'All Live Activity callbacks cleared for device: $deviceId (widget data retained)');
   }
 
   // MARK: - Convenience and Debugging Methods
@@ -379,18 +380,18 @@ class LiveActivityService {
 
   // Clear stored Live Activity data for a specific device
   void clearDeviceData(String deviceId) {
-    _lastLiveActivityData.remove(deviceId);
+    _activeLiveActivities.remove(deviceId);
     debugPrint('Live Activity data cleared for device: $deviceId');
   }
 
   // Get the last known Live Activity data for a device (useful for debugging)
   LiveActivityModel? getLastDeviceData(String deviceId) {
-    return _lastLiveActivityData[deviceId];
+    return _activeLiveActivities[deviceId];
   }
 
   // Check if we have stored data for a device
   bool hasDataForDevice(String deviceId) {
-    return _lastLiveActivityData.containsKey(deviceId);
+    return _activeLiveActivities.containsKey(deviceId);
   }
 
   // Legacy method for backward compatibility
@@ -447,7 +448,7 @@ class LiveActivityService {
           'Live Activity update requested for device: $deviceId with connection: ${data.isConnected}');
 
       // Store the data
-      _lastLiveActivityData[deviceId] = data;
+      _activeLiveActivities[deviceId] = data;
 
       // Check if we can add this device (max 3 devices)
       if (_activeDeviceIds.length >= maxActiveDevices &&
@@ -476,10 +477,8 @@ class LiveActivityService {
       // Check if live activity is about to expire and auto-disable if needed
       _checkAndHandleExpiry(deviceId, updatedData);
 
-      // Update home widgets (both Android and iOS)
-      _updateHomeWidgets(updatedData).ignore();
-
       // Update the specific device's Live Activity
+      // NOTE: Widgets are updated separately via WidgetService
       if (Platform.isAndroid) {
         if (isNewDevice) {
           // Add new notification
@@ -534,7 +533,7 @@ class LiveActivityService {
       debugPrint(
           'Live Activity update requested (legacy single device) with connection: ${data.isConnected}');
 
-      _updateHomeWidgets(data).ignore();
+      // NOTE: Widgets are updated separately via WidgetService
 
       await platform.invokeMethod(
         'updateLiveActivity',
@@ -546,39 +545,6 @@ class LiveActivityService {
       debugPrint("Failed to update live activity: '${e.message}'.");
     } catch (e) {
       debugPrint("Unexpected error updating live activity: $e");
-    }
-  }
-
-  Future<void> _updateHomeWidgets(LiveActivityModel data) async {
-    // Update both Android and iOS Home Widgets via home_widget plugin
-    final widgetData = data.toJson();
-    final jsonString = jsonEncode(widgetData);
-
-    debugPrint('🏠 Widget: Saving data with CO2 value: ${data.co2Value}');
-    debugPrint(
-        '🏠 Widget: JSON data: ${jsonString.substring(0, jsonString.length > 200 ? 200 : jsonString.length)}...');
-
-    try {
-      // Store data for widgets
-      await HomeWidget.saveWidgetData<String>('widget_data_json', jsonString);
-      debugPrint('✅ Widget: Data saved successfully');
-
-      // Platform-specific widget updates
-      if (Platform.isIOS) {
-        // iOS only has one widget type
-        await HomeWidget.updateWidget(iOSName: Constants.iOSWidgetName);
-      } else if (Platform.isAndroid) {
-        // Android has multiple widget sizes - update all of them
-        await Future.wait([
-          HomeWidget.updateWidget(androidName: Constants.androidWidgetCo2Small),
-          HomeWidget.updateWidget(
-              androidName: Constants.androidWidgetCo2Medium),
-          HomeWidget.updateWidget(androidName: Constants.androidWidgetCo2Large),
-        ]);
-      }
-      debugPrint('✅ Widget: Widget update triggered');
-    } catch (e) {
-      debugPrint('❌ Widget: Error updating widgets: $e');
     }
   }
 
@@ -595,7 +561,7 @@ class LiveActivityService {
       }
 
       _activeDeviceIds.clear(); // Clear all active devices when ending
-      _lastLiveActivityData.clear(); // Clear all stored data when ending
+      _activeLiveActivities.clear(); // Clear all stored data when ending
     } on PlatformException catch (e) {
       debugPrint("Failed to end live activity: '${e.message}'.");
     }
@@ -614,8 +580,11 @@ class LiveActivityService {
       }
 
       _activeDeviceIds.remove(deviceId);
-      _lastLiveActivityData.remove(deviceId);
-      debugPrint('Live Activity removed successfully for device: $deviceId');
+      // NOTE: We intentionally DO NOT remove from _activeLiveActivities here
+      // because widgets need this data even when Live Activity is disabled.
+      // The data will persist for widgets but the Live Activity notification is removed.
+      debugPrint(
+          'Live Activity removed successfully for device: $deviceId (widget data retained)');
     } on PlatformException catch (e) {
       debugPrint(
           "Failed to remove live activity for device $deviceId: '${e.message}'.");
@@ -643,17 +612,8 @@ class LiveActivityService {
       final bool alarmEnabled = deviceSettings?.alarmEnabled ?? false;
       final bool vibrationEnabled = deviceSettings?.vibrationEnabled ?? false;
 
-      // Calculate zone percentages for today
-      final zoneAnalysisService = ZoneAnalysisService();
-      final zoneResult = await zoneAnalysisService.calculateZonePercentages(
-        deviceId: deviceId,
-        greenUpperLimit: deviceSettings?.thresholds.greenUpperLimit ??
-            Constants.defaultGreenUpperLimit,
-        yellowUpperLimit: deviceSettings?.thresholds.yellowUpperLimit ??
-            Constants.defaultYellowUpperLimit,
-      );
-
       // Create unified data model with display CO2 value (minimum 400 for user-facing components)
+      // NOTE: Zone percentages are NOT calculated here - they're only needed for widgets
       final actualCO2Value = int.parse(co2Value);
       final displayCO2Value = actualCO2Value < 400 ? 400 : actualCO2Value;
       final displayCO2History =
@@ -677,39 +637,41 @@ class LiveActivityService {
         graphMaxValue: deviceSettings?.graphMaxValue ?? 1600,
         graphMinValue: deviceSettings?.graphMinValue ?? 0,
         isRefreshing: false,
-        greenZonePercentage: zoneResult.greenZonePercentage,
-        yellowZonePercentage: zoneResult.yellowZonePercentage,
-        redZonePercentage: zoneResult.redZonePercentage,
-        dominantZone: zoneResult.dominantZone,
-        dominantZonePercentage: zoneResult.dominantZonePercentage,
+        // Zone percentages not needed for Live Activities (only for widgets)
+        greenZonePercentage: 0,
+        yellowZonePercentage: 0,
+        redZonePercentage: 0,
+        dominantZone: 'none',
+        dominantZonePercentage: 0,
       );
 
       // Store the data for potential disconnection updates
-      _lastLiveActivityData[deviceId] = liveActivityData;
+      _activeLiveActivities[deviceId] = liveActivityData;
 
-      // Always update home widgets (Android and iOS), independent of Live Activity toggle
-      await _updateHomeWidgets(liveActivityData);
+      // NOTE: Widgets are updated separately via WidgetService (called by BLE provider)
 
       // Handle Live Activity based on toggle
       if (deviceSettings?.showLiveActivity == true) {
         await updateLiveActivity(deviceId: deviceId, data: liveActivityData);
+        // NOTE: On iOS, only ONE Live Activity can be active at a time.
+        // If multiple devices have Live Activity enabled, the most recently
+        // updated device will be shown. This is an iOS platform limitation.
       } else {
-        // If Live Activity is disabled, remove the device notification
-        await removeDeviceLiveActivity(deviceId);
+        // If Live Activity is disabled, handle platform-specifically
+        if (Platform.isAndroid) {
+          // Android: Can remove specific device notification without affecting others
+          await removeDeviceLiveActivity(deviceId);
+        } else if (Platform.isIOS) {
+          // iOS: Skip removal to preserve other active devices
+          // iOS only supports 1 Live Activity per app, so calling removeDeviceLiveActivity
+          // would end ALL Live Activities, affecting other devices that have it enabled.
+          _activeDeviceIds.remove(deviceId);
+          debugPrint(
+              'iOS: Skipped Live Activity removal for $deviceId to preserve other active devices');
+        }
       }
     } catch (e) {
       debugPrint('LiveActivity: Error processing CO2 data update: $e');
-
-      // Fallback for Android home widget
-      if (Platform.isAndroid) {
-        await HomeWidget.saveWidgetData(Constants.homeWidgetKey, '----');
-        await Future.wait([
-          HomeWidget.updateWidget(androidName: Constants.androidWidgetCo2Small),
-          HomeWidget.updateWidget(
-              androidName: Constants.androidWidgetCo2Medium),
-          HomeWidget.updateWidget(androidName: Constants.androidWidgetCo2Large),
-        ]);
-      }
     }
   }
 
@@ -723,7 +685,7 @@ class LiveActivityService {
           'LiveActivity: Updating disconnected state for device: $deviceId');
 
       // Get the last known Live Activity data for this device
-      final lastData = _lastLiveActivityData[deviceId];
+      final lastData = _activeLiveActivities[deviceId];
       if (lastData == null) {
         debugPrint(
             'LiveActivity: No previous data found for device $deviceId, cannot update disconnected state');
@@ -755,11 +717,10 @@ class LiveActivityService {
             'updateLiveActivity', disconnectedData.toJson());
       }
 
-      // Update home widgets as well (both Android and iOS)
-      await _updateHomeWidgets(disconnectedData);
+      // NOTE: Widgets are updated separately via WidgetService (called by BLE provider)
 
       // Store the disconnected state as the latest data
-      _lastLiveActivityData[deviceId] = disconnectedData;
+      _activeLiveActivities[deviceId] = disconnectedData;
 
       debugPrint(
           'LiveActivity: Successfully updated with disconnected state for device: $deviceId');
@@ -800,7 +761,7 @@ class LiveActivityService {
 
       // Restart Live Activities for all active devices
       for (final deviceId in _activeDeviceIds) {
-        final lastData = _lastLiveActivityData[deviceId];
+        final lastData = _activeLiveActivities[deviceId];
         if (lastData != null) {
           debugPrint(
               'LiveActivity: Restarting with last known data for device: $deviceId');
@@ -822,7 +783,7 @@ class LiveActivityService {
 
         // Restart Live Activities for all active devices
         for (final deviceId in _activeDeviceIds) {
-          final lastData = _lastLiveActivityData[deviceId];
+          final lastData = _activeLiveActivities[deviceId];
           if (lastData != null && lastData.isConnected) {
             await updateLiveActivity(data: lastData, deviceId: deviceId);
           }
