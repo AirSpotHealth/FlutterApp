@@ -280,12 +280,21 @@ class _BleDeviceCommunicationNotifier extends FamilyNotifier<dynamic, String> {
       try {
         final notificationPrefs =
             ref.read(notificationPreferencesProvider(deviceId));
-        await Co2MonitoringService.checkAndNotify(
+        final updatedPrefs = await Co2MonitoringService.checkAndNotify(
           deviceId: deviceId,
           deviceName: deviceName,
           co2Value: co2Data.value,
           preferences: notificationPrefs,
         );
+
+        // Update preferences if they were modified (e.g., triggered thresholds changed)
+        if (updatedPrefs != null) {
+          debugPrint(
+              'BLE Provider - Updating preferences with triggered thresholds: ${updatedPrefs.triggeredThresholds}');
+          ref
+              .read(notificationPreferencesProvider(deviceId).notifier)
+              .updatePreferences((_) => updatedPrefs);
+        }
 
         // Update last notification time if needed
         if (notificationPrefs.smartphoneNotificationsEnabled) {

@@ -29,6 +29,9 @@ class NotificationPreferences {
   /// Last notification time (to implement time-based cooldown)
   final DateTime? lastNotificationTime;
 
+  /// List of threshold IDs that have been triggered (for once-per-crossing mode)
+  final List<int> triggeredThresholds;
+
   const NotificationPreferences({
     required this.deviceId,
     this.smartphoneNotificationsEnabled = false,
@@ -38,6 +41,7 @@ class NotificationPreferences {
     this.cooldownMode = 'once',
     this.cooldownMinutes = 5,
     this.lastNotificationTime,
+    this.triggeredThresholds = const [],
   });
 
   NotificationPreferences.empty({required this.deviceId})
@@ -47,7 +51,8 @@ class NotificationPreferences {
         showInForeground = true,
         cooldownMode = 'once',
         cooldownMinutes = 5,
-        lastNotificationTime = null;
+        lastNotificationTime = null,
+        triggeredThresholds = const [];
 
   NotificationPreferences copyWith({
     String? deviceId,
@@ -58,6 +63,7 @@ class NotificationPreferences {
     String? cooldownMode,
     int? cooldownMinutes,
     DateTime? lastNotificationTime,
+    List<int>? triggeredThresholds,
   }) {
     return NotificationPreferences(
       deviceId: deviceId ?? this.deviceId,
@@ -71,6 +77,7 @@ class NotificationPreferences {
       cooldownMode: cooldownMode ?? this.cooldownMode,
       cooldownMinutes: cooldownMinutes ?? this.cooldownMinutes,
       lastNotificationTime: lastNotificationTime ?? this.lastNotificationTime,
+      triggeredThresholds: triggeredThresholds ?? this.triggeredThresholds,
     );
   }
 

@@ -26,7 +26,10 @@ class NotificationPreferencesNotifier
           .findFirst();
     });
 
-    return prefs ?? NotificationPreferences.empty(deviceId: deviceId);
+    final result = prefs ?? NotificationPreferences.empty(deviceId: deviceId);
+    debugPrint(
+        'NotificationPreferencesProvider - Loaded preferences for device $deviceId: triggered thresholds = ${result.triggeredThresholds}');
+    return result;
   }
 
   /// Update notification preferences
