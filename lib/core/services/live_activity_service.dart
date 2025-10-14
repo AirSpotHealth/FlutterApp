@@ -173,7 +173,9 @@ class LiveActivityService {
     debugPrint('📋 Registered callbacks: ${_deviceCallbacks.keys.toList()}');
     debugPrint('📊 Total callback devices: ${_deviceCallbacks.length}');
 
-    if (deviceId != null && _deviceCallbacks.containsKey(deviceId)) {
+    if (deviceId != null &&
+        deviceId != 'all' &&
+        _deviceCallbacks.containsKey(deviceId)) {
       // Specific device dismissal
       final dismissalCallback = _deviceCallbacks[deviceId]?.dismissalCallback;
       debugPrint(
@@ -193,8 +195,8 @@ class LiveActivityService {
       } else {
         debugPrint('⚠️ No dismissal callback registered for device: $deviceId');
       }
-    } else if (deviceId == null) {
-      // No specific device - dismiss all active devices
+    } else if (deviceId == null || deviceId == 'all') {
+      // No specific device or "all" - dismiss all active devices
       debugPrint(
           '🔄 Dismissing all active devices (${_activeDeviceIds.length} devices)');
       for (final activeDeviceId in _activeDeviceIds.toList()) {
