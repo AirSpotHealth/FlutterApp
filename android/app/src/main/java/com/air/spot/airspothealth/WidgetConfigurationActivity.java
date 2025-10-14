@@ -41,11 +41,9 @@ public class WidgetConfigurationActivity extends Activity {
     private int appWidgetId = AppWidgetManager.INVALID_APPWIDGET_ID;
     private ListView deviceListView;
     private List<DeviceInfo> availableDevices;
-    private CardView previewCard;
-    private TextView previewDeviceName;
-    private TextView previewCo2Value;
-    private TextView previewStatus;
     private Button confirmButton;
+    private View confirmButtonCard;
+    private View noDevicesContainer;
     private DeviceInfo selectedDevice = null;
     
     private static class DeviceInfo {
@@ -92,11 +90,9 @@ public class WidgetConfigurationActivity extends Activity {
         }
         
         deviceListView = findViewById(R.id.device_list);
-        previewCard = findViewById(R.id.preview_card);
-        previewDeviceName = findViewById(R.id.preview_device_name);
-        previewCo2Value = findViewById(R.id.preview_co2_value);
-        previewStatus = findViewById(R.id.preview_status);
         confirmButton = findViewById(R.id.confirm_button);
+        confirmButtonCard = findViewById(R.id.confirm_button_card);
+        noDevicesContainer = findViewById(R.id.no_devices_container);
         
         // Setup confirm button click listener
         confirmButton.setOnClickListener(new View.OnClickListener() {
@@ -188,38 +184,59 @@ public class WidgetConfigurationActivity extends Activity {
     }
     
     private void showNoDevicesMessage() {
-        TextView messageView = findViewById(R.id.no_devices_message);
-        messageView.setVisibility(View.VISIBLE);
+        noDevicesContainer.setVisibility(View.VISIBLE);
         deviceListView.setVisibility(View.GONE);
         
         // Auto-finish after showing message
-        messageView.postDelayed(() -> {
+        noDevicesContainer.postDelayed(() -> {
             Toast.makeText(this, "Please connect a device first", Toast.LENGTH_LONG).show();
             finish();
         }, 2000);
     }
     
     private void showDeviceSelectionList() {
-        TextView messageView = findViewById(R.id.no_devices_message);
-        messageView.setVisibility(View.GONE);
+        noDevicesContainer.setVisibility(View.GONE);
         deviceListView.setVisibility(View.VISIBLE);
         
-        // Create adapter for device list
+        // Create adapter for device list with custom layout
         ArrayAdapter<DeviceInfo> adapter = new ArrayAdapter<DeviceInfo>(
                 this,
-                android.R.layout.simple_list_item_1,
+                R.layout.device_list_item,
                 availableDevices) {
             @Override
             public View getView(int position, View convertView, ViewGroup parent) {
-                View view = super.getView(position, convertView, parent);
-                TextView textView = view.findViewById(android.R.id.text1);
+                if (convertView == null) {
+                    convertView = getLayoutInflater().inflate(R.layout.device_list_item, parent, false);
+                }
+                
                 DeviceInfo device = getItem(position);
                 if (device != null) {
-                    textView.setText(device.toString());
-                    textView.setTextSize(18);
-                    textView.setPadding(32, 32, 32, 32);
+                    TextView deviceNameView = convertView.findViewById(R.id.device_name);
+                    TextView connectionStatusView = convertView.findViewById(R.id.connection_status);
+                    TextView connectionIndicatorView = convertView.findViewById(R.id.connection_indicator);
+                    android.widget.ImageView selectionIndicator = convertView.findViewById(R.id.selection_indicator);
+                    
+                    deviceNameView.setText(device.deviceName);
+                    
+                    // Update connection status
+                    if (device.isConnected) {
+                        connectionStatusView.setText("Connected");
+                        connectionIndicatorView.setText("●");
+                        connectionIndicatorView.setTextColor(Color.parseColor("#10B981"));
+                    } else {
+                        connectionStatusView.setText("Disconnected");
+                        connectionIndicatorView.setText("○");
+                        connectionIndicatorView.setTextColor(Color.parseColor("#9CA3AF"));
+                    }
+                    
+                    // Show selection indicator for selected device
+                    if (device.equals(selectedDevice)) {
+                        selectionIndicator.setVisibility(View.VISIBLE);
+                    } else {
+                        selectionIndicator.setVisibility(View.GONE);
+                    }
                 }
-                return view;
+                return convertView;
             }
         };
         
@@ -229,61 +246,11 @@ public class WidgetConfigurationActivity extends Activity {
             public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
                 selectedDevice = availableDevices.get(position);
                 Log.d(TAG, "Device tapped: " + selectedDevice.deviceName + " (" + selectedDevice.deviceId + ")");
-                showPreview(selectedDevice);
+                adapter.notifyDataSetChanged(); // Refresh list to show selection
+                
+                confirmButton.setEnabled(true);
             }
         });
-    }
-    
-    private void showPreview(DeviceInfo device) {
-        try {
-            // Load device data from multi-device payload
-            String allDevicesJson = HomeWidgetPlugin.Companion.getData(this)
-                    .getString("widget_devices_data", "{}");
-            JSONObject allDevices = new JSONObject(allDevicesJson);
-            
-            if (allDevices.has(device.deviceId)) {
-                JSONObject deviceData = allDevices.getJSONObject(device.deviceId);
-                
-                // Extract data
-                int co2Value = deviceData.optInt("co2Value", 0);
-                boolean isConnected = deviceData.optBoolean("isConnected", false);
-                
-                // Update preview UI
-                previewDeviceName.setText(device.deviceName);
-                
-                if (co2Value > 0) {
-                    previewCo2Value.setText(co2Value + " ppm");
-                    
-                    // Color based on CO2 level
-                    int color;
-                    if (co2Value <= 800) {
-                        color = Color.parseColor("#4CAF50"); // Green
-                    } else if (co2Value <= 1000) {
-                        color = Color.parseColor("#FF9800"); // Orange
-                    } else {
-                        color = Color.parseColor("#F44336"); // Red
-                    }
-                    previewCo2Value.setTextColor(color);
-                    previewStatus.setTextColor(color);
-                } else {
-                    previewCo2Value.setText("----");
-                    previewCo2Value.setTextColor(Color.GRAY);
-                    previewStatus.setTextColor(Color.GRAY);
-                }
-                
-                previewStatus.setText(isConnected ? "●" : "○");
-                
-                // Show preview card and enable confirm button
-                previewCard.setVisibility(View.VISIBLE);
-                confirmButton.setVisibility(View.VISIBLE);
-                confirmButton.setEnabled(true);
-                
-            } else {
-                Log.w(TAG, "Device data not found for preview");
-            }
-        } catch (JSONException e) {
-            Log.e(TAG, "Error loading preview data", e);
-        }
     }
     
     private void configureWidget(String deviceId, String deviceName) {
