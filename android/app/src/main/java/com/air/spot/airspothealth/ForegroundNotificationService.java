@@ -117,6 +117,14 @@ public class ForegroundNotificationService extends Service {
             } else if ("REFRESH_DATA".equals(action)) {
                 Log.d(TAG, "Received REFRESH_DATA action - sending broadcast to Flutter");
                 Intent broadcastIntent = new Intent("com.air.spot.airspothealth.REFRESH_DATA");
+                // Forward deviceId if present (from per-device notifications)
+                String deviceId = intent.getStringExtra("deviceId");
+                if (deviceId != null && !deviceId.isEmpty()) {
+                    broadcastIntent.putExtra("deviceId", deviceId);
+                    Log.d(TAG, "Forwarding refresh for specific device: " + deviceId);
+                } else {
+                    Log.d(TAG, "Refreshing all devices (no specific device ID)");
+                }
                 sendBroadcast(broadcastIntent);
                 return START_STICKY;
             } else if ("ADD_DEVICE_NOTIFICATION".equals(action)) {

@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:airspothealth/core/models/device_settings.dart';
 import 'package:airspothealth/core/models/live_activity_model.dart';
 import 'package:airspothealth/core/services/isar_service.dart';
+import 'package:airspothealth/core/services/widget_service.dart';
 import 'package:airspothealth/core/utils/constants.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
@@ -111,7 +112,10 @@ class LiveActivityService {
       switch (call.method) {
         case 'onRefreshRequested':
           debugPrint('📲 Live Activity refresh requested');
-          _handleRefreshRequest();
+          final String? deviceId = call.arguments != null
+              ? call.arguments['deviceId'] as String?
+              : null;
+          _handleRefreshRequest(deviceId);
           break;
         case 'onLiveActivityDismissed':
           debugPrint('🚫 Live Activity dismissed by user');
@@ -141,25 +145,65 @@ class LiveActivityService {
     });
   }
 
-  void _handleRefreshRequest() {
-    // Refresh all active devices
-    debugPrint(
-        'Refreshing all active Live Activity devices (${_activeDeviceIds.length} devices)');
+  void _handleRefreshRequest(String? deviceId) {
+    if (deviceId != null) {
+      // Refresh specific device (from widget)
+      debugPrint('Refreshing specific device from widget: $deviceId');
 
-    for (final deviceId in _activeDeviceIds) {
       if (_deviceCallbacks.containsKey(deviceId)) {
         final refreshCallback = _deviceCallbacks[deviceId]?.refreshCallback;
         if (refreshCallback != null) {
-          debugPrint('Refreshing Live Activity device: $deviceId');
+          debugPrint('Calling refresh callback for device: $deviceId');
+
+          // Update widget refreshing state FIRST (for immediate UI feedback)
+          WidgetService()
+              .setRefreshingState(deviceId: deviceId, isRefreshing: true);
+
+          // Then call the refresh callback
           refreshCallback.call();
 
-          // Update the specific device's Live Activity with refreshing state
-          final deviceData = _activeLiveActivities[deviceId];
-          if (deviceData != null) {
-            _updateDeviceLiveActivity(
-              deviceId: deviceId,
-              data: deviceData.copyWith(isRefreshing: true),
-            );
+          // Update the specific device's Live Activity with refreshing state if active
+          if (_activeDeviceIds.contains(deviceId)) {
+            final deviceData = _activeLiveActivities[deviceId];
+            if (deviceData != null) {
+              _updateDeviceLiveActivity(
+                deviceId: deviceId,
+                data: deviceData.copyWith(isRefreshing: true),
+              );
+            }
+          }
+        } else {
+          debugPrint('No refresh callback registered for device: $deviceId');
+        }
+      } else {
+        debugPrint('Device not found in callbacks: $deviceId');
+      }
+    } else {
+      // Refresh all devices with callbacks (from notification or legacy)
+      debugPrint(
+          'Refreshing all devices with callbacks (${_deviceCallbacks.length} devices)');
+
+      for (final deviceId in _deviceCallbacks.keys) {
+        final refreshCallback = _deviceCallbacks[deviceId]?.refreshCallback;
+        if (refreshCallback != null) {
+          debugPrint('Refreshing device: $deviceId');
+
+          // Update widget refreshing state FIRST (for immediate UI feedback)
+          WidgetService()
+              .setRefreshingState(deviceId: deviceId, isRefreshing: true);
+
+          // Then call the refresh callback
+          refreshCallback.call();
+
+          // Update the specific device's Live Activity with refreshing state if active
+          if (_activeDeviceIds.contains(deviceId)) {
+            final deviceData = _activeLiveActivities[deviceId];
+            if (deviceData != null) {
+              _updateDeviceLiveActivity(
+                deviceId: deviceId,
+                data: deviceData.copyWith(isRefreshing: true),
+              );
+            }
           }
         }
       }

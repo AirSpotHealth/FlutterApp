@@ -17,8 +17,16 @@ class MainActivity: FlutterActivity() {
     private val refreshReceiver = object : android.content.BroadcastReceiver() {
         override fun onReceive(context: android.content.Context?, intent: android.content.Intent?) {
             Log.d(TAG, "Received REFRESH_DATA broadcast in MainActivity")
+            val deviceId = intent?.getStringExtra("deviceId")
+            val arguments = if (deviceId != null) {
+                Log.d(TAG, "Refresh requested for specific device: $deviceId")
+                mapOf("deviceId" to deviceId)
+            } else {
+                Log.d(TAG, "Refresh requested for all devices")
+                emptyMap<String, Any>()
+            }
             MethodChannel(flutterEngine?.dartExecutor?.binaryMessenger!!, CHANNEL)
-                .invokeMethod("onRefreshRequested", null)
+                .invokeMethod("onRefreshRequested", arguments)
         }
     }
     

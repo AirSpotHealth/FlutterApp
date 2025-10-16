@@ -47,6 +47,41 @@ class WidgetService {
     }
   }
 
+  /// Update the refreshing state for a specific device widget
+  /// This immediately shows/hides the refresh animation on the widget
+  Future<void> setRefreshingState({
+    required String deviceId,
+    required bool isRefreshing,
+  }) async {
+    try {
+      // Get existing widget data for this device
+      if (!_widgetData.containsKey(deviceId)) {
+        debugPrint(
+            '📱 Widget: No data found for device $deviceId, cannot update refreshing state');
+        return;
+      }
+
+      final currentData = _widgetData[deviceId]!;
+
+      // Update only the refreshing state
+      final updatedData = currentData.copyWith(isRefreshing: isRefreshing);
+      _widgetData[deviceId] = updatedData;
+
+      debugPrint(
+          '📱 Widget: Setting refreshing state to $isRefreshing for device: $deviceId');
+
+      // Persist to shared storage
+      await _persistWidgetData();
+
+      // Trigger widget refresh to show the animation
+      await _triggerWidgetRefresh();
+
+      debugPrint('✅ Widget: Refreshing state updated successfully');
+    } catch (e) {
+      debugPrint('❌ Widget: Error updating refreshing state: $e');
+    }
+  }
+
   /// Remove widget data for a specific device
   /// This immediately updates all widgets to reflect the device removal
   Future<void> removeWidgetData(String deviceId) async {

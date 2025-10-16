@@ -416,15 +416,22 @@ public class Co2LargeWidget extends AppWidgetProvider {
     public void onReceive(Context context, Intent intent) {
         super.onReceive(context, intent);
         if ("com.air.spot.airspothealth.REFRESH_DATA".equals(intent.getAction())) {
-            // Send the broadcast to MainActivity (which will forward to Flutter)
-            sendRefreshBroadcast(context);
+            // Extract deviceId from the original intent and forward it
+            String deviceId = intent.getStringExtra("deviceId");
+            Log.d(TAG, "Widget received REFRESH_DATA with deviceId: " + deviceId);
+            sendRefreshBroadcast(context, deviceId);
         }
     }
 
     // Add a static method to send the REFRESH_DATA broadcast
-    public static void sendRefreshBroadcast(Context context) {
+    public static void sendRefreshBroadcast(Context context, String deviceId) {
         Intent broadcastIntent = new Intent("com.air.spot.airspothealth.REFRESH_DATA");
+        if (deviceId != null && !deviceId.isEmpty()) {
+            broadcastIntent.putExtra("deviceId", deviceId);
+            Log.d(TAG, "Sent REFRESH_DATA broadcast from Co2LargeWidget for device: " + deviceId);
+        } else {
+            Log.d(TAG, "Sent REFRESH_DATA broadcast from Co2LargeWidget (no device specified)");
+        }
         context.sendBroadcast(broadcastIntent);
-        Log.d(TAG, "Sent REFRESH_DATA broadcast from Co2LargeWidget");
     }
 }
