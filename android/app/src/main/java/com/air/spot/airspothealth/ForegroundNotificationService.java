@@ -526,7 +526,7 @@ public class ForegroundNotificationService extends Service {
         PendingIntent openAppPendingIntent = PendingIntent.getActivity(this, 0, openAppIntent, PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
 
         // Create a simple fallback notification
-        NotificationCompat.Builder builder = new NotificationCompat.Builder(this, CHANNEL_ID).setSmallIcon(R.drawable.ic_launcher_foreground).setContentTitle("AirSpot CO2 Monitor").setContentText("CO2 monitoring active").setOngoing(true).setPriority(NotificationCompat.PRIORITY_MAX).setVisibility(NotificationCompat.VISIBILITY_PUBLIC).setCategory(NotificationCompat.CATEGORY_SERVICE).setContentIntent(openAppPendingIntent).setAutoCancel(false).setShowWhen(false).setOnlyAlertOnce(true).setLocalOnly(false).setDefaults(0);
+        NotificationCompat.Builder builder = new NotificationCompat.Builder(this, CHANNEL_ID).setSmallIcon(R.drawable.ic_launcher_foreground).setContentTitle("AirSpot CO2 Monitor").setContentText("CO2 monitoring active").setOngoing(true).setPriority(NotificationCompat.PRIORITY_MAX).setVisibility(NotificationCompat.VISIBILITY_PUBLIC).setCategory(NotificationCompat.CATEGORY_SERVICE).setContentIntent(openAppPendingIntent).setAutoCancel(false).setShowWhen(true).setOnlyAlertOnce(true).setLocalOnly(false).setDefaults(0);
 
         return builder.build();
     }
@@ -550,7 +550,7 @@ public class ForegroundNotificationService extends Service {
                 .setCategory(NotificationCompat.CATEGORY_SERVICE)
                 .setContentIntent(openAppPendingIntent)
                 .setAutoCancel(false)
-                .setShowWhen(false)
+                .setShowWhen(true)
                 .setOnlyAlertOnce(true)
                 .setLocalOnly(false)
                 .setDefaults(0);
@@ -624,7 +624,7 @@ public class ForegroundNotificationService extends Service {
                     .setCategory(NotificationCompat.CATEGORY_SERVICE)
                     .setContentIntent(openAppPendingIntent)
                     .setAutoCancel(false)
-                    .setShowWhen(false)
+                    .setShowWhen(true)
                     .setOnlyAlertOnce(true)
                     .setLocalOnly(false)
                     .setDefaults(0)

@@ -102,7 +102,7 @@
                         android:layout_width="10dp"
                         android:layout_height="10dp"
                         android:src="@drawable/ic_power_mode"
-                        android:tint="?android:colorPrimary"
+                        android:tint="@color/primary"
                         tools:tint="@color/light_blue_900" />
 
                     <TextView
