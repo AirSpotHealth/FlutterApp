@@ -2,6 +2,8 @@ import 'package:airspothealth/core/models/notification_preferences.dart';
 import 'package:airspothealth/core/providers/notification_preferences_provider.dart';
 import 'package:airspothealth/core/utils/extensions.dart';
 import 'package:airspothealth/core/widgets/custom_bottom_picker.dart';
+import 'package:airspothealth/features/notification_settings/widgets/ppm_threshold_picker.dart';
+import 'package:airspothealth/features/notification_settings/widgets/threshold_message_editor.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -424,49 +426,115 @@ class NotificationSettingsPage extends ConsumerWidget {
     NotificationThreshold threshold,
     int index,
   ) {
-    final messageController =
-        TextEditingController(text: threshold.message ?? '');
-
-    showDialog(
+    showModalBottomSheet(
       context: context,
-      builder: (context) => AlertDialog(
-        title: Text('Edit ${threshold.co2Threshold} ppm Alert'),
-        content: Column(
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) => Container(
+        decoration: const BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.only(
+            topLeft: Radius.circular(20),
+            topRight: Radius.circular(20),
+          ),
+        ),
+        padding: EdgeInsets.only(
+          bottom: MediaQuery.of(context).viewInsets.bottom,
+        ),
+        child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            TextField(
-              controller: messageController,
-              decoration: const InputDecoration(
-                labelText: 'Custom Message',
-                hintText: 'e.g., High CO₂ detected!',
-                border: OutlineInputBorder(),
+            // Handle
+            Padding(
+              padding: const EdgeInsets.only(top: 12.0),
+              child: Container(
+                width: 40,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: Colors.grey[300],
+                  borderRadius: BorderRadius.circular(2),
+                ),
               ),
-              maxLength: 100,
             ),
+            // Title
+            Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: Text(
+                'Edit Alert Threshold',
+                style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                      fontWeight: FontWeight.bold,
+                    ),
+              ),
+            ),
+            // PPM Threshold Option
+            ListTile(
+              leading: const Icon(Icons.speed),
+              title: const Text('PPM Threshold'),
+              subtitle: Text('${threshold.co2Threshold} ppm'),
+              trailing: const Icon(Icons.chevron_right),
+              onTap: () {
+                Navigator.pop(context);
+                _showPpmPicker(context, ref, preferences, threshold, index);
+              },
+            ),
+            const Divider(height: 1),
+            // Custom Message Option
+            ListTile(
+              leading: const Icon(Icons.message),
+              title: const Text('Custom Message'),
+              subtitle: Text(
+                threshold.message?.isEmpty ?? true
+                    ? 'No custom message'
+                    : threshold.message!,
+              ),
+              trailing: const Icon(Icons.chevron_right),
+              onTap: () {
+                Navigator.pop(context);
+                _showMessageEditor(context, ref, preferences, threshold, index);
+              },
+            ),
+            const SizedBox(height: 16),
           ],
         ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel'),
-          ),
-          TextButton(
-            onPressed: () {
-              ref
-                  .read(notificationPreferencesProvider(deviceId).notifier)
-                  .updateThreshold(
-                    index,
-                    threshold.copyWith(
-                      message: messageController.text.isEmpty
-                          ? null
-                          : messageController.text,
-                    ),
-                  );
-              Navigator.pop(context);
-            },
-            child: const Text('Save'),
-          ),
-        ],
+      ),
+    );
+  }
+
+  void _showPpmPicker(
+    BuildContext context,
+    WidgetRef ref,
+    NotificationPreferences preferences,
+    NotificationThreshold threshold,
+    int index,
+  ) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) => PpmThresholdPicker(
+        deviceId: deviceId,
+        preferences: preferences,
+        threshold: threshold,
+        thresholdIndex: index,
+      ),
+    );
+  }
+
+  void _showMessageEditor(
+    BuildContext context,
+    WidgetRef ref,
+    NotificationPreferences preferences,
+    NotificationThreshold threshold,
+    int index,
+  ) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) => ThresholdMessageEditor(
+        deviceId: deviceId,
+        threshold: threshold,
+        thresholdIndex: index,
       ),
     );
   }
