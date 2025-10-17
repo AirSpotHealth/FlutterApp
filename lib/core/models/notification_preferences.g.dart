@@ -55,6 +55,10 @@ const NotificationPreferencesSchema = IsarGeneratedSchema(
         type: IsarType.dateTime,
       ),
       IsarPropertySchema(
+        name: 'lastTriggeredThresholdValue',
+        type: IsarType.long,
+      ),
+      IsarPropertySchema(
         name: 'triggeredThresholds',
         type: IsarType.longList,
       ),
@@ -100,15 +104,17 @@ int serializeNotificationPreferences(
       8,
       object.lastNotificationTime?.toUtc().microsecondsSinceEpoch ??
           -9223372036854775808);
+  IsarCore.writeLong(
+      writer, 9, object.lastTriggeredThresholdValue ?? -9223372036854775808);
   {
     final list = object.triggeredThresholds;
-    final listWriter = IsarCore.beginList(writer, 9, list.length);
+    final listWriter = IsarCore.beginList(writer, 10, list.length);
     for (var i = 0; i < list.length; i++) {
       IsarCore.writeLong(listWriter, i, list[i]);
     }
     IsarCore.endList(writer, listWriter);
   }
-  IsarCore.writeBool(writer, 10, object.canSendNotification);
+  IsarCore.writeBool(writer, 11, object.canSendNotification);
   return Isar.fastHash(object.deviceId);
 }
 
@@ -192,9 +198,18 @@ NotificationPreferences deserializeNotificationPreferences(IsarReader reader) {
           DateTime.fromMicrosecondsSinceEpoch(value, isUtc: true).toLocal();
     }
   }
+  final int? _lastTriggeredThresholdValue;
+  {
+    final value = IsarCore.readLong(reader, 9);
+    if (value == -9223372036854775808) {
+      _lastTriggeredThresholdValue = null;
+    } else {
+      _lastTriggeredThresholdValue = value;
+    }
+  }
   final List<int> _triggeredThresholds;
   {
-    final length = IsarCore.readList(reader, 9, IsarCore.readerPtrPtr);
+    final length = IsarCore.readList(reader, 10, IsarCore.readerPtrPtr);
     {
       final reader = IsarCore.readerPtr;
       if (reader.isNull) {
@@ -219,6 +234,7 @@ NotificationPreferences deserializeNotificationPreferences(IsarReader reader) {
     cooldownMode: _cooldownMode,
     cooldownMinutes: _cooldownMinutes,
     lastNotificationTime: _lastNotificationTime,
+    lastTriggeredThresholdValue: _lastTriggeredThresholdValue,
     triggeredThresholds: _triggeredThresholds,
   );
   return object;
@@ -309,7 +325,16 @@ dynamic deserializeNotificationPreferencesProp(
       }
     case 9:
       {
-        final length = IsarCore.readList(reader, 9, IsarCore.readerPtrPtr);
+        final value = IsarCore.readLong(reader, 9);
+        if (value == -9223372036854775808) {
+          return null;
+        } else {
+          return value;
+        }
+      }
+    case 10:
+      {
+        final length = IsarCore.readList(reader, 10, IsarCore.readerPtrPtr);
         {
           final reader = IsarCore.readerPtr;
           if (reader.isNull) {
@@ -325,8 +350,8 @@ dynamic deserializeNotificationPreferencesProp(
           }
         }
       }
-    case 10:
-      return IsarCore.readBool(reader, 10);
+    case 11:
+      return IsarCore.readBool(reader, 11);
     default:
       throw ArgumentError('Unknown property: $property');
   }
@@ -341,6 +366,7 @@ sealed class _NotificationPreferencesUpdate {
     String? cooldownMode,
     int? cooldownMinutes,
     DateTime? lastNotificationTime,
+    int? lastTriggeredThresholdValue,
     bool? canSendNotification,
   });
 }
@@ -360,6 +386,7 @@ class _NotificationPreferencesUpdateImpl
     Object? cooldownMode = ignore,
     Object? cooldownMinutes = ignore,
     Object? lastNotificationTime = ignore,
+    Object? lastTriggeredThresholdValue = ignore,
     Object? canSendNotification = ignore,
   }) {
     return collection.updateProperties([
@@ -374,7 +401,9 @@ class _NotificationPreferencesUpdateImpl
           if (cooldownMinutes != ignore) 7: cooldownMinutes as int?,
           if (lastNotificationTime != ignore)
             8: lastNotificationTime as DateTime?,
-          if (canSendNotification != ignore) 10: canSendNotification as bool?,
+          if (lastTriggeredThresholdValue != ignore)
+            9: lastTriggeredThresholdValue as int?,
+          if (canSendNotification != ignore) 11: canSendNotification as bool?,
         }) >
         0;
   }
@@ -389,6 +418,7 @@ sealed class _NotificationPreferencesUpdateAll {
     String? cooldownMode,
     int? cooldownMinutes,
     DateTime? lastNotificationTime,
+    int? lastTriggeredThresholdValue,
     bool? canSendNotification,
   });
 }
@@ -408,6 +438,7 @@ class _NotificationPreferencesUpdateAllImpl
     Object? cooldownMode = ignore,
     Object? cooldownMinutes = ignore,
     Object? lastNotificationTime = ignore,
+    Object? lastTriggeredThresholdValue = ignore,
     Object? canSendNotification = ignore,
   }) {
     return collection.updateProperties(deviceId, {
@@ -419,7 +450,9 @@ class _NotificationPreferencesUpdateAllImpl
       if (cooldownMode != ignore) 6: cooldownMode as String?,
       if (cooldownMinutes != ignore) 7: cooldownMinutes as int?,
       if (lastNotificationTime != ignore) 8: lastNotificationTime as DateTime?,
-      if (canSendNotification != ignore) 10: canSendNotification as bool?,
+      if (lastTriggeredThresholdValue != ignore)
+        9: lastTriggeredThresholdValue as int?,
+      if (canSendNotification != ignore) 11: canSendNotification as bool?,
     });
   }
 }
@@ -441,6 +474,7 @@ sealed class _NotificationPreferencesQueryUpdate {
     String? cooldownMode,
     int? cooldownMinutes,
     DateTime? lastNotificationTime,
+    int? lastTriggeredThresholdValue,
     bool? canSendNotification,
   });
 }
@@ -460,6 +494,7 @@ class _NotificationPreferencesQueryUpdateImpl
     Object? cooldownMode = ignore,
     Object? cooldownMinutes = ignore,
     Object? lastNotificationTime = ignore,
+    Object? lastTriggeredThresholdValue = ignore,
     Object? canSendNotification = ignore,
   }) {
     return query.updateProperties(limit: limit, {
@@ -471,7 +506,9 @@ class _NotificationPreferencesQueryUpdateImpl
       if (cooldownMode != ignore) 6: cooldownMode as String?,
       if (cooldownMinutes != ignore) 7: cooldownMinutes as int?,
       if (lastNotificationTime != ignore) 8: lastNotificationTime as DateTime?,
-      if (canSendNotification != ignore) 10: canSendNotification as bool?,
+      if (lastTriggeredThresholdValue != ignore)
+        9: lastTriggeredThresholdValue as int?,
+      if (canSendNotification != ignore) 11: canSendNotification as bool?,
     });
   }
 }
@@ -502,6 +539,7 @@ class _NotificationPreferencesQueryBuilderUpdateImpl
     Object? cooldownMode = ignore,
     Object? cooldownMinutes = ignore,
     Object? lastNotificationTime = ignore,
+    Object? lastTriggeredThresholdValue = ignore,
     Object? canSendNotification = ignore,
   }) {
     final q = query.build();
@@ -516,7 +554,9 @@ class _NotificationPreferencesQueryBuilderUpdateImpl
         if (cooldownMinutes != ignore) 7: cooldownMinutes as int?,
         if (lastNotificationTime != ignore)
           8: lastNotificationTime as DateTime?,
-        if (canSendNotification != ignore) 10: canSendNotification as bool?,
+        if (lastTriggeredThresholdValue != ignore)
+          9: lastTriggeredThresholdValue as int?,
+        if (canSendNotification != ignore) 11: canSendNotification as bool?,
       });
     } finally {
       q.close();
@@ -1142,13 +1182,113 @@ extension NotificationPreferencesQueryFilter on QueryBuilder<
   }
 
   QueryBuilder<NotificationPreferences, NotificationPreferences,
+      QAfterFilterCondition> lastTriggeredThresholdValueIsNull() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(const IsNullCondition(property: 9));
+    });
+  }
+
+  QueryBuilder<NotificationPreferences, NotificationPreferences,
+      QAfterFilterCondition> lastTriggeredThresholdValueIsNotNull() {
+    return QueryBuilder.apply(not(), (query) {
+      return query.addFilterCondition(const IsNullCondition(property: 9));
+    });
+  }
+
+  QueryBuilder<NotificationPreferences, NotificationPreferences,
+      QAfterFilterCondition> lastTriggeredThresholdValueEqualTo(
+    int? value,
+  ) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        EqualCondition(
+          property: 9,
+          value: value,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<NotificationPreferences, NotificationPreferences,
+      QAfterFilterCondition> lastTriggeredThresholdValueGreaterThan(
+    int? value,
+  ) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        GreaterCondition(
+          property: 9,
+          value: value,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<NotificationPreferences, NotificationPreferences,
+      QAfterFilterCondition> lastTriggeredThresholdValueGreaterThanOrEqualTo(
+    int? value,
+  ) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        GreaterOrEqualCondition(
+          property: 9,
+          value: value,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<NotificationPreferences, NotificationPreferences,
+      QAfterFilterCondition> lastTriggeredThresholdValueLessThan(
+    int? value,
+  ) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        LessCondition(
+          property: 9,
+          value: value,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<NotificationPreferences, NotificationPreferences,
+      QAfterFilterCondition> lastTriggeredThresholdValueLessThanOrEqualTo(
+    int? value,
+  ) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        LessOrEqualCondition(
+          property: 9,
+          value: value,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<NotificationPreferences, NotificationPreferences,
+      QAfterFilterCondition> lastTriggeredThresholdValueBetween(
+    int? lower,
+    int? upper,
+  ) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        BetweenCondition(
+          property: 9,
+          lower: lower,
+          upper: upper,
+        ),
+      );
+    });
+  }
+
+  QueryBuilder<NotificationPreferences, NotificationPreferences,
       QAfterFilterCondition> triggeredThresholdsElementEqualTo(
     int value,
   ) {
     return QueryBuilder.apply(this, (query) {
       return query.addFilterCondition(
         EqualCondition(
-          property: 9,
+          property: 10,
           value: value,
         ),
       );
@@ -1162,7 +1302,7 @@ extension NotificationPreferencesQueryFilter on QueryBuilder<
     return QueryBuilder.apply(this, (query) {
       return query.addFilterCondition(
         GreaterCondition(
-          property: 9,
+          property: 10,
           value: value,
         ),
       );
@@ -1176,7 +1316,7 @@ extension NotificationPreferencesQueryFilter on QueryBuilder<
     return QueryBuilder.apply(this, (query) {
       return query.addFilterCondition(
         GreaterOrEqualCondition(
-          property: 9,
+          property: 10,
           value: value,
         ),
       );
@@ -1190,7 +1330,7 @@ extension NotificationPreferencesQueryFilter on QueryBuilder<
     return QueryBuilder.apply(this, (query) {
       return query.addFilterCondition(
         LessCondition(
-          property: 9,
+          property: 10,
           value: value,
         ),
       );
@@ -1204,7 +1344,7 @@ extension NotificationPreferencesQueryFilter on QueryBuilder<
     return QueryBuilder.apply(this, (query) {
       return query.addFilterCondition(
         LessOrEqualCondition(
-          property: 9,
+          property: 10,
           value: value,
         ),
       );
@@ -1219,7 +1359,7 @@ extension NotificationPreferencesQueryFilter on QueryBuilder<
     return QueryBuilder.apply(this, (query) {
       return query.addFilterCondition(
         BetweenCondition(
-          property: 9,
+          property: 10,
           lower: lower,
           upper: upper,
         ),
@@ -1236,7 +1376,7 @@ extension NotificationPreferencesQueryFilter on QueryBuilder<
       QAfterFilterCondition> triggeredThresholdsIsNotEmpty() {
     return QueryBuilder.apply(this, (query) {
       return query.addFilterCondition(
-        const GreaterOrEqualCondition(property: 9, value: null),
+        const GreaterOrEqualCondition(property: 10, value: null),
       );
     });
   }
@@ -1248,7 +1388,7 @@ extension NotificationPreferencesQueryFilter on QueryBuilder<
     return QueryBuilder.apply(this, (query) {
       return query.addFilterCondition(
         EqualCondition(
-          property: 10,
+          property: 11,
           value: value,
         ),
       );
@@ -1374,16 +1514,30 @@ extension NotificationPreferencesQuerySortBy
   }
 
   QueryBuilder<NotificationPreferences, NotificationPreferences, QAfterSortBy>
+      sortByLastTriggeredThresholdValue() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(9);
+    });
+  }
+
+  QueryBuilder<NotificationPreferences, NotificationPreferences, QAfterSortBy>
+      sortByLastTriggeredThresholdValueDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(9, sort: Sort.desc);
+    });
+  }
+
+  QueryBuilder<NotificationPreferences, NotificationPreferences, QAfterSortBy>
       sortByCanSendNotification() {
     return QueryBuilder.apply(this, (query) {
-      return query.addSortBy(10);
+      return query.addSortBy(11);
     });
   }
 
   QueryBuilder<NotificationPreferences, NotificationPreferences, QAfterSortBy>
       sortByCanSendNotificationDesc() {
     return QueryBuilder.apply(this, (query) {
-      return query.addSortBy(10, sort: Sort.desc);
+      return query.addSortBy(11, sort: Sort.desc);
     });
   }
 }
@@ -1489,16 +1643,30 @@ extension NotificationPreferencesQuerySortThenBy on QueryBuilder<
   }
 
   QueryBuilder<NotificationPreferences, NotificationPreferences, QAfterSortBy>
+      thenByLastTriggeredThresholdValue() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(9);
+    });
+  }
+
+  QueryBuilder<NotificationPreferences, NotificationPreferences, QAfterSortBy>
+      thenByLastTriggeredThresholdValueDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(9, sort: Sort.desc);
+    });
+  }
+
+  QueryBuilder<NotificationPreferences, NotificationPreferences, QAfterSortBy>
       thenByCanSendNotification() {
     return QueryBuilder.apply(this, (query) {
-      return query.addSortBy(10);
+      return query.addSortBy(11);
     });
   }
 
   QueryBuilder<NotificationPreferences, NotificationPreferences, QAfterSortBy>
       thenByCanSendNotificationDesc() {
     return QueryBuilder.apply(this, (query) {
-      return query.addSortBy(10, sort: Sort.desc);
+      return query.addSortBy(11, sort: Sort.desc);
     });
   }
 }
@@ -1548,16 +1716,23 @@ extension NotificationPreferencesQueryWhereDistinct on QueryBuilder<
   }
 
   QueryBuilder<NotificationPreferences, NotificationPreferences, QAfterDistinct>
-      distinctByTriggeredThresholds() {
+      distinctByLastTriggeredThresholdValue() {
     return QueryBuilder.apply(this, (query) {
       return query.addDistinctBy(9);
     });
   }
 
   QueryBuilder<NotificationPreferences, NotificationPreferences, QAfterDistinct>
-      distinctByCanSendNotification() {
+      distinctByTriggeredThresholds() {
     return QueryBuilder.apply(this, (query) {
       return query.addDistinctBy(10);
+    });
+  }
+
+  QueryBuilder<NotificationPreferences, NotificationPreferences, QAfterDistinct>
+      distinctByCanSendNotification() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addDistinctBy(11);
     });
   }
 }
@@ -1620,17 +1795,24 @@ extension NotificationPreferencesQueryProperty1 on QueryBuilder<
     });
   }
 
+  QueryBuilder<NotificationPreferences, int?, QAfterProperty>
+      lastTriggeredThresholdValueProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addProperty(9);
+    });
+  }
+
   QueryBuilder<NotificationPreferences, List<int>, QAfterProperty>
       triggeredThresholdsProperty() {
     return QueryBuilder.apply(this, (query) {
-      return query.addProperty(9);
+      return query.addProperty(10);
     });
   }
 
   QueryBuilder<NotificationPreferences, bool, QAfterProperty>
       canSendNotificationProperty() {
     return QueryBuilder.apply(this, (query) {
-      return query.addProperty(10);
+      return query.addProperty(11);
     });
   }
 }
@@ -1693,17 +1875,24 @@ extension NotificationPreferencesQueryProperty2<R>
     });
   }
 
+  QueryBuilder<NotificationPreferences, (R, int?), QAfterProperty>
+      lastTriggeredThresholdValueProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addProperty(9);
+    });
+  }
+
   QueryBuilder<NotificationPreferences, (R, List<int>), QAfterProperty>
       triggeredThresholdsProperty() {
     return QueryBuilder.apply(this, (query) {
-      return query.addProperty(9);
+      return query.addProperty(10);
     });
   }
 
   QueryBuilder<NotificationPreferences, (R, bool), QAfterProperty>
       canSendNotificationProperty() {
     return QueryBuilder.apply(this, (query) {
-      return query.addProperty(10);
+      return query.addProperty(11);
     });
   }
 }
@@ -1766,17 +1955,24 @@ extension NotificationPreferencesQueryProperty3<R1, R2>
     });
   }
 
+  QueryBuilder<NotificationPreferences, (R1, R2, int?), QOperations>
+      lastTriggeredThresholdValueProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addProperty(9);
+    });
+  }
+
   QueryBuilder<NotificationPreferences, (R1, R2, List<int>), QOperations>
       triggeredThresholdsProperty() {
     return QueryBuilder.apply(this, (query) {
-      return query.addProperty(9);
+      return query.addProperty(10);
     });
   }
 
   QueryBuilder<NotificationPreferences, (R1, R2, bool), QOperations>
       canSendNotificationProperty() {
     return QueryBuilder.apply(this, (query) {
-      return query.addProperty(10);
+      return query.addProperty(11);
     });
   }
 }

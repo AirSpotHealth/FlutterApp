@@ -90,7 +90,7 @@ class NotificationPreferencesNotifier
   /// Update last notification time
   Future<void> updateLastNotificationTime(DateTime time) async {
     await updatePreferences(
-      (prefs) => prefs.copyWith(lastNotificationTime: time),
+      (prefs) => prefs.copyWith(lastNotificationTime: () => time),
       persist: true,
     );
   }

@@ -29,6 +29,9 @@ class NotificationPreferences {
   /// Last notification time (to implement time-based cooldown)
   final DateTime? lastNotificationTime;
 
+  /// Last threshold value that triggered a notification (for time-based cooldown mode)
+  final int? lastTriggeredThresholdValue;
+
   /// List of threshold IDs that have been triggered (for once-per-crossing mode)
   final List<int> triggeredThresholds;
 
@@ -41,6 +44,7 @@ class NotificationPreferences {
     this.cooldownMode = 'once',
     this.cooldownMinutes = 5,
     this.lastNotificationTime,
+    this.lastTriggeredThresholdValue,
     this.triggeredThresholds = const [],
   });
 
@@ -52,6 +56,7 @@ class NotificationPreferences {
         cooldownMode = 'once',
         cooldownMinutes = 5,
         lastNotificationTime = null,
+        lastTriggeredThresholdValue = null,
         triggeredThresholds = const [];
 
   NotificationPreferences copyWith({
@@ -62,7 +67,8 @@ class NotificationPreferences {
     bool? showInForeground,
     String? cooldownMode,
     int? cooldownMinutes,
-    DateTime? lastNotificationTime,
+    DateTime? Function()? lastNotificationTime,
+    int? Function()? lastTriggeredThresholdValue,
     List<int>? triggeredThresholds,
   }) {
     return NotificationPreferences(
@@ -76,7 +82,12 @@ class NotificationPreferences {
       showInForeground: showInForeground ?? this.showInForeground,
       cooldownMode: cooldownMode ?? this.cooldownMode,
       cooldownMinutes: cooldownMinutes ?? this.cooldownMinutes,
-      lastNotificationTime: lastNotificationTime ?? this.lastNotificationTime,
+      lastNotificationTime: lastNotificationTime != null
+          ? lastNotificationTime()
+          : this.lastNotificationTime,
+      lastTriggeredThresholdValue: lastTriggeredThresholdValue != null
+          ? lastTriggeredThresholdValue()
+          : this.lastTriggeredThresholdValue,
       triggeredThresholds: triggeredThresholds ?? this.triggeredThresholds,
     );
   }
@@ -154,7 +165,7 @@ const defaultNotificationThresholds = [
   NotificationThreshold(
     id: 0,
     co2Threshold: 800,
-    enabled: false,
+    enabled: true,
     message: 'CO₂ level is getting high',
   ),
   NotificationThreshold(
