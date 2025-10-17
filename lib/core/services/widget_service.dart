@@ -130,6 +130,36 @@ class WidgetService {
     return Map.unmodifiable(_widgetData);
   }
 
+  /// Refresh the device list in widget storage
+  /// This updates the device list with current aliases without triggering a full widget refresh
+  /// Useful when device aliases are updated
+  Future<void> refreshDeviceList() async {
+    try {
+      debugPrint('📱 Widget: Refreshing device list');
+
+      // Get ALL saved devices from database for device list
+      final allSavedDevices =
+          IsarService().read<List<Map<String, String>>>((isar) {
+        final devices = isar.bleDevices.where().findAll();
+        return devices
+            .map((device) => {
+                  'deviceId': device.deviceId,
+                  'deviceName': device.alias ?? device.name, // Prefer alias
+                })
+            .toList();
+      });
+
+      // Update only the device list in shared storage
+      await HomeWidget.saveWidgetData<String>(
+          'widget_device_list', jsonEncode(allSavedDevices));
+
+      debugPrint(
+          '✅ Widget: Device list refreshed with ${allSavedDevices.length} device(s)');
+    } catch (e) {
+      debugPrint('❌ Widget: Error refreshing device list: $e');
+    }
+  }
+
   // MARK: - Private Implementation
 
   /// Persist all widget data to shared storage

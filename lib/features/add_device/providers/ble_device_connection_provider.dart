@@ -110,6 +110,9 @@ class _BleDeviceConnectionNotifier
           platform: device.platformName,
           address: device.remoteId.str,
         ));
+
+    // Refresh widget device list so the new device appears in widget configuration
+    WidgetService().refreshDeviceList();
   }
 
   Future<void> disconnect() async {

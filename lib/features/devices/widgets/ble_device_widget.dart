@@ -1,5 +1,4 @@
 import 'package:airspothealth/core/models/ble_device.dart';
-import 'package:airspothealth/core/providers/ble_saved_devices_provider.dart';
 import 'package:airspothealth/core/router/route_names.dart';
 import 'package:airspothealth/core/theme/app_colors.dart';
 import 'package:airspothealth/core/utils/app_utils.dart';
@@ -13,6 +12,7 @@ import 'package:airspothealth/features/add_device/providers/ble_search_results_p
 import 'package:airspothealth/features/device_settings/models/remote_version.dart';
 import 'package:airspothealth/features/device_settings/providers/device_forget_status_provider.dart';
 import 'package:airspothealth/features/device_settings/providers/firmware_remote_version_provider.dart';
+import 'package:airspothealth/features/devices/widgets/device_alias_editor.dart';
 import 'package:airspothealth/features/devices/widgets/device_battery_level_widget.dart';
 import 'package:airspothealth/features/devices/widgets/device_value_refresh_widget.dart';
 import 'package:airspothealth/features/devices/widgets/device_value_widget.dart';
@@ -249,60 +249,14 @@ class BleDeviceWidget extends ConsumerWidget {
   }
 
   void _showDeviceAliasDialog(WidgetRef ref, String deviceId, String? alias) {
-    showAdaptiveDialog(
+    showModalBottomSheet(
       context: ref.context,
-      barrierDismissible: true,
-      builder: (context) {
-        final TextEditingController controller =
-            TextEditingController(text: alias);
-        return AlertDialog(
-          backgroundColor: Colors.white,
-          surfaceTintColor: Colors.white,
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const Text(
-                'Change Device Nickname',
-                style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-              const SizedBox(height: 16),
-              TextFormField(
-                controller: controller,
-                decoration: const InputDecoration(
-                  hintText: 'Enter nickname',
-                  border: OutlineInputBorder(
-                      borderSide: BorderSide(color: AppColors.primaryColor)),
-                  enabledBorder: OutlineInputBorder(
-                      borderSide: BorderSide(color: AppColors.primaryColor)),
-                  focusedBorder: OutlineInputBorder(
-                      borderSide: BorderSide(color: AppColors.primaryColor)),
-                ),
-              ),
-            ],
-          ),
-          actions: [
-            TextButton(
-              onPressed: () {
-                Navigator.of(context).pop();
-              },
-              child: const Text('Cancel'),
-            ),
-            ElevatedButton(
-              onPressed: () {
-                ref
-                    .read(bleSavedDevicesProvider.notifier)
-                    .updateDeviceAlias(deviceId, controller.text);
-                Navigator.of(context).pop();
-              },
-              child: const Text('Save'),
-            ),
-          ],
-        );
-      },
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) => DeviceAliasEditor(
+        deviceId: deviceId,
+        currentAlias: alias,
+      ),
     );
   }
 }

@@ -111,10 +111,10 @@ class _BleSavedDevicesNotifier extends Notifier<List<BleDevice>> {
         );
         debugPrint('✅ Updated widget with new alias for device: $deviceId');
       } else {
-        // No existing data, but we should still update the device list
-        // This is handled automatically by _persistWidgetData() reading from database
+        // No existing widget data, but still refresh the device list
+        WidgetService().refreshDeviceList();
         debugPrint(
-            '⚠️ No widget data found for $deviceId, device list will update on next data');
+            '✅ Refreshed device list with new alias for device: $deviceId');
       }
     } catch (e) {
       debugPrint('❌ Error updating widget with new alias: $e');

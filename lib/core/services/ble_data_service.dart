@@ -8,6 +8,7 @@ import 'package:airspothealth/core/providers/ble_saved_devices_provider.dart';
 import 'package:airspothealth/core/providers/device_settings_provider.dart';
 import 'package:airspothealth/core/providers/isar_service_provider.dart';
 import 'package:airspothealth/core/services/isar_service.dart';
+import 'package:airspothealth/core/services/widget_service.dart';
 import 'package:airspothealth/core/utils/app_utils.dart';
 import 'package:airspothealth/features/device_graph/providers/ble_device_provider.dart';
 import 'package:airspothealth/features/device_graph/providers/device_history_data_request_provider.dart';
@@ -123,6 +124,8 @@ class BleDataService {
         break;
       case ResponseCommand.getAlias:
         ref.invalidate(bleSavedDevicesProvider);
+        // Update widget device list with the new alias
+        WidgetService().refreshDeviceList();
         break;
       case ResponseCommand.dataEraseDone:
         ref.read(isarServiceProvider).write((isar) {
