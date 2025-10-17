@@ -97,11 +97,27 @@ class NotificationService {
     // For iOS, permissions are requested via DarwinInitializationSettings.
     // For older Android versions, permissions are granted at install time.
 
-    return await _notificationsPlugin.initialize(
-          initializationSettings,
-          onDidReceiveNotificationResponse: onDidReceiveNotificationResponse,
-        ) ??
-        false;
+    final bool? initialized = await _notificationsPlugin.initialize(
+      initializationSettings,
+      onDidReceiveNotificationResponse: onDidReceiveNotificationResponse,
+    );
+
+    // Check iOS notification permissions after initialization
+    if (Platform.isIOS) {
+      final iosImpl =
+          _notificationsPlugin.resolvePlatformSpecificImplementation<
+              IOSFlutterLocalNotificationsPlugin>();
+      if (iosImpl != null) {
+        final bool? permissions = await iosImpl.requestPermissions(
+          alert: true,
+          badge: true,
+          sound: true,
+        );
+        debugPrint('📱 iOS notification permissions granted: $permissions');
+      }
+    }
+
+    return initialized ?? false;
   }
 
   static Future<void> initFirebaseMessaging() async {
@@ -113,7 +129,11 @@ class NotificationService {
       provisional: false,
     );
 
-    debugPrint('User granted permission: ${settings.authorizationStatus}');
+    debugPrint(
+        '📱 Firebase messaging permission status: ${settings.authorizationStatus}');
+    debugPrint('📱 Alert setting: ${settings.alert}');
+    debugPrint('📱 Badge setting: ${settings.badge}');
+    debugPrint('📱 Sound setting: ${settings.sound}');
 
     // Get FCM token
     String? token = await _firebaseMessaging.getToken();
@@ -348,7 +368,33 @@ class NotificationService {
   }) async {
     final message = customMessage ?? 'CO₂ level is $co2Value ppm';
 
-    debugPrint('CO2 Notification - sound: always on, vibrate: $vibrate');
+    debugPrint('📱 CO2 Notification - Preparing to show notification');
+    debugPrint('📱 Platform: ${Platform.operatingSystem}');
+    debugPrint('📱 Device: $deviceName, CO2: $co2Value, Threshold: $threshold');
+    debugPrint('📱 Sound: always on, Vibrate: $vibrate');
+
+    // Check iOS permissions before showing notification
+    if (Platform.isIOS) {
+      final iosImpl =
+          _notificationsPlugin.resolvePlatformSpecificImplementation<
+              IOSFlutterLocalNotificationsPlugin>();
+      if (iosImpl != null) {
+        try {
+          final bool? hasPermissions = await iosImpl.requestPermissions(
+            alert: true,
+            badge: true,
+            sound: true,
+          );
+          debugPrint('📱 iOS notification permissions check: $hasPermissions');
+          if (hasPermissions == false) {
+            debugPrint(
+                '⚠️ iOS notification permissions not granted - notification may not appear');
+          }
+        } catch (e) {
+          debugPrint('⚠️ Error checking iOS permissions: $e');
+        }
+      }
+    }
 
     // Note: Vibration patterns are now handled by the vibration package
     // instead of AndroidNotificationDetails.vibrationPattern
@@ -390,17 +436,110 @@ class NotificationService {
       macOS: darwinNotificationDetails,
     );
 
-    await _notificationsPlugin.show(
-      co2Value.hashCode, // Use co2Value hashCode as unique ID
-      '$deviceName - High CO₂',
-      message,
-      notificationDetails,
-      payload: 'co2_alert:$deviceName:$co2Value',
-    );
+    final notificationId =
+        co2Value.hashCode % 2147483647; // Ensure positive 32-bit int
+    debugPrint('📱 Showing notification with ID: $notificationId');
+
+    try {
+      await _notificationsPlugin.show(
+        notificationId,
+        '$deviceName - High CO₂',
+        message,
+        notificationDetails,
+        payload: 'co2_alert:$deviceName:$co2Value',
+      );
+      debugPrint('✅ Notification.show() called successfully');
+    } catch (e) {
+      debugPrint('❌ Error showing notification: $e');
+      debugPrint('❌ Stack trace: ${StackTrace.current}');
+    }
 
     // Trigger vibration pattern if vibration is enabled
     if (vibrate && Platform.isAndroid) {
       await VibrationPatternService.triggerVibrationPattern(threshold);
+    }
+  }
+
+  /// Check current notification permission status
+  static Future<bool> checkNotificationPermissionStatus() async {
+    if (Platform.isIOS) {
+      final iosImpl =
+          _notificationsPlugin.resolvePlatformSpecificImplementation<
+              IOSFlutterLocalNotificationsPlugin>();
+      if (iosImpl != null) {
+        try {
+          final bool? hasPermissions = await iosImpl.requestPermissions(
+            alert: true,
+            badge: true,
+            sound: true,
+          );
+          debugPrint('📱 iOS notification permission status: $hasPermissions');
+          return hasPermissions ?? false;
+        } catch (e) {
+          debugPrint('⚠️ Error checking iOS notification permissions: $e');
+          return false;
+        }
+      }
+    } else if (Platform.isAndroid) {
+      final androidImpl =
+          _notificationsPlugin.resolvePlatformSpecificImplementation<
+              AndroidFlutterLocalNotificationsPlugin>();
+      if (androidImpl != null) {
+        try {
+          final bool? hasPermissions =
+              await androidImpl.areNotificationsEnabled();
+          debugPrint(
+              '📱 Android notification permission status: $hasPermissions');
+          return hasPermissions ?? false;
+        } catch (e) {
+          debugPrint('⚠️ Error checking Android notification permissions: $e');
+          return false;
+        }
+      }
+    }
+    return false;
+  }
+
+  /// Test notification to verify system is working
+  static Future<void> showTestNotification() async {
+    debugPrint('📱 Sending test notification...');
+
+    const AndroidNotificationDetails androidDetails =
+        AndroidNotificationDetails(
+      'co2_notifications',
+      'CO₂ Notifications',
+      channelDescription: 'High CO₂ level notifications',
+      importance: Importance.high,
+      priority: Priority.high,
+      playSound: true,
+      color: AppColors.brandColorRed,
+    );
+
+    const DarwinNotificationDetails iosDetails = DarwinNotificationDetails(
+      presentAlert: true,
+      presentBadge: true,
+      presentSound: true,
+      sound: 'default',
+      interruptionLevel: InterruptionLevel.timeSensitive,
+    );
+
+    const NotificationDetails notificationDetails = NotificationDetails(
+      android: androidDetails,
+      iOS: iosDetails,
+      macOS: iosDetails,
+    );
+
+    try {
+      await _notificationsPlugin.show(
+        999999, // Unique test ID
+        'Test Notification',
+        'If you see this, notifications are working correctly!',
+        notificationDetails,
+        payload: 'test',
+      );
+      debugPrint('✅ Test notification sent successfully');
+    } catch (e) {
+      debugPrint('❌ Error sending test notification: $e');
     }
   }
 

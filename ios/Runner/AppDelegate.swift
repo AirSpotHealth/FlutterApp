@@ -1,6 +1,7 @@
 import Flutter
 import UIKit
 import ActivityKit
+import UserNotifications
 
 @main
 @objc class AppDelegate: FlutterAppDelegate {
@@ -13,6 +14,11 @@ import ActivityKit
     _ application: UIApplication,
     didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?
   ) -> Bool {
+
+    // Set up notification center delegate to handle foreground notifications
+    if #available(iOS 10.0, *) {
+      UNUserNotificationCenter.current().delegate = self as? UNUserNotificationCenterDelegate
+    }
 
     // Live Activity Channel
     let controller : FlutterViewController = window?.rootViewController as! FlutterViewController
@@ -199,4 +205,36 @@ import ActivityKit
    deinit {
        NotificationCenter.default.removeObserver(self)
    }
+    
+    // MARK: - UNUserNotificationCenterDelegate
+    // Handle notification when app is in foreground
+    @available(iOS 10.0, *)
+    override func userNotificationCenter(
+        _ center: UNUserNotificationCenter,
+        willPresent notification: UNNotification,
+        withCompletionHandler completionHandler: @escaping (UNNotificationPresentationOptions) -> Void
+    ) {
+        print("📱 Notification received in foreground: \(notification.request.content.title)")
+        print("📱 Notification body: \(notification.request.content.body)")
+        
+        // Show notification even when app is in foreground
+        if #available(iOS 14.0, *) {
+            completionHandler([.banner, .sound, .badge])
+        } else {
+            completionHandler([.alert, .sound, .badge])
+        }
+    }
+    
+    // Handle notification tap
+    @available(iOS 10.0, *)
+    override func userNotificationCenter(
+        _ center: UNUserNotificationCenter,
+        didReceive response: UNNotificationResponse,
+        withCompletionHandler completionHandler: @escaping () -> Void
+    ) {
+        print("📱 Notification tapped: \(response.notification.request.content.title)")
+        
+        // Let the parent class handle the response (for Flutter local notifications)
+        super.userNotificationCenter(center, didReceive: response, withCompletionHandler: completionHandler)
+    }
 }
