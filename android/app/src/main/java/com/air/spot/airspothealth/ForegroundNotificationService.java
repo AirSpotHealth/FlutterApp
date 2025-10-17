@@ -495,7 +495,7 @@ public class ForegroundNotificationService extends Service {
 
             // Create notification with custom layouts - clean minimal style
             Log.d(TAG, "Building clean custom notification with refresh state: " + isRefreshing);
-            NotificationCompat.Builder builder = new NotificationCompat.Builder(this, CHANNEL_ID).setSmallIcon(R.drawable.ic_launcher_foreground)  // Minimal transparent icon
+            NotificationCompat.Builder builder = new NotificationCompat.Builder(this, CHANNEL_ID).setSmallIcon(R.drawable.ic_notification)  // Proper notification icon
                     .setCustomContentView(compactLayout)        // Custom compact layout
                     .setCustomBigContentView(expandedLayout).setOngoing(true)                          // Allow dismissal to trigger delete intent
                     .setPriority(NotificationCompat.PRIORITY_DEFAULT).setVisibility(NotificationCompat.VISIBILITY_PUBLIC).setCategory(NotificationCompat.CATEGORY_SERVICE).setContentIntent(openAppPendingIntent).setAutoCancel(false).setShowWhen(true)                         // Show system timestamp
@@ -526,7 +526,7 @@ public class ForegroundNotificationService extends Service {
         PendingIntent openAppPendingIntent = PendingIntent.getActivity(this, 0, openAppIntent, PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
 
         // Create a simple fallback notification
-        NotificationCompat.Builder builder = new NotificationCompat.Builder(this, CHANNEL_ID).setSmallIcon(R.drawable.ic_launcher_foreground).setContentTitle("AirSpot CO2 Monitor").setContentText("CO2 monitoring active").setOngoing(true).setPriority(NotificationCompat.PRIORITY_MAX).setVisibility(NotificationCompat.VISIBILITY_PUBLIC).setCategory(NotificationCompat.CATEGORY_SERVICE).setContentIntent(openAppPendingIntent).setAutoCancel(false).setShowWhen(true).setOnlyAlertOnce(true).setLocalOnly(false).setDefaults(0);
+        NotificationCompat.Builder builder = new NotificationCompat.Builder(this, CHANNEL_ID).setSmallIcon(R.drawable.ic_notification).setContentTitle("AirSpot CO2 Monitor").setContentText("CO2 monitoring active").setOngoing(true).setPriority(NotificationCompat.PRIORITY_MAX).setVisibility(NotificationCompat.VISIBILITY_PUBLIC).setCategory(NotificationCompat.CATEGORY_SERVICE).setContentIntent(openAppPendingIntent).setAutoCancel(false).setShowWhen(true).setOnlyAlertOnce(true).setLocalOnly(false).setDefaults(0);
 
         return builder.build();
     }
@@ -541,7 +541,7 @@ public class ForegroundNotificationService extends Service {
         
         // Create a simple service notification
         NotificationCompat.Builder builder = new NotificationCompat.Builder(this, CHANNEL_ID)
-                .setSmallIcon(R.drawable.ic_launcher_foreground)
+                .setSmallIcon(R.drawable.ic_notification)
                 .setContentTitle("AirSpot CO2 Monitor")
                 .setContentText("Monitoring multiple devices")
                 .setOngoing(true)
@@ -615,7 +615,7 @@ public class ForegroundNotificationService extends Service {
             
             // Create the notification
             NotificationCompat.Builder builder = new NotificationCompat.Builder(this, CHANNEL_ID)
-                    .setSmallIcon(R.drawable.ic_launcher_foreground)
+                    .setSmallIcon(R.drawable.ic_notification)
                     .setContentTitle(deviceName + " - " + co2Value + " ppm")
                     .setContentText(customTimestamp)
                     .setOngoing(true)

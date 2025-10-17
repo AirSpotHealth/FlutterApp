@@ -31,7 +31,7 @@ class NotificationService {
   static Future<bool> initNotification() async {
     const AndroidInitializationSettings androidInitializationSettings =
         AndroidInitializationSettings(
-            '@mipmap/ic_launcher'); // Or your app icon
+            '@drawable/ic_notification'); // Proper notification icon
 
     const DarwinInitializationSettings darwinInitializationSettings =
         DarwinInitializationSettings(
