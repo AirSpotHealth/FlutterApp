@@ -195,6 +195,7 @@ extension GoRouterExtension on GoRouter {
 
 extension ColorX on Color {
   String toHexTriplet() =>
+      // ignore: deprecated_member_use
       '#${(value & 0xFFFFFF).toRadixString(16).padLeft(6, '0').toUpperCase()}';
 }
 

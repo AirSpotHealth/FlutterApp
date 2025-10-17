@@ -168,10 +168,10 @@ class _PpmThresholdPickerState extends ConsumerState<PpmThresholdPicker> {
                     height: 50,
                     margin: const EdgeInsets.symmetric(horizontal: 16),
                     decoration: BoxDecoration(
-                      color: _primaryColor.withOpacity(0.1),
+                      color: _primaryColor.withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(8),
                       border: Border.all(
-                        color: _primaryColor.withOpacity(0.3),
+                        color: _primaryColor.withValues(alpha: 0.3),
                         width: 2,
                       ),
                     ),
