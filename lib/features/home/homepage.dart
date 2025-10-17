@@ -1,3 +1,4 @@
+import 'package:airspothealth/core/providers/app_notification_preferences_provider.dart';
 import 'package:airspothealth/core/providers/bluetooth_state_provider.dart';
 import 'package:airspothealth/core/router/route_names.dart';
 import 'package:airspothealth/core/theme/app_colors.dart';
@@ -23,7 +24,10 @@ class _HomePageState extends ConsumerState<HomePage> {
   void initState() {
     super.initState();
 
-    // NotificationService.checkNotificationPermission();
+    // Initialize app notification preferences to sync topic subscriptions
+    // This ensures users receive FCM notifications even if they don't visit the App Setup page
+    ref.read(appNotificationPreferencesProvider);
+
     _checkFirmwareVersion();
     _checkAppVersion();
     _scanForDevices();
