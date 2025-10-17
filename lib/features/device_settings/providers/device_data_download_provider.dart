@@ -161,11 +161,13 @@ class _DeviceDataDownloadNotifier
     state = AsyncInProgress(1.0, message: 'Device data ready for download....');
 
     if (share) {
-      await SharePlus.instance.share(ShareParams(
-        files: [XFile(file.path)],
+      await Share.shareXFiles(
+        [XFile(file.path)],
         text: fileName,
-        fileNameOverrides: [fileName],
-      ));
+        // For iOS: provide a share origin rect (center of screen)
+        sharePositionOrigin:
+            Platform.isIOS ? const Rect.fromLTWH(0, 0, 100, 100) : null,
+      );
     } else {
       await FileSaver.instance.saveAs(
           name: fileName,

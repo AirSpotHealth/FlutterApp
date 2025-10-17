@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'dart:io';
+import 'dart:ui';
 
 import 'package:airspothealth/features/device_settings/models/progress_model.dart';
 import 'package:airspothealth/features/factory_test/providers/factory_test_provider.dart';
@@ -152,10 +153,13 @@ class TestResultsExportNotifier
       await csvFile.writeAsString(_generateCsvContent());
       await jsonFile.writeAsString(_generateJsonContent());
 
-      await SharePlus.instance.share(ShareParams(
-        files: [XFile(csvFile.path), XFile(jsonFile.path)],
+      await Share.shareXFiles(
+        [XFile(csvFile.path), XFile(jsonFile.path)],
         text: 'Factory Test Results for $deviceId',
-      ));
+        // For iOS: provide a share origin rect
+        sharePositionOrigin:
+            Platform.isIOS ? const Rect.fromLTWH(0, 0, 100, 100) : null,
+      );
     } catch (e) {
       state = AsyncFailure(e.toString());
     }
