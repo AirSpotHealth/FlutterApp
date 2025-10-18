@@ -193,8 +193,8 @@ class NotificationService {
       importance: Importance.high,
       priority: Priority.high,
       playSound: true,
-      // icon: statusBarIcon, // Set in AndroidInitializationSettings
-      // largeIcon: suffixIcon != null ? FilePathAndroidBitmap(suffixIcon) : null, // Requires path
+      largeIcon: DrawableResourceAndroidBitmap(
+          '@drawable/ic_launcher_foreground'), // Colorful logo
       color: AppColors.primaryColor,
       ledColor: AppColors.primaryColorDark,
       ledOnMs: 1000,
@@ -296,6 +296,8 @@ class NotificationService {
       importance: Importance.high,
       priority: Priority.high,
       playSound: true,
+      largeIcon: const DrawableResourceAndroidBitmap(
+          '@drawable/ic_launcher_foreground'), // Colorful logo
       color: AppColors.primaryColor,
       styleInformation: imagePath != null
           ? BigPictureStyleInformation(
@@ -410,6 +412,8 @@ class NotificationService {
       enableVibration: Platform.isAndroid && vibrate
           ? false
           : vibrate, // Disable default vibration - we use custom patterns
+      largeIcon: const DrawableResourceAndroidBitmap(
+          '@drawable/ic_launcher_foreground'), // Colorful logo
       color: AppColors.brandColorRed,
       ledColor: AppColors.brandColorRed,
       ledOnMs: 1000,

@@ -15,6 +15,8 @@ import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
 import android.graphics.RectF;
+import android.graphics.drawable.Drawable;
+import androidx.core.content.ContextCompat;
 import android.net.Uri;
 import android.os.Build;
 import android.os.IBinder;
@@ -495,7 +497,7 @@ public class ForegroundNotificationService extends Service {
 
             // Create notification with custom layouts - clean minimal style
             Log.d(TAG, "Building clean custom notification with refresh state: " + isRefreshing);
-            NotificationCompat.Builder builder = new NotificationCompat.Builder(this, CHANNEL_ID).setSmallIcon(R.drawable.ic_notification)  // Proper notification icon
+            NotificationCompat.Builder builder = new NotificationCompat.Builder(this, CHANNEL_ID).setSmallIcon(R.drawable.ic_notification)  // Monochrome icon for status bar AND notification left
                     .setCustomContentView(compactLayout)        // Custom compact layout
                     .setCustomBigContentView(expandedLayout).setOngoing(true)                          // Allow dismissal to trigger delete intent
                     .setPriority(NotificationCompat.PRIORITY_DEFAULT).setVisibility(NotificationCompat.VISIBILITY_PUBLIC).setCategory(NotificationCompat.CATEGORY_SERVICE).setContentIntent(openAppPendingIntent).setAutoCancel(false).setShowWhen(true)                         // Show system timestamp
@@ -657,6 +659,16 @@ public class ForegroundNotificationService extends Service {
         views.setTextViewText(R.id.co2_value, co2Value);
         int co2Color = isConnected ? getColorForCO2Value(co2Value, greenUpperLimit, yellowUpperLimit) : Color.parseColor("#808080"); // Grey when disconnected
         views.setTextColor(R.id.co2_value, co2Color);
+        
+        // Set timestamp label for compact layout
+        if (!isExpanded) {
+            try {
+                String timestamp = new SimpleDateFormat("h:mm a", Locale.getDefault()).format(new Date());
+                views.setTextViewText(R.id.timestamp_label, "at " + timestamp);
+            } catch (Exception e) {
+                Log.d(TAG, "Timestamp label not found in compact layout: " + e.getMessage());
+            }
+        }
 
         // Set device name only for expanded layout
         if (isExpanded) {
@@ -754,6 +766,26 @@ public class ForegroundNotificationService extends Service {
         }
 
         return views;
+    }
+
+    private Bitmap getLargeIconBitmap() {
+        try {
+            Drawable drawable = ContextCompat.getDrawable(this, R.drawable.ic_launcher_foreground);
+            if (drawable == null) {
+                return null;
+            }
+            
+            int size = (int) (64 * getResources().getDisplayMetrics().density); // 64dp in pixels
+            Bitmap bitmap = Bitmap.createBitmap(size, size, Bitmap.Config.ARGB_8888);
+            Canvas canvas = new Canvas(bitmap);
+            drawable.setBounds(0, 0, canvas.getWidth(), canvas.getHeight());
+            drawable.draw(canvas);
+            
+            return bitmap;
+        } catch (Exception e) {
+            Log.e(TAG, "Error creating large icon bitmap: " + e.getMessage());
+            return null;
+        }
     }
 
     private int getBatteryIconResource(int batteryPercentage, boolean isCharging) {
