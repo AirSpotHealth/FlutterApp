@@ -68,42 +68,22 @@ class _DataGraphWrapperState extends ConsumerState<DataGraphWrapper> {
         ref.watch(deviceSettingsProvider(widget.deviceId));
     final GraphViewMode viewMode = ref.watch(graphViewModeProvider);
 
+    final Widget mainContent = viewMode == GraphViewMode.graph
+        ? DataGraphWidget(
+            deviceSettings: deviceSettings,
+            deviceDataList: deviceDataList.valueOrNull ?? const [],
+            loading: deviceDataList.isLoading,
+            duration: duration,
+            mapIconDataUrl: _mapIconDataUrl,
+            onMapHandoff: _onMapHandoff,
+          )
+        : ZonePieChartWidget(deviceId: widget.deviceId);
+
     return Stack(
       fit: StackFit.expand,
       children: [
         // Main content - either graph or pie chart
-        Padding(
-          padding: const EdgeInsets.only(top: 16),
-          child: viewMode == GraphViewMode.graph
-              ? DataGraphWidget(
-                  deviceSettings: deviceSettings,
-                  deviceDataList: deviceDataList.valueOrNull ?? const [],
-                  loading: deviceDataList.isLoading,
-                  duration: duration,
-                  mapIconDataUrl: _mapIconDataUrl,
-                  // Wire map handoff via chart bridge
-                  onMapHandoff: (tsMs, co2) async {
-                    debugPrint('Map handoff: $tsMs, $co2');
-                    // Build and open map handoff with selected ts and co2
-                    final service = MapHandoffService();
-                    try {
-                      final url = await service.buildSignedMapUrl(
-                        deviceId: widget.deviceId,
-                        recordLimit: 500,
-                        useFragment: true,
-                        tsMs: tsMs,
-                        selectedCo2: co2,
-                      );
-                      debugPrint('Map handoff URL: ${url.toString()}');
-                      await launchUrlString(url.toString(),
-                          mode: LaunchMode.externalApplication);
-                    } catch (e) {
-                      debugPrint('Failed to open map handoff from graph: $e');
-                    }
-                  },
-                )
-              : ZonePieChartWidget(deviceId: widget.deviceId),
-        ),
+        Padding(padding: const EdgeInsets.only(top: 16), child: mainContent),
         // Date range selector
         Positioned(
           top: 8,
@@ -118,13 +98,12 @@ class _DataGraphWrapperState extends ConsumerState<DataGraphWrapper> {
         ),
 
         // Legends (only show in graph mode)
-        if (viewMode == GraphViewMode.graph)
-          Positioned(
-            right: 12,
-            child: GraphLegends(
-              deviceSettings: deviceSettings,
-            ),
+        Positioned(
+          right: 12,
+          child: GraphLegends(
+            deviceSettings: deviceSettings,
           ),
+        ),
         // Data transmission indicator (show in both modes)
         Align(
           alignment: Alignment.bottomCenter,
@@ -155,5 +134,25 @@ class _DataGraphWrapperState extends ConsumerState<DataGraphWrapper> {
         ),
       ),
     );
+  }
+
+  void _onMapHandoff(int tsMs, int co2) async {
+    debugPrint('Map handoff: $tsMs, $co2');
+    // Build and open map handoff with selected ts and co2
+    final service = MapHandoffService();
+    try {
+      final url = await service.buildSignedMapUrl(
+        deviceId: widget.deviceId,
+        recordLimit: 500,
+        useFragment: true,
+        tsMs: tsMs,
+        selectedCo2: co2,
+      );
+      debugPrint('Map handoff URL: ${url.toString()}');
+      await launchUrlString(url.toString(),
+          mode: LaunchMode.externalApplication);
+    } catch (e) {
+      debugPrint('Failed to open map handoff from graph: $e');
+    }
   }
 }

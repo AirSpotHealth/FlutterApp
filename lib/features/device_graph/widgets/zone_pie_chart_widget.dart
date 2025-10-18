@@ -1,9 +1,11 @@
 import 'dart:math' as math;
 
 import 'package:airspothealth/core/utils/extensions.dart';
+import 'package:airspothealth/features/device_graph/models/graph_data_duration.dart';
 import 'package:airspothealth/features/device_graph/models/zone_analysis_data.dart';
 import 'package:airspothealth/features/device_graph/providers/device_historical_data_provider.dart';
 import 'package:airspothealth/features/device_graph/providers/graph_range_provider.dart';
+import 'package:airspothealth/features/device_graph/providers/graph_view_mode_provider.dart';
 import 'package:airspothealth/features/device_graph/providers/zone_analysis_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -61,7 +63,10 @@ class ZonePieChartWidget extends ConsumerWidget {
     // Sort by date descending (newest first)
     dailyData.sort((a, b) => b.date.compareTo(a.date));
 
-    return _buildCompactListView(context, dailyData);
+    return Padding(
+      padding: const EdgeInsets.only(top: 54),
+      child: _buildCompactListView(ref, dailyData),
+    );
   }
 
   Widget _buildLoadingState(BuildContext context) {
@@ -100,100 +105,121 @@ class ZonePieChartWidget extends ConsumerWidget {
   }
 
   Widget _buildCompactListView(
-      BuildContext context, List<DailyZoneAnalysisData> dailyData) {
+      WidgetRef ref, List<DailyZoneAnalysisData> dailyData) {
     return ListView.builder(
-      padding: EdgeInsets.fromLTRB(16, 40, 16, 16),
+      padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
       itemCount: dailyData.length,
       itemBuilder: (context, index) {
         final dayData = dailyData[index];
-        return _buildCompactDayRow(context, dayData);
+        return _buildCompactDayRow(ref, dayData);
       },
     );
   }
 
-  Widget _buildCompactDayRow(
-      BuildContext context, DailyZoneAnalysisData dayData) {
-    final dateFormat = DateFormat('MMM dd, yyyy');
+  Widget _buildCompactDayRow(WidgetRef ref, DailyZoneAnalysisData dayData) {
+    final dateFormat = DateFormat('E, MMM dd, yyyy'); // E adds day of week
     final zoneData = dayData.zoneData;
 
-    return Container(
-      margin: const EdgeInsets.only(bottom: 12),
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.05),
-            blurRadius: 4,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      child: Row(
-        children: [
-          // Date
-          Expanded(
-            flex: 2,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  dateFormat.format(dayData.date),
-                  style: context.textTheme.titleSmall?.copyWith(
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-                Text(
-                  '${zoneData.totalDataPoints} readings',
-                  style: context.textTheme.bodySmall?.copyWith(
-                    color: Colors.grey.shade600,
-                    fontSize: 11,
-                  ),
-                ),
-              ],
+    return InkWell(
+      onTap: () {
+        // Switch to graph mode and focus on this specific day
+        _navigateToGraphForDay(ref, dayData.date);
+      },
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 12),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(12),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.05),
+              blurRadius: 4,
+              offset: const Offset(0, 2),
             ),
-          ),
-          const SizedBox(width: 12),
-          // Compact Pie Chart
-          SizedBox(
-            width: 60,
-            height: 60,
-            child: CustomPaint(
-              painter: _CompactPieChartPainter(
-                greenPercentage: zoneData.greenPercentage,
-                yellowPercentage: zoneData.yellowPercentage,
-                redPercentage: zoneData.redPercentage,
+          ],
+        ),
+        child: Row(
+          children: [
+            // Date
+            Expanded(
+              flex: 2,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    dateFormat.format(dayData.date),
+                    style: ref.context.textTheme.titleSmall?.copyWith(
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  Text(
+                    '${zoneData.totalDataPoints} readings',
+                    style: ref.context.textTheme.bodySmall?.copyWith(
+                      color: Colors.grey.shade600,
+                      fontSize: 11,
+                    ),
+                  ),
+                ],
               ),
             ),
-          ),
-          const SizedBox(width: 16),
-          // Green Zone Percentage (Primary metric)
-          Expanded(
-            flex: 1,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.end,
-              children: [
-                Text(
-                  '${zoneData.greenPercentage}%',
-                  style: context.textTheme.headlineSmall?.copyWith(
-                    color: const Color(0xFF4CAF50),
-                    fontWeight: FontWeight.bold,
-                  ),
+            const SizedBox(width: 12),
+            // Compact Pie Chart
+            SizedBox(
+              width: 60,
+              height: 60,
+              child: CustomPaint(
+                painter: _CompactPieChartPainter(
+                  greenPercentage: zoneData.greenPercentage,
+                  yellowPercentage: zoneData.yellowPercentage,
+                  redPercentage: zoneData.redPercentage,
                 ),
-                Text(
-                  'Green',
-                  style: context.textTheme.bodySmall?.copyWith(
-                    color: Colors.grey.shade600,
-                    fontSize: 11,
-                  ),
-                ),
-              ],
+              ),
             ),
-          ),
-        ],
+            const SizedBox(width: 16),
+            // Green Zone Percentage (Primary metric)
+            Expanded(
+              flex: 1,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: [
+                  Text(
+                    '${zoneData.greenPercentage}%',
+                    style: ref.context.textTheme.headlineSmall?.copyWith(
+                      color: const Color(0xFF4CAF50),
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  Text(
+                    'Green',
+                    style: ref.context.textTheme.bodySmall?.copyWith(
+                      color: Colors.grey.shade600,
+                      fontSize: 11,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
       ),
     );
+  }
+
+  void _navigateToGraphForDay(WidgetRef ref, DateTime date) {
+    // Create a single-day date range for the selected day
+    final startOfDay = DateTime(date.year, date.month, date.day);
+    final endOfDay = DateTime(date.year, date.month, date.day, 23, 59, 59);
+
+    // Update the duration to focus on this specific day
+    ref.read(graphDurationProvider.notifier).setDuration(
+          GraphDataDuration.custom(
+            DateTimeRange(start: startOfDay, end: endOfDay),
+          ),
+        );
+
+    // Switch to graph mode
+    ref.read(graphViewModeProvider.notifier).setViewMode(GraphViewMode.graph);
   }
 }
 
