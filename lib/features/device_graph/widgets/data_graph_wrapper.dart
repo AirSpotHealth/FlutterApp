@@ -4,13 +4,16 @@ import 'package:airspothealth/core/models/device_data.dart';
 import 'package:airspothealth/core/models/device_settings.dart';
 import 'package:airspothealth/core/providers/device_settings_provider.dart';
 import 'package:airspothealth/core/services/map_handoff_service.dart';
+import 'package:airspothealth/core/theme/app_colors.dart';
 import 'package:airspothealth/features/device_graph/models/graph_data_duration.dart';
 import 'package:airspothealth/features/device_graph/providers/device_historical_data_provider.dart';
 import 'package:airspothealth/features/device_graph/providers/graph_range_provider.dart';
+import 'package:airspothealth/features/device_graph/providers/graph_view_mode_provider.dart';
 import 'package:airspothealth/features/device_graph/widgets/data_graph_widget.dart';
 import 'package:airspothealth/features/device_graph/widgets/device_data_transmission_indicator.dart';
 import 'package:airspothealth/features/device_graph/widgets/graph_legends.dart';
 import 'package:airspothealth/features/device_graph/widgets/graph_range_selector.dart';
+import 'package:airspothealth/features/device_graph/widgets/zone_pie_chart_widget.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart' show rootBundle;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -63,56 +66,94 @@ class _DataGraphWrapperState extends ConsumerState<DataGraphWrapper> {
             DeviceHistoryDataRequest(widget.deviceId, duration)));
     final DeviceSettings deviceSettings =
         ref.watch(deviceSettingsProvider(widget.deviceId));
+    final GraphViewMode viewMode = ref.watch(graphViewModeProvider);
 
     return Stack(
       fit: StackFit.expand,
       children: [
+        // Main content - either graph or pie chart
         Padding(
           padding: const EdgeInsets.only(top: 16),
-          child: DataGraphWidget(
-            deviceSettings: deviceSettings,
-            deviceDataList: deviceDataList.valueOrNull ?? const [],
-            loading: deviceDataList.isLoading,
-            duration: duration,
-            mapIconDataUrl: _mapIconDataUrl,
-            // Wire map handoff via chart bridge
-            onMapHandoff: (tsMs, co2) async {
-              debugPrint('Map handoff: $tsMs, $co2');
-              // Build and open map handoff with selected ts and co2
-              final service = MapHandoffService();
-              try {
-                final url = await service.buildSignedMapUrl(
-                  deviceId: widget.deviceId,
-                  recordLimit: 500,
-                  useFragment: true,
-                  tsMs: tsMs,
-                  selectedCo2: co2,
-                );
-                debugPrint('Map handoff URL: ${url.toString()}');
-                await launchUrlString(url.toString(),
-                    mode: LaunchMode.externalApplication);
-              } catch (e) {
-                debugPrint('Failed to open map handoff from graph: $e');
-              }
-            },
-          ),
+          child: viewMode == GraphViewMode.graph
+              ? DataGraphWidget(
+                  deviceSettings: deviceSettings,
+                  deviceDataList: deviceDataList.valueOrNull ?? const [],
+                  loading: deviceDataList.isLoading,
+                  duration: duration,
+                  mapIconDataUrl: _mapIconDataUrl,
+                  // Wire map handoff via chart bridge
+                  onMapHandoff: (tsMs, co2) async {
+                    debugPrint('Map handoff: $tsMs, $co2');
+                    // Build and open map handoff with selected ts and co2
+                    final service = MapHandoffService();
+                    try {
+                      final url = await service.buildSignedMapUrl(
+                        deviceId: widget.deviceId,
+                        recordLimit: 500,
+                        useFragment: true,
+                        tsMs: tsMs,
+                        selectedCo2: co2,
+                      );
+                      debugPrint('Map handoff URL: ${url.toString()}');
+                      await launchUrlString(url.toString(),
+                          mode: LaunchMode.externalApplication);
+                    } catch (e) {
+                      debugPrint('Failed to open map handoff from graph: $e');
+                    }
+                  },
+                )
+              : ZonePieChartWidget(deviceId: widget.deviceId),
         ),
+        // Date range selector
         Positioned(
           top: 8,
           left: 16,
-          child: const GraphRangeSelector(),
-        ),
-        Positioned(
-          right: 12,
-          child: GraphLegends(
-            deviceSettings: deviceSettings,
+          child: Row(
+            children: [
+              const GraphRangeSelector(),
+              const SizedBox(width: 8),
+              _buildViewModeToggle(context, viewMode: viewMode)
+            ],
           ),
         ),
+
+        // Legends (only show in graph mode)
+        if (viewMode == GraphViewMode.graph)
+          Positioned(
+            right: 12,
+            child: GraphLegends(
+              deviceSettings: deviceSettings,
+            ),
+          ),
+        // Data transmission indicator (show in both modes)
         Align(
           alignment: Alignment.bottomCenter,
           child: DeviceDataTransmissionIndicator(deviceId: widget.deviceId),
         ),
       ],
+    );
+  }
+
+  Widget _buildViewModeToggle(BuildContext context,
+      {required GraphViewMode viewMode}) {
+    return GestureDetector(
+      onTap: () {
+        ref.read(graphViewModeProvider.notifier).toggleViewMode();
+      },
+      child: Container(
+        padding: const EdgeInsets.all(4),
+        decoration: BoxDecoration(
+          color: AppColors.neutralWhite,
+          borderRadius: BorderRadius.circular(8),
+        ),
+        child: Image.asset(
+          viewMode == GraphViewMode.graph
+              ? 'assets/images/ic_pie_chart.png'
+              : 'assets/images/air_graph_icon.png',
+          width: 24,
+          height: 24,
+        ),
+      ),
     );
   }
 }
