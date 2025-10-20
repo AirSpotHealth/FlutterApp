@@ -20,6 +20,7 @@ import java.util.Calendar;
 import java.util.Locale;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 
 import org.json.JSONObject;
@@ -82,6 +83,10 @@ public class Co2MediumWidget extends AppWidgetProvider {
             boolean vibrationEnabled = widgetData.optBoolean("vibrationEnabled", false);
             boolean isConnected = widgetData.optBoolean("isConnected", false);
             boolean isRefreshing = widgetData.optBoolean("isRefreshing", false);
+            
+            // Extract lastUpdated timestamp
+            long lastUpdatedMs = widgetData.optLong("lastUpdated", System.currentTimeMillis());
+            String lastUpdatedTime = formatDataTimestamp(lastUpdatedMs);
 
             // Graph data
             JSONArray co2HistoryArray = widgetData.optJSONArray("co2History");
@@ -95,7 +100,7 @@ public class Co2MediumWidget extends AppWidgetProvider {
             if (hasValidDevice) {
                 // Device name and time
                 views.setTextViewText(R.id.device_name, deviceName);
-                views.setTextViewText(R.id.last_updated, getCurrentTime());
+                views.setTextViewText(R.id.last_updated, lastUpdatedTime);
                 
                 // CO2 value with color coding
                 views.setTextViewText(R.id.co2_value, co2Value);
@@ -314,10 +319,10 @@ public class Co2MediumWidget extends AppWidgetProvider {
         }
     }
 
-    private static String getCurrentTime() {
-        Calendar calendar = Calendar.getInstance();
+    private static String formatDataTimestamp(long timestampMs) {
+        Date date = new Date(timestampMs);
         SimpleDateFormat timeFormat = new SimpleDateFormat("h:mm a", Locale.getDefault());
-        return "at " + timeFormat.format(calendar.getTime());
+        return "at " + timeFormat.format(date);
     }
 
     @Override

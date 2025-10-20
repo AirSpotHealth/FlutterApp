@@ -458,6 +458,10 @@ public class ForegroundNotificationService extends Service {
             boolean vibrationEnabled = widgetData.optBoolean("vibrationEnabled", false);
             boolean isConnected = widgetData.optBoolean("isConnected", false);
             boolean isRefreshing = widgetData.optBoolean("isRefreshing", false);
+            
+            // Extract lastUpdated timestamp
+            long lastUpdatedMs = widgetData.optLong("lastUpdated", System.currentTimeMillis());
+            String customTimestamp = "at " + new SimpleDateFormat("h:mm a", Locale.getDefault()).format(new Date(lastUpdatedMs));
 
             // Extract graph data
             JSONArray co2HistoryArray = widgetData.optJSONArray("co2History");
@@ -468,9 +472,6 @@ public class ForegroundNotificationService extends Service {
             int graphMinValue = widgetData.optInt("graphMinValue", 0);
 
             Log.d(TAG, "Parsed data - CO2: " + co2Value + ", Device: " + deviceName + ", History: " + co2History.size() + " values");
-
-            // Format custom timestamp
-            String customTimestamp = "at " + new SimpleDateFormat("h:mm a", Locale.getDefault()).format(new Date());
 
             Log.d(TAG, "Custom timestamp: " + customTimestamp);
             Log.d(TAG, "Locale: " + Locale.getDefault());
@@ -598,8 +599,9 @@ public class ForegroundNotificationService extends Service {
             int graphMaxValue = deviceDataObj.optInt("graphMaxValue", 1600);
             int graphMinValue = deviceDataObj.optInt("graphMinValue", 0);
             
-            // Format custom timestamp
-            String customTimestamp = "at " + new SimpleDateFormat("h:mm a", Locale.getDefault()).format(new Date());
+            // Extract lastUpdated timestamp and format it
+            long lastUpdatedMs = deviceDataObj.optLong("lastUpdated", System.currentTimeMillis());
+            String customTimestamp = "at " + new SimpleDateFormat("h:mm a", Locale.getDefault()).format(new Date(lastUpdatedMs));
             
             // Create open app intent
             Intent openAppIntent = new Intent(this, MainActivity.class);
