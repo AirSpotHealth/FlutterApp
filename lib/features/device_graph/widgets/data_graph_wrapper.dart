@@ -6,13 +6,16 @@ import 'package:airspothealth/core/providers/device_settings_provider.dart';
 import 'package:airspothealth/core/services/map_handoff_service.dart';
 import 'package:airspothealth/core/theme/app_colors.dart';
 import 'package:airspothealth/features/device_graph/models/graph_data_duration.dart';
+import 'package:airspothealth/features/device_graph/models/zone_analysis_data.dart';
 import 'package:airspothealth/features/device_graph/providers/device_historical_data_provider.dart';
 import 'package:airspothealth/features/device_graph/providers/graph_range_provider.dart';
 import 'package:airspothealth/features/device_graph/providers/graph_view_mode_provider.dart';
+import 'package:airspothealth/features/device_graph/providers/zone_analysis_provider.dart';
 import 'package:airspothealth/features/device_graph/widgets/data_graph_widget.dart';
 import 'package:airspothealth/features/device_graph/widgets/device_data_transmission_indicator.dart';
 import 'package:airspothealth/features/device_graph/widgets/graph_legends.dart';
 import 'package:airspothealth/features/device_graph/widgets/graph_range_selector.dart';
+import 'package:airspothealth/features/device_graph/widgets/mini_pie_chart_icon.dart';
 import 'package:airspothealth/features/device_graph/widgets/zone_pie_chart_widget.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart' show rootBundle;
@@ -125,14 +128,78 @@ class _DataGraphWrapperState extends ConsumerState<DataGraphWrapper> {
           color: AppColors.neutralWhite,
           borderRadius: BorderRadius.circular(8),
         ),
-        child: Image.asset(
-          viewMode == GraphViewMode.graph
-              ? 'assets/images/ic_pie_chart.png'
-              : 'assets/images/air_graph_icon.png',
-          width: 24,
-          height: 24,
-        ),
+        child: viewMode == GraphViewMode.graph
+            ? _buildPieChartToggleIcon()
+            : Image.asset(
+                'assets/images/air_graph_icon.png',
+                width: 24,
+                height: 24,
+              ),
       ),
+    );
+  }
+
+  Widget _buildPieChartToggleIcon() {
+    final zoneAnalysisResult = ref.watch(zoneAnalysisProvider(widget.deviceId));
+
+    // Get aggregated data for the toggle icon
+    // If it's multi-day, we'll show combined data; if single day, show that day's data
+    final zoneData = zoneAnalysisResult.aggregatedData ??
+        (zoneAnalysisResult.dailyData?.isNotEmpty == true
+            ? _calculateCombinedZoneData(zoneAnalysisResult.dailyData!)
+            : null);
+
+    return MiniPieChartIcon(
+      zoneData: zoneData,
+      size: 26,
+    );
+  }
+
+  /// Calculate combined zone data from multiple days for the toggle icon
+  ZoneAnalysisData? _calculateCombinedZoneData(
+      List<DailyZoneAnalysisData> dailyData) {
+    if (dailyData.isEmpty) return null;
+
+    int totalGreenPoints = 0;
+    int totalYellowPoints = 0;
+    int totalRedPoints = 0;
+    int totalDataPoints = 0;
+
+    for (final day in dailyData) {
+      final dayTotal = day.zoneData.totalDataPoints;
+      totalGreenPoints +=
+          ((day.zoneData.greenPercentage * dayTotal) / 100).round();
+      totalYellowPoints +=
+          ((day.zoneData.yellowPercentage * dayTotal) / 100).round();
+      totalRedPoints += ((day.zoneData.redPercentage * dayTotal) / 100).round();
+      totalDataPoints += dayTotal;
+    }
+
+    if (totalDataPoints == 0) return null;
+
+    final greenPercentage =
+        ((totalGreenPoints / totalDataPoints) * 100).round();
+    final yellowPercentage =
+        ((totalYellowPoints / totalDataPoints) * 100).round();
+    final redPercentage = ((totalRedPoints / totalDataPoints) * 100).round();
+
+    // Determine dominant zone
+    String dominantZone;
+    if (totalGreenPoints >= totalYellowPoints &&
+        totalGreenPoints >= totalRedPoints) {
+      dominantZone = 'green';
+    } else if (totalYellowPoints >= totalRedPoints) {
+      dominantZone = 'yellow';
+    } else {
+      dominantZone = 'red';
+    }
+
+    return ZoneAnalysisData(
+      greenPercentage: greenPercentage,
+      yellowPercentage: yellowPercentage,
+      redPercentage: redPercentage,
+      dominantZone: dominantZone,
+      totalDataPoints: totalDataPoints,
     );
   }
 
