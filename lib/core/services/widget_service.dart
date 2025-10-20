@@ -82,6 +82,42 @@ class WidgetService {
     }
   }
 
+  /// Update widget with disconnected state for a specific device
+  /// This immediately shows the device as disconnected on the widget
+  Future<void> updateDisconnectedState({
+    required String deviceId,
+  }) async {
+    try {
+      debugPrint('📱 Widget: Updating disconnected state for device: $deviceId');
+
+      // Get existing widget data for this device
+      if (!_widgetData.containsKey(deviceId)) {
+        debugPrint(
+            '📱 Widget: No data found for device $deviceId, cannot update disconnected state');
+        return;
+      }
+
+      final currentData = _widgetData[deviceId]!;
+
+      // Update with disconnected state
+      final disconnectedData = currentData.copyWith(
+        isConnected: false,
+        isRefreshing: false,
+      );
+      _widgetData[deviceId] = disconnectedData;
+
+      // Persist to shared storage
+      await _persistWidgetData();
+
+      // Trigger widget refresh to show disconnected state
+      await _triggerWidgetRefresh();
+
+      debugPrint('✅ Widget: Disconnected state updated for device: $deviceId');
+    } catch (e) {
+      debugPrint('❌ Widget: Error updating disconnected state: $e');
+    }
+  }
+
   /// Remove widget data for a specific device
   /// This immediately updates all widgets to reflect the device removal
   Future<void> removeWidgetData(String deviceId) async {

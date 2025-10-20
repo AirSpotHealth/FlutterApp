@@ -465,6 +465,11 @@ class LiveActivityService {
     return _activeDeviceIds.contains(deviceId);
   }
 
+  // Check if a device has stored data (was previously active)
+  bool wasDevicePreviouslyActive(String deviceId) {
+    return _activeLiveActivities.containsKey(deviceId);
+  }
+
   // Get the number of active devices
   int getActiveDeviceCount() {
     return _activeDeviceIds.length;
@@ -691,6 +696,11 @@ class LiveActivityService {
         dominantZonePercentage: 0,
       );
 
+      // Check if this is a reconnection scenario (device was disconnected and now connected)
+      final wasDisconnected = _activeLiveActivities[deviceId]?.isConnected == false;
+      final isNowConnected = isConnected;
+      final isReconnection = wasDisconnected && isNowConnected;
+
       // Store the data for potential disconnection updates
       _activeLiveActivities[deviceId] = liveActivityData;
 
@@ -698,7 +708,13 @@ class LiveActivityService {
 
       // Handle Live Activity based on toggle
       if (deviceSettings?.showLiveActivity == true) {
-        await updateLiveActivity(deviceId: deviceId, data: liveActivityData);
+        if (isReconnection) {
+          debugPrint('LiveActivity: Detected reconnection for device $deviceId - restarting with fresh timer');
+          // For reconnection, ensure we get a fresh Live Activity with new timer
+          await _restartLiveActivityForReconnection(deviceId: deviceId, data: liveActivityData);
+        } else {
+          await updateLiveActivity(deviceId: deviceId, data: liveActivityData);
+        }
         // NOTE: On iOS, only ONE Live Activity can be active at a time.
         // If multiple devices have Live Activity enabled, the most recently
         // updated device will be shown. This is an iOS platform limitation.
@@ -751,6 +767,7 @@ class LiveActivityService {
       final disconnectedData = lastData.copyWith(
         isConnected: false,
         isRefreshing: false,
+        lastUpdated: DateTime.now(), // Update the timestamp for disconnection
       );
 
       // Force update even if settings say not to show Live Activity
@@ -917,5 +934,87 @@ class LiveActivityService {
       _devicesToAutoDisable.remove(deviceId);
     }
     return shouldDisable;
+  }
+
+  /// Restart Live Activity for reconnected device to get fresh 8-hour timer
+  Future<void> _restartLiveActivityForReconnection({
+    required String deviceId,
+    required LiveActivityModel data,
+  }) async {
+    try {
+      debugPrint('LiveActivity: Restarting Live Activity for reconnected device: $deviceId');
+      
+      // Remove the old Live Activity first
+      if (_activeDeviceIds.contains(deviceId)) {
+        await removeDeviceLiveActivity(deviceId);
+        
+        // Wait a moment for clean transition
+        await Future.delayed(const Duration(milliseconds: 300));
+      }
+      
+      // Reset the activity start time for fresh timer
+      _activityStartTimes[deviceId] = DateTime.now();
+      
+      // Create fresh Live Activity with new start time
+      final freshData = data.copyWith(
+        activityStartTime: _activityStartTimes[deviceId],
+        lastUpdated: DateTime.now(),
+      );
+      
+      // Start fresh Live Activity
+      await updateLiveActivity(deviceId: deviceId, data: freshData);
+      
+      debugPrint('LiveActivity: Successfully restarted Live Activity with fresh timer for device: $deviceId');
+    } catch (e) {
+      debugPrint('LiveActivity: Error restarting Live Activity for device $deviceId: $e');
+      // Fallback to regular update if restart fails
+      await updateLiveActivity(deviceId: deviceId, data: data);
+    }
+  }
+
+  /// Clean up stale disconnected notifications
+  /// This should be called when the app comes to foreground
+  Future<void> cleanupStaleDisconnectedNotifications() async {
+    try {
+      debugPrint('LiveActivity: Checking for stale disconnected notifications');
+      
+      final staleDevices = <String>[];
+      
+      // Check each active device
+      for (final deviceId in _activeDeviceIds.toList()) {
+        final deviceData = _activeLiveActivities[deviceId];
+        
+        if (deviceData != null && !deviceData.isConnected) {
+          // Check how long the device has been disconnected
+          final lastUpdated = deviceData.lastUpdated ?? DateTime.now();
+          final timeSinceUpdate = DateTime.now().difference(lastUpdated);
+          
+          // If disconnected for more than 10 minutes, consider it stale
+          if (timeSinceUpdate.inMinutes > 10) {
+            debugPrint('LiveActivity: Found stale disconnected notification for device: $deviceId (disconnected for ${timeSinceUpdate.inMinutes} minutes)');
+            staleDevices.add(deviceId);
+          }
+        }
+      }
+      
+      // Clean up stale devices
+      for (final deviceId in staleDevices) {
+        debugPrint('LiveActivity: Cleaning up stale notification for device: $deviceId');
+        
+        // Remove the notification
+        await removeDeviceLiveActivity(deviceId);
+        
+        // Optionally disable the Live Activity setting to prevent future ghost notifications
+        _immediatelyDisableLiveActivitySetting(deviceId);
+      }
+      
+      if (staleDevices.isNotEmpty) {
+        debugPrint('LiveActivity: Cleaned up ${staleDevices.length} stale disconnected notifications');
+      } else {
+        debugPrint('LiveActivity: No stale disconnected notifications found');
+      }
+    } catch (e) {
+      debugPrint('LiveActivity: Error cleaning up stale notifications: $e');
+    }
   }
 }

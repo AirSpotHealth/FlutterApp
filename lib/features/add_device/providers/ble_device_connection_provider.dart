@@ -65,6 +65,9 @@ class _BleDeviceConnectionNotifier
 
         _refreshAndAddDevice();
 
+        // Handle reconnection - restart Live Activity for fresh timer
+        _handleDeviceReconnection();
+
         state = BluetoothBondState.bonded;
 
         ref.read(bleDeviceCommunicationProvider(arg).notifier).setConnected();
@@ -176,6 +179,31 @@ class _BleDeviceConnectionNotifier
       }
     } catch (e) {
       debugPrint('Error updating live activity/widget on disconnect: $e');
+    }
+  }
+
+  void _handleDeviceReconnection() async {
+    try {
+      debugPrint('Device reconnected: $arg - Live Activity will restart automatically with fresh data');
+      
+      // Update widget with reconnected state if it exists
+      final widgetData = WidgetService().getWidgetData(arg);
+      if (widgetData != null) {
+        await WidgetService().updateWidgetData(
+          deviceId: arg,
+          data: widgetData.copyWith(
+            isConnected: true,
+            isRefreshing: false,
+          ),
+        );
+        debugPrint('✅ Widget updated with reconnected state for: $arg');
+      }
+      
+      // Note: Live Activity restart will be handled automatically in LiveActivityService
+      // when fresh CO2 data arrives via BleDeviceCommunicationProvider.setHomeValue()
+      // This ensures we get a fresh 8-hour timer on iOS
+    } catch (e) {
+      debugPrint('Error handling device reconnection: $e');
     }
   }
 }

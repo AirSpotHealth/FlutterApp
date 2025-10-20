@@ -1,5 +1,6 @@
 import 'package:airspothealth/core/router/app_router.dart';
 import 'package:airspothealth/core/services/isar_service.dart';
+import 'package:airspothealth/core/services/live_activity_service.dart';
 import 'package:airspothealth/core/services/notification_service.dart';
 import 'package:airspothealth/core/services/prefs_service.dart';
 import 'package:airspothealth/core/theme/app_theme.dart';
@@ -37,6 +38,9 @@ void main() async {
     _initializeHomeWidget(),
   ].wait;
 
+  // Clean up any stale notifications after services are initialized
+  _cleanupStaleNotifications();
+
   await _checkVersion();
 
   runApp(
@@ -44,6 +48,17 @@ void main() async {
       child: const AirspotApp(),
     ),
   );
+}
+
+void _cleanupStaleNotifications() {
+  // Schedule cleanup after a short delay to ensure all services are ready
+  Future.delayed(const Duration(seconds: 2), () {
+    try {
+      LiveActivityService().cleanupStaleDisconnectedNotifications();
+    } catch (e) {
+      debugPrint('Error during startup notification cleanup: $e');
+    }
+  });
 }
 
 Future<void> _initializeHomeWidget() async {
