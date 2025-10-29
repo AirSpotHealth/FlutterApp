@@ -533,12 +533,15 @@ class LiveActivityService {
       if (Platform.isAndroid) {
         if (isNewDevice) {
           // Add new notification
+          // Note: On Android 14+, this may fail with ForegroundServiceStartNotAllowedException
+          // if app is in background. In that case, we'll wait until app resumes.
           await platform.invokeMethod('addDeviceNotification', {
             'deviceId': deviceId,
             'data': updatedData.toJson(),
           });
         } else {
           // Update existing notification with new data
+          // This works fine even when app is in background on Android 14+
           await platform.invokeMethod('updateDeviceNotification', {
             'deviceId': deviceId,
             'data': updatedData.toJson(),
@@ -553,6 +556,26 @@ class LiveActivityService {
     } on PlatformException catch (e) {
       debugPrint(
           "Failed to update live activity for device $deviceId: '${e.message}'.");
+
+      // Special handling for background restrictions on both platforms
+      final isBackgroundRestrictionError = (Platform.isAndroid &&
+              e.message != null &&
+              e.message!
+                  .contains('ForegroundServiceStartNotAllowedException')) ||
+          (Platform.isIOS &&
+              e.message != null &&
+              (e.message!.contains('background') ||
+                  e.message!.contains('not allowed') ||
+                  e.code == 'BACKGROUND_RESTRICTION'));
+
+      if (isBackgroundRestrictionError) {
+        debugPrint(
+            "Platform restriction: Cannot start Live Activity/notification from background. "
+            "Will be created when app returns to foreground.");
+        // Keep device in active list and store data so checkAndRestartMissingLiveActivities()
+        // can create it when app resumes
+        return;
+      }
 
       // If update fails and device is disconnected, ensure we still show disconnected state
       if (!data.isConnected) {
@@ -696,8 +719,12 @@ class LiveActivityService {
         dominantZonePercentage: 0,
       );
 
+      // Check if Live Activity toggle is enabled
+      final bool showLiveActivity = deviceSettings?.showLiveActivity ?? false;
+
       // Check if this is a reconnection scenario (device was disconnected and now connected)
-      final wasDisconnected = _activeLiveActivities[deviceId]?.isConnected == false;
+      final wasDisconnected =
+          _activeLiveActivities[deviceId]?.isConnected == false;
       final isNowConnected = isConnected;
       final isReconnection = wasDisconnected && isNowConnected;
 
@@ -706,21 +733,41 @@ class LiveActivityService {
 
       // NOTE: Widgets are updated separately via WidgetService (called by BLE provider)
 
-      // Handle Live Activity based on toggle
-      if (deviceSettings?.showLiveActivity == true) {
-        if (isReconnection) {
-          debugPrint('LiveActivity: Detected reconnection for device $deviceId - restarting with fresh timer');
-          // For reconnection, ensure we get a fresh Live Activity with new timer
-          await _restartLiveActivityForReconnection(deviceId: deviceId, data: liveActivityData);
+      // Handle Live Activity based on toggle and connection state
+      if (showLiveActivity) {
+        if (isConnected) {
+          // Device is connected and toggle is ON
+          if (isReconnection) {
+            debugPrint(
+                'LiveActivity: Detected reconnection for device $deviceId - restarting with fresh timer');
+            // For reconnection, ensure we get a fresh Live Activity with new timer
+            await _restartLiveActivityForReconnection(
+                deviceId: deviceId, data: liveActivityData);
+          } else if (!_activeDeviceIds.contains(deviceId)) {
+            // Device is connected but not showing Live Activity yet - start it
+            debugPrint(
+                'LiveActivity: Device $deviceId is connected with toggle ON but no active Live Activity - starting fresh');
+            await _restartLiveActivityForReconnection(
+                deviceId: deviceId, data: liveActivityData);
+          } else {
+            // Normal update for connected device
+            await updateLiveActivity(
+                deviceId: deviceId, data: liveActivityData);
+          }
         } else {
-          await updateLiveActivity(deviceId: deviceId, data: liveActivityData);
+          // Device is disconnected but toggle is ON - show disconnected state
+          debugPrint(
+              'LiveActivity: Device $deviceId is disconnected but toggle is ON - showing disconnected state');
+          await updateWithDisconnectedState(deviceId: deviceId);
         }
         // NOTE: On iOS, only ONE Live Activity can be active at a time.
         // If multiple devices have Live Activity enabled, the most recently
         // updated device will be shown. This is an iOS platform limitation.
       } else {
-        // If Live Activity is disabled, only remove if it's actually active
+        // Toggle is OFF - remove Live Activity if it exists
         if (_activeDeviceIds.contains(deviceId)) {
+          debugPrint(
+              'LiveActivity: Toggle is OFF for device $deviceId - removing Live Activity');
           if (Platform.isAndroid) {
             // Android: Can remove specific device notification without affecting others
             await removeDeviceLiveActivity(deviceId);
@@ -741,6 +788,7 @@ class LiveActivityService {
 
   /// Method to update Live Activity when device disconnects
   /// Uses the last known data and marks the device as disconnected
+  /// IMPORTANT: This should preserve the notification/live activity, just show it as disconnected
   Future<void> updateWithDisconnectedState({
     required String deviceId,
   }) async {
@@ -756,10 +804,20 @@ class LiveActivityService {
         return;
       }
 
-      // Only update if this device currently has an active Live Activity
-      if (!_activeDeviceIds.contains(deviceId)) {
+      // IMPORTANT: Check if Live Activity toggle is enabled for this device
+      // If it's disabled, don't show disconnected state
+      final deviceSettings = IsarService().read<DeviceSettings?>((isar) {
+        return isar.deviceSettings
+            .where()
+            .deviceIdEqualTo(deviceId)
+            .findFirst();
+      });
+
+      if (deviceSettings?.showLiveActivity != true) {
         debugPrint(
-            'LiveActivity: Device $deviceId is not in active devices, skipping disconnected state update');
+            'LiveActivity: Live Activity toggle is OFF for device $deviceId, skipping disconnected state update');
+        // Remove from active devices since toggle is off
+        _activeDeviceIds.remove(deviceId);
         return;
       }
 
@@ -770,10 +828,12 @@ class LiveActivityService {
         lastUpdated: DateTime.now(), // Update the timestamp for disconnection
       );
 
-      // Force update even if settings say not to show Live Activity
-      // This ensures the disconnected state is shown immediately
+      // Keep device in active devices so notification persists
+      _activeDeviceIds.add(deviceId);
+
+      // Update the Live Activity with disconnected state
       if (Platform.isAndroid) {
-        await platform.invokeMethod('addDeviceNotification', {
+        await platform.invokeMethod('updateDeviceNotification', {
           'deviceId': deviceId,
           'data': disconnectedData.toJson(),
         });
@@ -936,85 +996,133 @@ class LiveActivityService {
     return shouldDisable;
   }
 
-  /// Restart Live Activity for reconnected device to get fresh 8-hour timer
+  /// Restart Live Activity for reconnected device
+  /// Both iOS and Android: Just update existing Live Activity/notification
+  /// Cannot start NEW activities from background (both platforms have restrictions)
+  /// If no existing activity, data is stored and will be created when app resumes
   Future<void> _restartLiveActivityForReconnection({
     required String deviceId,
     required LiveActivityModel data,
   }) async {
     try {
-      debugPrint('LiveActivity: Restarting Live Activity for reconnected device: $deviceId');
-      
-      // Remove the old Live Activity first
-      if (_activeDeviceIds.contains(deviceId)) {
-        await removeDeviceLiveActivity(deviceId);
-        
-        // Wait a moment for clean transition
-        await Future.delayed(const Duration(milliseconds: 300));
-      }
-      
-      // Reset the activity start time for fresh timer
-      _activityStartTimes[deviceId] = DateTime.now();
-      
-      // Create fresh Live Activity with new start time
+      debugPrint(
+          'LiveActivity: Updating Live Activity for reconnected device: $deviceId');
+
+      // For both platforms: Just update existing notification/activity
+      // Don't try to create new ones from background (both platforms restrict this)
+
+      // Update timestamp for tracking
       final freshData = data.copyWith(
-        activityStartTime: _activityStartTimes[deviceId],
         lastUpdated: DateTime.now(),
       );
-      
-      // Start fresh Live Activity
+
+      // This will attempt to update existing activity
+      // If it fails (e.g., app in background, no existing activity),
+      // the error handler in _updateDeviceLiveActivity will catch it
       await updateLiveActivity(deviceId: deviceId, data: freshData);
-      
-      debugPrint('LiveActivity: Successfully restarted Live Activity with fresh timer for device: $deviceId');
+
+      debugPrint(
+          'LiveActivity: Successfully updated Live Activity for device: $deviceId');
     } catch (e) {
-      debugPrint('LiveActivity: Error restarting Live Activity for device $deviceId: $e');
-      // Fallback to regular update if restart fails
-      await updateLiveActivity(deviceId: deviceId, data: data);
+      debugPrint(
+          'LiveActivity: Error updating Live Activity for device $deviceId: $e');
+      // Error is already logged, data is stored in _activeLiveActivities
+      // checkAndRestartMissingLiveActivities() will create it when app resumes
     }
   }
 
-  /// Clean up stale disconnected notifications
-  /// This should be called when the app comes to foreground
+  /// Clean up truly stale disconnected notifications (devices disconnected for 24+ hours)
+  /// This is a safety net for abandoned devices that user won't reconnect
+  /// Most cases are handled by reconnection detection in updateWithCO2Data()
   Future<void> cleanupStaleDisconnectedNotifications() async {
     try {
-      debugPrint('LiveActivity: Checking for stale disconnected notifications');
-      
+      debugPrint(
+          'LiveActivity: Checking for truly stale disconnected notifications (24+ hours)');
+
       final staleDevices = <String>[];
-      
+
       // Check each active device
       for (final deviceId in _activeDeviceIds.toList()) {
         final deviceData = _activeLiveActivities[deviceId];
-        
+
         if (deviceData != null && !deviceData.isConnected) {
           // Check how long the device has been disconnected
-          final lastUpdated = deviceData.lastUpdated ?? DateTime.now();
+          final lastUpdated = deviceData.lastUpdated;
           final timeSinceUpdate = DateTime.now().difference(lastUpdated);
-          
-          // If disconnected for more than 10 minutes, consider it stale
-          if (timeSinceUpdate.inMinutes > 10) {
-            debugPrint('LiveActivity: Found stale disconnected notification for device: $deviceId (disconnected for ${timeSinceUpdate.inMinutes} minutes)');
+
+          // Only clean up devices disconnected for 24+ hours (truly abandoned)
+          // Devices that reconnect sooner will be handled by reconnection logic
+          if (timeSinceUpdate.inHours >= 24) {
+            debugPrint(
+                'LiveActivity: Found truly stale disconnected notification for device: $deviceId (disconnected for ${timeSinceUpdate.inHours} hours)');
             staleDevices.add(deviceId);
           }
         }
       }
-      
-      // Clean up stale devices
+
+      // Clean up truly stale devices
       for (final deviceId in staleDevices) {
-        debugPrint('LiveActivity: Cleaning up stale notification for device: $deviceId');
-        
+        debugPrint(
+            'LiveActivity: Cleaning up notification for abandoned device: $deviceId');
+
         // Remove the notification
         await removeDeviceLiveActivity(deviceId);
-        
-        // Optionally disable the Live Activity setting to prevent future ghost notifications
+
+        // Auto-disable the Live Activity setting since device is clearly abandoned
+        debugPrint(
+            'LiveActivity: Device abandoned for 24+ hours - auto-disabling toggle');
         _immediatelyDisableLiveActivitySetting(deviceId);
       }
-      
+
       if (staleDevices.isNotEmpty) {
-        debugPrint('LiveActivity: Cleaned up ${staleDevices.length} stale disconnected notifications');
+        debugPrint(
+            'LiveActivity: Cleaned up ${staleDevices.length} truly stale notifications (24+ hours)');
       } else {
-        debugPrint('LiveActivity: No stale disconnected notifications found');
+        debugPrint('LiveActivity: No truly stale notifications found');
       }
     } catch (e) {
       debugPrint('LiveActivity: Error cleaning up stale notifications: $e');
+    }
+  }
+
+  /// Check and restart any Live Activities that should be active but aren't showing
+  /// This handles the edge case where toggle is ON but notification isn't showing
+  Future<void> checkAndRestartMissingLiveActivities() async {
+    try {
+      debugPrint(
+          'LiveActivity: Checking for missing Live Activities that should be active');
+
+      // Get all devices with Live Activity toggle enabled
+      final allDeviceSettings =
+          IsarService().read<List<DeviceSettings>>((isar) {
+        return isar.deviceSettings
+            .where()
+            .showLiveActivityEqualTo(true)
+            .findAll();
+      });
+
+      for (final settings in allDeviceSettings) {
+        final deviceId = settings.deviceId;
+
+        // Check if this device should have a Live Activity but doesn't
+        if (!_activeDeviceIds.contains(deviceId)) {
+          // Check if we have stored data for this device
+          final storedData = _activeLiveActivities[deviceId];
+
+          if (storedData != null && storedData.isConnected) {
+            // Device is connected with toggle ON but no active Live Activity
+            debugPrint(
+                'LiveActivity: Found device $deviceId with toggle ON and connected but no active Live Activity - restarting');
+            await _restartLiveActivityForReconnection(
+              deviceId: deviceId,
+              data: storedData,
+            );
+          }
+        }
+      }
+    } catch (e) {
+      debugPrint(
+          'LiveActivity: Error checking for missing Live Activities: $e');
     }
   }
 }

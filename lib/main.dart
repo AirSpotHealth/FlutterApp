@@ -38,8 +38,9 @@ void main() async {
     _initializeHomeWidget(),
   ].wait;
 
-  // Clean up any stale notifications after services are initialized
-  _cleanupStaleNotifications();
+  // Clean up stale Live Activities IMMEDIATELY before BLE connects
+  // This prevents race condition where new Live Activities are created before cleanup
+  await _cleanupStaleNotifications();
 
   await _checkVersion();
 
@@ -50,15 +51,21 @@ void main() async {
   );
 }
 
-void _cleanupStaleNotifications() {
-  // Schedule cleanup after a short delay to ensure all services are ready
-  Future.delayed(const Duration(seconds: 2), () {
-    try {
-      LiveActivityService().cleanupStaleDisconnectedNotifications();
-    } catch (e) {
-      debugPrint('Error during startup notification cleanup: $e');
-    }
-  });
+Future<void> _cleanupStaleNotifications() async {
+  try {
+    debugPrint(
+        '🧹 Startup: Removing stale Live Activities from previous app session');
+
+    // Since BLE devices disconnect when app is killed, any Live Activities
+    // from previous session are showing stale "connected" data
+    // Remove them BEFORE BLE auto-connect happens (which triggers in bluetoothStateProvider)
+    await LiveActivityService().endLiveActivity();
+
+    debugPrint(
+        '✅ Stale Live Activities cleared - fresh ones will be created on device reconnection');
+  } catch (e) {
+    debugPrint('❌ Error during startup notification cleanup: $e');
+  }
 }
 
 Future<void> _initializeHomeWidget() async {
@@ -103,8 +110,83 @@ Future<void> _checkVersion() async {
   }
 }
 
-class AirspotApp extends StatelessWidget {
+class AirspotApp extends StatefulWidget {
   const AirspotApp({super.key});
+
+  @override
+  State<AirspotApp> createState() => _AirspotAppState();
+}
+
+class _AirspotAppState extends State<AirspotApp> with WidgetsBindingObserver {
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    super.didChangeAppLifecycleState(state);
+
+    debugPrint('App lifecycle state changed: $state');
+
+    switch (state) {
+      case AppLifecycleState.resumed:
+        // App came to foreground - clean up stale notifications
+        // and restart missing live activities
+        _handleAppResumed();
+        break;
+
+      case AppLifecycleState.paused:
+        // App is about to go to background or be terminated
+        // Note: This doesn't mean app is killed, just backgrounded
+        debugPrint('App paused - devices will disconnect if app is killed');
+        break;
+
+      case AppLifecycleState.detached:
+        // App is about to be terminated (killed by system or user)
+        // Since BLE devices disconnect when app is killed, remove all Live Activities
+        _handleAppTermination();
+        break;
+
+      case AppLifecycleState.inactive:
+        // App is inactive (transitioning between states)
+        break;
+
+      case AppLifecycleState.hidden:
+        // App window is hidden
+        break;
+    }
+  }
+
+  void _handleAppResumed() {
+    debugPrint('App resumed - checking for missing Live Activities');
+
+    // Check and restart any missing Live Activities for connected devices
+    // This handles edge cases where toggle is ON but notification isn't showing
+    LiveActivityService().checkAndRestartMissingLiveActivities();
+  }
+
+  void _handleAppTermination() {
+    debugPrint(
+        'App being terminated - removing all Live Activities/notifications');
+    debugPrint('Reason: BLE devices disconnect when app is killed');
+
+    try {
+      // End all Live Activities since devices will disconnect anyway
+      LiveActivityService().endLiveActivity();
+      debugPrint(
+          '✅ All Live Activities/notifications removed on app termination');
+    } catch (e) {
+      debugPrint('❌ Error removing Live Activities on termination: $e');
+    }
+  }
 
   @override
   Widget build(BuildContext context) {

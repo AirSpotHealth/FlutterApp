@@ -4,6 +4,7 @@ import 'package:airspothealth/core/models/device_settings.dart';
 import 'package:airspothealth/core/providers/ble_device_communication_provider.dart';
 import 'package:airspothealth/core/providers/isar_service_provider.dart';
 import 'package:airspothealth/core/services/isar_service.dart';
+import 'package:airspothealth/core/services/live_activity_service.dart';
 import 'package:airspothealth/core/services/widget_service.dart';
 import 'package:airspothealth/core/utils/device_cmd_utils.dart';
 import 'package:airspothealth/core/utils/extensions.dart';
@@ -57,18 +58,34 @@ class _BleSavedDevicesNotifier extends Notifier<List<BleDevice>> {
 
     state = state.where((d) => d.deviceId != deviceId).toList();
 
-    // Clean up widget data for removed device
-    _cleanupWidgetDataForRemovedDevice(deviceId);
+    // Clean up both widget data AND live activity for removed device
+    _cleanupForRemovedDevice(deviceId);
   }
 
-  /// Clean up widget data when device is removed
-  void _cleanupWidgetDataForRemovedDevice(String deviceId) {
+  /// Clean up widget data and live activity when device is removed/forgotten
+  void _cleanupForRemovedDevice(String deviceId) {
     try {
-      // Import WidgetService at the top of the file
+      debugPrint('🧹 Starting cleanup for removed device: $deviceId');
+
+      // 1. Remove Live Activity/notification if it exists
+      LiveActivityService().removeDeviceLiveActivity(deviceId);
+      debugPrint('✅ Live Activity removed for device: $deviceId');
+
+      // 2. Clear all callbacks for this device
+      LiveActivityService().clearAllDeviceCallbacks(deviceId);
+      debugPrint('✅ Live Activity callbacks cleared for device: $deviceId');
+
+      // 3. Clear stored Live Activity data
+      LiveActivityService().clearDeviceData(deviceId);
+      debugPrint('✅ Live Activity data cleared for device: $deviceId');
+
+      // 4. Remove widget data (this also updates widget device list)
       WidgetService().removeWidgetData(deviceId);
-      debugPrint('✅ Cleaned up widget data for removed device: $deviceId');
+      debugPrint('✅ Widget data removed for device: $deviceId');
+
+      debugPrint('✅ Complete cleanup finished for removed device: $deviceId');
     } catch (e) {
-      debugPrint('❌ Error cleaning up widget data for device $deviceId: $e');
+      debugPrint('❌ Error during cleanup for device $deviceId: $e');
     }
   }
 
