@@ -2,7 +2,7 @@ import 'package:airspothealth/core/models/notification_preferences.dart';
 import 'package:airspothealth/core/services/isar_service.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:isar/isar.dart';
+import 'package:isar_plus/isar_plus.dart';
 
 /// Provider for notification preferences per device
 final notificationPreferencesProvider = NotifierProvider.family<

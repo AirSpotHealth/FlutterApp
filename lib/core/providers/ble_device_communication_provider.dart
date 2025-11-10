@@ -27,7 +27,7 @@ import 'package:airspothealth/features/devices/providers/device_battery_level_pr
 import 'package:flutter/material.dart';
 import 'package:flutter_blue_plus/flutter_blue_plus.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:isar/isar.dart';
+import 'package:isar_plus/isar_plus.dart';
 
 final bleDeviceCommunicationProvider =
     NotifierProvider.family<_BleDeviceCommunicationNotifier, dynamic, String>(

@@ -7,7 +7,7 @@ import 'package:airspothealth/core/services/widget_service.dart';
 import 'package:airspothealth/core/utils/constants.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
-import 'package:isar/isar.dart';
+import 'package:isar_plus/isar_plus.dart';
 
 /// Enum for different types of device callbacks
 enum CallbackType {

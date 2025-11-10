@@ -1,5 +1,5 @@
 import 'package:airspothealth/core/models/device_data_type.dart';
-import 'package:isar/isar.dart';
+import 'package:isar_plus/isar_plus.dart';
 
 part 'device_data.g.dart';
 

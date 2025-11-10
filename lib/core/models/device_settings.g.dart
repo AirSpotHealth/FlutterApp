@@ -15,7 +15,7 @@ extension GetDeviceSettingsCollection on Isar {
       this.collection();
 }
 
-const DeviceSettingsSchema = IsarGeneratedSchema(
+final DeviceSettingsSchema = IsarGeneratedSchema(
   schema: IsarSchema(
     name: 'DeviceSettings',
     idName: 'deviceId',
@@ -137,15 +137,15 @@ const DeviceSettingsSchema = IsarGeneratedSchema(
     deserialize: deserializeDeviceSettings,
     deserializeProperty: deserializeDeviceSettingsProp,
   ),
-  embeddedSchemas: [DeviceThresholdsSchema, AlarmLevelSchema],
+  getEmbeddedSchemas: () => [DeviceThresholdsSchema, AlarmLevelSchema],
 );
 
 @isarProtected
 int serializeDeviceSettings(IsarWriter writer, DeviceSettings object) {
-  IsarCore.writeBool(writer, 1, object.alarmEnabled);
-  IsarCore.writeBool(writer, 2, object.vibrationEnabled);
+  IsarCore.writeBool(writer, 1, value: object.alarmEnabled);
+  IsarCore.writeBool(writer, 2, value: object.vibrationEnabled);
   IsarCore.writeByte(writer, 3, object.powerMode.index);
-  IsarCore.writeBool(writer, 4, object.continuosScreenEnabled);
+  IsarCore.writeBool(writer, 4, value: object.continuosScreenEnabled);
   {
     final value = object.thresholds;
     final objectWriter = IsarCore.beginObject(writer, 5);
@@ -153,13 +153,13 @@ int serializeDeviceSettings(IsarWriter writer, DeviceSettings object) {
     IsarCore.endObject(writer, objectWriter);
   }
   IsarCore.writeString(writer, 6, object.deviceId);
-  IsarCore.writeBool(writer, 7, object.co2MedAlertEnabled);
-  IsarCore.writeBool(writer, 8, object.co2HighAlertEnabled);
-  IsarCore.writeBool(writer, 9, object.autoSyncTime);
-  IsarCore.writeBool(writer, 10, object.autoCalibration);
-  IsarCore.writeBool(writer, 11, object.autoConnect);
-  IsarCore.writeBool(writer, 12, object.logData);
-  IsarCore.writeBool(writer, 13, object.dndEnabled);
+  IsarCore.writeBool(writer, 7, value: object.co2MedAlertEnabled);
+  IsarCore.writeBool(writer, 8, value: object.co2HighAlertEnabled);
+  IsarCore.writeBool(writer, 9, value: object.autoSyncTime);
+  IsarCore.writeBool(writer, 10, value: object.autoCalibration);
+  IsarCore.writeBool(writer, 11, value: object.autoConnect);
+  IsarCore.writeBool(writer, 12, value: object.logData);
+  IsarCore.writeBool(writer, 13, value: object.dndEnabled);
   IsarCore.writeLong(
       writer,
       14,
@@ -174,9 +174,9 @@ int serializeDeviceSettings(IsarWriter writer, DeviceSettings object) {
   IsarCore.writeLong(writer, 17, object.graphMaxValue);
   IsarCore.writeLong(writer, 18, object.graphMinValue);
   IsarCore.writeByte(writer, 19, object.uiMode.index);
-  IsarCore.writeBool(writer, 20, object.showRebreathePercentage);
-  IsarCore.writeBool(writer, 21, object.screenOnAlarm);
-  IsarCore.writeBool(writer, 22, object.alarmOnCo2Fall);
+  IsarCore.writeBool(writer, 20, value: object.showRebreathePercentage);
+  IsarCore.writeBool(writer, 21, value: object.screenOnAlarm);
+  IsarCore.writeBool(writer, 22, value: object.alarmOnCo2Fall);
   {
     final list = object.alarmLevels;
     final listWriter = IsarCore.beginList(writer, 23, list.length);
@@ -191,217 +191,17 @@ int serializeDeviceSettings(IsarWriter writer, DeviceSettings object) {
     IsarCore.endList(writer, listWriter);
   }
   IsarCore.writeDouble(writer, 24, object.scaling);
-  IsarCore.writeBool(writer, 25, object.flightMode);
-  IsarCore.writeBool(writer, 26, object.showLiveActivity);
+  IsarCore.writeBool(writer, 25, value: object.flightMode);
+  IsarCore.writeBool(writer, 26, value: object.showLiveActivity);
   return Isar.fastHash(object.deviceId);
 }
 
 @isarProtected
 DeviceSettings deserializeDeviceSettings(IsarReader reader) {
-  final bool _alarmEnabled;
-  _alarmEnabled = IsarCore.readBool(reader, 1);
-  final bool _vibrationEnabled;
-  _vibrationEnabled = IsarCore.readBool(reader, 2);
-  final PowerMode _powerMode;
-  {
-    if (IsarCore.readNull(reader, 3)) {
-      _powerMode = PowerMode.onDemand;
-    } else {
-      _powerMode = _deviceSettingsPowerMode[IsarCore.readByte(reader, 3)] ??
-          PowerMode.onDemand;
-    }
-  }
-  final bool _continuosScreenEnabled;
-  _continuosScreenEnabled = IsarCore.readBool(reader, 4);
-  final DeviceThresholds _thresholds;
-  {
-    final objectReader = IsarCore.readObject(reader, 5);
-    if (objectReader.isNull) {
-      _thresholds = DeviceThresholds(
-        greenUpperLimit: -9223372036854775808,
-        yellowUpperLimit: -9223372036854775808,
-      );
-    } else {
-      final embedded = deserializeDeviceThresholds(objectReader);
-      IsarCore.freeReader(objectReader);
-      _thresholds = embedded;
-    }
-  }
   final String _deviceId;
   _deviceId = IsarCore.readString(reader, 6) ?? '';
-  final bool _co2MedAlertEnabled;
-  _co2MedAlertEnabled = IsarCore.readBool(reader, 7);
-  final bool _co2HighAlertEnabled;
-  _co2HighAlertEnabled = IsarCore.readBool(reader, 8);
-  final bool _autoSyncTime;
-  {
-    if (IsarCore.readNull(reader, 9)) {
-      _autoSyncTime = true;
-    } else {
-      _autoSyncTime = IsarCore.readBool(reader, 9);
-    }
-  }
-  final bool _autoCalibration;
-  _autoCalibration = IsarCore.readBool(reader, 10);
-  final bool _autoConnect;
-  {
-    if (IsarCore.readNull(reader, 11)) {
-      _autoConnect = true;
-    } else {
-      _autoConnect = IsarCore.readBool(reader, 11);
-    }
-  }
-  final bool _logData;
-  _logData = IsarCore.readBool(reader, 12);
-  final bool _dndEnabled;
-  _dndEnabled = IsarCore.readBool(reader, 13);
-  final DateTime? _dndStartTime;
-  {
-    final value = IsarCore.readLong(reader, 14);
-    if (value == -9223372036854775808) {
-      _dndStartTime = null;
-    } else {
-      _dndStartTime =
-          DateTime.fromMicrosecondsSinceEpoch(value, isUtc: true).toLocal();
-    }
-  }
-  final DateTime? _dndEndTime;
-  {
-    final value = IsarCore.readLong(reader, 15);
-    if (value == -9223372036854775808) {
-      _dndEndTime = null;
-    } else {
-      _dndEndTime =
-          DateTime.fromMicrosecondsSinceEpoch(value, isUtc: true).toLocal();
-    }
-  }
-  final int _recalibrationTarget;
-  {
-    final value = IsarCore.readLong(reader, 16);
-    if (value == -9223372036854775808) {
-      _recalibrationTarget = 426;
-    } else {
-      _recalibrationTarget = value;
-    }
-  }
-  final int _graphMaxValue;
-  {
-    final value = IsarCore.readLong(reader, 17);
-    if (value == -9223372036854775808) {
-      _graphMaxValue = 1600;
-    } else {
-      _graphMaxValue = value;
-    }
-  }
-  final int _graphMinValue;
-  {
-    final value = IsarCore.readLong(reader, 18);
-    if (value == -9223372036854775808) {
-      _graphMinValue = 0;
-    } else {
-      _graphMinValue = value;
-    }
-  }
-  final UIMode _uiMode;
-  {
-    if (IsarCore.readNull(reader, 19)) {
-      _uiMode = UIMode.graph;
-    } else {
-      _uiMode =
-          _deviceSettingsUiMode[IsarCore.readByte(reader, 19)] ?? UIMode.graph;
-    }
-  }
-  final bool _showRebreathePercentage;
-  _showRebreathePercentage = IsarCore.readBool(reader, 20);
-  final bool _screenOnAlarm;
-  {
-    if (IsarCore.readNull(reader, 21)) {
-      _screenOnAlarm = true;
-    } else {
-      _screenOnAlarm = IsarCore.readBool(reader, 21);
-    }
-  }
-  final bool _alarmOnCo2Fall;
-  _alarmOnCo2Fall = IsarCore.readBool(reader, 22);
-  final List<AlarmLevel> _alarmLevels;
-  {
-    final length = IsarCore.readList(reader, 23, IsarCore.readerPtrPtr);
-    {
-      final reader = IsarCore.readerPtr;
-      if (reader.isNull) {
-        _alarmLevels = defaultAlarmLevels;
-      } else {
-        final list = List<AlarmLevel>.filled(
-            length,
-            AlarmLevel(
-              id: -9223372036854775808,
-              co2Threshold: -9223372036854775808,
-              repeatCount: -9223372036854775808,
-              enabled: false,
-            ),
-            growable: true);
-        for (var i = 0; i < length; i++) {
-          {
-            final objectReader = IsarCore.readObject(reader, i);
-            if (objectReader.isNull) {
-              list[i] = AlarmLevel(
-                id: -9223372036854775808,
-                co2Threshold: -9223372036854775808,
-                repeatCount: -9223372036854775808,
-                enabled: false,
-              );
-            } else {
-              final embedded = deserializeAlarmLevel(objectReader);
-              IsarCore.freeReader(objectReader);
-              list[i] = embedded;
-            }
-          }
-        }
-        IsarCore.freeReader(reader);
-        _alarmLevels = list;
-      }
-    }
-  }
-  final double _scaling;
-  {
-    final value = IsarCore.readDouble(reader, 24);
-    if (value.isNaN) {
-      _scaling = 1.0;
-    } else {
-      _scaling = value;
-    }
-  }
-  final bool _flightMode;
-  _flightMode = IsarCore.readBool(reader, 25);
-  final bool _showLiveActivity;
-  _showLiveActivity = IsarCore.readBool(reader, 26);
   final object = DeviceSettings(
-    alarmEnabled: _alarmEnabled,
-    vibrationEnabled: _vibrationEnabled,
-    powerMode: _powerMode,
-    continuosScreenEnabled: _continuosScreenEnabled,
-    thresholds: _thresholds,
     deviceId: _deviceId,
-    co2MedAlertEnabled: _co2MedAlertEnabled,
-    co2HighAlertEnabled: _co2HighAlertEnabled,
-    autoSyncTime: _autoSyncTime,
-    autoCalibration: _autoCalibration,
-    autoConnect: _autoConnect,
-    logData: _logData,
-    dndEnabled: _dndEnabled,
-    dndStartTime: _dndStartTime,
-    dndEndTime: _dndEndTime,
-    recalibrationTarget: _recalibrationTarget,
-    graphMaxValue: _graphMaxValue,
-    graphMinValue: _graphMinValue,
-    uiMode: _uiMode,
-    showRebreathePercentage: _showRebreathePercentage,
-    screenOnAlarm: _screenOnAlarm,
-    alarmOnCo2Fall: _alarmOnCo2Fall,
-    alarmLevels: _alarmLevels,
-    scaling: _scaling,
-    flightMode: _flightMode,
-    showLiveActivity: _showLiveActivity,
   );
   return object;
 }
@@ -428,10 +228,7 @@ dynamic deserializeDeviceSettingsProp(IsarReader reader, int property) {
       {
         final objectReader = IsarCore.readObject(reader, 5);
         if (objectReader.isNull) {
-          return DeviceThresholds(
-            greenUpperLimit: -9223372036854775808,
-            yellowUpperLimit: -9223372036854775808,
-          );
+          return DeviceThresholds();
         } else {
           final embedded = deserializeDeviceThresholds(objectReader);
           IsarCore.freeReader(objectReader);
@@ -445,23 +242,11 @@ dynamic deserializeDeviceSettingsProp(IsarReader reader, int property) {
     case 8:
       return IsarCore.readBool(reader, 8);
     case 9:
-      {
-        if (IsarCore.readNull(reader, 9)) {
-          return true;
-        } else {
-          return IsarCore.readBool(reader, 9);
-        }
-      }
+      return IsarCore.readBool(reader, 9);
     case 10:
       return IsarCore.readBool(reader, 10);
     case 11:
-      {
-        if (IsarCore.readNull(reader, 11)) {
-          return true;
-        } else {
-          return IsarCore.readBool(reader, 11);
-        }
-      }
+      return IsarCore.readBool(reader, 11);
     case 12:
       return IsarCore.readBool(reader, 12);
     case 13:
@@ -487,32 +272,11 @@ dynamic deserializeDeviceSettingsProp(IsarReader reader, int property) {
         }
       }
     case 16:
-      {
-        final value = IsarCore.readLong(reader, 16);
-        if (value == -9223372036854775808) {
-          return 426;
-        } else {
-          return value;
-        }
-      }
+      return IsarCore.readLong(reader, 16);
     case 17:
-      {
-        final value = IsarCore.readLong(reader, 17);
-        if (value == -9223372036854775808) {
-          return 1600;
-        } else {
-          return value;
-        }
-      }
+      return IsarCore.readLong(reader, 17);
     case 18:
-      {
-        final value = IsarCore.readLong(reader, 18);
-        if (value == -9223372036854775808) {
-          return 0;
-        } else {
-          return value;
-        }
-      }
+      return IsarCore.readLong(reader, 18);
     case 19:
       {
         if (IsarCore.readNull(reader, 19)) {
@@ -525,13 +289,7 @@ dynamic deserializeDeviceSettingsProp(IsarReader reader, int property) {
     case 20:
       return IsarCore.readBool(reader, 20);
     case 21:
-      {
-        if (IsarCore.readNull(reader, 21)) {
-          return true;
-        } else {
-          return IsarCore.readBool(reader, 21);
-        }
-      }
+      return IsarCore.readBool(reader, 21);
     case 22:
       return IsarCore.readBool(reader, 22);
     case 23:
@@ -540,7 +298,7 @@ dynamic deserializeDeviceSettingsProp(IsarReader reader, int property) {
         {
           final reader = IsarCore.readerPtr;
           if (reader.isNull) {
-            return defaultAlarmLevels;
+            return const <AlarmLevel>[];
           } else {
             final list = List<AlarmLevel>.filled(
                 length,
@@ -574,14 +332,7 @@ dynamic deserializeDeviceSettingsProp(IsarReader reader, int property) {
         }
       }
     case 24:
-      {
-        final value = IsarCore.readDouble(reader, 24);
-        if (value.isNaN) {
-          return 1.0;
-        } else {
-          return value;
-        }
-      }
+      return IsarCore.readDouble(reader, 24);
     case 25:
       return IsarCore.readBool(reader, 25);
     case 26:
@@ -3492,7 +3243,7 @@ extension DeviceSettingsQueryProperty3<R1, R2>
 // ignore_for_file: duplicate_ignore, invalid_use_of_protected_member, lines_longer_than_80_chars, constant_identifier_names, avoid_js_rounded_ints, no_leading_underscores_for_local_identifiers, require_trailing_commas, unnecessary_parenthesis, unnecessary_raw_strings, unnecessary_null_in_if_null_operators, library_private_types_in_public_api, prefer_const_constructors
 // ignore_for_file: type=lint
 
-const DeviceThresholdsSchema = IsarGeneratedSchema(
+final DeviceThresholdsSchema = IsarGeneratedSchema(
   schema: IsarSchema(
     name: 'DeviceThresholds',
     embedded: true,
@@ -3523,14 +3274,7 @@ int serializeDeviceThresholds(IsarWriter writer, DeviceThresholds object) {
 
 @isarProtected
 DeviceThresholds deserializeDeviceThresholds(IsarReader reader) {
-  final int _greenUpperLimit;
-  _greenUpperLimit = IsarCore.readLong(reader, 1);
-  final int _yellowUpperLimit;
-  _yellowUpperLimit = IsarCore.readLong(reader, 2);
-  final object = DeviceThresholds(
-    greenUpperLimit: _greenUpperLimit,
-    yellowUpperLimit: _yellowUpperLimit,
-  );
+  final object = DeviceThresholds();
   return object;
 }
 
@@ -3716,7 +3460,7 @@ extension DeviceThresholdsQueryObject
 // ignore_for_file: duplicate_ignore, invalid_use_of_protected_member, lines_longer_than_80_chars, constant_identifier_names, avoid_js_rounded_ints, no_leading_underscores_for_local_identifiers, require_trailing_commas, unnecessary_parenthesis, unnecessary_raw_strings, unnecessary_null_in_if_null_operators, library_private_types_in_public_api, prefer_const_constructors
 // ignore_for_file: type=lint
 
-const AlarmLevelSchema = IsarGeneratedSchema(
+final AlarmLevelSchema = IsarGeneratedSchema(
   schema: IsarSchema(
     name: 'AlarmLevel',
     embedded: true,
@@ -3751,7 +3495,7 @@ int serializeAlarmLevel(IsarWriter writer, AlarmLevel object) {
   IsarCore.writeLong(writer, 1, object.id);
   IsarCore.writeLong(writer, 2, object.co2Threshold);
   IsarCore.writeLong(writer, 3, object.repeatCount);
-  IsarCore.writeBool(writer, 4, object.enabled);
+  IsarCore.writeBool(writer, 4, value: object.enabled);
   return 0;
 }
 

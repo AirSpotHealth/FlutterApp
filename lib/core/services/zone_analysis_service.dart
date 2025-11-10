@@ -1,6 +1,6 @@
 import 'package:airspothealth/core/models/device_data.dart';
 import 'package:airspothealth/core/services/isar_service.dart';
-import 'package:isar/isar.dart';
+import 'package:isar_plus/isar_plus.dart';
 
 /// Service responsible for analyzing CO2 zone data and calculating percentages
 /// Follows single responsibility principle - only handles zone analysis logic

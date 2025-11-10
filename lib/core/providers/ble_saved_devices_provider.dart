@@ -11,7 +11,7 @@ import 'package:airspothealth/core/utils/extensions.dart';
 import 'package:airspothealth/features/device_graph/providers/ble_device_provider.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:isar/isar.dart';
+import 'package:isar_plus/isar_plus.dart';
 
 final bleSavedDevicesProvider =
     NotifierProvider<_BleSavedDevicesNotifier, List<BleDevice>>(

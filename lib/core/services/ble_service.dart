@@ -3,7 +3,7 @@ import 'dart:async';
 import 'package:airspothealth/core/models/ble_device.dart';
 import 'package:airspothealth/core/services/isar_service.dart';
 import 'package:flutter_blue_plus/flutter_blue_plus.dart';
-import 'package:isar/isar.dart';
+import 'package:isar_plus/isar_plus.dart';
 
 /// A service class related to Bluetooth.
 /// This class provides methods to interact with Bluetooth.

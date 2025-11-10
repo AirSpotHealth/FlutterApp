@@ -36,7 +36,7 @@ import 'package:airspothealth/features/device_settings/widgets/vibrate_setting_w
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:isar/isar.dart';
+import 'package:isar_plus/isar_plus.dart';
 
 class DeviceSettingsPage extends ConsumerStatefulWidget {
   const DeviceSettingsPage({required this.deviceId, super.key});

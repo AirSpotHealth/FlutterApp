@@ -14,7 +14,7 @@ extension GetBleDeviceCollection on Isar {
   IsarCollection<String, BleDevice> get bleDevices => this.collection();
 }
 
-const BleDeviceSchema = IsarGeneratedSchema(
+final BleDeviceSchema = IsarGeneratedSchema(
   schema: IsarSchema(
     name: 'BleDevice',
     idName: 'deviceId',
@@ -85,7 +85,7 @@ const BleDeviceSchema = IsarGeneratedSchema(
     deserialize: deserializeBleDevice,
     deserializeProperty: deserializeBleDeviceProp,
   ),
-  embeddedSchemas: [],
+  getEmbeddedSchemas: () => [],
 );
 
 @isarProtected

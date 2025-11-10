@@ -6,7 +6,7 @@ import 'package:airspothealth/core/utils/constants.dart';
 import 'package:airspothealth/core/utils/device_cmd_utils.dart';
 import 'package:airspothealth/features/device_settings/widgets/device_ui_mode_widget.dart';
 import 'package:flutter/material.dart';
-import 'package:isar/isar.dart';
+import 'package:isar_plus/isar_plus.dart';
 
 part 'device_settings.g.dart';
 
@@ -90,12 +90,15 @@ class DeviceSettings {
   final bool showLiveActivity;
 
   const DeviceSettings({
-    required this.alarmEnabled,
-    required this.vibrationEnabled,
-    required this.powerMode,
-    required this.continuosScreenEnabled,
-    required this.thresholds,
     required this.deviceId,
+    this.alarmEnabled = false,
+    this.vibrationEnabled = false,
+    this.powerMode = PowerMode.onDemand,
+    this.continuosScreenEnabled = false,
+    this.thresholds = const DeviceThresholds(
+      greenUpperLimit: Constants.defaultGreenUpperLimit,
+      yellowUpperLimit: Constants.defaultYellowUpperLimit,
+    ),
     this.co2MedAlertEnabled = false,
     this.co2HighAlertEnabled = false,
     this.autoSyncTime = true,
@@ -391,9 +394,9 @@ class DeviceThresholds {
   final int greenUpperLimit;
   final int yellowUpperLimit;
 
-  DeviceThresholds({
-    required this.greenUpperLimit,
-    required this.yellowUpperLimit,
+  const DeviceThresholds({
+    this.greenUpperLimit = Constants.defaultGreenUpperLimit,
+    this.yellowUpperLimit = Constants.defaultYellowUpperLimit,
   });
 
   DeviceThresholds.empty()

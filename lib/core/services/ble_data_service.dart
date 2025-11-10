@@ -30,7 +30,7 @@ import 'package:airspothealth/features/device_settings/widgets/device_ui_mode_wi
 import 'package:airspothealth/features/devices/providers/device_battery_level_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:isar/isar.dart';
+import 'package:isar_plus/isar_plus.dart';
 
 /// BLE data utils class to handle BLE data operations
 /// This class provides methods to handle BLE data operations.

@@ -9,7 +9,7 @@ import 'package:airspothealth/core/models/device_data_type.dart';
 import 'package:airspothealth/core/services/isar_service.dart';
 import 'package:airspothealth/core/utils/constants.dart';
 import 'package:flutter/material.dart';
-import 'package:isar/isar.dart';
+import 'package:isar_plus/isar_plus.dart';
 import 'package:pointycastle/export.dart';
 
 class MapHandoffService {

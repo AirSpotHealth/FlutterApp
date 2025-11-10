@@ -14,7 +14,7 @@ extension GetDeviceDataCollection on Isar {
   IsarCollection<String, DeviceData> get deviceDatas => this.collection();
 }
 
-const DeviceDataSchema = IsarGeneratedSchema(
+final DeviceDataSchema = IsarGeneratedSchema(
   schema: IsarSchema(
     name: 'DeviceData',
     idName: 'id',
@@ -77,7 +77,7 @@ const DeviceDataSchema = IsarGeneratedSchema(
     deserialize: deserializeDeviceData,
     deserializeProperty: deserializeDeviceDataProp,
   ),
-  embeddedSchemas: [],
+  getEmbeddedSchemas: () => [],
 );
 
 @isarProtected
@@ -85,7 +85,7 @@ int serializeDeviceData(IsarWriter writer, DeviceData object) {
   IsarCore.writeString(writer, 1, object.deviceId);
   IsarCore.writeLong(writer, 2, object.dateTime.toUtc().microsecondsSinceEpoch);
   IsarCore.writeInt(writer, 3, object.value);
-  IsarCore.writeBool(writer, 4, object.isLiveCo2);
+  IsarCore.writeBool(writer, 4, value: object.isLiveCo2);
   IsarCore.writeByte(writer, 5, object.type);
   IsarCore.writeString(writer, 6, object.id);
   return Isar.fastHash(object.id);

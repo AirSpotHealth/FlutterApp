@@ -7,7 +7,7 @@ import 'package:airspothealth/core/services/isar_service.dart';
 import 'package:airspothealth/core/utils/constants.dart';
 import 'package:flutter/foundation.dart';
 import 'package:home_widget/home_widget.dart';
-import 'package:isar/isar.dart';
+import 'package:isar_plus/isar_plus.dart';
 
 /// Service responsible for managing home screen widgets
 /// Handles widget data persistence and updates independently from Live Activities
@@ -88,7 +88,8 @@ class WidgetService {
     required String deviceId,
   }) async {
     try {
-      debugPrint('📱 Widget: Updating disconnected state for device: $deviceId');
+      debugPrint(
+          '📱 Widget: Updating disconnected state for device: $deviceId');
 
       // Get existing widget data for this device
       if (!_widgetData.containsKey(deviceId)) {

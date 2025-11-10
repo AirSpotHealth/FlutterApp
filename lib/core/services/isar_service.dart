@@ -2,7 +2,7 @@ import 'package:airspothealth/core/models/ble_device.dart';
 import 'package:airspothealth/core/models/device_data.dart';
 import 'package:airspothealth/core/models/device_settings.dart';
 import 'package:airspothealth/core/models/notification_preferences.dart';
-import 'package:isar/isar.dart';
+import 'package:isar_plus/isar_plus.dart';
 import 'package:path_provider/path_provider.dart';
 
 /// A service class for interacting with the Isar database.

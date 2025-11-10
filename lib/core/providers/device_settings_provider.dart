@@ -5,7 +5,7 @@ import 'package:airspothealth/core/services/isar_service.dart';
 import 'package:airspothealth/core/utils/device_cmd_utils.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:isar/isar.dart';
+import 'package:isar_plus/isar_plus.dart';
 
 final deviceSettingsProvider =
     NotifierProvider.family<_DeviceSettingsNotifier, DeviceSettings, String>(
