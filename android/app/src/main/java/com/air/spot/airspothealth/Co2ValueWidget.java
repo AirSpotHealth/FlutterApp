@@ -36,6 +36,7 @@ public class Co2ValueWidget extends AppWidgetProvider {
 
     private static final String TAG = "Co2ValueWidget";
     private static final String WIDGET_DATA_KEY = "widget_data_json";
+    private static final String WIDGET_DEVICE_LIST_KEY = "widget_device_list";
 
     static void updateAppWidget(Context context, AppWidgetManager appWidgetManager, int appWidgetId) {
         Log.d(TAG, "Updating widget: " + appWidgetId);
@@ -53,7 +54,24 @@ public class Co2ValueWidget extends AppWidgetProvider {
             String co2Value = String.valueOf(widgetData.optInt("co2Value", 0));
             if (co2Value.equals("0")) co2Value = "----"; // Fallback for invalid data
             String deviceId = widgetData.optString("deviceId", "");
-            String deviceName = widgetData.optString("deviceName", "No Device");
+            String deviceName = widgetData.optString("deviceName", "");
+            
+            // ALWAYS prefer alias from widget_device_list (source of truth for aliases)
+            // This ensures widgets show aliases even if widget_devices_data has BLE name
+            String aliasFromList = "";
+            if (!deviceId.isEmpty()) {
+                aliasFromList = getDeviceNameFromList(context, deviceId);
+            }
+            
+            // Use alias from list if available, otherwise fall back to deviceName from data
+            if (!aliasFromList.isEmpty()) {
+                deviceName = aliasFromList;
+                Log.d(TAG, "Using alias from device list: " + deviceName);
+            } else if (deviceName.isEmpty()) {
+                // Final fallback
+                deviceName = "No Device";
+            }
+            
             String powerMode = widgetData.optString("powerMode", "Now");
             String batteryLevel = String.valueOf(widgetData.optInt("batteryLevel", 0));
             boolean isCharging = widgetData.optBoolean("isCharging", false);
@@ -313,6 +331,35 @@ public class Co2ValueWidget extends AppWidgetProvider {
         } catch (NumberFormatException e) {
             return Color.parseColor("#4CAF50"); // Default green for invalid values
         }
+    }
+
+    /**
+     * Get device name (alias) from widget_device_list as fallback
+     * This ensures widgets show aliases even when widget data hasn't been updated yet
+     */
+    private static String getDeviceNameFromList(Context context, String deviceId) {
+        try {
+            String deviceListJson = HomeWidgetPlugin.Companion.getData(context)
+                    .getString(WIDGET_DEVICE_LIST_KEY, "[]");
+            
+            if (deviceListJson.isEmpty() || deviceListJson.equals("[]")) {
+                return "";
+            }
+            
+            JSONArray deviceList = new JSONArray(deviceListJson);
+            for (int i = 0; i < deviceList.length(); i++) {
+                JSONObject device = deviceList.getJSONObject(i);
+                String id = device.optString("deviceId", "");
+                if (id.equals(deviceId)) {
+                    String name = device.optString("deviceName", "");
+                    Log.d(TAG, "Found device name from list: " + name + " for device: " + deviceId);
+                    return name;
+                }
+            }
+        } catch (JSONException e) {
+            Log.e(TAG, "Error reading device list for fallback name", e);
+        }
+        return "";
     }
 
     // Add a static method to send the REFRESH_DATA broadcast
