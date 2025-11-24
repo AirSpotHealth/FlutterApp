@@ -644,18 +644,18 @@ packages:
     dependency: "direct main"
     description:
       name: isar_plus
-      sha256: cc58f59cf688068a819e79677b653d2a0a2f9051d4182ebccccccfa9b32606cd
+      sha256: "7a4e793eb8f938bde56cb37d1e5f779c2f537a85630ac193337c1390e9b8e2e9"
       url: "https://pub.dev"
     source: hosted
-    version: "1.1.6"
+    version: "1.1.7"
   isar_plus_flutter_libs:
     dependency: "direct main"
     description:
       name: isar_plus_flutter_libs
-      sha256: be7ece2c6c37180ccce32f252af37f4a3ecbf3dff3206a0aa2fed68b5376959b
+      sha256: "768c0095ade9e8cb90355fa170b2872ed0262bdb027d26297f154b891d889213"
       url: "https://pub.dev"
     source: hosted
-    version: "1.1.6"
+    version: "1.1.7"
   js:
     dependency: transitive
     description:
