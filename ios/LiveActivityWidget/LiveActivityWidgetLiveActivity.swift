@@ -726,8 +726,8 @@ struct LiveActivityWidgetLiveActivity: Widget {
                                 .foregroundColor(.white)
                                 .offset(y: -4)
                             Text("at \(context.state.lastUpdated.formatted(date: .omitted, time: .shortened))")
-                                .font(.system(size: 9, weight: .regular))
-                                .foregroundColor(.white.opacity(0.8))
+                                .font(.system(size: 10, weight: .regular))
+                                .foregroundColor(.white)
                                 .offset(y: -4)
                         }
                         .padding(.leading, 28)
@@ -840,7 +840,7 @@ struct LiveActivityWidgetLiveActivity: Widget {
             if !context.state.deviceName.isEmpty {
                 Text(context.state.deviceName)
                     .font(.system(size: 11, weight: .medium))
-                    .foregroundColor(.gray)
+                    .foregroundColor(.white)
                     .frame(maxWidth: .infinity, alignment: .center)
                     .padding(.top, -10) // Move closer to top section
                     .padding(.bottom, 0) // Normal spacing to bottom section
