@@ -189,4 +189,7 @@ class Constants {
     }
   ''';
   }
+
+  static const String liveActivityLearnMoreUrl =
+      'https://vimeo.com/1106340814?share=copy&fl=sv&fe=ci';
 }
