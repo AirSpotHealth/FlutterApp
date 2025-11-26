@@ -35,7 +35,7 @@ class NotificationPreferences {
   /// List of threshold IDs that have been triggered (for once-per-crossing mode)
   final List<int> triggeredThresholds;
 
-  const NotificationPreferences({
+  NotificationPreferences({
     required this.deviceId,
     this.smartphoneNotificationsEnabled = false,
     this.notificationThresholds = defaultNotificationThresholds,

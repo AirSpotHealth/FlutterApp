@@ -122,8 +122,120 @@ int serializeNotificationPreferences(
 NotificationPreferences deserializeNotificationPreferences(IsarReader reader) {
   final String _deviceId;
   _deviceId = IsarCore.readString(reader, 1) ?? '';
+  final bool _smartphoneNotificationsEnabled;
+  _smartphoneNotificationsEnabled = IsarCore.readBool(reader, 2);
+  final List<NotificationThreshold> _notificationThresholds;
+  {
+    final length = IsarCore.readList(reader, 3, IsarCore.readerPtrPtr);
+    {
+      final reader = IsarCore.readerPtr;
+      if (reader.isNull) {
+        _notificationThresholds = defaultNotificationThresholds;
+      } else {
+        final list = List<NotificationThreshold>.filled(
+            length,
+            NotificationThreshold(
+              id: -9223372036854775808,
+              co2Threshold: -9223372036854775808,
+              enabled: false,
+            ),
+            growable: true);
+        for (var i = 0; i < length; i++) {
+          {
+            final objectReader = IsarCore.readObject(reader, i);
+            if (objectReader.isNull) {
+              list[i] = NotificationThreshold(
+                id: -9223372036854775808,
+                co2Threshold: -9223372036854775808,
+                enabled: false,
+              );
+            } else {
+              final embedded = deserializeNotificationThreshold(objectReader);
+              IsarCore.freeReader(objectReader);
+              list[i] = embedded;
+            }
+          }
+        }
+        IsarCore.freeReader(reader);
+        _notificationThresholds = list;
+      }
+    }
+  }
+  final bool _notificationVibrationEnabled;
+  {
+    if (IsarCore.readNull(reader, 4)) {
+      _notificationVibrationEnabled = true;
+    } else {
+      _notificationVibrationEnabled = IsarCore.readBool(reader, 4);
+    }
+  }
+  final bool _showInForeground;
+  {
+    if (IsarCore.readNull(reader, 5)) {
+      _showInForeground = true;
+    } else {
+      _showInForeground = IsarCore.readBool(reader, 5);
+    }
+  }
+  final String _cooldownMode;
+  _cooldownMode = IsarCore.readString(reader, 6) ?? 'once';
+  final int _cooldownMinutes;
+  {
+    final value = IsarCore.readLong(reader, 7);
+    if (value == -9223372036854775808) {
+      _cooldownMinutes = 5;
+    } else {
+      _cooldownMinutes = value;
+    }
+  }
+  final DateTime? _lastNotificationTime;
+  {
+    final value = IsarCore.readLong(reader, 8);
+    if (value == -9223372036854775808) {
+      _lastNotificationTime = null;
+    } else {
+      _lastNotificationTime =
+          DateTime.fromMicrosecondsSinceEpoch(value, isUtc: true).toLocal();
+    }
+  }
+  final int? _lastTriggeredThresholdValue;
+  {
+    final value = IsarCore.readLong(reader, 9);
+    if (value == -9223372036854775808) {
+      _lastTriggeredThresholdValue = null;
+    } else {
+      _lastTriggeredThresholdValue = value;
+    }
+  }
+  final List<int> _triggeredThresholds;
+  {
+    final length = IsarCore.readList(reader, 10, IsarCore.readerPtrPtr);
+    {
+      final reader = IsarCore.readerPtr;
+      if (reader.isNull) {
+        _triggeredThresholds = const [];
+      } else {
+        final list =
+            List<int>.filled(length, -9223372036854775808, growable: true);
+        for (var i = 0; i < length; i++) {
+          list[i] = IsarCore.readLong(reader, i);
+        }
+        IsarCore.freeReader(reader);
+        _triggeredThresholds = list;
+      }
+    }
+  }
   final object = NotificationPreferences(
     deviceId: _deviceId,
+    smartphoneNotificationsEnabled: _smartphoneNotificationsEnabled,
+    notificationThresholds: _notificationThresholds,
+    notificationVibrationEnabled: _notificationVibrationEnabled,
+    showInForeground: _showInForeground,
+    cooldownMode: _cooldownMode,
+    cooldownMinutes: _cooldownMinutes,
+    lastNotificationTime: _lastNotificationTime,
+    lastTriggeredThresholdValue: _lastTriggeredThresholdValue,
+    triggeredThresholds: _triggeredThresholds,
   );
   return object;
 }
@@ -142,7 +254,7 @@ dynamic deserializeNotificationPreferencesProp(
         {
           final reader = IsarCore.readerPtr;
           if (reader.isNull) {
-            return const <NotificationThreshold>[];
+            return defaultNotificationThresholds;
           } else {
             final list = List<NotificationThreshold>.filled(
                 length,
@@ -175,13 +287,32 @@ dynamic deserializeNotificationPreferencesProp(
         }
       }
     case 4:
-      return IsarCore.readBool(reader, 4);
+      {
+        if (IsarCore.readNull(reader, 4)) {
+          return true;
+        } else {
+          return IsarCore.readBool(reader, 4);
+        }
+      }
     case 5:
-      return IsarCore.readBool(reader, 5);
+      {
+        if (IsarCore.readNull(reader, 5)) {
+          return true;
+        } else {
+          return IsarCore.readBool(reader, 5);
+        }
+      }
     case 6:
-      return IsarCore.readString(reader, 6) ?? '';
+      return IsarCore.readString(reader, 6) ?? 'once';
     case 7:
-      return IsarCore.readLong(reader, 7);
+      {
+        final value = IsarCore.readLong(reader, 7);
+        if (value == -9223372036854775808) {
+          return 5;
+        } else {
+          return value;
+        }
+      }
     case 8:
       {
         final value = IsarCore.readLong(reader, 8);
@@ -207,7 +338,7 @@ dynamic deserializeNotificationPreferencesProp(
         {
           final reader = IsarCore.readerPtr;
           if (reader.isNull) {
-            return const <int>[];
+            return const [];
           } else {
             final list =
                 List<int>.filled(length, -9223372036854775808, growable: true);

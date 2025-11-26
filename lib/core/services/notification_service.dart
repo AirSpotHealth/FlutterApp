@@ -401,6 +401,16 @@ class NotificationService {
     // Note: Vibration patterns are now handled by the vibration package
     // instead of AndroidNotificationDetails.vibrationPattern
 
+    // Format time (e.g. 10:30 AM)
+    final now = DateTime.now();
+    final hour = now.hour > 12 ? now.hour - 12 : (now.hour == 0 ? 12 : now.hour);
+    final minute = now.minute.toString().padLeft(2, '0');
+    final period = now.hour >= 12 ? 'PM' : 'AM';
+    final timeString = '$hour:$minute $period';
+
+    final title = '$co2Value PPM ($timeString)';
+    final body = '$deviceName\n$message';
+
     AndroidNotificationDetails androidNotificationDetails =
         AndroidNotificationDetails(
       'co2_notifications', // Channel ID - separate from FCM
@@ -419,9 +429,9 @@ class NotificationService {
       ledOnMs: 1000,
       ledOffMs: 500,
       styleInformation: BigTextStyleInformation(
-        message,
-        contentTitle: '$deviceName - High CO₂',
-        summaryText: 'Threshold: $threshold ppm',
+        body,
+        contentTitle: title,
+        summaryText: null, // Removed summary text to keep it clean
       ),
     );
 
@@ -447,8 +457,8 @@ class NotificationService {
     try {
       await _notificationsPlugin.show(
         notificationId,
-        '$deviceName - High CO₂',
-        message,
+        title,
+        body,
         notificationDetails,
         payload: 'co2_alert:$deviceName:$co2Value',
       );
