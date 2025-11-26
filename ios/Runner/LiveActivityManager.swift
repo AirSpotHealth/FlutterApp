@@ -145,6 +145,14 @@ class LiveActivityManager: LiveActivityManagerProtocol {
                     if let (deviceId, _) = self.deviceActivities.first(where: { $0.value.id == activity.id }) {
                         print("🗑️ Device activity for \(deviceId) is stale. Removing reference.")
                         self.deviceActivities.removeValue(forKey: deviceId)
+                        
+                        // Notify Flutter to disable toggle
+                        let userInfo: [String: Any] = ["deviceId": deviceId]
+                        NotificationCenter.default.post(
+                            name: Notification.Name("AutoDisableLiveActivity"),
+                            object: nil,
+                            userInfo: userInfo
+                        )
                     } else if let currentActivity = liveActivity, currentActivity.id == activity.id {
                         // Backward compatibility for single activity
                         print("🗑️ Main Live Activity is stale. Removing reference.")
@@ -156,6 +164,24 @@ class LiveActivityManager: LiveActivityManagerProtocol {
                     if liveActivity?.id != activity.id {
                         print("🔄 Updating activity reference to active activity")
                         liveActivity = activity
+                    }
+                } else if activity.activityState == .ended {
+                    print("🏁 Live Activity ended")
+                    
+                    if !isAppInitiatedDismissal {
+                        // System ended it (or something else), so we should auto-disable toggle
+                        if let (deviceId, _) = self.deviceActivities.first(where: { $0.value.id == activity.id }) {
+                            print("ℹ️ Device activity for \(deviceId) ended (not app-initiated). Auto-disabling.")
+                            
+                            let userInfo: [String: Any] = ["deviceId": deviceId]
+                            NotificationCenter.default.post(
+                                name: Notification.Name("AutoDisableLiveActivity"),
+                                object: nil,
+                                userInfo: userInfo
+                            )
+                            
+                            self.deviceActivities.removeValue(forKey: deviceId)
+                        }
                     }
                 }
             }
