@@ -133,8 +133,53 @@ class _BleSavedDevicesNotifier extends Notifier<List<BleDevice>> {
         debugPrint(
             '✅ Refreshed device list with new alias for device: $deviceId');
       }
+
+      // Also update Live Activity with new alias if it's active
+      _updateLiveActivityWithNewAlias(deviceId, alias);
     } catch (e) {
       debugPrint('❌ Error updating widget with new alias: $e');
+    }
+  }
+
+  /// Update Live Activity with new alias when it changes
+  void _updateLiveActivityWithNewAlias(String deviceId, String alias) {
+    try {
+      debugPrint(
+          '🔄 Updating Live Activity alias for device: $deviceId, new alias: $alias');
+
+      // Check if Live Activity is active for this device
+      if (LiveActivityService().isDeviceActive(deviceId)) {
+        debugPrint('✅ Live Activity is active for device: $deviceId');
+
+        // Get the current Live Activity data
+        final currentData = LiveActivityService().getLastDeviceData(deviceId);
+        if (currentData != null) {
+          debugPrint(
+              '📊 Current Live Activity data - deviceName: ${currentData.deviceName}, new alias: $alias');
+
+          // Update with new alias
+          final updatedData = currentData.copyWith(deviceName: alias);
+
+          debugPrint(
+              '🔄 Updating Live Activity with new deviceName: ${updatedData.deviceName}');
+
+          // Update the Live Activity immediately with new alias
+          LiveActivityService().updateLiveActivity(
+            deviceId: deviceId,
+            data: updatedData,
+          );
+          debugPrint(
+              '✅ Updated Live Activity with new alias for device: $deviceId');
+        } else {
+          debugPrint(
+              '⚠️ Live Activity is active but no data found for device: $deviceId');
+        }
+      } else {
+        debugPrint(
+            'ℹ️ Live Activity not active for device: $deviceId, skipping alias update');
+      }
+    } catch (e) {
+      debugPrint('❌ Error updating Live Activity with new alias: $e');
     }
   }
 

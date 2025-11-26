@@ -215,27 +215,39 @@ class _BleDeviceCommunicationNotifier extends FamilyNotifier<dynamic, String> {
 
     try {
       // 1. Get device name (prefer alias over advertised name)
+      // Read directly from Isar to ensure we get the latest alias
       BleDevice? bleDevice;
       try {
-        bleDevice = ref.read(bleDeviceProvider(deviceId));
+        // First try to read from Isar directly to get the latest alias
+        bleDevice = _isarService.read<BleDevice?>((isar) {
+          return isar.bleDevices.where().deviceIdEqualTo(deviceId).findFirst();
+        });
+
+        // If not found in Isar, try the provider as fallback
+        bleDevice ??= ref.read(bleDeviceProvider(deviceId));
       } catch (e) {
-        debugPrint('BLE: Error reading bleDeviceProvider: $e');
+        debugPrint('BLE: Error reading device: $e');
         bleDevice = null;
       }
 
       String deviceName = 'AirSpot Device';
 
       // Prefer alias if it exists and is not empty
-      if (bleDevice?.alias?.isNotEmpty == true) {
-        deviceName = bleDevice!.alias!;
+      if (bleDevice?.alias != null && bleDevice!.alias!.isNotEmpty) {
+        deviceName = bleDevice.alias!;
+        debugPrint('BLE: Using alias for device name: $deviceName');
       }
       // Fall back to advertised name if available
       else if (device?.advName.isNotEmpty == true) {
         deviceName = device!.advName;
+        debugPrint('BLE: Using advertised name for device name: $deviceName');
       }
       // Fall back to device name if available
       else if (bleDevice?.name.isNotEmpty == true) {
         deviceName = bleDevice!.name;
+        debugPrint('BLE: Using device name for device name: $deviceName');
+      } else {
+        debugPrint('BLE: Using default device name: $deviceName');
       }
 
       // 2. Get device settings
