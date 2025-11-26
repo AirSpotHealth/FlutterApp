@@ -65,6 +65,7 @@ class LiveActivityManager: LiveActivityManagerProtocol {
     init() {
         startActivityMonitoring()
         setupNotificationObservers()
+        reconcileExistingActivities()
     }
     
     deinit {
@@ -100,6 +101,58 @@ class LiveActivityManager: LiveActivityManagerProtocol {
             object: nil,
             userInfo: navigationInfo
         )
+    }
+    
+    private func reconcileExistingActivities() {
+        print("🧹 Reconciling existing Live Activities on startup...")
+        
+        let allActivities = Activity<LiveActivityWidgetAttributes>.activities
+        print("📊 Found \(allActivities.count) existing activities")
+        
+        // Group activities by device ID
+        var activitiesByDevice: [String: [Activity<LiveActivityWidgetAttributes>]] = [:]
+        
+        for activity in allActivities {
+            let deviceId = activity.content.state.deviceId
+            if activitiesByDevice[deviceId] == nil {
+                activitiesByDevice[deviceId] = []
+            }
+            activitiesByDevice[deviceId]?.append(activity)
+        }
+        
+        // Process each device
+        for (deviceId, activities) in activitiesByDevice {
+            print("📱 Device \(deviceId) has \(activities.count) activities")
+            
+            if activities.isEmpty { continue }
+            
+            // Sort by creation date (if available) or just keep the last one
+            // Since we don't have creation date easily accessible on the activity object itself in all versions,
+            // we'll assume the order in .activities is roughly chronological, but to be safe we'll just keep one.
+            // A better heuristic might be to check content state lastUpdated if we trusted it, but let's just keep the last one.
+            
+            let activitiesToKeep = activities.suffix(1)
+            let activitiesToRemove = activities.prefix(activities.count - 1)
+            
+            // Remove duplicates (ghosts)
+            for activity in activitiesToRemove {
+                print("👻 Removing ghost activity: \(activity.id)")
+                Task {
+                    await activity.end(dismissalPolicy: .immediate)
+                }
+            }
+            
+            // Keep the valid one
+            if let validActivity = activitiesToKeep.first {
+                print("✅ Keeping valid activity: \(validActivity.id)")
+                deviceActivities[deviceId] = validActivity
+                
+                // Also try to restore the last known state if possible, or at least have the reference
+                // We don't have the full data dictionary here, but we have the content state
+                // We can reconstruct a basic state if needed, but for now just having the reference is enough
+                // so that updateLiveActivity() will update it instead of creating a new one.
+            }
+        }
     }
     
     private func startActivityMonitoring() {
