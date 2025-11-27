@@ -89,7 +89,7 @@ class DeviceSettings {
   /// Show Live Activity
   final bool showLiveActivity;
 
-  const DeviceSettings({
+  DeviceSettings({
     required this.deviceId,
     this.alarmEnabled = false,
     this.vibrationEnabled = false,

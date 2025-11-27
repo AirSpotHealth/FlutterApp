@@ -198,10 +198,209 @@ int serializeDeviceSettings(IsarWriter writer, DeviceSettings object) {
 
 @isarProtected
 DeviceSettings deserializeDeviceSettings(IsarReader reader) {
+  final bool _alarmEnabled;
+  _alarmEnabled = IsarCore.readBool(reader, 1);
+  final bool _vibrationEnabled;
+  _vibrationEnabled = IsarCore.readBool(reader, 2);
+  final PowerMode _powerMode;
+  {
+    if (IsarCore.readNull(reader, 3)) {
+      _powerMode = PowerMode.onDemand;
+    } else {
+      _powerMode = _deviceSettingsPowerMode[IsarCore.readByte(reader, 3)] ??
+          PowerMode.onDemand;
+    }
+  }
+  final bool _continuosScreenEnabled;
+  _continuosScreenEnabled = IsarCore.readBool(reader, 4);
+  final DeviceThresholds _thresholds;
+  {
+    final objectReader = IsarCore.readObject(reader, 5);
+    if (objectReader.isNull) {
+      _thresholds = const DeviceThresholds(
+          greenUpperLimit: Constants.defaultGreenUpperLimit,
+          yellowUpperLimit: Constants.defaultYellowUpperLimit);
+    } else {
+      final embedded = deserializeDeviceThresholds(objectReader);
+      IsarCore.freeReader(objectReader);
+      _thresholds = embedded;
+    }
+  }
   final String _deviceId;
   _deviceId = IsarCore.readString(reader, 6) ?? '';
+  final bool _co2MedAlertEnabled;
+  _co2MedAlertEnabled = IsarCore.readBool(reader, 7);
+  final bool _co2HighAlertEnabled;
+  _co2HighAlertEnabled = IsarCore.readBool(reader, 8);
+  final bool _autoSyncTime;
+  {
+    if (IsarCore.readNull(reader, 9)) {
+      _autoSyncTime = true;
+    } else {
+      _autoSyncTime = IsarCore.readBool(reader, 9);
+    }
+  }
+  final bool _autoCalibration;
+  _autoCalibration = IsarCore.readBool(reader, 10);
+  final bool _autoConnect;
+  {
+    if (IsarCore.readNull(reader, 11)) {
+      _autoConnect = true;
+    } else {
+      _autoConnect = IsarCore.readBool(reader, 11);
+    }
+  }
+  final bool _logData;
+  _logData = IsarCore.readBool(reader, 12);
+  final bool _dndEnabled;
+  _dndEnabled = IsarCore.readBool(reader, 13);
+  final DateTime? _dndStartTime;
+  {
+    final value = IsarCore.readLong(reader, 14);
+    if (value == -9223372036854775808) {
+      _dndStartTime = null;
+    } else {
+      _dndStartTime =
+          DateTime.fromMicrosecondsSinceEpoch(value, isUtc: true).toLocal();
+    }
+  }
+  final DateTime? _dndEndTime;
+  {
+    final value = IsarCore.readLong(reader, 15);
+    if (value == -9223372036854775808) {
+      _dndEndTime = null;
+    } else {
+      _dndEndTime =
+          DateTime.fromMicrosecondsSinceEpoch(value, isUtc: true).toLocal();
+    }
+  }
+  final int _recalibrationTarget;
+  {
+    final value = IsarCore.readLong(reader, 16);
+    if (value == -9223372036854775808) {
+      _recalibrationTarget = 426;
+    } else {
+      _recalibrationTarget = value;
+    }
+  }
+  final int _graphMaxValue;
+  {
+    final value = IsarCore.readLong(reader, 17);
+    if (value == -9223372036854775808) {
+      _graphMaxValue = 1600;
+    } else {
+      _graphMaxValue = value;
+    }
+  }
+  final int _graphMinValue;
+  {
+    final value = IsarCore.readLong(reader, 18);
+    if (value == -9223372036854775808) {
+      _graphMinValue = 0;
+    } else {
+      _graphMinValue = value;
+    }
+  }
+  final UIMode _uiMode;
+  {
+    if (IsarCore.readNull(reader, 19)) {
+      _uiMode = UIMode.graph;
+    } else {
+      _uiMode =
+          _deviceSettingsUiMode[IsarCore.readByte(reader, 19)] ?? UIMode.graph;
+    }
+  }
+  final bool _showRebreathePercentage;
+  _showRebreathePercentage = IsarCore.readBool(reader, 20);
+  final bool _screenOnAlarm;
+  {
+    if (IsarCore.readNull(reader, 21)) {
+      _screenOnAlarm = true;
+    } else {
+      _screenOnAlarm = IsarCore.readBool(reader, 21);
+    }
+  }
+  final bool _alarmOnCo2Fall;
+  _alarmOnCo2Fall = IsarCore.readBool(reader, 22);
+  final List<AlarmLevel> _alarmLevels;
+  {
+    final length = IsarCore.readList(reader, 23, IsarCore.readerPtrPtr);
+    {
+      final reader = IsarCore.readerPtr;
+      if (reader.isNull) {
+        _alarmLevels = defaultAlarmLevels;
+      } else {
+        final list = List<AlarmLevel>.filled(
+            length,
+            AlarmLevel(
+              id: -9223372036854775808,
+              co2Threshold: -9223372036854775808,
+              repeatCount: -9223372036854775808,
+              enabled: false,
+            ),
+            growable: true);
+        for (var i = 0; i < length; i++) {
+          {
+            final objectReader = IsarCore.readObject(reader, i);
+            if (objectReader.isNull) {
+              list[i] = AlarmLevel(
+                id: -9223372036854775808,
+                co2Threshold: -9223372036854775808,
+                repeatCount: -9223372036854775808,
+                enabled: false,
+              );
+            } else {
+              final embedded = deserializeAlarmLevel(objectReader);
+              IsarCore.freeReader(objectReader);
+              list[i] = embedded;
+            }
+          }
+        }
+        IsarCore.freeReader(reader);
+        _alarmLevels = list;
+      }
+    }
+  }
+  final double _scaling;
+  {
+    final value = IsarCore.readDouble(reader, 24);
+    if (value.isNaN) {
+      _scaling = 1.0;
+    } else {
+      _scaling = value;
+    }
+  }
+  final bool _flightMode;
+  _flightMode = IsarCore.readBool(reader, 25);
+  final bool _showLiveActivity;
+  _showLiveActivity = IsarCore.readBool(reader, 26);
   final object = DeviceSettings(
+    alarmEnabled: _alarmEnabled,
+    vibrationEnabled: _vibrationEnabled,
+    powerMode: _powerMode,
+    continuosScreenEnabled: _continuosScreenEnabled,
+    thresholds: _thresholds,
     deviceId: _deviceId,
+    co2MedAlertEnabled: _co2MedAlertEnabled,
+    co2HighAlertEnabled: _co2HighAlertEnabled,
+    autoSyncTime: _autoSyncTime,
+    autoCalibration: _autoCalibration,
+    autoConnect: _autoConnect,
+    logData: _logData,
+    dndEnabled: _dndEnabled,
+    dndStartTime: _dndStartTime,
+    dndEndTime: _dndEndTime,
+    recalibrationTarget: _recalibrationTarget,
+    graphMaxValue: _graphMaxValue,
+    graphMinValue: _graphMinValue,
+    uiMode: _uiMode,
+    showRebreathePercentage: _showRebreathePercentage,
+    screenOnAlarm: _screenOnAlarm,
+    alarmOnCo2Fall: _alarmOnCo2Fall,
+    alarmLevels: _alarmLevels,
+    scaling: _scaling,
+    flightMode: _flightMode,
+    showLiveActivity: _showLiveActivity,
   );
   return object;
 }
@@ -228,7 +427,9 @@ dynamic deserializeDeviceSettingsProp(IsarReader reader, int property) {
       {
         final objectReader = IsarCore.readObject(reader, 5);
         if (objectReader.isNull) {
-          return DeviceThresholds();
+          return const DeviceThresholds(
+              greenUpperLimit: Constants.defaultGreenUpperLimit,
+              yellowUpperLimit: Constants.defaultYellowUpperLimit);
         } else {
           final embedded = deserializeDeviceThresholds(objectReader);
           IsarCore.freeReader(objectReader);
@@ -242,11 +443,23 @@ dynamic deserializeDeviceSettingsProp(IsarReader reader, int property) {
     case 8:
       return IsarCore.readBool(reader, 8);
     case 9:
-      return IsarCore.readBool(reader, 9);
+      {
+        if (IsarCore.readNull(reader, 9)) {
+          return true;
+        } else {
+          return IsarCore.readBool(reader, 9);
+        }
+      }
     case 10:
       return IsarCore.readBool(reader, 10);
     case 11:
-      return IsarCore.readBool(reader, 11);
+      {
+        if (IsarCore.readNull(reader, 11)) {
+          return true;
+        } else {
+          return IsarCore.readBool(reader, 11);
+        }
+      }
     case 12:
       return IsarCore.readBool(reader, 12);
     case 13:
@@ -272,11 +485,32 @@ dynamic deserializeDeviceSettingsProp(IsarReader reader, int property) {
         }
       }
     case 16:
-      return IsarCore.readLong(reader, 16);
+      {
+        final value = IsarCore.readLong(reader, 16);
+        if (value == -9223372036854775808) {
+          return 426;
+        } else {
+          return value;
+        }
+      }
     case 17:
-      return IsarCore.readLong(reader, 17);
+      {
+        final value = IsarCore.readLong(reader, 17);
+        if (value == -9223372036854775808) {
+          return 1600;
+        } else {
+          return value;
+        }
+      }
     case 18:
-      return IsarCore.readLong(reader, 18);
+      {
+        final value = IsarCore.readLong(reader, 18);
+        if (value == -9223372036854775808) {
+          return 0;
+        } else {
+          return value;
+        }
+      }
     case 19:
       {
         if (IsarCore.readNull(reader, 19)) {
@@ -289,7 +523,13 @@ dynamic deserializeDeviceSettingsProp(IsarReader reader, int property) {
     case 20:
       return IsarCore.readBool(reader, 20);
     case 21:
-      return IsarCore.readBool(reader, 21);
+      {
+        if (IsarCore.readNull(reader, 21)) {
+          return true;
+        } else {
+          return IsarCore.readBool(reader, 21);
+        }
+      }
     case 22:
       return IsarCore.readBool(reader, 22);
     case 23:
@@ -298,7 +538,7 @@ dynamic deserializeDeviceSettingsProp(IsarReader reader, int property) {
         {
           final reader = IsarCore.readerPtr;
           if (reader.isNull) {
-            return const <AlarmLevel>[];
+            return defaultAlarmLevels;
           } else {
             final list = List<AlarmLevel>.filled(
                 length,
@@ -332,7 +572,14 @@ dynamic deserializeDeviceSettingsProp(IsarReader reader, int property) {
         }
       }
     case 24:
-      return IsarCore.readDouble(reader, 24);
+      {
+        final value = IsarCore.readDouble(reader, 24);
+        if (value.isNaN) {
+          return 1.0;
+        } else {
+          return value;
+        }
+      }
     case 25:
       return IsarCore.readBool(reader, 25);
     case 26:

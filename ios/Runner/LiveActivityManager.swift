@@ -59,6 +59,9 @@ class LiveActivityManager: LiveActivityManagerProtocol {
     private var deviceActivities: [String: Activity<LiveActivityWidgetAttributes>] = [:]
     private let maxDevices = 3
     
+    // Track activities that we are cleaning up and should ignore dismissals for
+    private var ignoredActivityIds: Set<String> = []
+    
     // Track dismissal intent to avoid unnecessary callbacks to Flutter
     private var isAppInitiatedDismissal = false
        
@@ -137,6 +140,8 @@ class LiveActivityManager: LiveActivityManagerProtocol {
             // Remove duplicates (ghosts)
             for activity in activitiesToRemove {
                 print("👻 Removing ghost activity: \(activity.id)")
+                // Add to ignored list so we don't trigger dismissal callback
+                ignoredActivityIds.insert(activity.id)
                 Task {
                     await activity.end(dismissalPolicy: .immediate)
                 }
@@ -168,6 +173,13 @@ class LiveActivityManager: LiveActivityManagerProtocol {
                 
                 if activity.activityState == .dismissed {
                     print("🚫 Live Activity dismissed")
+
+                    // Check if this is an ignored activity (ghost cleanup)
+                    if ignoredActivityIds.contains(activity.id) {
+                        print("👻 Ignoring dismissal for ghost activity: \(activity.id)")
+                        ignoredActivityIds.remove(activity.id)
+                        continue
+                    }
 
                     // Clear our reference since the activity is dismissed
                     if let currentActivity = liveActivity, currentActivity.id == activity.id {
@@ -221,7 +233,7 @@ class LiveActivityManager: LiveActivityManagerProtocol {
                 } else if activity.activityState == .ended {
                     print("🏁 Live Activity ended")
                     
-                    if !isAppInitiatedDismissal {
+                    if !isAppInitiatedDismissal && !ignoredActivityIds.contains(activity.id) {
                         // System ended it (or something else), so we should auto-disable toggle
                         if let (deviceId, _) = self.deviceActivities.first(where: { $0.value.id == activity.id }) {
                             print("ℹ️ Device activity for \(deviceId) ended (not app-initiated). Auto-disabling.")
@@ -235,6 +247,8 @@ class LiveActivityManager: LiveActivityManagerProtocol {
                             
                             self.deviceActivities.removeValue(forKey: deviceId)
                         }
+                    } else if ignoredActivityIds.contains(activity.id) {
+                         print("👻 Ignoring ended state for ghost activity: \(activity.id)")
                     }
                 }
             }

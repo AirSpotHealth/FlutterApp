@@ -263,7 +263,16 @@ public class ForegroundNotificationService extends Service {
                 
                 // Start with a basic service notification
                 Notification serviceNotification = createServiceNotification();
-                startForeground(BASE_NOTIFICATION_ID, serviceNotification);
+                
+                if (Build.VERSION.SDK_INT >= 34) { // Android 14 (UPSIDE_DOWN_CAKE)
+                    Log.d(TAG, "Starting foreground service with type CONNECTED_DEVICE | DATA_SYNC");
+                    // 16 = FOREGROUND_SERVICE_TYPE_CONNECTED_DEVICE
+                    // 1 = FOREGROUND_SERVICE_TYPE_DATA_SYNC
+                    startForeground(BASE_NOTIFICATION_ID, serviceNotification, 16 | 1);
+                } else {
+                    startForeground(BASE_NOTIFICATION_ID, serviceNotification);
+                }
+                
                 isServiceRunning = true;
                 Log.d(TAG, "Foreground service started with service notification");
             } catch (Exception e) {
@@ -307,7 +316,13 @@ public class ForegroundNotificationService extends Service {
                     // If this is the foreground notification, use startForeground to update it
                     if (notificationId == BASE_NOTIFICATION_ID) {
                         Log.d(TAG, "Updating foreground notification for device: " + deviceId);
-                        startForeground(notificationId, notification);
+                        if (Build.VERSION.SDK_INT >= 34) { // Android 14
+                             // 16 = FOREGROUND_SERVICE_TYPE_CONNECTED_DEVICE
+                             // 1 = FOREGROUND_SERVICE_TYPE_DATA_SYNC
+                            startForeground(notificationId, notification, 16 | 1);
+                        } else {
+                            startForeground(notificationId, notification);
+                        }
                     } else {
                         notificationManager.notify(notificationId, notification);
                     }
@@ -364,7 +379,13 @@ public class ForegroundNotificationService extends Service {
                 // If this is the first device (using BASE_NOTIFICATION_ID), update the foreground notification
                 if (notificationId == BASE_NOTIFICATION_ID) {
                     Log.d(TAG, "First device notification, updating foreground notification");
-                    startForeground(notificationId, notification);
+                    if (Build.VERSION.SDK_INT >= 34) { // Android 14
+                        // 16 = FOREGROUND_SERVICE_TYPE_CONNECTED_DEVICE
+                        // 1 = FOREGROUND_SERVICE_TYPE_DATA_SYNC
+                        startForeground(notificationId, notification, 16 | 1);
+                    } else {
+                        startForeground(notificationId, notification);
+                    }
                 } else {
                     // For subsequent devices, just add as regular notification
                     notificationManager.notify(notificationId, notification);
@@ -406,7 +427,13 @@ public class ForegroundNotificationService extends Service {
                     Notification nextNotification = createDeviceNotification(nextDeviceId);
                     if (nextNotification != null) {
                         // Update to be the new foreground notification
-                        startForeground(BASE_NOTIFICATION_ID, nextNotification);
+                        if (Build.VERSION.SDK_INT >= 34) { // Android 14
+                            // 16 = FOREGROUND_SERVICE_TYPE_CONNECTED_DEVICE
+                            // 1 = FOREGROUND_SERVICE_TYPE_DATA_SYNC
+                            startForeground(BASE_NOTIFICATION_ID, nextNotification, 16 | 1);
+                        } else {
+                            startForeground(BASE_NOTIFICATION_ID, nextNotification);
+                        }
                         
                         // Cancel the old notification at the different ID
                         notificationManager.cancel(nextNotificationId);

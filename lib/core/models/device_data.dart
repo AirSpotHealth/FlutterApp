@@ -5,7 +5,7 @@ part 'device_data.g.dart';
 
 @collection
 class DeviceData {
-  const DeviceData({
+  DeviceData({
     required this.deviceId,
     required this.dateTime,
     required this.value,

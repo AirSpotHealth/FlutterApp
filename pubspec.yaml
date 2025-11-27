@@ -44,8 +44,8 @@ dependencies:
   bottom_picker: ^4.1.1
   pointycastle: ^4.0.0
   vibration: ^3.1.4
-  isar_plus: ^1.1.7
-  isar_plus_flutter_libs: ^1.1.7
+  isar_plus: ^1.1.8
+  isar_plus_flutter_libs: ^1.1.8
 
 dev_dependencies:
   flutter_test:
