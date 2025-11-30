@@ -233,6 +233,10 @@ class LiveActivityService {
         _activeDeviceIds.remove(deviceId);
         // NOTE: We keep _activeLiveActivities for widgets to continue showing data
         _activityStartTimes.remove(deviceId);
+
+        // CRITICAL: Update the persistent setting to OFF so the UI reflects the dismissal
+        _immediatelyDisableLiveActivitySetting(deviceId);
+
         debugPrint(
             '🗑️ Removed device from active devices: $deviceId (widget data retained)');
         return;
@@ -864,6 +868,18 @@ class LiveActivityService {
     }
   }
 
+  Future<String> getLiveActivityState(String deviceId) async {
+    try {
+      final String state = await platform.invokeMethod('getLiveActivityState', {
+        'deviceId': deviceId,
+      });
+      return state;
+    } on PlatformException catch (e) {
+      debugPrint("Failed to get live activity state: '${e.message}'.");
+      return "unknown";
+    }
+  }
+
   Future<void> resetDismissalState() async {
     try {
       await platform.invokeMethod('resetDismissalState');
@@ -1087,10 +1103,11 @@ class LiveActivityService {
 
   /// Check and restart any Live Activities that should be active but aren't showing
   /// This handles the edge case where toggle is ON but notification isn't showing
+  /// Sync Live Activity state with native side
+  /// This handles cases where user dismissed the activity while app was suspended
   Future<void> checkAndRestartMissingLiveActivities() async {
     try {
-      debugPrint(
-          'LiveActivity: Checking for missing Live Activities that should be active');
+      debugPrint('LiveActivity: Syncing Live Activity state with native side');
 
       // Get all devices with Live Activity toggle enabled
       final allDeviceSettings =
@@ -1104,25 +1121,34 @@ class LiveActivityService {
       for (final settings in allDeviceSettings) {
         final deviceId = settings.deviceId;
 
-        // Check if this device should have a Live Activity but doesn't
-        if (!_activeDeviceIds.contains(deviceId)) {
-          // Check if we have stored data for this device
-          final storedData = _activeLiveActivities[deviceId];
+        // Check actual state on native side
+        final nativeState = await getLiveActivityState(deviceId);
+        debugPrint('LiveActivity: Device $deviceId native state: $nativeState');
 
-          if (storedData != null && storedData.isConnected) {
-            // Device is connected with toggle ON but no active Live Activity
+        if (nativeState == 'active' || nativeState == 'stale') {
+          // Activity is active on native side
+          if (!_activeDeviceIds.contains(deviceId)) {
             debugPrint(
-                'LiveActivity: Found device $deviceId with toggle ON and connected but no active Live Activity - restarting');
-            await _restartLiveActivityForReconnection(
-              deviceId: deviceId,
-              data: storedData,
-            );
+                'LiveActivity: Device $deviceId is active natively but not tracked in Flutter - adding to active list');
+            _activeDeviceIds.add(deviceId);
+            // We might want to refresh data here if we have it
+            if (_activeLiveActivities.containsKey(deviceId)) {
+              // Update to ensure data is fresh
+              final data = _activeLiveActivities[deviceId]!;
+              await updateLiveActivity(deviceId: deviceId, data: data);
+            }
           }
+        } else {
+          // Activity is NOT active on native side (none, dismissed, ended)
+          // But toggle is ON. This means user dismissed it or it ended.
+          // We should turn the toggle OFF to match reality.
+          debugPrint(
+              'LiveActivity: Device $deviceId has toggle ON but native state is $nativeState - turning toggle OFF');
+          _immediatelyDisableLiveActivitySetting(deviceId);
         }
       }
     } catch (e) {
-      debugPrint(
-          'LiveActivity: Error checking for missing Live Activities: $e');
+      debugPrint('LiveActivity: Error syncing Live Activities: $e');
     }
   }
 }

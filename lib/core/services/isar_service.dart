@@ -74,4 +74,6 @@ class IsarService {
   /// expose the schemas
   IsarCollection<String, BleDevice> get bleDevices => _isar.bleDevices;
   IsarCollection<String, DeviceData> get deviceDatas => _isar.deviceDatas;
+  IsarCollection<String, DeviceSettings> get deviceSettings =>
+      _isar.deviceSettings;
 }
