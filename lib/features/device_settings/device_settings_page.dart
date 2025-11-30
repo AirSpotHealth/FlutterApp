@@ -140,6 +140,7 @@ class _DeviceSettingsPageState extends ConsumerState<DeviceSettingsPage> {
       body: ListView(
         padding: const EdgeInsets.only(left: 16, right: 16, bottom: 16),
         children: [
+          // CloudSyncSettingWidget(deviceId: widget.deviceId),
           AlarmSettingWidget(deviceId: widget.deviceId),
           VibrateSettingWidget(deviceId: widget.deviceId),
           AutoConnectSettingWidget(deviceId: widget.deviceId),

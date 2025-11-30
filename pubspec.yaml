@@ -46,6 +46,8 @@ dependencies:
   vibration: ^3.1.4
   isar_plus: ^1.1.8
   isar_plus_flutter_libs: ^1.1.8
+  supabase_flutter: ^2.10.3
+  sign_in_with_apple: ^7.0.1
 
 dev_dependencies:
   flutter_test:

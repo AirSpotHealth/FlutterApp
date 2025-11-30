@@ -13,6 +13,7 @@ import 'package:flutter/material.dart' hide DateUtils;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:home_widget/home_widget.dart';
 import 'package:package_info_plus/package_info_plus.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'firebase_options.dart';
 
@@ -31,6 +32,10 @@ void main() async {
 
   // Initialize other services in parallel
   await [
+    Supabase.initialize(
+      url: Constants.supabaseUrl,
+      anonKey: Constants.supabaseAnonKey,
+    ),
     IsarService().initialize(),
     PrefsService().initialize(),
     LocalDateFormat().initialize(),
