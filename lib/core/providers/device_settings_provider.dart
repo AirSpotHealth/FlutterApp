@@ -5,7 +5,7 @@ import 'package:airspothealth/core/services/isar_service.dart';
 import 'package:airspothealth/core/utils/device_cmd_utils.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:isar/isar.dart';
+import 'package:isar_plus/isar_plus.dart';
 
 final deviceSettingsProvider =
     NotifierProvider.family<_DeviceSettingsNotifier, DeviceSettings, String>(
@@ -16,17 +16,38 @@ class _DeviceSettingsNotifier extends FamilyNotifier<DeviceSettings, String> {
 
   @override
   DeviceSettings build(String arg) {
-    final setting = _isarService.read<DeviceSettings?>((isar) {
+    // Initial read
+    final initialSetting = _isarService.read<DeviceSettings?>((isar) {
       return isar.deviceSettings.where().deviceIdEqualTo(arg).findFirst();
     });
 
-    if (setting == null) {
+    // Set up watcher for real-time updates
+    final stream = _isarService.deviceSettings
+        .where()
+        .deviceIdEqualTo(arg)
+        .watch(fireImmediately: true);
+
+    final subscription = stream.listen((settings) {
+      if (settings.isNotEmpty) {
+        state = settings.first;
+      } else {
+        // Handle case where setting might be deleted (though unlikely for active device)
+        state = DeviceSettings.empty(deviceId: arg);
+      }
+    });
+
+    // Clean up subscription when provider is disposed
+    ref.onDispose(() {
+      subscription.cancel();
+    });
+
+    if (initialSetting == null) {
       return DeviceSettings.empty(deviceId: arg);
     }
 
-    debugPrint('SETTING: ${setting.toJson()}');
+    debugPrint('SETTING: ${initialSetting.toJson()}');
 
-    return setting;
+    return initialSetting;
   }
 
   void updateSetting(
@@ -111,6 +132,7 @@ class _DeviceSettingsNotifier extends FamilyNotifier<DeviceSettings, String> {
       isar.deviceSettings.put(newSettings);
     });
 
+    // Optimistic update for immediate UI feedback
     state = newSettings;
   }
 

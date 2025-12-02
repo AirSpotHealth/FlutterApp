@@ -4,11 +4,14 @@ import 'package:airspothealth/core/models/device_settings.dart';
 import 'package:airspothealth/core/providers/ble_device_communication_provider.dart';
 import 'package:airspothealth/core/providers/isar_service_provider.dart';
 import 'package:airspothealth/core/services/isar_service.dart';
+import 'package:airspothealth/core/services/live_activity_service.dart';
+import 'package:airspothealth/core/services/widget_service.dart';
 import 'package:airspothealth/core/utils/device_cmd_utils.dart';
 import 'package:airspothealth/core/utils/extensions.dart';
 import 'package:airspothealth/features/device_graph/providers/ble_device_provider.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:isar/isar.dart';
+import 'package:isar_plus/isar_plus.dart';
 
 final bleSavedDevicesProvider =
     NotifierProvider<_BleSavedDevicesNotifier, List<BleDevice>>(
@@ -54,6 +57,36 @@ class _BleSavedDevicesNotifier extends Notifier<List<BleDevice>> {
     });
 
     state = state.where((d) => d.deviceId != deviceId).toList();
+
+    // Clean up both widget data AND live activity for removed device
+    _cleanupForRemovedDevice(deviceId);
+  }
+
+  /// Clean up widget data and live activity when device is removed/forgotten
+  void _cleanupForRemovedDevice(String deviceId) {
+    try {
+      debugPrint('🧹 Starting cleanup for removed device: $deviceId');
+
+      // 1. Remove Live Activity/notification if it exists
+      LiveActivityService().removeDeviceLiveActivity(deviceId);
+      debugPrint('✅ Live Activity removed for device: $deviceId');
+
+      // 2. Clear all callbacks for this device
+      LiveActivityService().clearAllDeviceCallbacks(deviceId);
+      debugPrint('✅ Live Activity callbacks cleared for device: $deviceId');
+
+      // 3. Clear stored Live Activity data
+      LiveActivityService().clearDeviceData(deviceId);
+      debugPrint('✅ Live Activity data cleared for device: $deviceId');
+
+      // 4. Remove widget data (this also updates widget device list)
+      WidgetService().removeWidgetData(deviceId);
+      debugPrint('✅ Widget data removed for device: $deviceId');
+
+      debugPrint('✅ Complete cleanup finished for removed device: $deviceId');
+    } catch (e) {
+      debugPrint('❌ Error during cleanup for device $deviceId: $e');
+    }
   }
 
   void updateDeviceAlias(String deviceId, String alias) {
@@ -77,6 +110,77 @@ class _BleSavedDevicesNotifier extends Notifier<List<BleDevice>> {
         state.map((d) => d.deviceId == device.deviceId ? device : d).toList();
 
     ref.invalidate(bleDeviceProvider(deviceId));
+
+    // Update widget with new alias - this updates the device list
+    _updateWidgetWithNewAlias(deviceId, alias);
+  }
+
+  /// Update widget data when alias changes
+  void _updateWidgetWithNewAlias(String deviceId, String alias) {
+    try {
+      // Get current widget data for this device
+      final currentData = WidgetService().getWidgetData(deviceId);
+      if (currentData != null) {
+        // Update with new alias
+        WidgetService().updateWidgetData(
+          deviceId: deviceId,
+          data: currentData.copyWith(deviceName: alias),
+        );
+        debugPrint('✅ Updated widget with new alias for device: $deviceId');
+      } else {
+        // No existing widget data, but still refresh the device list
+        WidgetService().refreshDeviceList();
+        debugPrint(
+            '✅ Refreshed device list with new alias for device: $deviceId');
+      }
+
+      // Also update Live Activity with new alias if it's active
+      _updateLiveActivityWithNewAlias(deviceId, alias);
+    } catch (e) {
+      debugPrint('❌ Error updating widget with new alias: $e');
+    }
+  }
+
+  /// Update Live Activity with new alias when it changes
+  void _updateLiveActivityWithNewAlias(String deviceId, String alias) {
+    try {
+      debugPrint(
+          '🔄 Updating Live Activity alias for device: $deviceId, new alias: $alias');
+
+      // Check if Live Activity is active for this device
+      if (LiveActivityService().isDeviceActive(deviceId)) {
+        debugPrint('✅ Live Activity is active for device: $deviceId');
+
+        // Get the current Live Activity data
+        final currentData = LiveActivityService().getLastDeviceData(deviceId);
+        if (currentData != null) {
+          debugPrint(
+              '📊 Current Live Activity data - deviceName: ${currentData.deviceName}, new alias: $alias');
+
+          // Update with new alias
+          final updatedData = currentData.copyWith(deviceName: alias);
+
+          debugPrint(
+              '🔄 Updating Live Activity with new deviceName: ${updatedData.deviceName}');
+
+          // Update the Live Activity immediately with new alias
+          LiveActivityService().updateLiveActivity(
+            deviceId: deviceId,
+            data: updatedData,
+          );
+          debugPrint(
+              '✅ Updated Live Activity with new alias for device: $deviceId');
+        } else {
+          debugPrint(
+              '⚠️ Live Activity is active but no data found for device: $deviceId');
+        }
+      } else {
+        debugPrint(
+            'ℹ️ Live Activity not active for device: $deviceId, skipping alias update');
+      }
+    } catch (e) {
+      debugPrint('❌ Error updating Live Activity with new alias: $e');
+    }
   }
 
   void reloadDevices() {

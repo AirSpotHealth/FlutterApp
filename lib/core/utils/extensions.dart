@@ -1,6 +1,6 @@
 // Extension file for managing the extensions of the app
 
-import 'package:airspothealth/main.dart';
+import 'package:airspothealth/core/utils/local_date_format.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
@@ -108,10 +108,10 @@ extension StringExtension on String {
 extension DateTimeExtension on DateTime {
   /// Format time in 10/20 01:20 format
   String formatTime() {
-    final pattern =
-        systemDateFormat.pattern!.replaceAll(RegExp(r'^/?y+|/y+$'), '');
+    final pattern = LocalDateFormat.instance.systemDateFormat.pattern!
+        .replaceAll(RegExp(r'^/?y+|/y+$'), '');
 
-    return '${DateFormat(pattern).format(this)} ${systemTimeFormat.format(this)}';
+    return '${DateFormat(pattern).format(this)} ${LocalDateFormat.instance.systemTimeFormat.format(this)}';
   }
 
   /// format date in local format without milliseconds
@@ -195,6 +195,7 @@ extension GoRouterExtension on GoRouter {
 
 extension ColorX on Color {
   String toHexTriplet() =>
+      // ignore: deprecated_member_use
       '#${(value & 0xFFFFFF).toRadixString(16).padLeft(6, '0').toUpperCase()}';
 }
 

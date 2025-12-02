@@ -1,3 +1,4 @@
+import 'package:airspothealth/core/providers/app_notification_preferences_provider.dart';
 import 'package:airspothealth/core/router/route_names.dart';
 import 'package:airspothealth/core/utils/assets.dart';
 import 'package:airspothealth/core/utils/extensions.dart';
@@ -34,23 +35,82 @@ class AppSetupPage extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final bool isDevMode = ref.watch(devModeProvider);
+    final notificationPrefs = ref.watch(appNotificationPreferencesProvider);
 
     return Scaffold(
+      backgroundColor: Colors.grey[100],
       appBar: AppBar(
         title: const Text('Settings'),
       ),
-      body: ListView.separated(
+      body: ListView(
         padding: const EdgeInsets.all(16),
-        separatorBuilder: (context, index) => const SizedBox(height: 12),
-        itemCount: _items.length,
-        itemBuilder: (context, index) {
-          final menuItem = _items[index];
-          return MenuItemWidget(
-            menuItem: menuItem,
-            dense: true,
-            iconSize: 24,
-          );
-        },
+        children: [
+          // Menu Items Section
+          ..._items.map(
+            (menuItem) => Padding(
+              padding: const EdgeInsets.only(bottom: 12),
+              child: MenuItemWidget(
+                menuItem: menuItem,
+                dense: true,
+                iconSize: 24,
+              ),
+            ),
+          ),
+
+          const SizedBox(height: 16),
+
+          // Notification Preferences Section Header
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 2, vertical: 6),
+            child: Row(
+              children: [
+                const Icon(Icons.notifications_outlined,
+                    size: 18, color: Colors.grey),
+                const SizedBox(width: 6),
+                Text(
+                  'Notification Preferences',
+                  style: context.textTheme.bodyMedium?.copyWith(
+                    fontWeight: FontWeight.w600,
+                    fontSize: 14,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 6),
+
+          _buildNotificationToggle(
+            context,
+            ref,
+            title: 'News & Announcements',
+            subtitle: 'Important news and company announcements',
+            value: notificationPrefs.newsNotifications,
+            icon: Icons.newspaper,
+            onChanged: (value) {
+              ref
+                  .read(appNotificationPreferencesProvider.notifier)
+                  .toggleNews(value);
+            },
+          ),
+
+          const SizedBox(height: 10),
+
+          _buildNotificationToggle(
+            context,
+            ref,
+            title: 'Blog Posts',
+            subtitle: 'New articles and insights',
+            value: notificationPrefs.blogsNotifications,
+            icon: Icons.article,
+            onChanged: (value) {
+              ref
+                  .read(appNotificationPreferencesProvider.notifier)
+                  .toggleBlogs(value);
+            },
+          ),
+
+          const SizedBox(height: 24),
+        ],
       ),
       bottomNavigationBar: isDevMode
           ? SettingItemWidget(
@@ -69,6 +129,57 @@ class AppSetupPage extends ConsumerWidget {
               ),
             )
           : null,
+    );
+  }
+
+  Widget _buildNotificationToggle(
+    BuildContext context,
+    WidgetRef ref, {
+    required String title,
+    required String subtitle,
+    required bool value,
+    required IconData icon,
+    required ValueChanged<bool> onChanged,
+  }) {
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(8),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.05),
+            blurRadius: 6,
+            offset: const Offset(0, 1),
+          ),
+        ],
+      ),
+      child: ListTile(
+        contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 0),
+        leading: Icon(
+          icon,
+          size: 20,
+          color: value ? context.theme.primaryColor : Colors.grey,
+        ),
+        title: Text(
+          title,
+          style: const TextStyle(
+            fontSize: 14,
+            fontWeight: FontWeight.w500,
+          ),
+        ),
+        subtitle: Text(
+          subtitle,
+          style: const TextStyle(
+            fontSize: 11,
+            color: Colors.grey,
+          ),
+        ),
+        trailing: Switch(
+          value: value,
+          onChanged: onChanged,
+          materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+        ),
+      ),
     );
   }
 }

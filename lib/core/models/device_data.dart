@@ -1,16 +1,17 @@
 import 'package:airspothealth/core/models/device_data_type.dart';
-import 'package:isar/isar.dart';
+import 'package:isar_plus/isar_plus.dart';
 
 part 'device_data.g.dart';
 
 @collection
 class DeviceData {
-  const DeviceData({
+  DeviceData({
     required this.deviceId,
     required this.dateTime,
     required this.value,
     this.type = 0,
     this.isLiveCo2 = false,
+    this.synced = false,
   });
 
   @Index()
@@ -22,6 +23,9 @@ class DeviceData {
   final short value;
 
   final bool isLiveCo2;
+
+  @Index()
+  bool synced; // Track sync status
 
   @Index()
   final byte type;
@@ -38,6 +42,7 @@ class DeviceData {
     short? value,
     DeviceDataType? type,
     bool? isLiveCo2,
+    bool? synced,
   }) {
     return DeviceData(
       deviceId: deviceId ?? this.deviceId,
@@ -45,6 +50,7 @@ class DeviceData {
       value: value ?? this.value,
       type: type?.index ?? this.type,
       isLiveCo2: isLiveCo2 ?? this.isLiveCo2,
+      synced: synced ?? this.synced,
     );
   }
 

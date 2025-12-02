@@ -24,6 +24,8 @@ class _RecalibrationTimeNotifier
   void setRecalibrationTime(int? time) {
     if (time == null) {
       state = AsyncNone();
+    } else if (time == 0) {
+      state = AsyncInProgress(-1, message: 'Finalizing calibration...');
     } else {
       state = AsyncInProgress(time.toDouble());
     }

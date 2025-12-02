@@ -75,7 +75,10 @@ class DataLoggerService {
       final name = 'data_log_$deviceId.txt';
 
       await FileSaver.instance.saveAs(
-          name: name, bytes: bytes, mimeType: MimeType.text, ext: 'txt');
+          name: name,
+          bytes: bytes,
+          mimeType: MimeType.text,
+          fileExtension: 'txt');
     } catch (e) {
       debugPrint('Error downloading log data: $e');
     }

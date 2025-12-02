@@ -83,7 +83,7 @@ class DeviceDataAggregateCard extends ConsumerWidget {
             textAlign: TextAlign.end,
             text: TextSpan(
               text: data != null
-                  ? data.value.toInt().clamp(0, 5000).toString()
+                  ? data.value.toInt().clamp(400, 5000).toString()
                   : '0000',
               style: context.textTheme.bodyMedium?.copyWith(color: color),
               children: const [

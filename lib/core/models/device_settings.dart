@@ -6,7 +6,7 @@ import 'package:airspothealth/core/utils/constants.dart';
 import 'package:airspothealth/core/utils/device_cmd_utils.dart';
 import 'package:airspothealth/features/device_settings/widgets/device_ui_mode_widget.dart';
 import 'package:flutter/material.dart';
-import 'package:isar/isar.dart';
+import 'package:isar_plus/isar_plus.dart';
 
 part 'device_settings.g.dart';
 
@@ -86,13 +86,19 @@ class DeviceSettings {
   /// Flight mode
   final bool flightMode;
 
-  const DeviceSettings({
-    required this.alarmEnabled,
-    required this.vibrationEnabled,
-    required this.powerMode,
-    required this.continuosScreenEnabled,
-    required this.thresholds,
+  /// Show Live Activity
+  final bool showLiveActivity;
+
+  DeviceSettings({
     required this.deviceId,
+    this.alarmEnabled = false,
+    this.vibrationEnabled = false,
+    this.powerMode = PowerMode.onDemand,
+    this.continuosScreenEnabled = false,
+    this.thresholds = const DeviceThresholds(
+      greenUpperLimit: Constants.defaultGreenUpperLimit,
+      yellowUpperLimit: Constants.defaultYellowUpperLimit,
+    ),
     this.co2MedAlertEnabled = false,
     this.co2HighAlertEnabled = false,
     this.autoSyncTime = true,
@@ -112,6 +118,7 @@ class DeviceSettings {
     this.alarmLevels = defaultAlarmLevels,
     this.scaling = 1.0,
     this.flightMode = false,
+    this.showLiveActivity = false,
   });
 
   DeviceSettings.empty({required this.deviceId})
@@ -138,7 +145,8 @@ class DeviceSettings {
         alarmOnCo2Fall = false,
         alarmLevels = defaultAlarmLevels,
         scaling = 1.0,
-        flightMode = false;
+        flightMode = false,
+        showLiveActivity = false;
 
   DeviceSettings copyWith({
     bool? alarmEnabled,
@@ -167,6 +175,7 @@ class DeviceSettings {
     List<AlarmLevel>? alarmLevels,
     double? scaling,
     bool? flightMode,
+    bool? showLiveActivity,
   }) {
     return DeviceSettings(
       alarmEnabled: alarmEnabled ?? this.alarmEnabled,
@@ -196,6 +205,7 @@ class DeviceSettings {
       alarmLevels: alarmLevels ?? this.alarmLevels,
       scaling: scaling ?? this.scaling,
       flightMode: flightMode ?? this.flightMode,
+      showLiveActivity: showLiveActivity ?? this.showLiveActivity,
     );
   }
 
@@ -307,6 +317,7 @@ class DeviceSettings {
       'graphMinValue': graphMinValue,
       'scaling': scaling,
       'flightMode': flightMode,
+      'showLiveActivity': showLiveActivity,
     };
   }
 
@@ -339,7 +350,8 @@ class DeviceSettings {
         other.alarmLevels == alarmLevels &&
         other.graphMinValue == graphMinValue &&
         other.scaling == scaling &&
-        other.flightMode == flightMode;
+        other.flightMode == flightMode &&
+        other.showLiveActivity == showLiveActivity;
   }
 
   @override
@@ -368,11 +380,12 @@ class DeviceSettings {
       alarmLevels.hashCode ^
       graphMinValue.hashCode ^
       scaling.hashCode ^
-      flightMode.hashCode;
+      flightMode.hashCode ^
+      showLiveActivity.hashCode;
 
   @override
   String toString() {
-    return 'DeviceSettings(alarmEnabled: $alarmEnabled, vibrationEnabled: $vibrationEnabled, powerMode: $powerMode, continuosScreenEnabled: $continuosScreenEnabled, thresholds: $thresholds, deviceId: $deviceId, co2MedAlertEnabled: $co2MedAlertEnabled, co2HighAlertEnabled: $co2HighAlertEnabled, autoSyncTime: $autoSyncTime, autoCalibration: $autoCalibration, autoConnect: $autoConnect, logData: $logData, dndEnabled: $dndEnabled, dndStartTime: $dndStartTime, dndEndTime: $dndEndTime, recalibrationTarget: $recalibrationTarget, graphMaxValue: $graphMaxValue, uiMode: $uiMode, showRebreathePercentage: $showRebreathePercentage, graphMinValue: $graphMinValue, screenOnAlarm: $screenOnAlarm, alarmOnCo2Fall: $alarmOnCo2Fall, alarmLevels: $alarmLevels, scaling: $scaling, flightMode: $flightMode)';
+    return 'DeviceSettings(alarmEnabled: $alarmEnabled, vibrationEnabled: $vibrationEnabled, powerMode: $powerMode, continuosScreenEnabled: $continuosScreenEnabled, thresholds: $thresholds, deviceId: $deviceId, co2MedAlertEnabled: $co2MedAlertEnabled, co2HighAlertEnabled: $co2HighAlertEnabled, autoSyncTime: $autoSyncTime, autoCalibration: $autoCalibration, autoConnect: $autoConnect, logData: $logData, dndEnabled: $dndEnabled, dndStartTime: $dndStartTime, dndEndTime: $dndEndTime, recalibrationTarget: $recalibrationTarget, graphMaxValue: $graphMaxValue, uiMode: $uiMode, showRebreathePercentage: $showRebreathePercentage, graphMinValue: $graphMinValue, screenOnAlarm: $screenOnAlarm, alarmOnCo2Fall: $alarmOnCo2Fall, alarmLevels: $alarmLevels, scaling: $scaling, flightMode: $flightMode, showLiveActivity: $showLiveActivity)';
   }
 }
 
@@ -381,9 +394,9 @@ class DeviceThresholds {
   final int greenUpperLimit;
   final int yellowUpperLimit;
 
-  DeviceThresholds({
-    required this.greenUpperLimit,
-    required this.yellowUpperLimit,
+  const DeviceThresholds({
+    this.greenUpperLimit = Constants.defaultGreenUpperLimit,
+    this.yellowUpperLimit = Constants.defaultYellowUpperLimit,
   });
 
   DeviceThresholds.empty()

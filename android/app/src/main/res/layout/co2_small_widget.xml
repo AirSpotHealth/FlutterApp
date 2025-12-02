@@ -1,0 +1,148 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@drawable/widget_background_light"
+    android:gravity="start"
+    android:orientation="vertical"
+    android:paddingHorizontal="10dp"
+    android:paddingTop="10dp"
+    android:paddingBottom="6dp">
+
+
+    <LinearLayout
+        android:id="@+id/widget_container"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:background="#161616"
+        android:gravity="start"
+        android:orientation="vertical"
+        android:padding="6dp">
+
+        <!-- Status Icons Row (Top Right) -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="end"
+            android:orientation="horizontal"
+            android:paddingTop="4dp"
+            android:paddingEnd="4dp">
+
+            <!-- Battery Icon -->
+            <ImageView
+                android:id="@+id/battery_icon"
+                android:layout_width="16dp"
+                android:layout_height="12dp"
+                android:layout_marginEnd="4dp"
+                android:src="@drawable/battery_100percent_bolt" />
+
+            <!-- Alarm Icon -->
+            <ImageView
+                android:id="@+id/alarm_icon"
+                android:layout_width="10dp"
+                android:layout_height="10dp"
+                android:layout_marginEnd="4dp"
+                android:src="@drawable/ic_bell" />
+
+            <!-- Vibration Icon -->
+            <ImageView
+                android:id="@+id/vibration_icon"
+                android:layout_width="10dp"
+                android:layout_height="10dp"
+                android:src="@drawable/ic_iphone_radiowaves" />
+
+        </LinearLayout>
+
+
+        <!-- CO2 Value (Centered) -->
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:layout_marginTop="12dp"
+            android:gravity="center_horizontal"
+            android:orientation="vertical">
+
+            <TextView
+                android:id="@+id/co2_value"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="450"
+                android:textColor="#4CAF50"
+                android:textSize="32sp"
+                android:textStyle="bold" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:alpha="0.8"
+                android:text="CO₂ ppm"
+                android:textColor="#FFFFFF"
+                android:textSize="10sp" />
+
+        </LinearLayout>
+
+        <!-- Device Name -->
+        <TextView
+            android:id="@+id/device_name"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:layout_marginTop="12dp"
+            android:gravity="center"
+            android:text="AirSpot Device"
+            android:textColor="@color/white"
+            android:textSize="12sp"
+            android:textStyle="bold" />
+
+        <!-- Last Updated Time -->
+        <TextView
+            android:id="@+id/last_updated"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:layout_marginTop="2dp"
+            android:gravity="center"
+            android:text="at 12:15 PM"
+            android:textColor="@color/white"
+            android:textSize="12sp" />
+
+
+    </LinearLayout>
+
+    <!-- Refresh Button/Progress Container (Small widget: 2x2 cells, 120x120dp) -->
+    <FrameLayout
+        android:layout_width="28dp"
+        android:layout_height="28dp"
+        android:layout_gravity="center"
+        android:layout_marginTop="2dp">
+
+        <!-- Static Refresh Button (shown when not refreshing) -->
+        <ImageButton
+            android:id="@+id/refresh_button"
+            android:layout_width="28dp"
+            android:layout_height="28dp"
+            android:layout_gravity="center"
+            android:background="@android:color/transparent"
+            android:contentDescription="Refresh CO₂ Value"
+            android:scaleType="fitCenter"
+            android:src="@drawable/refresh_button_widget"
+            android:visibility="visible"
+            tools:visibility="gone" />
+
+        <!-- Animated Progress Ring (shown when refreshing) -->
+        <ProgressBar
+            android:id="@+id/progress_refresh"
+            style="?android:attr/progressBarStyle"
+            android:layout_width="26dp"
+            android:layout_height="26dp"
+            android:layout_gravity="center"
+            android:indeterminate="true"
+            android:indeterminateTint="#FFFFFF"
+            android:visibility="visible"
+            tools:vsibility="visible" />
+
+    </FrameLayout>
+
+</LinearLayout>

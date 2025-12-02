@@ -1,7 +1,8 @@
 import 'package:airspothealth/core/models/ble_device.dart';
 import 'package:airspothealth/core/models/device_data.dart';
 import 'package:airspothealth/core/models/device_settings.dart';
-import 'package:isar/isar.dart';
+import 'package:airspothealth/core/models/notification_preferences.dart';
+import 'package:isar_plus/isar_plus.dart';
 import 'package:path_provider/path_provider.dart';
 
 /// A service class for interacting with the Isar database.
@@ -20,7 +21,12 @@ class IsarService {
   Future<void> initialize() async {
     final dir = await getApplicationDocumentsDirectory();
     _isar = Isar.open(
-      schemas: [BleDeviceSchema, DeviceDataSchema, DeviceSettingsSchema],
+      schemas: [
+        BleDeviceSchema,
+        DeviceDataSchema,
+        DeviceSettingsSchema,
+        NotificationPreferencesSchema,
+      ],
       directory: dir.path,
     );
   }
@@ -68,4 +74,6 @@ class IsarService {
   /// expose the schemas
   IsarCollection<String, BleDevice> get bleDevices => _isar.bleDevices;
   IsarCollection<String, DeviceData> get deviceDatas => _isar.deviceDatas;
+  IsarCollection<String, DeviceSettings> get deviceSettings =>
+      _isar.deviceSettings;
 }

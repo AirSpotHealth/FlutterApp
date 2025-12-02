@@ -112,6 +112,17 @@ class RecalibrateDevicePage extends ConsumerWidget {
   Widget _buildCalibrationStatusWidget(AsyncProgressValue calibrationStatus,
       DeviceSettings deviceSettings, WidgetRef ref) {
     if (calibrationStatus.isInProgress) {
+      final progress = calibrationStatus as AsyncInProgress;
+      String displayText;
+
+      if (progress.message?.isNotEmpty == true) {
+        displayText = progress.message!;
+      } else if (progress.progress < 0) {
+        displayText = 'Initialising...';
+      } else {
+        displayText = 'Remaining Time: ${progress.progress.toInt()} seconds';
+      }
+
       return Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
@@ -122,9 +133,7 @@ class RecalibrateDevicePage extends ConsumerWidget {
               style: TextStyle(fontSize: 14),
             ),
             Text(
-              (calibrationStatus as AsyncInProgress).progress < 0
-                  ? 'Initialising...'
-                  : 'Remaining Time: ${calibrationStatus.progress.toInt()} seconds',
+              displayText,
               style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
             ),
           ],

@@ -1,13 +1,41 @@
-import 'package:airspothealth/main.dart';
+import 'package:airspothealth/core/utils/local_date_format.dart';
 import 'package:intl/intl.dart';
 
 class Constants {
-  static const String baseUrl = 'https://update.airspothealth.com/api';
+  // API Configuration - loaded from environment variables
+  static const String baseUrl = String.fromEnvironment(
+    'API_BASE_URL',
+    defaultValue: 'https://update.airspothealth.com/api',
+  );
 
-  // UUIDs for the service and characteristics
-  static const String serviceUuid = "6E400001-B5A3-F393-E0A9-E50E24DCCA9E";
-  static const String notifyUuid = "6E400003-B5A3-F393-E0A9-E50E24DCCA9E";
-  static const String writeUuid = "6E400002-B5A3-F393-E0A9-E50E24DCCA9E";
+  static const String mapUrl = String.fromEnvironment(
+    'MAP_URL',
+    defaultValue: 'https://map.airspothealth.com/',
+  );
+
+  // Bluetooth UUIDs - loaded from environment variables
+  static const String serviceUuid = String.fromEnvironment(
+    'BLUETOOTH_SERVICE_UUID',
+    defaultValue: '6E400001-B5A3-F393-E0A9-E50E24DCCA9E',
+  );
+
+  static const String notifyUuid = String.fromEnvironment(
+    'BLUETOOTH_NOTIFY_UUID',
+    defaultValue: '6E400003-B5A3-F393-E0A9-E50E24DCCA9E',
+  );
+
+  static const String writeUuid = String.fromEnvironment(
+    'BLUETOOTH_WRITE_UUID',
+    defaultValue: '6E400002-B5A3-F393-E0A9-E50E24DCCA9E',
+  );
+
+  static const String supabaseUrl = String.fromEnvironment(
+    'SUPABASE_URL',
+  );
+
+  static const String supabaseAnonKey = String.fromEnvironment(
+    'SUPABASE_ANON_KEY',
+  );
 
   static const String greenUpperLimit = "greenThreshold";
   static const int defaultGreenUpperLimit = 800;
@@ -37,13 +65,19 @@ class Constants {
     2000
   ];
 
-  static const String solutionsUrl =
-      'https://airspothealth.com/a/blog/category/';
+  static const String solutionsUrl = String.fromEnvironment(
+    'SOLUTIONS_URL',
+    defaultValue: 'https://airspothealth.com/a/blog/category/',
+  );
 
   static const String homeWidgetKey = 'airspot_home_widget';
-  static const String appGroupId = 'com.air.spot.airspothealth';
-  static const String iOSWidgetName = 'Co2ValueWidget';
-  static const String androidWidgetName = 'Co2ValueWidget';
+  static const String appGroupId = 'group.com.airspot.lohas';
+  static const String iOSWidgetName = 'Co2Widget';
+  // Fully-qualified Android widget provider names
+  // static const String androidWidgetCo2Value = 'airspothealth.Co2ValueWidget';
+  static const String androidWidgetCo2Small = 'airspothealth.Co2SmallWidget';
+  static const String androidWidgetCo2Medium = 'airspothealth.Co2MediumWidget';
+  static const String androidWidgetCo2Large = 'airspothealth.Co2LargeWidget';
 
   static const String subscript2 = '₂';
 
@@ -122,8 +156,10 @@ class Constants {
 
   static String echartTimeFormat() {
     // Get system date and time format
-    String sDFormat = systemDateFormat.pattern ?? "d/M/y";
-    String sTFormat = systemTimeFormat.pattern ?? "h:mm a"; // Fallback if null
+    String sDFormat =
+        LocalDateFormat.instance.systemDateFormat.pattern ?? "d/M/y";
+    String sTFormat = LocalDateFormat.instance.systemTimeFormat.pattern ??
+        "h:mm a"; // Fallback if null
 
     // Mapping Date Format
     String formattedDate = sDFormat
@@ -161,4 +197,7 @@ class Constants {
     }
   ''';
   }
+
+  static const String liveActivityLearnMoreUrl =
+      'https://vimeo.com/1106340814?share=copy&fl=sv&fe=ci';
 }

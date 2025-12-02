@@ -67,6 +67,15 @@ class RouteNames {
   /// advanced alarm settings route
   static const String advancedAlarmSettings = '/advanced-alarm-settings';
 
+  /// notification settings route
+  static const String notificationSettings = '/notification-settings';
+
   /// sensor configuration route
   static const String sensorConfiguration = '/sensor-configuration';
+
+  /// factory test route
+  static const String factoryTest = '/factory-test';
+
+  /// map handoff route (deep link handler)
+  static const String mapHandoff = '/map-handoff';
 }

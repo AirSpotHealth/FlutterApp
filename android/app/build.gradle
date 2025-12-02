@@ -1,5 +1,8 @@
 plugins {
     id "com.android.application"
+    // START: FlutterFire Configuration
+    id 'com.google.gms.google-services'
+    // END: FlutterFire Configuration
     id "kotlin-android"
     // The Flutter Gradle Plugin must be applied after the Android and Kotlin Gradle plugins.
     id "dev.flutter.flutter-gradle-plugin"
@@ -9,11 +12,17 @@ def keystoreProperties = new Properties()
 def keystorePropertiesFile = rootProject.file('key.properties')
 if (keystorePropertiesFile.exists()) {
     keystoreProperties.load(new FileInputStream(keystorePropertiesFile))
+} else {
+    // Use debug keystore for open source builds when key.properties is missing
+    keystoreProperties['keyAlias'] = 'androiddebugkey'
+    keystoreProperties['keyPassword'] = 'android'
+    keystoreProperties['storeFile'] = 'debug.keystore'
+    keystoreProperties['storePassword'] = 'android'
 }
 
 android {
     namespace = "com.air.spot.airspothealth"
-    compileSdk = 35
+    compileSdk = 36
     ndkVersion = flutter.ndkVersion
 
     compileOptions {
@@ -28,8 +37,8 @@ android {
 
     defaultConfig {
         applicationId "com.air.spot"
-        minSdk = 23
-        targetSdk = 34
+        minSdkVersion flutter.minSdkVersion
+        targetSdk = 35
         versionCode = flutter.versionCode
         versionName = flutter.versionName
         multiDexEnabled true
@@ -60,4 +69,5 @@ flutter {
 
 dependencies {
     coreLibraryDesugaring 'com.android.tools:desugar_jdk_libs:2.1.4'
+    implementation 'androidx.cardview:cardview:1.0.0'
 }

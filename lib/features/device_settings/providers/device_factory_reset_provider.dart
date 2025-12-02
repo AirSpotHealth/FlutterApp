@@ -7,7 +7,7 @@ import 'package:airspothealth/core/utils/device_cmd_utils.dart';
 import 'package:airspothealth/features/add_device/providers/ble_device_connection_provider.dart';
 import 'package:airspothealth/features/device_settings/models/progress_model.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:isar/isar.dart';
+import 'package:isar_plus/isar_plus.dart';
 
 final deviceFactoryResetProvider = NotifierProvider.family<
     _DeviceFactoryResetNotifier,

@@ -70,6 +70,17 @@ class AppUtils {
 
     return true;
   }
+
+  /// Returns the display value for CO2, ensuring minimum of 400 ppm for user-facing components
+  /// while preserving actual values for data storage and CSV export
+  static int getDisplayCO2Value(int actualValue) {
+    return actualValue < 400 ? 400 : actualValue;
+  }
+
+  /// Returns the display value for CO2 as string, ensuring minimum of 400 ppm for user-facing components
+  static String getDisplayCO2ValueString(int actualValue) {
+    return getDisplayCO2Value(actualValue).toString();
+  }
 }
 
 // Show cupertino time picker

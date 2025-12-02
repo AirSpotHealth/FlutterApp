@@ -3,5 +3,5 @@ class ExternalUrls {
 
   static const String shop = 'https://airspothealth.com/collections/all';
 
-  static const String airmap = 'https://ravenapp.org/cleanair';
+  static const String airmap = 'https://map.airspothealth.com/';
 }

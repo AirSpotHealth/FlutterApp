@@ -12,9 +12,11 @@ class EChart extends StatefulWidget {
   const EChart({
     super.key,
     required this.option,
+    this.onMapHandoff,
   });
 
   final String option;
+  final void Function(int tsMs, int co2)? onMapHandoff;
 
   @override
   State<EChart> createState() => _EChartState();
@@ -37,6 +39,30 @@ class _EChartState extends State<EChart> {
       ..setJavaScriptMode(JavaScriptMode.unrestricted)
       ..setNavigationDelegate(
         NavigationDelegate(
+          onNavigationRequest: (NavigationRequest request) {
+            try {
+              final urlStr = request.url;
+              debugPrint('Navigation request: $urlStr');
+              if (urlStr.startsWith('airspothealth://')) {
+                final uri = Uri.parse(urlStr);
+                if (uri.host == 'chart-map-handoff') {
+                  final tsParam = uri.queryParameters['ts'];
+                  final co2Param = uri.queryParameters['co2'];
+                  if (tsParam != null && co2Param != null) {
+                    final ts = int.tryParse(tsParam);
+                    final co2 = int.tryParse(co2Param);
+                    if (ts != null && co2 != null) {
+                      widget.onMapHandoff?.call(ts, co2);
+                    }
+                  }
+                  return NavigationDecision.prevent;
+                }
+              }
+            } catch (e) {
+              debugPrint('Navigation intercept error: $e');
+            }
+            return NavigationDecision.navigate;
+          },
           onPageFinished: (url) => init(),
           onWebResourceError: (e) {
             debugPrint('Chart error: ${e.description}');
@@ -46,6 +72,19 @@ class _EChartState extends State<EChart> {
       ..addJavaScriptChannel('Print',
           onMessageReceived: (JavaScriptMessage javascriptMessage) {
         debugPrint('Chart message: ${javascriptMessage.message}');
+      })
+      ..addJavaScriptChannel('GraphBridge',
+          onMessageReceived: (JavaScriptMessage message) {
+        try {
+          final data = jsonDecode(message.message) as Map<String, dynamic>;
+          if (data['type'] == 'mapHandoff') {
+            final ts = (data['ts'] as num).toInt();
+            final co2 = (data['co2'] as num).toInt();
+            widget.onMapHandoff?.call(ts, co2);
+          }
+        } catch (e) {
+          debugPrint('GraphBridge parse error: $e');
+        }
       });
   }
 
@@ -62,6 +101,14 @@ class _EChartState extends State<EChart> {
 
         let tooltipTimeout = null;
 
+        // Ensure tooltip CSS accepts clicks
+        try {
+          var style = document.createElement('style');
+          style.type = 'text/css';
+          style.appendChild(document.createTextNode('.echarts-tooltip { pointer-events: auto !important; }'));
+          document.head.appendChild(style);
+        } catch (_) {}
+
         chart.on("showTip", function (params) {
 
           // If there is an active timeout, clear it
@@ -71,15 +118,98 @@ class _EChartState extends State<EChart> {
 
           // Start a new timeout (always ensure tooltip hides)
           tooltipTimeout = setTimeout(() => {
-            chart.dispatchAction({ type: 'hideTip' });
-            chart.dispatchAction({
-              type: 'updateAxisPointer',
-              currTrigger: 'leave',
-              dataIndex: -1
-            });
-            tooltipTimeout = null; // Reset timeout
-          }, 3000);
+            var tooltip = document.querySelector('.echarts-tooltip');
+            var isHovering = false;
+            if (tooltip) {
+              var rect = tooltip.getBoundingClientRect();
+              var x = window._lastMouseX || -1;
+              var y = window._lastMouseY || -1;
+              isHovering = x >= rect.left && x <= rect.right && y >= rect.top && y <= rect.bottom;
+            }
+            if (!isHovering) {
+              chart.dispatchAction({ type: 'hideTip' });
+              chart.dispatchAction({
+                type: 'updateAxisPointer',
+                currTrigger: 'leave',
+                dataIndex: -1
+              });
+              tooltipTimeout = null; // Reset timeout
+            }
+          }, 5000);
+          // Hook map handoff button click
+          try {
+            var idx = (params && params.dataIndex != null) ? params.dataIndex : null;
+            if (idx == null && params && params.batch && params.batch.length) {
+              idx = params.batch[0].dataIndex;
+            }
+            var series = chart.getOption().series;
+            if (idx != null && series && series.length) {
+              var pt = series[0].data[idx];
+              var tsIso = pt && pt.length ? pt[0] : null;
+              var co2Val = pt && pt.length ? pt[1] : null;
+              var tsMs = tsIso ? (new Date(tsIso)).getTime() : null;
+              // Store latest point globally for delegated handlers
+              if (tsMs && (co2Val !== null && co2Val !== undefined)) {
+                window._latestPoint = { ts: tsMs, co2: co2Val };
+              }
+              setTimeout(function() {
+                var btn = document.getElementById('map-handoff-btn');
+                if (btn && tsMs && (co2Val !== null && co2Val !== undefined)) {
+                  btn.style.pointerEvents = 'auto';
+                  btn.addEventListener('mouseenter', function(){ window._hoveringTooltip = true; });
+                  btn.addEventListener('mouseleave', function(){ window._hoveringTooltip = false; });
+                  btn.onclick = function(ev) {
+                    ev.preventDefault(); ev.stopPropagation();
+                    if (typeof GraphBridge !== 'undefined' && GraphBridge.postMessage) {
+                      GraphBridge.postMessage(JSON.stringify({ type: 'mapHandoff', ts: tsMs, co2: co2Val }));
+                    }
+                  };
+                  // Touch fallback
+                  btn.addEventListener('touchend', function(ev){
+                    ev.preventDefault(); ev.stopPropagation();
+                    if (typeof GraphBridge !== 'undefined' && GraphBridge.postMessage) {
+                      GraphBridge.postMessage(JSON.stringify({ type: 'mapHandoff', ts: tsMs, co2: co2Val }));
+                    }
+                  }, { passive: false });
+                }
+                // Ensure tooltip wrapper accepts events
+                var tooltipEl = document.querySelector('.echarts-tooltip');
+                if (tooltipEl) { tooltipEl.style.pointerEvents = 'auto'; tooltipEl.style.zIndex = '9999'; }
+              }, 0);
+            }
+          } catch (e) {
+            if (typeof Print !== 'undefined' && Print.postMessage) { Print.postMessage('map btn error: ' + e); }
+          }
         });
+
+        // Track last mouse position to detect hovering over tooltip
+        document.addEventListener('mousemove', function(ev){
+          window._lastMouseX = ev.clientX; window._lastMouseY = ev.clientY;
+        });
+
+        // Delegate click/touch on tooltip icon to ensure reliability on mobile
+        if (!window._mapHandoffBound) {
+          window._mapHandoffBound = true;
+          var handler = function(ev) {
+            var target = ev.target;
+            if (!target) return;
+            var btn = (target.id === 'map-handoff-btn') ? target : (target.closest ? target.closest('#map-handoff-btn') : null);
+            if (btn) {
+              ev.preventDefault(); ev.stopPropagation();
+              try {
+                var tsAttr = btn.getAttribute('data-ts');
+                var co2Attr = btn.getAttribute('data-co2');
+                var tsVal = tsAttr ? parseInt(tsAttr, 10) : (window._latestPoint ? window._latestPoint.ts : null);
+                var co2Val = co2Attr ? parseInt(co2Attr, 10) : (window._latestPoint ? window._latestPoint.co2 : null);
+                if (typeof GraphBridge !== 'undefined' && GraphBridge.postMessage) {
+                  GraphBridge.postMessage(JSON.stringify({ type: 'mapHandoff', ts: tsVal, co2: co2Val }));
+                }
+              } catch (e) {}
+            }
+          };
+          document.addEventListener('click', handler, true);
+          document.addEventListener('touchend', handler, { passive: false, capture: true });
+        }
 
       })();
     ''');

@@ -6,6 +6,7 @@ import 'package:airspothealth/core/providers/ble_saved_devices_provider.dart';
 import 'package:airspothealth/core/providers/device_settings_provider.dart';
 import 'package:airspothealth/core/providers/isar_service_provider.dart';
 import 'package:airspothealth/core/router/route_names.dart';
+import 'package:airspothealth/core/services/live_activity_service.dart';
 import 'package:airspothealth/core/utils/assets.dart';
 import 'package:airspothealth/core/utils/constants.dart';
 import 'package:airspothealth/core/utils/device_cmd_utils.dart';
@@ -26,6 +27,7 @@ import 'package:airspothealth/features/device_settings/widgets/erase_device_reco
 import 'package:airspothealth/features/device_settings/widgets/factory_reset_widget.dart';
 import 'package:airspothealth/features/device_settings/widgets/flight_mode_widget.dart';
 import 'package:airspothealth/features/device_settings/widgets/forget_device_widget.dart';
+import 'package:airspothealth/features/device_settings/widgets/live_activity_setting_widget.dart';
 import 'package:airspothealth/features/device_settings/widgets/populate_fake_data_widget.dart';
 import 'package:airspothealth/features/device_settings/widgets/power_off_device_widget.dart';
 import 'package:airspothealth/features/device_settings/widgets/sensor_error_widget.dart';
@@ -34,12 +36,40 @@ import 'package:airspothealth/features/device_settings/widgets/vibrate_setting_w
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:isar/isar.dart';
+import 'package:isar_plus/isar_plus.dart';
 
-class DeviceSettingsPage extends ConsumerWidget {
+class DeviceSettingsPage extends ConsumerStatefulWidget {
   const DeviceSettingsPage({required this.deviceId, super.key});
 
   final String deviceId;
+
+  @override
+  ConsumerState<DeviceSettingsPage> createState() => _DeviceSettingsPageState();
+}
+
+class _DeviceSettingsPageState extends ConsumerState<DeviceSettingsPage> {
+  @override
+  void initState() {
+    super.initState();
+    // Invalidate settings on first frame if opened from expired link
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final from = GoRouterState.of(context).uri.queryParameters['from'];
+      if (from == 'expired') {
+        // Remove only this device's Live Activity (not all devices)
+        LiveActivityService()
+            .removeDeviceLiveActivity(widget.deviceId)
+            .ignore();
+        // toggle live activity setting to false
+        ref
+            .read(deviceSettingsProvider(widget.deviceId).notifier)
+            .updateSettings(ref
+                .read(deviceSettingsProvider(widget.deviceId))
+                .copyWith(showLiveActivity: false));
+
+        ref.invalidate(deviceSettingsProvider(widget.deviceId));
+      }
+    });
+  }
 
   static final _deviceSettingsList = <SettingItem>[
     // SettingItem(
@@ -52,6 +82,11 @@ class DeviceSettingsPage extends ConsumerWidget {
       title: 'Device Screen Settings',
       assetIcon: Assets.screenSettings,
       route: RouteNames.screenSettings,
+    ),
+    SettingItem(
+      title: 'Notification Settings',
+      assetIcon: Assets.alarmSettings,
+      route: RouteNames.notificationSettings,
     ),
     SettingItem(
       title: 'Do Not Disturb',
@@ -76,13 +111,13 @@ class DeviceSettingsPage extends ConsumerWidget {
   ];
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final BleDevice? device = ref.read(bleDeviceProvider(deviceId));
+  Widget build(BuildContext context) {
+    final BleDevice? device = ref.read(bleDeviceProvider(widget.deviceId));
 
     final bool devMode = ref.watch(devModeProvider);
 
     if (device == null) {
-      ref.context.showSnackBar('Device with id $deviceId not found');
+      ref.context.showSnackBar('Device with id ${widget.deviceId} not found');
       context.pop();
       return const SizedBox();
     }
@@ -90,14 +125,14 @@ class DeviceSettingsPage extends ConsumerWidget {
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: AppBar(
-        title: DeviceSettingsNameWidget(deviceId: deviceId),
+        title: DeviceSettingsNameWidget(deviceId: widget.deviceId),
         actions: [
           if (devMode)
             IconButton(
               icon: Icon(Icons.data_array),
               onPressed: () {
                 context.pushNamed(RouteNames.dataLog,
-                    pathParameters: {'deviceId': deviceId});
+                    pathParameters: {'deviceId': widget.deviceId});
               },
             ),
         ],
@@ -105,19 +140,21 @@ class DeviceSettingsPage extends ConsumerWidget {
       body: ListView(
         padding: const EdgeInsets.only(left: 16, right: 16, bottom: 16),
         children: [
-          AlarmSettingWidget(deviceId: deviceId),
-          VibrateSettingWidget(deviceId: deviceId),
-          AutoConnectSettingWidget(deviceId: deviceId),
+          // CloudSyncSettingWidget(deviceId: widget.deviceId),
+          AlarmSettingWidget(deviceId: widget.deviceId),
+          VibrateSettingWidget(deviceId: widget.deviceId),
+          AutoConnectSettingWidget(deviceId: widget.deviceId),
+          LiveActivitySettingWidget(deviceId: widget.deviceId),
           _buildTimeSettingWidget(ref),
-          PowerModeSettingWidget(deviceId: deviceId),
+          PowerModeSettingWidget(deviceId: widget.deviceId),
           ..._buildSettingsList(ref),
-          FlightModeWidget(deviceId: deviceId),
+          FlightModeWidget(deviceId: widget.deviceId),
           // DeviceDataDownloadSettingWidget(deviceId: deviceId),
           DisconnectDeviceWidget(device: device),
-          ForgetDeviceWidget(deviceId: deviceId),
-          PowerOffDeviceWidget(deviceId: deviceId),
-          EraseDeviceRecordWidget(deviceId: deviceId),
-          FactoryResetWidget(deviceId: deviceId),
+          ForgetDeviceWidget(deviceId: widget.deviceId),
+          PowerOffDeviceWidget(deviceId: widget.deviceId),
+          EraseDeviceRecordWidget(deviceId: widget.deviceId),
+          FactoryResetWidget(deviceId: widget.deviceId),
           if (devMode) ..._addDevModeWidgets(ref),
         ],
       ),
@@ -144,17 +181,17 @@ class DeviceSettingsPage extends ConsumerWidget {
         ),
         onTap: () {
           ref.context.pushNamed(RouteNames.sensorConfiguration,
-              pathParameters: {'deviceId': deviceId});
+              pathParameters: {'deviceId': widget.deviceId});
         },
       ),
-      SensorErrorWidget(deviceId: deviceId),
-      PopulateFakeDataWidget(deviceId: deviceId),
-      TurnOffBluetoothWidget(deviceId: deviceId),
-      DeleteLocalCacheWidget(deviceId: deviceId),
-      DeviceDataDumpWidget(deviceId: deviceId),
+      SensorErrorWidget(deviceId: widget.deviceId),
+      PopulateFakeDataWidget(deviceId: widget.deviceId),
+      TurnOffBluetoothWidget(deviceId: widget.deviceId),
+      DeleteLocalCacheWidget(deviceId: widget.deviceId),
+      DeviceDataDumpWidget(deviceId: widget.deviceId),
       // ImportCsvDataWidget(deviceId: deviceId),
-      SetAscDurationWidget(deviceId: deviceId),
-      DeviceVariantWidget(deviceId: deviceId),
+      SetAscDurationWidget(deviceId: widget.deviceId),
+      DeviceVariantWidget(deviceId: widget.deviceId),
       //RestartDeviceWidget(deviceId: deviceId),
     ];
   }
@@ -168,7 +205,7 @@ class DeviceSettingsPage extends ConsumerWidget {
       ),
       onTap: () {
         if (!ref
-            .read(bleDeviceConnectionProvider(deviceId).notifier)
+            .read(bleDeviceConnectionProvider(widget.deviceId).notifier)
             .isConnected) {
           ref.context.showSnackBar('Device not connected');
 
@@ -177,7 +214,7 @@ class DeviceSettingsPage extends ConsumerWidget {
         }
 
         ref.context.pushNamed(RouteNames.timeSettings,
-            pathParameters: {'deviceId': deviceId});
+            pathParameters: {'deviceId': widget.deviceId});
       },
     );
   }
@@ -188,7 +225,7 @@ class DeviceSettingsPage extends ConsumerWidget {
         item: item,
         onTap: () {
           if (!ref
-              .read(bleDeviceConnectionProvider(deviceId).notifier)
+              .read(bleDeviceConnectionProvider(widget.deviceId).notifier)
               .isConnected) {
             ref.context.showSnackBar('Device not connected');
 
@@ -199,8 +236,8 @@ class DeviceSettingsPage extends ConsumerWidget {
           if (item.suffixWidget != null) return;
 
           if (item.route != null) {
-            ref.context
-                .pushNamed(item.route!, pathParameters: {'deviceId': deviceId});
+            ref.context.pushNamed(item.route!,
+                pathParameters: {'deviceId': widget.deviceId});
           }
         },
       ),

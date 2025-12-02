@@ -1,3 +1,4 @@
+import 'package:airspothealth/core/router/redirect_handler.dart';
 import 'package:airspothealth/core/router/route_names.dart';
 import 'package:airspothealth/features/add_device/add_device_page.dart';
 import 'package:airspothealth/features/advanced_alarm_settings/advanced_alarm_settings_page.dart';
@@ -16,8 +17,10 @@ import 'package:airspothealth/features/device_settings/pages/recalibrate_device_
 import 'package:airspothealth/features/device_settings/pages/time_settings_page.dart';
 import 'package:airspothealth/features/device_settings/widgets/sensor_configuration_page.dart';
 import 'package:airspothealth/features/devices/devices_page.dart';
+import 'package:airspothealth/features/factory_test/factory_test_wrapper.dart';
 import 'package:airspothealth/features/find_my_device/find_my_device_page.dart';
 import 'package:airspothealth/features/home/homepage.dart';
+import 'package:airspothealth/features/notification_settings/notification_settings_page.dart';
 import 'package:airspothealth/features/solutions/solutions_page.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
@@ -28,7 +31,18 @@ class AppRouter {
   static final router = GoRouter(
     navigatorKey: navigatorKey,
     initialLocation: RouteNames.home,
+    debugLogDiagnostics: true,
+    redirect: RedirectHandler.handleRedirect,
     routes: [
+      // Map handoff internal route (optional: for manual triggering)
+      GoRoute(
+        path: RouteNames.mapHandoff,
+        name: RouteNames.mapHandoff,
+        builder: (context, state) {
+          // This route is primarily driven by deep link redirect logic above
+          return const SizedBox.shrink();
+        },
+      ),
       // Route for HomePage
       GoRoute(
         path: RouteNames.home,
@@ -175,6 +189,19 @@ class AppRouter {
                       return AdvancedAlarmSettingsPage(deviceId: deviceId);
                     },
                   ),
+                  // Route for notification settings within device settings
+                  GoRoute(
+                    path: 'notification-settings',
+                    name: RouteNames.notificationSettings,
+                    builder: (context, state) {
+                      final deviceId = state.pathParameters['deviceId'];
+                      if (deviceId == null) {
+                        throw ErrorDescription(
+                            'Device ID is required for notification settings');
+                      }
+                      return NotificationSettingsPage(deviceId: deviceId);
+                    },
+                  ),
                   // Route for find my device settings within device settings
                   GoRoute(
                     name: RouteNames.findMyDevice,
@@ -232,6 +259,13 @@ class AppRouter {
         name: RouteNames.latestNews,
         path: RouteNames.latestNews,
         builder: (context, state) => const LatestNewsPage(),
+      ),
+
+      // Factory Test route (hidden)
+      GoRoute(
+        name: RouteNames.factoryTest,
+        path: RouteNames.factoryTest,
+        builder: (context, state) => const FactoryTestWrapper(),
       ),
     ],
   );

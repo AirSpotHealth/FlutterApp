@@ -1,7 +1,7 @@
+import 'package:airspothealth/core/providers/app_notification_preferences_provider.dart';
 import 'package:airspothealth/core/providers/bluetooth_state_provider.dart';
 import 'package:airspothealth/core/router/route_names.dart';
 import 'package:airspothealth/core/theme/app_colors.dart';
-import 'package:airspothealth/core/utils/constants.dart';
 import 'package:airspothealth/core/widgets/app_logo.dart';
 import 'package:airspothealth/features/add_device/providers/ble_search_results_provider.dart';
 import 'package:airspothealth/features/app_setup/providers/app_version_provider.dart';
@@ -11,7 +11,6 @@ import 'package:airspothealth/features/home/widgets/menu_item_widget.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_blue_plus/flutter_blue_plus.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:home_widget/home_widget.dart';
 
 class HomePage extends ConsumerStatefulWidget {
   const HomePage({super.key});
@@ -23,12 +22,15 @@ class HomePage extends ConsumerStatefulWidget {
 class _HomePageState extends ConsumerState<HomePage> {
   @override
   void initState() {
-    _setAppGroupId();
-    // NotificationService.checkNotificationPermission();
+    super.initState();
+
+    // Initialize app notification preferences to sync topic subscriptions
+    // This ensures users receive FCM notifications even if they don't visit the App Setup page
+    ref.read(appNotificationPreferencesProvider);
+
     _checkFirmwareVersion();
     _checkAppVersion();
     _scanForDevices();
-    super.initState();
   }
 
   void _checkFirmwareVersion() {
@@ -47,15 +49,15 @@ class _HomePageState extends ConsumerState<HomePage> {
     }
   }
 
-  void _setAppGroupId() => HomeWidget.setAppGroupId(Constants.appGroupId);
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
         backgroundColor: AppColors.primaryColor,
-        title:
-            const Padding(padding: EdgeInsets.only(top: 12), child: AppLogo()),
+        title: const Padding(
+          padding: EdgeInsets.only(top: 12),
+          child: AppLogo(testEnabled: true),
+        ),
         centerTitle: true,
       ),
       body: ListView.separated(

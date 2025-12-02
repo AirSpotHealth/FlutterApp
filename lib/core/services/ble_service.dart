@@ -3,7 +3,7 @@ import 'dart:async';
 import 'package:airspothealth/core/models/ble_device.dart';
 import 'package:airspothealth/core/services/isar_service.dart';
 import 'package:flutter_blue_plus/flutter_blue_plus.dart';
-import 'package:isar/isar.dart';
+import 'package:isar_plus/isar_plus.dart';
 
 /// A service class related to Bluetooth.
 /// This class provides methods to interact with Bluetooth.
@@ -55,7 +55,7 @@ class BLEService {
 
   /// Method to connect to a Bluetooth device.
   Future<void> connect(BluetoothDevice device) async =>
-      device.connect(autoConnect: true, mtu: null);
+      device.connect(license: License.free, autoConnect: true, mtu: null);
 
   /// Method to disconnect from a Bluetooth device.
   Future<void> disconnect(BluetoothDevice device) => device.disconnect();

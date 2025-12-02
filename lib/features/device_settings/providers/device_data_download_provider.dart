@@ -1,3 +1,5 @@
+// ignore_for_file: deprecated_member_use
+
 import 'dart:io';
 
 import 'package:airspothealth/core/models/device_data.dart';
@@ -13,7 +15,7 @@ import 'package:file_saver/file_saver.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
-import 'package:isar/isar.dart';
+import 'package:isar_plus/isar_plus.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:share_plus/share_plus.dart';
 
@@ -161,14 +163,19 @@ class _DeviceDataDownloadNotifier
     state = AsyncInProgress(1.0, message: 'Device data ready for download....');
 
     if (share) {
-      await SharePlus.instance.share(ShareParams(
-        files: [XFile(file.path)],
+      await Share.shareXFiles(
+        [XFile(file.path)],
         text: fileName,
-        fileNameOverrides: [fileName],
-      ));
+        // For iOS: provide a share origin rect (center of screen)
+        sharePositionOrigin:
+            Platform.isIOS ? const Rect.fromLTWH(0, 0, 100, 100) : null,
+      );
     } else {
       await FileSaver.instance.saveAs(
-          name: fileName, bytes: bytes, mimeType: MimeType.csv, ext: 'csv');
+          name: fileName,
+          bytes: bytes,
+          mimeType: MimeType.csv,
+          fileExtension: 'csv');
     }
   }
 

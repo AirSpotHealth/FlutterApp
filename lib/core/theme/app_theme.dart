@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 class AppTheme {
   static final _theme = ThemeData(
     primarySwatch: MaterialColor(
+      // ignore: deprecated_member_use
       AppColors.primaryColor.value,
       const {
         50: AppColors.primaryColorLight,

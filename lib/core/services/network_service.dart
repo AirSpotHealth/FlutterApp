@@ -13,8 +13,8 @@ class NetworkService {
   final Dio _dio = Dio()
     ..options = BaseOptions(
       baseUrl: Constants.baseUrl,
-      connectTimeout: const Duration(seconds: 10),
-      receiveTimeout: const Duration(seconds: 10),
+      connectTimeout: const Duration(seconds: 60),
+      receiveTimeout: const Duration(seconds: 60),
       contentType: Headers.jsonContentType,
     );
 
@@ -22,8 +22,11 @@ class NetworkService {
     return _dio.get(url, data: body);
   }
 
-  Future<Response> post(String url, dynamic data) async {
-    return _dio.post(url, data: data);
+  Future<Response> post(String url, dynamic data,
+      {Map<String, String>? headers}) async {
+    return _dio.post(url,
+        data: data,
+        options: headers != null ? Options(headers: headers) : null);
   }
 
   Future<Response> put(String url, dynamic data) async {

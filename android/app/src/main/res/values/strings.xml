@@ -1,6 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="appwidget_text">CO2 Value</string>
-    <string name="add_widget">Add widget</string>
-    <string name="app_widget_description">CO2 Value Widget</string>
+    <string name="appwidget_text">AirSpot CO2 Monitor</string>
+    <string name="add_widget">Add AirSpot Widget</string>
+    <string name="app_widget_description">Monitor CO2 levels from your AirSpot device</string>
+    <string name="app_widget_small_description">Small CO2 monitor widget</string>
+    <string name="app_widget_medium_description">Medium CO2 monitor widget with graph</string>
+    <string name="app_widget_large_description">Large CO2 monitor widget with graph and zone analysis</string>
 </resources>

@@ -85,7 +85,7 @@ class _DeviceDataDumpNotifier
       name: _dataDumpBuilder.fileName,
       bytes: await _dataDumpBuilder.file!.readAsBytes(),
       mimeType: MimeType.text,
-      ext: 'txt',
+      fileExtension: 'txt',
     );
 
     // reset the builder

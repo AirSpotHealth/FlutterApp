@@ -25,6 +25,14 @@
     <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
     <uses-permission android:name="android.permission.VIBRATE"/>
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED"/>
+
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE"/>
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_DATA_SYNC"/>
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_CONNECTED_DEVICE"/>
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>
+    <uses-permission android:name="android.permission.WAKE_LOCK"/>
+    <uses-permission android:name="android.permission.USE_FULL_SCREEN_INTENT"/>
+    <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW"/>
     <!--
  Required to query activities that can process text, see:
          https://developer.android.com/training/package-visibility and
@@ -48,9 +56,12 @@
         android:icon="@mipmap/launcher_icon"
         android:label="AirSpot Health">
 
-         <receiver
-            android:name=".Co2ValueWidget"
-            android:exported="true">
+        <!-- Co2ValueWidget commented out - functionality moved to other widgets -->
+        <!--
+        <receiver
+            android:name="com.air.spot.airspothealth.Co2ValueWidget"
+            android:exported="true"
+            android:label="AirSpot CO2 Widget">
             <intent-filter>
                 <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
             </intent-filter>
@@ -58,6 +69,74 @@
                 android:name="android.appwidget.provider"
                 android:resource="@xml/co2_value_widget_info" />
         </receiver>
+        -->
+
+        <receiver
+            android:name="com.air.spot.airspothealth.Co2SmallWidget"
+            android:exported="true"
+            android:label="AirSpot CO2 Small Widget">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/co2_small_widget_info" />
+        </receiver>
+
+        <receiver
+            android:name="com.air.spot.airspothealth.Co2MediumWidget"
+            android:exported="true"
+            android:label="AirSpot CO2 Medium Widget">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/co2_medium_widget_info" />
+        </receiver>
+
+        <receiver
+            android:name="com.air.spot.airspothealth.Co2LargeWidget"
+            android:exported="true"
+            android:label="AirSpot CO2 Large Widget">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/co2_large_widget_info" />
+        </receiver>
+
+        <receiver android:name="es.antonborri.home_widget.HomeWidgetBackgroundReceiver"  android:exported="true">
+            <intent-filter>
+                <action android:name="es.antonborri.home_widget.action.BACKGROUND" />
+            </intent-filter>
+        </receiver>
+
+        <!-- Background Service for Home Widget -->
+        <service
+                android:name="es.antonborri.home_widget.HomeWidgetBackgroundService"
+                android:permission="android.permission.BIND_JOB_SERVICE" 
+                android:exported="true"/>
+
+        <!-- Foreground Notification Service -->
+        <service
+            android:name="com.air.spot.airspothealth.ForegroundNotificationService"
+            android:enabled="true"
+            android:exported="false"
+            android:foregroundServiceType="dataSync|connectedDevice"
+            android:showWhenLocked="true"
+            android:permission="android.permission.BIND_JOB_SERVICE" />
+
+        <!-- Widget Configuration Activity -->
+        <activity
+            android:name="com.air.spot.airspothealth.WidgetConfigurationActivity"
+            android:exported="false"
+            android:theme="@style/WidgetConfigTheme">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_CONFIGURE" />
+            </intent-filter>
+        </activity>
 
         <activity
             android:name=".MainActivity"
@@ -84,6 +163,22 @@
 
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
+            
+            <!-- Deep link intent filter for widget refresh -->
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="airspothealthapp" />
+            </intent-filter>
+            
+            <!-- Deep link intent filter for app navigation -->
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="airspothealth" />
+            </intent-filter>
         </activity>
         <!--
  Don't delete the meta-data below.
@@ -92,6 +187,16 @@
         <meta-data
             android:name="flutterEmbedding"
             android:value="2" />
+        
+        <!-- Default notification icon for Firebase Cloud Messaging -->
+        <meta-data
+            android:name="com.google.firebase.messaging.default_notification_icon"
+            android:resource="@drawable/ic_notification" />
+        
+        <!-- Default notification color -->
+        <meta-data
+            android:name="com.google.firebase.messaging.default_notification_color"
+            android:resource="@android:color/white" />
     </application>
 
 </manifest>

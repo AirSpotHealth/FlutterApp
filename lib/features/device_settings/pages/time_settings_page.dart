@@ -3,8 +3,8 @@ import 'package:airspothealth/core/providers/device_settings_provider.dart';
 import 'package:airspothealth/core/theme/app_colors.dart';
 import 'package:airspothealth/core/utils/device_cmd_utils.dart';
 import 'package:airspothealth/core/utils/extensions.dart';
+import 'package:airspothealth/core/utils/local_date_format.dart';
 import 'package:airspothealth/features/device_settings/widgets/device_settings_name_widget.dart';
-import 'package:airspothealth/main.dart';
 import 'package:bottom_picker/bottom_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -80,7 +80,8 @@ class _TimeSettingsPageState extends ConsumerState<TimeSettingsPage> {
   Widget build(BuildContext context) {
     final autoSyncTime =
         ref.watch(deviceSettingsProvider(widget.deviceId)).autoSyncTime;
-    final bool is12Hour = systemTimeFormat.pattern!.contains('a');
+    final bool is12Hour =
+        LocalDateFormat.instance.systemTimeFormat.pattern!.contains('a');
 
     return Scaffold(
       backgroundColor: Colors.white,
@@ -134,7 +135,7 @@ class _TimeSettingsPageState extends ConsumerState<TimeSettingsPage> {
 
   void _showTimePicker(BuildContext context, bool is12Hour) {
     BottomPicker.time(
-      pickerTitle: Text('Select time', style: _styles['title']),
+      headerBuilder: (context) => Text('Select time', style: _styles['title']),
       initialTime: Time(
         hours: _selectedHour,
         minutes: _selectedMinute,

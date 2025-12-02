@@ -1,0 +1,426 @@
+package com.air.spot.airspothealth;
+
+import android.app.PendingIntent;
+import android.appwidget.AppWidgetManager;
+import android.appwidget.AppWidgetProvider;
+import android.content.Context;
+import android.content.Intent;
+import android.graphics.Bitmap;
+import android.graphics.Canvas;
+import android.graphics.Color;
+import android.graphics.Paint;
+import android.graphics.RectF;
+import android.net.Uri;
+import android.os.Bundle;
+import android.util.Log;
+import android.view.View;
+import android.widget.RemoteViews;
+
+import java.util.Calendar;
+import java.util.Locale;
+import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.List;
+
+import org.json.JSONObject;
+import org.json.JSONArray;
+import org.json.JSONException;
+
+import es.antonborri.home_widget.HomeWidgetBackgroundIntent;
+import es.antonborri.home_widget.HomeWidgetPlugin;
+
+/**
+ * Implementation of App Widget functionality for Medium CO2 monitoring widget.
+ */
+public class Co2MediumWidget extends AppWidgetProvider {
+
+    private static final String TAG = "Co2MediumWidget";
+    private static final String WIDGET_DATA_KEY = "widget_data_json";
+    private static final String WIDGET_DEVICES_DATA_KEY = "widget_devices_data";
+    private static final String WIDGET_DEVICE_LIST_KEY = "widget_device_list";
+
+    static void updateAppWidget(Context context, AppWidgetManager appWidgetManager, int appWidgetId) {
+        Log.d(TAG, "Updating medium widget: " + appWidgetId);
+        
+        RemoteViews views = new RemoteViews(context.getPackageName(), R.layout.co2_medium_widget);
+        
+        try {
+            // Get the configured device ID for this widget instance
+            String configuredDeviceId = WidgetConfigurationActivity.loadDeviceIdPref(context, appWidgetId);
+            Log.d(TAG, "Widget " + appWidgetId + " configured for device: " + configuredDeviceId);
+            
+            JSONObject widgetData;
+            
+            if (configuredDeviceId != null) {
+                // Load multi-device data and extract the specific device's data
+                String allDevicesJson = HomeWidgetPlugin.Companion.getData(context).getString(WIDGET_DEVICES_DATA_KEY, "{}");
+                JSONObject allDevices = new JSONObject(allDevicesJson);
+                
+                if (allDevices.has(configuredDeviceId)) {
+                    widgetData = allDevices.getJSONObject(configuredDeviceId);
+                    Log.d(TAG, "Loaded data for configured device: " + configuredDeviceId);
+                } else {
+                    // Configured device not found in data - use fallback
+                    Log.w(TAG, "Configured device " + configuredDeviceId + " not found in data");
+                    widgetData = new JSONObject();
+                }
+            } else {
+                // No device configured - use legacy single device data for backward compatibility
+                Log.d(TAG, "No device configured, using legacy data");
+                String widgetDataJson = HomeWidgetPlugin.Companion.getData(context).getString(WIDGET_DATA_KEY, "{}");
+                widgetData = new JSONObject(widgetDataJson);
+            }
+            
+            // Extract all values from JSON with fallbacks
+            int co2Int = widgetData.optInt("co2Value", 0);
+            String co2Value = co2Int == 0 ? "----" : String.valueOf(co2Int);
+            String deviceId = widgetData.optString("deviceId", "");
+            String deviceName = widgetData.optString("deviceName", "");
+            
+            // ALWAYS prefer alias from widget_device_list (source of truth for aliases)
+            // This ensures widgets show aliases even if widget_devices_data has BLE name
+            String aliasFromList = "";
+            if (configuredDeviceId != null) {
+                aliasFromList = getDeviceNameFromList(context, configuredDeviceId);
+            }
+            
+            // Use alias from list if available, otherwise fall back to deviceName from data
+            if (!aliasFromList.isEmpty()) {
+                deviceName = aliasFromList;
+                Log.d(TAG, "Using alias from device list: " + deviceName);
+            } else if (deviceName.isEmpty()) {
+                // Final fallback
+                deviceName = "AirSpot Device";
+            }
+            
+            String powerMode = widgetData.optString("powerMode", "Now");
+            String batteryLevel = String.valueOf(widgetData.optInt("batteryLevel", 0));
+            boolean isCharging = widgetData.optBoolean("isCharging", false);
+            boolean alarmEnabled = widgetData.optBoolean("alarmEnabled", false);
+            boolean vibrationEnabled = widgetData.optBoolean("vibrationEnabled", false);
+            boolean isConnected = widgetData.optBoolean("isConnected", false);
+            boolean isRefreshing = widgetData.optBoolean("isRefreshing", false);
+            
+            // Extract lastUpdated timestamp
+            long lastUpdatedMs = widgetData.optLong("lastUpdated", System.currentTimeMillis());
+            String lastUpdatedTime = formatDataTimestamp(lastUpdatedMs);
+
+            // Graph data
+            JSONArray co2HistoryArray = widgetData.optJSONArray("co2History");
+            List<Integer> co2History = parseJsonArrayToIntList(co2HistoryArray);
+            int greenUpperLimit = widgetData.optInt("greenUpperLimit", 800);
+            int yellowUpperLimit = widgetData.optInt("yellowUpperLimit", 1000);
+
+            // Check if we have a valid device connection
+            boolean hasValidDevice = !deviceId.isEmpty() && isConnected;
+            
+            if (hasValidDevice) {
+                // Device name and time
+                views.setTextViewText(R.id.device_name, deviceName);
+                views.setTextViewText(R.id.last_updated, lastUpdatedTime);
+                
+                // CO2 value with color coding
+                views.setTextViewText(R.id.co2_value, co2Value);
+                int co2Color = co2Int == 0 ? Color.GRAY : getDynamicColorForCO2Value(co2Int, greenUpperLimit, yellowUpperLimit);
+                views.setTextColor(R.id.co2_value, co2Color);
+                
+                // Status icons
+                updateStatusIcons(views, batteryLevel, isCharging, alarmEnabled, vibrationEnabled, powerMode, isConnected);
+                
+                // CO2 History Graph (bar-style like Co2ValueWidget)
+                Bitmap graphBitmap = createBarGraph(context, co2History, greenUpperLimit, yellowUpperLimit);
+                views.setImageViewBitmap(R.id.co2_graph, graphBitmap);
+                
+            } else {
+                // No device connected state
+                views.setTextViewText(R.id.device_name, "");
+                views.setTextViewText(R.id.last_updated, "");
+                views.setTextViewText(R.id.co2_value, "----");
+                views.setTextColor(R.id.co2_value, Color.GRAY);
+                
+                // Hide all status icons
+                views.setViewVisibility(R.id.battery_icon, View.GONE);
+                views.setViewVisibility(R.id.battery_percentage, View.GONE);
+                views.setViewVisibility(R.id.alarm_icon, View.GONE);
+                views.setViewVisibility(R.id.timer_icon, View.GONE);
+                views.setViewVisibility(R.id.power_mode, View.GONE);
+                views.setViewVisibility(R.id.vibration_icon, View.GONE);
+                
+                // Show no data graph
+                views.setImageViewResource(R.id.co2_graph, R.drawable.no_data_graph);
+            }
+            
+            // ALWAYS handle refresh state and setup refresh button (regardless of device connection)
+            setupRefreshState(views, isRefreshing, isConnected);
+            setupRefreshButton(context, views, appWidgetId, deviceId);
+            
+            // Set up click intent using deep link with widget flag
+            Intent intent = new Intent(context, MainActivity.class);
+            intent.setData(Uri.parse("airspothealth://devices?from=widget"));
+            intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TOP);
+            PendingIntent pendingIntent = PendingIntent.getActivity(context, 0, intent, PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
+            views.setOnClickPendingIntent(R.id.widget_container, pendingIntent);
+            
+        } catch (JSONException e) {
+            Log.e(TAG, "Error parsing widget data", e);
+            // Set fallback values
+            views.setTextViewText(R.id.device_name, "AirSpot Device");
+            views.setTextViewText(R.id.co2_value, "----");
+            views.setTextColor(R.id.co2_value, Color.GRAY);
+        }
+        
+        // Update the widget
+        appWidgetManager.updateAppWidget(appWidgetId, views);
+    }
+
+    private static void updateStatusIcons(RemoteViews views, String batteryLevel, boolean isCharging, 
+                                        boolean alarmEnabled, boolean vibrationEnabled, String powerMode, boolean isConnected) {
+        // Battery icon and percentage
+        views.setViewVisibility(R.id.battery_icon, View.VISIBLE);
+        views.setViewVisibility(R.id.battery_percentage, View.VISIBLE);
+        int batteryLevelInt = Integer.parseInt(batteryLevel);
+        int batteryIcon = getBatteryIcon(batteryLevelInt, isCharging);
+        views.setImageViewResource(R.id.battery_icon, batteryIcon);
+        views.setTextViewText(R.id.battery_percentage, batteryLevel + "%");
+        
+        // Alarm icon
+        views.setViewVisibility(R.id.alarm_icon, View.VISIBLE);
+        views.setImageViewResource(R.id.alarm_icon, alarmEnabled ? R.drawable.ic_bell : R.drawable.ic_bell_slash);
+        
+        // Timer icon and power mode
+        views.setViewVisibility(R.id.timer_icon, View.VISIBLE);
+        views.setViewVisibility(R.id.power_mode, View.VISIBLE);
+        views.setImageViewResource(R.id.timer_icon, R.drawable.ic_timer);
+        views.setTextViewText(R.id.power_mode, powerMode);
+        
+        // Vibration icon
+        views.setViewVisibility(R.id.vibration_icon, View.VISIBLE);
+        views.setImageViewResource(R.id.vibration_icon, vibrationEnabled ? R.drawable.ic_iphone_radiowaves : R.drawable.ic_iphone_slash);
+    }
+
+    private static Bitmap createBarGraph(Context context, List<Integer> co2History, int greenUpperLimit, int yellowUpperLimit) {
+        float density = context.getResources().getDisplayMetrics().density;
+        int width = (int)(300 * density);
+        int height = (int)(60 * density);
+        int padding = (int)(8 * density);
+        Bitmap bitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888);
+        Canvas canvas = new Canvas(bitmap);
+
+        // Background rounded rect
+        Paint bg = new Paint();
+        bg.setAntiAlias(true);
+        bg.setColor(Color.parseColor("#1A000000"));
+        canvas.drawRoundRect(new android.graphics.RectF(0,0,width,height), 8 * density, 8 * density, bg);
+
+        float drawableWidth = width - (2 * padding);
+        float drawableHeight = height - (2 * padding);
+
+        if (co2History == null) co2History = new ArrayList<>();
+        int maxBars = Math.min(40, co2History.size());
+        int startIndex = Math.max(0, co2History.size() - maxBars);
+
+        float barSpacing = 2 * density;
+        float barWidth = (drawableWidth - (barSpacing * (40 - 1))) / 40f;
+
+        // Grey background bars
+        Paint grey = new Paint();
+        grey.setAntiAlias(true);
+        grey.setColor(Color.parseColor("#40808080"));
+        for (int i = 0; i < 40; i++) {
+            float left = padding + (i * (barWidth + barSpacing));
+            android.graphics.RectF r = new android.graphics.RectF(left, padding, left + barWidth, height - padding);
+            canvas.drawRoundRect(r, 2 * density, 2 * density, grey);
+        }
+
+        // Colored overlay bars
+        Paint bar = new Paint();
+        bar.setAntiAlias(true);
+        int graphMinValue = 0;
+        int graphMaxValue = Math.max(yellowUpperLimit * 2, 1600);
+        for (int i = 0; i < maxBars; i++) {
+            int value = co2History.get(startIndex + i);
+            float ratio = (float)(value - graphMinValue) / (graphMaxValue - graphMinValue);
+            ratio = Math.max(0.05f, Math.min(1.0f, ratio));
+            float barHeight = drawableHeight * ratio;
+            int barIndex = (40 - maxBars) + i;
+            float left = padding + (barIndex * (barWidth + barSpacing));
+            float top = height - padding - barHeight;
+            android.graphics.RectF r = new android.graphics.RectF(left, top, left + barWidth, height - padding);
+            int color = getDynamicColorForCO2Value(value, greenUpperLimit, yellowUpperLimit);
+            bar.setColor(color);
+            canvas.drawRoundRect(r, 2 * density, 2 * density, bar);
+        }
+        return bitmap;
+    }
+
+    private static void setupRefreshState(RemoteViews views, boolean isRefreshing, boolean isConnected) {
+        Log.d(TAG, "Setting up refresh state - isRefreshing: " + isRefreshing + ", isConnected: " + isConnected);
+        
+        if (isRefreshing && isConnected) {
+            // Show progress bar, hide refresh button
+            Log.d(TAG, "Showing refresh animation");
+            views.setViewVisibility(R.id.progress_refresh, View.VISIBLE);
+            views.setViewVisibility(R.id.refresh_button, View.GONE);
+        } else {
+            // Hide progress bar, show refresh button
+            Log.d(TAG, "Hiding refresh animation, showing refresh button");
+            views.setViewVisibility(R.id.progress_refresh, View.GONE);
+            views.setViewVisibility(R.id.refresh_button, View.VISIBLE);
+            
+            // Set appropriate refresh button icon based on connection state
+            if (isConnected && !isRefreshing) {
+                // Show normal refresh icon when connected
+                Log.d(TAG, "Setting refresh button icon (connected)");
+                views.setImageViewResource(R.id.refresh_button, R.drawable.refresh_button_widget);
+            } else {
+                // Show disabled/disconnected icon when not connected
+                Log.d(TAG, "Setting refresh button icon (disconnected)");
+                views.setImageViewResource(R.id.refresh_button, R.drawable.ic_bt_off);
+            }
+            
+            // Ensure button is properly enabled/clickable
+            views.setBoolean(R.id.refresh_button, "setEnabled", true);
+        }
+    }
+
+    private static void setupRefreshButton(Context context, RemoteViews views, int appWidgetId, String deviceId) {
+        // When the refresh button is clicked, send the REFRESH_DATA broadcast
+        Intent intent = new Intent(context, Co2MediumWidget.class);
+        intent.setAction("com.air.spot.airspothealth.REFRESH_DATA");
+        // Optionally, add deviceId as extra if needed
+        if (deviceId != null && !deviceId.isEmpty()) {
+            intent.putExtra("deviceId", deviceId);
+        }
+        PendingIntent refreshPendingIntent = PendingIntent.getBroadcast(context, appWidgetId, intent, PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
+        views.setOnClickPendingIntent(R.id.refresh_button, refreshPendingIntent);
+        Log.d(TAG, "Refresh button setup to send REFRESH_DATA broadcast");
+    }
+
+    private static List<Integer> parseJsonArrayToIntList(JSONArray jsonArray) {
+        List<Integer> list = new ArrayList<>();
+        if (jsonArray != null) {
+            for (int i = 0; i < jsonArray.length(); i++) {
+                try {
+                    list.add(jsonArray.getInt(i));
+                } catch (JSONException e) {
+                    Log.e(TAG, "Error parsing CO2 history array", e);
+                }
+            }
+        }
+        return list;
+    }
+
+    private static int getDynamicColorForCO2Value(int co2Value, int greenUpperLimit, int yellowUpperLimit) {
+        if (co2Value <= greenUpperLimit) {
+            return Color.parseColor("#4CAF50"); // Green
+        } else if (co2Value <= yellowUpperLimit) {
+            return Color.parseColor("#FF9800"); // Orange  
+        } else {
+            return Color.parseColor("#F44336"); // Red
+        }
+    }
+
+    private static int getBatteryIcon(int level, boolean isCharging) {
+        if (isCharging) {
+            return R.drawable.battery_100percent_bolt;
+        } else if (level > 75) {
+            return R.drawable.battery_100percent;
+        } else if (level > 50) {
+            return R.drawable.battery_75percent;
+        } else if (level > 25) {
+            return R.drawable.battery_50percent;
+        } else if (level > 10) {
+            return R.drawable.battery_25percent;
+        } else {
+            return R.drawable.battery_0percent;
+        }
+    }
+
+    private static String formatDataTimestamp(long timestampMs) {
+        Date date = new Date(timestampMs);
+        SimpleDateFormat timeFormat = new SimpleDateFormat("h:mm a", Locale.getDefault());
+        return "at " + timeFormat.format(date);
+    }
+
+    /**
+     * Get device name (alias) from widget_device_list as fallback
+     * This ensures widgets show aliases even when widget data hasn't been updated yet
+     */
+    private static String getDeviceNameFromList(Context context, String deviceId) {
+        try {
+            String deviceListJson = HomeWidgetPlugin.Companion.getData(context)
+                    .getString(WIDGET_DEVICE_LIST_KEY, "[]");
+            
+            if (deviceListJson.isEmpty() || deviceListJson.equals("[]")) {
+                return "";
+            }
+            
+            JSONArray deviceList = new JSONArray(deviceListJson);
+            for (int i = 0; i < deviceList.length(); i++) {
+                JSONObject device = deviceList.getJSONObject(i);
+                String id = device.optString("deviceId", "");
+                if (id.equals(deviceId)) {
+                    String name = device.optString("deviceName", "");
+                    Log.d(TAG, "Found device name from list: " + name + " for device: " + deviceId);
+                    return name;
+                }
+            }
+        } catch (JSONException e) {
+            Log.e(TAG, "Error reading device list for fallback name", e);
+        }
+        return "";
+    }
+
+    @Override
+    public void onUpdate(Context context, AppWidgetManager appWidgetManager, int[] appWidgetIds) {
+        // There may be multiple widgets active, so update all of them
+        for (int appWidgetId : appWidgetIds) {
+            updateAppWidget(context, appWidgetManager, appWidgetId);
+        }
+    }
+
+    @Override
+    public void onEnabled(Context context) {
+        // Enter relevant functionality for when the first widget is created
+        Log.d(TAG, "Medium widget enabled");
+    }
+
+    @Override
+    public void onDisabled(Context context) {
+        // Enter relevant functionality for when the last widget is disabled
+        Log.d(TAG, "Medium widget disabled");
+    }
+
+    @Override
+    public void onDeleted(Context context, int[] appWidgetIds) {
+        // Clean up preferences when widgets are deleted
+        for (int appWidgetId : appWidgetIds) {
+            WidgetConfigurationActivity.deleteDeviceIdPref(context, appWidgetId);
+            Log.d(TAG, "Cleaned up preferences for widget: " + appWidgetId);
+        }
+    }
+
+    @Override
+    public void onReceive(Context context, Intent intent) {
+        super.onReceive(context, intent);
+        if ("com.air.spot.airspothealth.REFRESH_DATA".equals(intent.getAction())) {
+            // Extract deviceId from the original intent and forward it
+            String deviceId = intent.getStringExtra("deviceId");
+            Log.d(TAG, "Widget received REFRESH_DATA with deviceId: " + deviceId);
+            sendRefreshBroadcast(context, deviceId);
+        }
+    }
+
+    // Add a static method to send the REFRESH_DATA broadcast
+    public static void sendRefreshBroadcast(Context context, String deviceId) {
+        Intent broadcastIntent = new Intent("com.air.spot.airspothealth.REFRESH_DATA");
+        if (deviceId != null && !deviceId.isEmpty()) {
+            broadcastIntent.putExtra("deviceId", deviceId);
+            Log.d(TAG, "Sent REFRESH_DATA broadcast from Co2MediumWidget for device: " + deviceId);
+        } else {
+            Log.d(TAG, "Sent REFRESH_DATA broadcast from Co2MediumWidget (no device specified)");
+        }
+        context.sendBroadcast(broadcastIntent);
+    }
+}

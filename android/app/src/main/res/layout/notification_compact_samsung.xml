@@ -1,0 +1,239 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:background="@android:color/transparent"
+    android:orientation="vertical">
+
+
+    <RelativeLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:background="@android:color/transparent"
+        android:gravity="center_vertical"
+        android:orientation="horizontal"
+        tools:background="@color/widget_bg_black">
+
+        <!-- CO2 Value -->
+        <LinearLayout
+            android:id="@+id/co2_layout"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignParentStart="true"
+            android:layout_centerVertical="true"
+            android:gravity="center_horizontal"
+            android:orientation="vertical">
+
+            <TextView
+                android:id="@+id/co2_value"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:includeFontPadding="false"
+                android:text="----"
+                android:textColor="@color/notification_text"
+                android:textSize="24sp"
+                android:textStyle="bold"
+                tools:textColor="@color/white" />
+
+            <TextView
+                android:id="@+id/co2_ppm_label"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:gravity="center"
+                android:includeFontPadding="false"
+                android:text="CO₂ ppm"
+                android:textColor="?android:textColorSecondary"
+                android:textSize="10sp"
+                tools:textColor="@color/white" />
+
+        </LinearLayout>
+
+
+        <!-- Right section: Battery and Quick Actions -->
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_centerHorizontal="true"
+            android:layout_centerVertical="true"
+            android:layout_toStartOf="@id/refresh_layout"
+            android:layout_toEndOf="@id/co2_layout"
+            android:gravity="center_horizontal"
+            android:orientation="vertical">
+
+            <LinearLayout
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:gravity="start"
+                android:orientation="vertical">
+
+                <!-- Battery -->
+                <LinearLayout
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:gravity="center"
+                    android:orientation="horizontal">
+
+                    <ImageView
+                        android:id="@+id/battery_icon"
+                        android:layout_width="14dp"
+                        android:layout_height="14dp"
+                        android:src="@drawable/battery_100percent_bolt"
+                        android:tint="@color/brand_green" />
+
+                    <TextView
+                        android:id="@+id/battery"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="4dp"
+                        android:text="85%"
+                        android:textColor="@color/notification_text"
+                        android:textSize="10sp"
+                        tools:textColor="@color/white" />
+
+
+                </LinearLayout>
+
+                <!-- Power Mode -->
+                <LinearLayout
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:gravity="center"
+                    android:orientation="horizontal">
+
+                    <ImageView
+                        android:id="@+id/power_mode_icon"
+                        android:layout_width="10dp"
+                        android:layout_height="10dp"
+                        android:src="@drawable/ic_power_mode"
+                        android:tint="@color/primary"
+                        tools:tint="@color/light_blue_900" />
+
+                    <TextView
+                        android:id="@+id/power_mode"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="4dp"
+                        android:text="1 min"
+                        android:textColor="@color/notification_text"
+                        android:textSize="10sp"
+                        tools:textColor="@color/white" />
+
+
+                </LinearLayout>
+
+                <!-- Timestamp -->
+                <TextView
+                    android:id="@+id/timestamp_label"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="2dp"
+                    android:gravity="center"
+                    android:includeFontPadding="false"
+                    android:text="at 12:00 PM"
+                    android:textColor="@color/notification_text"
+                    android:textSize="8sp"
+                    tools:textColor="@color/white" />
+
+            </LinearLayout>
+
+
+        </LinearLayout>
+
+        <!-- Refresh Icon/Animation Container -->
+        <FrameLayout
+            android:id="@+id/refresh_layout"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:layout_centerHorizontal="true"
+            android:layout_centerVertical="true">
+
+            <!-- Static Refresh Icon -->
+            <ImageView
+                android:id="@+id/ic_refresh"
+                android:layout_width="40dp"
+                android:layout_height="40dp"
+                android:layout_gravity="center"
+                android:contentDescription="Refresh"
+                android:src="@drawable/refresh_button_dark" />
+
+            <!-- Animated Progress Ring (shown when refreshing) -->
+            <ProgressBar
+                android:id="@+id/progress_refresh"
+                style="?android:attr/progressBarStyle"
+                android:layout_width="32dp"
+                android:layout_height="32dp"
+                android:layout_gravity="center"
+                android:indeterminate="true"
+                android:indeterminateTint="?android:colorPrimary"
+                android:visibility="gone" />
+
+        </FrameLayout>
+
+        <!-- Battery -->
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_centerVertical="true"
+            android:layout_toStartOf="@id/layout_graph"
+            android:layout_toEndOf="@id/refresh_layout"
+            android:gravity="center_horizontal"
+            android:orientation="vertical">
+
+            <LinearLayout
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:orientation="vertical">
+
+                <ImageView
+                    android:id="@+id/vibrate_mode"
+                    android:layout_width="12dp"
+                    android:layout_height="12dp"
+                    android:layout_marginBottom="4dp"
+                    android:src="@drawable/ic_alarm_off" />
+
+                <ImageView
+                    android:id="@+id/alarm_mode"
+                    android:layout_width="12dp"
+                    android:layout_height="12dp"
+                    android:src="@drawable/ic_vibrate_off" />
+
+
+            </LinearLayout>
+
+
+        </LinearLayout>
+
+
+        <LinearLayout
+            android:id="@+id/layout_graph"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignParentEnd="true"
+            android:layout_centerVertical="true"
+            android:orientation="horizontal">
+
+            <!-- Map Icon -->
+            <ImageView
+                android:id="@+id/ic_map"
+                android:layout_width="28dp"
+                android:layout_height="28dp"
+                android:layout_marginEnd="6dp"
+                android:contentDescription="Map"
+                android:src="@drawable/ic_map" />
+
+            <!-- Graph Icon -->
+            <ImageView
+                android:id="@+id/ic_graph"
+                android:layout_width="28dp"
+                android:layout_height="28dp"
+                android:layout_marginStart="6dp"
+                android:contentDescription="Graph"
+                android:src="@drawable/ic_graph" />
+
+        </LinearLayout>
+
+    </RelativeLayout>
+
+</LinearLayout>
+

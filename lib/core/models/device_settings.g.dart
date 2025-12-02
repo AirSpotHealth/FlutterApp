@@ -15,7 +15,7 @@ extension GetDeviceSettingsCollection on Isar {
       this.collection();
 }
 
-const DeviceSettingsSchema = IsarGeneratedSchema(
+final DeviceSettingsSchema = IsarGeneratedSchema(
   schema: IsarSchema(
     name: 'DeviceSettings',
     idName: 'deviceId',
@@ -125,6 +125,10 @@ const DeviceSettingsSchema = IsarGeneratedSchema(
         name: 'flightMode',
         type: IsarType.bool,
       ),
+      IsarPropertySchema(
+        name: 'showLiveActivity',
+        type: IsarType.bool,
+      ),
     ],
     indexes: [],
   ),
@@ -133,15 +137,15 @@ const DeviceSettingsSchema = IsarGeneratedSchema(
     deserialize: deserializeDeviceSettings,
     deserializeProperty: deserializeDeviceSettingsProp,
   ),
-  embeddedSchemas: [DeviceThresholdsSchema, AlarmLevelSchema],
+  getEmbeddedSchemas: () => [DeviceThresholdsSchema, AlarmLevelSchema],
 );
 
 @isarProtected
 int serializeDeviceSettings(IsarWriter writer, DeviceSettings object) {
-  IsarCore.writeBool(writer, 1, object.alarmEnabled);
-  IsarCore.writeBool(writer, 2, object.vibrationEnabled);
+  IsarCore.writeBool(writer, 1, value: object.alarmEnabled);
+  IsarCore.writeBool(writer, 2, value: object.vibrationEnabled);
   IsarCore.writeByte(writer, 3, object.powerMode.index);
-  IsarCore.writeBool(writer, 4, object.continuosScreenEnabled);
+  IsarCore.writeBool(writer, 4, value: object.continuosScreenEnabled);
   {
     final value = object.thresholds;
     final objectWriter = IsarCore.beginObject(writer, 5);
@@ -149,13 +153,13 @@ int serializeDeviceSettings(IsarWriter writer, DeviceSettings object) {
     IsarCore.endObject(writer, objectWriter);
   }
   IsarCore.writeString(writer, 6, object.deviceId);
-  IsarCore.writeBool(writer, 7, object.co2MedAlertEnabled);
-  IsarCore.writeBool(writer, 8, object.co2HighAlertEnabled);
-  IsarCore.writeBool(writer, 9, object.autoSyncTime);
-  IsarCore.writeBool(writer, 10, object.autoCalibration);
-  IsarCore.writeBool(writer, 11, object.autoConnect);
-  IsarCore.writeBool(writer, 12, object.logData);
-  IsarCore.writeBool(writer, 13, object.dndEnabled);
+  IsarCore.writeBool(writer, 7, value: object.co2MedAlertEnabled);
+  IsarCore.writeBool(writer, 8, value: object.co2HighAlertEnabled);
+  IsarCore.writeBool(writer, 9, value: object.autoSyncTime);
+  IsarCore.writeBool(writer, 10, value: object.autoCalibration);
+  IsarCore.writeBool(writer, 11, value: object.autoConnect);
+  IsarCore.writeBool(writer, 12, value: object.logData);
+  IsarCore.writeBool(writer, 13, value: object.dndEnabled);
   IsarCore.writeLong(
       writer,
       14,
@@ -170,9 +174,9 @@ int serializeDeviceSettings(IsarWriter writer, DeviceSettings object) {
   IsarCore.writeLong(writer, 17, object.graphMaxValue);
   IsarCore.writeLong(writer, 18, object.graphMinValue);
   IsarCore.writeByte(writer, 19, object.uiMode.index);
-  IsarCore.writeBool(writer, 20, object.showRebreathePercentage);
-  IsarCore.writeBool(writer, 21, object.screenOnAlarm);
-  IsarCore.writeBool(writer, 22, object.alarmOnCo2Fall);
+  IsarCore.writeBool(writer, 20, value: object.showRebreathePercentage);
+  IsarCore.writeBool(writer, 21, value: object.screenOnAlarm);
+  IsarCore.writeBool(writer, 22, value: object.alarmOnCo2Fall);
   {
     final list = object.alarmLevels;
     final listWriter = IsarCore.beginList(writer, 23, list.length);
@@ -187,7 +191,8 @@ int serializeDeviceSettings(IsarWriter writer, DeviceSettings object) {
     IsarCore.endList(writer, listWriter);
   }
   IsarCore.writeDouble(writer, 24, object.scaling);
-  IsarCore.writeBool(writer, 25, object.flightMode);
+  IsarCore.writeBool(writer, 25, value: object.flightMode);
+  IsarCore.writeBool(writer, 26, value: object.showLiveActivity);
   return Isar.fastHash(object.deviceId);
 }
 
@@ -212,10 +217,9 @@ DeviceSettings deserializeDeviceSettings(IsarReader reader) {
   {
     final objectReader = IsarCore.readObject(reader, 5);
     if (objectReader.isNull) {
-      _thresholds = DeviceThresholds(
-        greenUpperLimit: -9223372036854775808,
-        yellowUpperLimit: -9223372036854775808,
-      );
+      _thresholds = const DeviceThresholds(
+          greenUpperLimit: Constants.defaultGreenUpperLimit,
+          yellowUpperLimit: Constants.defaultYellowUpperLimit);
     } else {
       final embedded = deserializeDeviceThresholds(objectReader);
       IsarCore.freeReader(objectReader);
@@ -368,6 +372,8 @@ DeviceSettings deserializeDeviceSettings(IsarReader reader) {
   }
   final bool _flightMode;
   _flightMode = IsarCore.readBool(reader, 25);
+  final bool _showLiveActivity;
+  _showLiveActivity = IsarCore.readBool(reader, 26);
   final object = DeviceSettings(
     alarmEnabled: _alarmEnabled,
     vibrationEnabled: _vibrationEnabled,
@@ -394,6 +400,7 @@ DeviceSettings deserializeDeviceSettings(IsarReader reader) {
     alarmLevels: _alarmLevels,
     scaling: _scaling,
     flightMode: _flightMode,
+    showLiveActivity: _showLiveActivity,
   );
   return object;
 }
@@ -420,10 +427,9 @@ dynamic deserializeDeviceSettingsProp(IsarReader reader, int property) {
       {
         final objectReader = IsarCore.readObject(reader, 5);
         if (objectReader.isNull) {
-          return DeviceThresholds(
-            greenUpperLimit: -9223372036854775808,
-            yellowUpperLimit: -9223372036854775808,
-          );
+          return const DeviceThresholds(
+              greenUpperLimit: Constants.defaultGreenUpperLimit,
+              yellowUpperLimit: Constants.defaultYellowUpperLimit);
         } else {
           final embedded = deserializeDeviceThresholds(objectReader);
           IsarCore.freeReader(objectReader);
@@ -576,6 +582,8 @@ dynamic deserializeDeviceSettingsProp(IsarReader reader, int property) {
       }
     case 25:
       return IsarCore.readBool(reader, 25);
+    case 26:
+      return IsarCore.readBool(reader, 26);
     default:
       throw ArgumentError('Unknown property: $property');
   }
@@ -606,6 +614,7 @@ sealed class _DeviceSettingsUpdate {
     bool? alarmOnCo2Fall,
     double? scaling,
     bool? flightMode,
+    bool? showLiveActivity,
   });
 }
 
@@ -639,6 +648,7 @@ class _DeviceSettingsUpdateImpl implements _DeviceSettingsUpdate {
     Object? alarmOnCo2Fall = ignore,
     Object? scaling = ignore,
     Object? flightMode = ignore,
+    Object? showLiveActivity = ignore,
   }) {
     return collection.updateProperties([
           deviceId
@@ -667,6 +677,7 @@ class _DeviceSettingsUpdateImpl implements _DeviceSettingsUpdate {
           if (alarmOnCo2Fall != ignore) 22: alarmOnCo2Fall as bool?,
           if (scaling != ignore) 24: scaling as double?,
           if (flightMode != ignore) 25: flightMode as bool?,
+          if (showLiveActivity != ignore) 26: showLiveActivity as bool?,
         }) >
         0;
   }
@@ -697,6 +708,7 @@ sealed class _DeviceSettingsUpdateAll {
     bool? alarmOnCo2Fall,
     double? scaling,
     bool? flightMode,
+    bool? showLiveActivity,
   });
 }
 
@@ -730,6 +742,7 @@ class _DeviceSettingsUpdateAllImpl implements _DeviceSettingsUpdateAll {
     Object? alarmOnCo2Fall = ignore,
     Object? scaling = ignore,
     Object? flightMode = ignore,
+    Object? showLiveActivity = ignore,
   }) {
     return collection.updateProperties(deviceId, {
       if (alarmEnabled != ignore) 1: alarmEnabled as bool?,
@@ -755,6 +768,7 @@ class _DeviceSettingsUpdateAllImpl implements _DeviceSettingsUpdateAll {
       if (alarmOnCo2Fall != ignore) 22: alarmOnCo2Fall as bool?,
       if (scaling != ignore) 24: scaling as double?,
       if (flightMode != ignore) 25: flightMode as bool?,
+      if (showLiveActivity != ignore) 26: showLiveActivity as bool?,
     });
   }
 }
@@ -789,6 +803,7 @@ sealed class _DeviceSettingsQueryUpdate {
     bool? alarmOnCo2Fall,
     double? scaling,
     bool? flightMode,
+    bool? showLiveActivity,
   });
 }
 
@@ -822,6 +837,7 @@ class _DeviceSettingsQueryUpdateImpl implements _DeviceSettingsQueryUpdate {
     Object? alarmOnCo2Fall = ignore,
     Object? scaling = ignore,
     Object? flightMode = ignore,
+    Object? showLiveActivity = ignore,
   }) {
     return query.updateProperties(limit: limit, {
       if (alarmEnabled != ignore) 1: alarmEnabled as bool?,
@@ -847,6 +863,7 @@ class _DeviceSettingsQueryUpdateImpl implements _DeviceSettingsQueryUpdate {
       if (alarmOnCo2Fall != ignore) 22: alarmOnCo2Fall as bool?,
       if (scaling != ignore) 24: scaling as double?,
       if (flightMode != ignore) 25: flightMode as bool?,
+      if (showLiveActivity != ignore) 26: showLiveActivity as bool?,
     });
   }
 }
@@ -890,6 +907,7 @@ class _DeviceSettingsQueryBuilderUpdateImpl
     Object? alarmOnCo2Fall = ignore,
     Object? scaling = ignore,
     Object? flightMode = ignore,
+    Object? showLiveActivity = ignore,
   }) {
     final q = query.build();
     try {
@@ -918,6 +936,7 @@ class _DeviceSettingsQueryBuilderUpdateImpl
         if (alarmOnCo2Fall != ignore) 22: alarmOnCo2Fall as bool?,
         if (scaling != ignore) 24: scaling as double?,
         if (flightMode != ignore) 25: flightMode as bool?,
+        if (showLiveActivity != ignore) 26: showLiveActivity as bool?,
       });
     } finally {
       q.close();
@@ -2065,6 +2084,20 @@ extension DeviceSettingsQueryFilter
       );
     });
   }
+
+  QueryBuilder<DeviceSettings, DeviceSettings, QAfterFilterCondition>
+      showLiveActivityEqualTo(
+    bool value,
+  ) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        EqualCondition(
+          property: 26,
+          value: value,
+        ),
+      );
+    });
+  }
 }
 
 extension DeviceSettingsQueryObject
@@ -2403,6 +2436,20 @@ extension DeviceSettingsQuerySortBy
       return query.addSortBy(25, sort: Sort.desc);
     });
   }
+
+  QueryBuilder<DeviceSettings, DeviceSettings, QAfterSortBy>
+      sortByShowLiveActivity() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(26);
+    });
+  }
+
+  QueryBuilder<DeviceSettings, DeviceSettings, QAfterSortBy>
+      sortByShowLiveActivityDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(26, sort: Sort.desc);
+    });
+  }
 }
 
 extension DeviceSettingsQuerySortThenBy
@@ -2724,6 +2771,20 @@ extension DeviceSettingsQuerySortThenBy
       return query.addSortBy(25, sort: Sort.desc);
     });
   }
+
+  QueryBuilder<DeviceSettings, DeviceSettings, QAfterSortBy>
+      thenByShowLiveActivity() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(26);
+    });
+  }
+
+  QueryBuilder<DeviceSettings, DeviceSettings, QAfterSortBy>
+      thenByShowLiveActivityDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(26, sort: Sort.desc);
+    });
+  }
 }
 
 extension DeviceSettingsQueryWhereDistinct
@@ -2879,6 +2940,13 @@ extension DeviceSettingsQueryWhereDistinct
       distinctByFlightMode() {
     return QueryBuilder.apply(this, (query) {
       return query.addDistinctBy(25);
+    });
+  }
+
+  QueryBuilder<DeviceSettings, DeviceSettings, QAfterDistinct>
+      distinctByShowLiveActivity() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addDistinctBy(26);
     });
   }
 }
@@ -3041,6 +3109,13 @@ extension DeviceSettingsQueryProperty1
   QueryBuilder<DeviceSettings, bool, QAfterProperty> flightModeProperty() {
     return QueryBuilder.apply(this, (query) {
       return query.addProperty(25);
+    });
+  }
+
+  QueryBuilder<DeviceSettings, bool, QAfterProperty>
+      showLiveActivityProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addProperty(26);
     });
   }
 }
@@ -3213,6 +3288,13 @@ extension DeviceSettingsQueryProperty2<R>
   QueryBuilder<DeviceSettings, (R, bool), QAfterProperty> flightModeProperty() {
     return QueryBuilder.apply(this, (query) {
       return query.addProperty(25);
+    });
+  }
+
+  QueryBuilder<DeviceSettings, (R, bool), QAfterProperty>
+      showLiveActivityProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addProperty(26);
     });
   }
 }
@@ -3391,6 +3473,13 @@ extension DeviceSettingsQueryProperty3<R1, R2>
       return query.addProperty(25);
     });
   }
+
+  QueryBuilder<DeviceSettings, (R1, R2, bool), QOperations>
+      showLiveActivityProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addProperty(26);
+    });
+  }
 }
 
 // **************************************************************************
@@ -3401,7 +3490,7 @@ extension DeviceSettingsQueryProperty3<R1, R2>
 // ignore_for_file: duplicate_ignore, invalid_use_of_protected_member, lines_longer_than_80_chars, constant_identifier_names, avoid_js_rounded_ints, no_leading_underscores_for_local_identifiers, require_trailing_commas, unnecessary_parenthesis, unnecessary_raw_strings, unnecessary_null_in_if_null_operators, library_private_types_in_public_api, prefer_const_constructors
 // ignore_for_file: type=lint
 
-const DeviceThresholdsSchema = IsarGeneratedSchema(
+final DeviceThresholdsSchema = IsarGeneratedSchema(
   schema: IsarSchema(
     name: 'DeviceThresholds',
     embedded: true,
@@ -3432,14 +3521,7 @@ int serializeDeviceThresholds(IsarWriter writer, DeviceThresholds object) {
 
 @isarProtected
 DeviceThresholds deserializeDeviceThresholds(IsarReader reader) {
-  final int _greenUpperLimit;
-  _greenUpperLimit = IsarCore.readLong(reader, 1);
-  final int _yellowUpperLimit;
-  _yellowUpperLimit = IsarCore.readLong(reader, 2);
-  final object = DeviceThresholds(
-    greenUpperLimit: _greenUpperLimit,
-    yellowUpperLimit: _yellowUpperLimit,
-  );
+  final object = DeviceThresholds();
   return object;
 }
 
@@ -3625,7 +3707,7 @@ extension DeviceThresholdsQueryObject
 // ignore_for_file: duplicate_ignore, invalid_use_of_protected_member, lines_longer_than_80_chars, constant_identifier_names, avoid_js_rounded_ints, no_leading_underscores_for_local_identifiers, require_trailing_commas, unnecessary_parenthesis, unnecessary_raw_strings, unnecessary_null_in_if_null_operators, library_private_types_in_public_api, prefer_const_constructors
 // ignore_for_file: type=lint
 
-const AlarmLevelSchema = IsarGeneratedSchema(
+final AlarmLevelSchema = IsarGeneratedSchema(
   schema: IsarSchema(
     name: 'AlarmLevel',
     embedded: true,
@@ -3660,7 +3742,7 @@ int serializeAlarmLevel(IsarWriter writer, AlarmLevel object) {
   IsarCore.writeLong(writer, 1, object.id);
   IsarCore.writeLong(writer, 2, object.co2Threshold);
   IsarCore.writeLong(writer, 3, object.repeatCount);
-  IsarCore.writeBool(writer, 4, object.enabled);
+  IsarCore.writeBool(writer, 4, value: object.enabled);
   return 0;
 }
 

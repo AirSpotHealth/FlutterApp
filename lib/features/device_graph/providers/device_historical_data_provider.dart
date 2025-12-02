@@ -13,7 +13,7 @@ import 'package:airspothealth/features/device_graph/providers/ble_device_provide
 import 'package:airspothealth/features/device_graph/providers/device_history_data_request_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:isar/isar.dart';
+import 'package:isar_plus/isar_plus.dart';
 
 class DeviceHistoryDataRequest {
   final String deviceId;

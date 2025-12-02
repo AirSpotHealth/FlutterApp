@@ -1,0 +1,30 @@
+{
+  "flutter": {
+    "platforms": {
+      "android": {
+        "default": {
+          "projectId": "airspothealth-7c87d",
+          "appId": "1:1041325410797:android:1166cb605c2a1e4e7a3fe4",
+          "fileOutput": "android/app/google-services.json"
+        }
+      },
+      "ios": {
+        "default": {
+          "projectId": "airspothealth-7c87d",
+          "appId": "1:1041325410797:ios:303cb90c33d5cfd97a3fe4",
+          "uploadDebugSymbols": false,
+          "fileOutput": "ios/Runner/GoogleService-Info.plist"
+        }
+      },
+      "dart": {
+        "lib/firebase_options.dart": {
+          "projectId": "airspothealth-7c87d",
+          "configurations": {
+            "android": "1:1041325410797:android:1166cb605c2a1e4e7a3fe4",
+            "ios": "1:1041325410797:ios:303cb90c33d5cfd97a3fe4"
+          }
+        }
+      }
+    }
+  }
+}

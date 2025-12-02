@@ -1,7 +1,7 @@
 import 'package:airspothealth/core/models/device_settings.dart';
 import 'package:airspothealth/core/services/isar_service.dart';
 import 'package:flutter/material.dart';
-import 'package:isar/isar.dart';
+import 'package:isar_plus/isar_plus.dart';
 
 part 'ble_device.g.dart';
 
