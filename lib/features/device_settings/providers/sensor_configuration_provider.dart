@@ -7,14 +7,14 @@ import 'package:airspothealth/features/device_settings/models/progress_model.dar
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-final sensorConfigurationProvider = NotifierProvider.autoDispose.family<
+final sensorConfigurationProvider = NotifierProvider.family<
     SensorConfigurationNotifier,
     AsyncProgressValue<DeviceSensorConfigData?>,
     String>(
   SensorConfigurationNotifier.new,
 );
 
-class SensorConfigurationNotifier extends AutoDisposeFamilyNotifier<
+class SensorConfigurationNotifier extends FamilyNotifier<
     AsyncProgressValue<DeviceSensorConfigData?>, String> {
   @override
   AsyncProgressValue<DeviceSensorConfigData?> build(String deviceId) {

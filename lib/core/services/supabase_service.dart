@@ -177,6 +177,7 @@ class SupabaseService {
       await _client.from('readings').upsert(
             records,
             onConflict: 'device_id, timestamp, type',
+            ignoreDuplicates: true,
           );
     } catch (e) {
       debugPrint('Error uploading readings: $e');

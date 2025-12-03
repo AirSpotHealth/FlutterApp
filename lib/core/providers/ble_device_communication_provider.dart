@@ -23,6 +23,7 @@ import 'package:airspothealth/core/utils/extensions.dart';
 import 'package:airspothealth/core/utils/local_date_format.dart';
 import 'package:airspothealth/features/app_setup/providers/dev_mode_provider.dart';
 import 'package:airspothealth/features/device_graph/providers/ble_device_provider.dart';
+import 'package:airspothealth/features/device_settings/providers/sensor_configuration_provider.dart';
 import 'package:airspothealth/features/devices/providers/device_battery_level_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_blue_plus/flutter_blue_plus.dart';
@@ -412,6 +413,8 @@ class _BleDeviceCommunicationNotifier extends FamilyNotifier<dynamic, String> {
     for (final command in commands) {
       await sendCommand(command);
     }
+
+    ref.read(sensorConfigurationProvider(deviceId));
   }
 
   Future<bool> sendCommand(List<int> data) async {

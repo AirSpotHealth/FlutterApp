@@ -22,26 +22,23 @@ class SyncService {
   Future<void> syncData({String? targetDeviceId}) async {
     if (_supabaseService.currentUser == null) return;
 
-    // Debounce logic
-    if (_debounceTimer?.isActive ?? false) {
-      _debounceTimer!.cancel();
+    if (_isSyncing) {
+      debugPrint('Sync already in progress.');
+      return;
     }
 
-    _debounceTimer = Timer(_debounceDuration, () async {
-      if (_isSyncing) return;
+    _isSyncing = true;
+    debugPrint('Starting Cloud Sync...');
 
-      _isSyncing = true;
-      debugPrint('Starting Cloud Sync...');
-
-      try {
-        await _uploadUnsyncedData(targetDeviceId: targetDeviceId);
-      } catch (e) {
-        debugPrint('Sync failed: $e');
-      } finally {
-        _isSyncing = false;
-        debugPrint('Cloud Sync finished.');
-      }
-    });
+    try {
+      await _uploadUnsyncedData(targetDeviceId: targetDeviceId);
+    } catch (e) {
+      debugPrint('Sync failed: $e');
+      rethrow; // Rethrow to let the caller know it failed
+    } finally {
+      _isSyncing = false;
+      debugPrint('Cloud Sync finished.');
+    }
   }
 
   Future<void> _uploadUnsyncedData({String? targetDeviceId}) async {

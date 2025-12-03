@@ -61,8 +61,25 @@ class CloudSyncNotifier
   }
 
   Future<void> _fetchLastSyncedDate() async {
-    final date = await _syncService.getLastSyncedDate(_deviceId);
-    state = state.copyWith(lastSyncedDate: date);
+    // We need the serial number to check Supabase
+    // Try to get it from the provider if already loaded
+    final sensorConfigState = ref.read(sensorConfigurationProvider(_deviceId));
+    debugPrint('Sensor Config State: $sensorConfigState');
+    String? serialNumber;
+
+    if (sensorConfigState.isSuccess) {
+      final data = (sensorConfigState as AsyncSuccess).data;
+      if (data is DeviceSensorConfigData) {
+        serialNumber = data.serialNumber;
+      }
+    }
+
+    debugPrint('Serial Number: $serialNumber');
+
+    if (serialNumber != null) {
+      final date = await _syncService.getLastSyncedDate(serialNumber);
+      state = state.copyWith(lastSyncedDate: date);
+    }
   }
 
   Future<void> sync() async {
@@ -124,7 +141,7 @@ class CloudSyncNotifier
       await _syncService.syncData(targetDeviceId: serialNumber);
 
       // 5. Success
-      final lastSynced = await _syncService.getLastSyncedDate(_deviceId);
+      final lastSynced = await _syncService.getLastSyncedDate(serialNumber);
       state = state.copyWith(
         isLoading: false,
         successMessage: 'Sync Completed Successfully!',
