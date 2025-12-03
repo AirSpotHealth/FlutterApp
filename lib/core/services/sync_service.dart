@@ -1,5 +1,3 @@
-import 'dart:async';
-
 import 'package:airspothealth/core/models/device_data.dart';
 import 'package:airspothealth/core/services/isar_service.dart';
 import 'package:airspothealth/core/services/supabase_service.dart';

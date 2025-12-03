@@ -2,9 +2,9 @@ import 'package:airspothealth/core/providers/ble_connected_devices_provider.dart
 import 'package:airspothealth/core/services/supabase_service.dart';
 import 'package:airspothealth/features/device_settings/models/device_sensor_config_data.dart';
 import 'package:airspothealth/features/device_settings/models/progress_model.dart';
-import 'package:airspothealth/features/device_settings/providers/cloud_sync_provider.dart';
+import 'package:airspothealth/features/device_settings/providers/cloud_sync_provider.dart'
+    show cloudSyncProvider;
 import 'package:airspothealth/features/device_settings/providers/sensor_configuration_provider.dart';
-import 'package:airspothealth/features/device_settings/widgets/cloud_sync_animation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
@@ -104,15 +104,13 @@ class _CloudSyncPageState extends ConsumerState<CloudSyncPage> {
                 icon: Icons.qr_code,
                 color: Colors.blue,
               ),
-              const SizedBox(height: 16),
-              Center(
-                child: CloudSyncAnimation(
-                  isSyncing: syncState.isLoading,
-                  isSuccess: syncState.successMessage != null,
-                  isError: syncState.errorMessage != null,
-                  size: 120,
+              if (syncState.isLoading)
+                const Center(
+                  child: Padding(
+                    padding: EdgeInsets.only(bottom: 24.0),
+                    child: CircularProgressIndicator(),
+                  ),
                 ),
-              ),
               const SizedBox(height: 16),
               if (syncState.isLoading)
                 Center(
