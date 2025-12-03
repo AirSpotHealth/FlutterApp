@@ -15,25 +15,36 @@ class SyncService {
   final SupabaseService _supabaseService = SupabaseService();
   bool _isSyncing = false;
 
+  Timer? _debounceTimer;
+  static const Duration _debounceDuration = Duration(seconds: 5);
+
   // Trigger sync
-  Future<void> syncData() async {
-    if (_isSyncing) return;
+  Future<void> syncData({String? targetDeviceId}) async {
     if (_supabaseService.currentUser == null) return;
 
-    _isSyncing = true;
-    debugPrint('Starting Cloud Sync...');
-
-    try {
-      await _uploadUnsyncedData();
-    } catch (e) {
-      debugPrint('Sync failed: $e');
-    } finally {
-      _isSyncing = false;
-      debugPrint('Cloud Sync finished.');
+    // Debounce logic
+    if (_debounceTimer?.isActive ?? false) {
+      _debounceTimer!.cancel();
     }
+
+    _debounceTimer = Timer(_debounceDuration, () async {
+      if (_isSyncing) return;
+
+      _isSyncing = true;
+      debugPrint('Starting Cloud Sync...');
+
+      try {
+        await _uploadUnsyncedData(targetDeviceId: targetDeviceId);
+      } catch (e) {
+        debugPrint('Sync failed: $e');
+      } finally {
+        _isSyncing = false;
+        debugPrint('Cloud Sync finished.');
+      }
+    });
   }
 
-  Future<void> _uploadUnsyncedData() async {
+  Future<void> _uploadUnsyncedData({String? targetDeviceId}) async {
     // 1. Get unsynced data from Isar
     // We need to query for synced == false.
     // Note: We need to update DeviceData model first to include 'synced' field.
@@ -48,11 +59,12 @@ class SyncService {
     while (hasMore) {
       List<DeviceData> batch = [];
 
-      await _isarService.readAsync((isar) async {
-        batch = isar.deviceDatas
+      batch = await _isarService.readAsync((isar) {
+        return isar.deviceDatas
             .where()
             .syncedEqualTo(false)
-            .dateTimeGreaterThan(minDate)
+            .dateTimeBetween(
+                minDate, DateTime.now().add(const Duration(days: 1)))
             .findAll(limit: batchSize);
       });
 
@@ -63,10 +75,11 @@ class SyncService {
 
       // 2. Upload to Supabase
       try {
-        await _supabaseService.uploadReadings(batch);
+        await _supabaseService.uploadReadings(batch,
+            targetDeviceId: targetDeviceId);
 
         // 3. Mark as synced locally
-        await _isarService.writeAsync((isar) async {
+        await _isarService.writeAsync((isar) {
           for (var item in batch) {
             item.synced = true;
             isar.deviceDatas.put(item);
@@ -80,5 +93,9 @@ class SyncService {
         hasMore = false;
       }
     }
+  }
+
+  Future<DateTime?> getLastSyncedDate(String deviceId) async {
+    return _supabaseService.getLastSyncedDate(deviceId);
   }
 }

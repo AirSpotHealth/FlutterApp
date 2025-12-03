@@ -11,8 +11,6 @@ PODS:
   - nordic_dfu (1.0.0):
     - Flutter
     - iOSDFULibrary (~> 4.15.3)
-  - objective_c (0.0.1):
-    - Flutter
   - permission_handler_apple (9.3.0):
     - Flutter
   - sign_in_with_apple (0.0.1):
@@ -29,7 +27,6 @@ DEPENDENCIES:
   - home_widget (from `.symlinks/plugins/home_widget/ios`)
   - isar_plus_flutter_libs (from `.symlinks/plugins/isar_plus_flutter_libs/ios`)
   - nordic_dfu (from `.symlinks/plugins/nordic_dfu/ios`)
-  - objective_c (from `.symlinks/plugins/objective_c/ios`)
   - permission_handler_apple (from `.symlinks/plugins/permission_handler_apple/ios`)
   - sign_in_with_apple (from `.symlinks/plugins/sign_in_with_apple/ios`)
   - system_date_time_format (from `.symlinks/plugins/system_date_time_format/ios`)
@@ -51,8 +48,6 @@ EXTERNAL SOURCES:
     :path: ".symlinks/plugins/isar_plus_flutter_libs/ios"
   nordic_dfu:
     :path: ".symlinks/plugins/nordic_dfu/ios"
-  objective_c:
-    :path: ".symlinks/plugins/objective_c/ios"
   permission_handler_apple:
     :path: ".symlinks/plugins/permission_handler_apple/ios"
   sign_in_with_apple:
@@ -69,7 +64,6 @@ SPEC CHECKSUMS:
   iOSDFULibrary: 198c36ebe5a31bf2ca04ee8fb40837176a423e85
   isar_plus_flutter_libs: bea5f6058f18eae2da310c97a84bfdf73657b2fd
   nordic_dfu: e4fb6f461f4a290b28ea4b1dfb69071665cdfa3e
-  objective_c: 89e720c30d716b036faf9c9684022048eee1eee2
   permission_handler_apple: 4ed2196e43d0651e8ff7ca3483a069d469701f2d
   sign_in_with_apple: c5dcc141574c8c54d5ac99dd2163c0c72ad22418
   system_date_time_format: d2ff596217fdbb6f04710511579fd3c36c6db598

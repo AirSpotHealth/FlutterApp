@@ -29,12 +29,20 @@ class Constants {
     defaultValue: '6E400002-B5A3-F393-E0A9-E50E24DCCA9E',
   );
 
+  // Supabase Configuration - loaded from environment variables
   static const String supabaseUrl = String.fromEnvironment(
     'SUPABASE_URL',
   );
-
   static const String supabaseAnonKey = String.fromEnvironment(
     'SUPABASE_ANON_KEY',
+  );
+
+  // Google Ids
+  static const String googleClientId = String.fromEnvironment(
+    'GOOGLE_CLIENT_ID',
+  );
+  static const String iosClientId = String.fromEnvironment(
+    'IOS_CLIENT_ID',
   );
 
   static const String greenUpperLimit = "greenThreshold";

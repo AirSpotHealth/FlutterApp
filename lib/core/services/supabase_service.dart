@@ -1,8 +1,10 @@
 import 'dart:convert';
 
 import 'package:airspothealth/core/models/device_data.dart';
+import 'package:airspothealth/core/utils/constants.dart';
 import 'package:crypto/crypto.dart';
 import 'package:flutter/foundation.dart';
+import 'package:google_sign_in/google_sign_in.dart';
 import 'package:sign_in_with_apple/sign_in_with_apple.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -72,13 +74,43 @@ class SupabaseService {
   }
 
   Future<void> signInWithGoogle() async {
-    // For native Google Sign In on Android/iOS, we use the standard OAuth flow
-    // which opens a browser/modal.
-    // Ensure you have configured the redirect URL in Supabase and the deep link in your app.
-    await _client.auth.signInWithOAuth(
-      OAuthProvider.google,
-      redirectTo: kIsWeb ? null : 'airspothealth://login-callback',
-    );
+    try {
+      if (kIsWeb) {
+        // Web Flow
+        await _client.auth.signInWithOAuth(
+          OAuthProvider.google,
+        );
+      } else {
+        // Native Flow
+        // 1. Google Sign In
+        final GoogleSignIn googleSignIn = GoogleSignIn(
+          clientId: Constants.iosClientId,
+          serverClientId: Constants.googleClientId,
+        );
+
+        final googleUser = await googleSignIn.signIn();
+        final googleAuth = await googleUser?.authentication;
+        final accessToken = googleAuth?.accessToken;
+        final idToken = googleAuth?.idToken;
+
+        if (accessToken == null) {
+          throw 'No Access Token found.';
+        }
+        if (idToken == null) {
+          throw 'No ID Token found.';
+        }
+
+        // 2. Supabase Sign In
+        await _client.auth.signInWithIdToken(
+          provider: OAuthProvider.google,
+          idToken: idToken,
+          accessToken: accessToken,
+        );
+      }
+    } catch (e) {
+      debugPrint('Error signing in with Google: $e');
+      rethrow;
+    }
   }
 
   Future<void> signOut() async {
@@ -98,28 +130,47 @@ class SupabaseService {
       });
     } catch (e) {
       // Handle unique constraint violation (device already claimed)
+      // Postgres error code 23505 is unique_violation
+      if (e.toString().contains('23505')) {
+        debugPrint('Device already claimed: $deviceId');
+        return;
+      }
       debugPrint('Error claiming device: $e');
-      rethrow;
+      // If it's not a duplicate error, we might want to rethrow or handle it
+      // For now, let's log and continue, assuming it might be a permission issue or similar
+      // that shouldn't block the flow if the device is already there.
     }
   }
 
   // Data Sync
-  Future<void> uploadReadings(List<DeviceData> readings) async {
+  Future<void> uploadReadings(List<DeviceData> readings,
+      {String? targetDeviceId}) async {
     final user = currentUser;
     if (user == null) return;
 
     if (readings.isEmpty) return;
 
-    final List<Map<String, dynamic>> records = readings.map((r) {
-      return {
-        'device_id': r.deviceId,
-        'timestamp': r.dateTime.toIso8601String(),
+    // Deduplicate readings based on (device_id, timestamp, type)
+    // Use a Map to keep only the last occurrence of each unique key
+    final Map<String, Map<String, dynamic>> uniqueRecords = {};
+
+    for (var r in readings) {
+      final deviceId = targetDeviceId ?? r.deviceId;
+      final timestamp = r.dateTime.toIso8601String();
+      final type = r.type;
+      final key = '$deviceId-$timestamp-$type';
+
+      uniqueRecords[key] = {
+        'device_id': deviceId,
+        'timestamp': timestamp,
         'value': r.value,
-        'type': r.type,
+        'type': type,
         'user_id': user.id, // RLS will also enforce this
         'created_at': DateTime.now().toIso8601String(),
       };
-    }).toList();
+    }
+
+    final List<Map<String, dynamic>> records = uniqueRecords.values.toList();
 
     try {
       // Upsert based on (device_id, timestamp, type)
@@ -158,6 +209,27 @@ class SupabaseService {
     } catch (e) {
       debugPrint('Error fetching readings: $e');
       return [];
+    }
+  }
+
+  Future<DateTime?> getLastSyncedDate(String deviceId) async {
+    final user = currentUser;
+    if (user == null) return null;
+
+    try {
+      final response = await _client
+          .from('readings')
+          .select('timestamp')
+          .eq('device_id', deviceId)
+          .order('timestamp', ascending: false)
+          .limit(1)
+          .maybeSingle();
+
+      if (response == null) return null;
+      return DateTime.parse(response['timestamp']);
+    } catch (e) {
+      debugPrint('Error fetching last synced date: $e');
+      return null;
     }
   }
 }

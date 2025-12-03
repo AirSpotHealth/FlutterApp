@@ -61,6 +61,7 @@ class BleDeviceCommunicator {
           debugPrint('Subscribed to notifications for $deviceId');
         }
         _initCompleter?.complete();
+
         return; // Success
       } on PlatformException catch (e) {
         debugPrint('Error initializing communicator (attempt ${i + 1}): $e');
