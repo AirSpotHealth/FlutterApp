@@ -15,9 +15,6 @@ class SyncService {
   final SupabaseService _supabaseService = SupabaseService();
   bool _isSyncing = false;
 
-  Timer? _debounceTimer;
-  static const Duration _debounceDuration = Duration(seconds: 5);
-
   // Trigger sync
   Future<void> syncData({String? targetDeviceId}) async {
     if (_supabaseService.currentUser == null) return;

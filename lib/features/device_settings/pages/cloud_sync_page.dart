@@ -172,10 +172,27 @@ class _CloudSyncPageState extends ConsumerState<CloudSyncPage> {
                   label: const Text('Sign in with Google'),
                 ),
               ] else ...[
-                Text(
-                  'Signed in as: ${user.email}',
-                  style: const TextStyle(
-                      fontSize: 16, fontWeight: FontWeight.bold),
+                Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        'Signed in as:\n${user.email}',
+                        style: const TextStyle(
+                            fontSize: 16, fontWeight: FontWeight.bold),
+                      ),
+                    ),
+                    TextButton.icon(
+                      onPressed: () async {
+                        await _supabaseService.signOut();
+                        setState(() {});
+                      },
+                      icon: const Icon(Icons.logout, color: Colors.red),
+                      label: const Text(
+                        'Sign Out',
+                        style: TextStyle(color: Colors.red),
+                      ),
+                    ),
+                  ],
                 ),
                 const SizedBox(height: 16),
                 SizedBox(
