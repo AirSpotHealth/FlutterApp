@@ -12,6 +12,28 @@ class GraphRangeSelector extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final GraphDataDuration selectedRange = ref.watch(graphDurationProvider);
+
+    return DateRangeSelector(
+      selectedRange: selectedRange,
+      onRangeSelected: (range) {
+        ref.read(graphDurationProvider.notifier).setDuration(range);
+      },
+    );
+  }
+}
+
+class DateRangeSelector extends StatelessWidget {
+  final GraphDataDuration selectedRange;
+  final Function(GraphDataDuration) onRangeSelected;
+
+  const DateRangeSelector({
+    super.key,
+    required this.selectedRange,
+    required this.onRangeSelected,
+  });
+
+  @override
+  Widget build(BuildContext context) {
     final dateFormat = DateFormat('MMM d');
 
     final String selectedRangeString = selectedRange.name == 'today'
@@ -52,7 +74,7 @@ class GraphRangeSelector extends ConsumerWidget {
               builder: (context) => _DatePickerSheet(
                 selectedRange: selectedRange,
                 onRangeSelected: (range) {
-                  ref.read(graphDurationProvider.notifier).setDuration(range);
+                  onRangeSelected(range);
                   Navigator.pop(context);
                 },
               ),

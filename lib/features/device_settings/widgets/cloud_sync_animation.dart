@@ -98,7 +98,7 @@ class _CloudSyncAnimationState extends State<CloudSyncAnimation>
                     height: widget.size,
                     decoration: BoxDecoration(
                       shape: BoxShape.circle,
-                      color: Colors.blue.withOpacity(0.1),
+                      color: Colors.blue.withValues(alpha: .1),
                     ),
                   ),
                 );
