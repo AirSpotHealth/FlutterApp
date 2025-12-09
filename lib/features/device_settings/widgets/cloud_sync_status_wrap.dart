@@ -55,13 +55,13 @@ class CloudSyncStatusWrap extends StatelessWidget {
   }) {
     return Chip(
       avatar: CircleAvatar(
-        backgroundColor: color.withOpacity(0.1),
+        backgroundColor: color.withValues(alpha: 0.1),
         child: Icon(icon, color: color, size: 18),
       ),
       label: Text(label),
-      backgroundColor: color.withOpacity(0.08),
+      backgroundColor: color.withValues(alpha: 0.08),
       shape: StadiumBorder(
-        side: BorderSide(color: color.withOpacity(0.2)),
+        side: BorderSide(color: color.withValues(alpha: 0.2)),
       ),
     );
   }

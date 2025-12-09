@@ -41,7 +41,7 @@ class CloudSyncLiveStatus extends StatelessWidget {
       decoration: BoxDecoration(
         color: bannerColor,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: textColor.withOpacity(0.2)),
+        border: Border.all(color: textColor.withValues(alpha: 0.2)),
       ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -74,7 +74,7 @@ class CloudSyncLiveStatus extends StatelessWidget {
                           ? 'Check your connection or sign-in status, then try again.'
                           : 'You can safely leave after the sync completes.',
                   style: TextStyle(
-                    color: textColor.withOpacity(0.8),
+                    color: textColor.withValues(alpha: 0.8),
                   ),
                 ),
               ],
