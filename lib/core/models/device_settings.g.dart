@@ -3521,7 +3521,28 @@ int serializeDeviceThresholds(IsarWriter writer, DeviceThresholds object) {
 
 @isarProtected
 DeviceThresholds deserializeDeviceThresholds(IsarReader reader) {
-  final object = DeviceThresholds();
+  final int _greenUpperLimit;
+  {
+    final value = IsarCore.readLong(reader, 1);
+    if (value == -9223372036854775808) {
+      _greenUpperLimit = Constants.defaultGreenUpperLimit;
+    } else {
+      _greenUpperLimit = value;
+    }
+  }
+  final int _yellowUpperLimit;
+  {
+    final value = IsarCore.readLong(reader, 2);
+    if (value == -9223372036854775808) {
+      _yellowUpperLimit = Constants.defaultYellowUpperLimit;
+    } else {
+      _yellowUpperLimit = value;
+    }
+  }
+  final object = DeviceThresholds(
+    greenUpperLimit: _greenUpperLimit,
+    yellowUpperLimit: _yellowUpperLimit,
+  );
   return object;
 }
 
