@@ -140,6 +140,7 @@ class RedirectHandler {
       'factory-test',
       'map-handoff',
       'find-my-device',
+      'report-issue',
     };
 
     // Handle malformed device ID paths (missing /devices prefix)

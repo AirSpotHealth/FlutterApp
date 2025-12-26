@@ -12,10 +12,12 @@ import 'package:airspothealth/features/add_device/providers/ble_search_results_p
 import 'package:airspothealth/features/device_settings/models/remote_version.dart';
 import 'package:airspothealth/features/device_settings/providers/device_forget_status_provider.dart';
 import 'package:airspothealth/features/device_settings/providers/firmware_remote_version_provider.dart';
+import 'package:airspothealth/features/device_settings/providers/sensor_error_provider.dart';
 import 'package:airspothealth/features/devices/widgets/device_alias_editor.dart';
 import 'package:airspothealth/features/devices/widgets/device_battery_level_widget.dart';
 import 'package:airspothealth/features/devices/widgets/device_value_refresh_widget.dart';
 import 'package:airspothealth/features/devices/widgets/device_value_widget.dart';
+import 'package:airspothealth/features/report_issue/providers/issue_reporting_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_blue_plus/flutter_blue_plus.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -82,6 +84,11 @@ class BleDeviceWidget extends ConsumerWidget {
                   DeviceValueRefreshWidget(deviceId: bleDevice.deviceId),
                   const SizedBox(width: 8),
                 ],
+              ),
+              // Show sensor error row if error is detected
+              _SensorErrorRow(
+                deviceId: bleDevice.deviceId,
+                firmware: bleDevice.firmwareVersion,
               ),
             ],
           ],
@@ -320,5 +327,91 @@ class ConnectButtonRow extends ConsumerWidget {
           ),
       ],
     );
+  }
+}
+
+/// Compact inline widget for showing sensor error in device list
+class _SensorErrorRow extends ConsumerWidget {
+  const _SensorErrorRow({
+    required this.deviceId,
+    this.firmware,
+  });
+
+  final String deviceId;
+  final String? firmware;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final sensorError = ref.watch(sensorErrorProvider(deviceId));
+
+    if (sensorError == null) {
+      return const SizedBox.shrink();
+    }
+
+    return Padding(
+      padding: const EdgeInsets.only(top: 12),
+      child: Container(
+        padding: const EdgeInsets.all(10),
+        decoration: BoxDecoration(
+          color: Colors.red.shade50,
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(color: Colors.red.shade200),
+        ),
+        child: Row(
+          children: [
+            Icon(
+              Icons.warning_amber_rounded,
+              color: Colors.red.shade600,
+              size: 20,
+            ),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Text(
+                'Sensor issue detected. Try restarting or report the issue.',
+                style: TextStyle(
+                  color: Colors.red.shade700,
+                  fontSize: 12,
+                ),
+              ),
+            ),
+            const SizedBox(width: 8),
+            GestureDetector(
+              onTap: () => _reportIssue(context, ref),
+              child: Container(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                decoration: BoxDecoration(
+                  color: Colors.red.shade600,
+                  borderRadius: BorderRadius.circular(6),
+                ),
+                child: const Text(
+                  'Report',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 11,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _reportIssue(BuildContext context, WidgetRef ref) {
+    final sensorError = ref.read(sensorErrorProvider(deviceId));
+    if (sensorError == null) return;
+
+    ref.read(issueReportingProvider.notifier).prefillFromSensorError(
+          deviceId: deviceId,
+          firmware: firmware,
+          errorCode: sensorError.errorCode,
+          recoveryAttempts: sensorError.recoveryAttempts,
+          errorMessage: sensorError.errorMessage,
+        );
+
+    context.pushNamed(RouteNames.reportIssue);
   }
 }

@@ -30,6 +30,11 @@ class AppSetupPage extends ConsumerWidget {
       iconAsset: Assets.privayPolicy,
       route: RouteNames.privacyPolicy,
     ),
+    MenuItem(
+      title: 'Report an Issue',
+      iconAsset: Assets.reportIssue,
+      route: RouteNames.reportIssue,
+    ),
   ];
 
   @override

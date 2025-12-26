@@ -21,6 +21,7 @@ import 'package:airspothealth/features/factory_test/factory_test_wrapper.dart';
 import 'package:airspothealth/features/find_my_device/find_my_device_page.dart';
 import 'package:airspothealth/features/home/homepage.dart';
 import 'package:airspothealth/features/notification_settings/notification_settings_page.dart';
+import 'package:airspothealth/features/report_issue/report_issue_page.dart';
 import 'package:airspothealth/features/solutions/solutions_page.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
@@ -259,6 +260,13 @@ class AppRouter {
         name: RouteNames.latestNews,
         path: RouteNames.latestNews,
         builder: (context, state) => const LatestNewsPage(),
+      ),
+
+      // Report Issue route
+      GoRoute(
+        name: RouteNames.reportIssue,
+        path: RouteNames.reportIssue,
+        builder: (context, state) => const ReportIssuePage(),
       ),
 
       // Factory Test route (hidden)

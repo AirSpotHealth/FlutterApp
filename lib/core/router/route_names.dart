@@ -78,4 +78,7 @@ class RouteNames {
 
   /// map handoff route (deep link handler)
   static const String mapHandoff = '/map-handoff';
+
+  /// report issue route
+  static const String reportIssue = '/report-issue';
 }

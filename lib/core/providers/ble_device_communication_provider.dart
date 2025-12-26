@@ -24,6 +24,7 @@ import 'package:airspothealth/core/utils/local_date_format.dart';
 import 'package:airspothealth/features/app_setup/providers/dev_mode_provider.dart';
 import 'package:airspothealth/features/device_graph/providers/ble_device_provider.dart';
 import 'package:airspothealth/features/device_settings/providers/sensor_configuration_provider.dart';
+import 'package:airspothealth/features/device_settings/providers/sensor_error_provider.dart';
 import 'package:airspothealth/features/devices/providers/device_battery_level_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_blue_plus/flutter_blue_plus.dart';
@@ -195,6 +196,40 @@ class _BleDeviceCommunicationNotifier extends FamilyNotifier<dynamic, String> {
         BleDataService.parseResponseCommand(ref, device, data);
 
     if (co2Data is DeviceData) {
+      // Check if this is a sensor error (CO2 = 0xFFFF)
+      if (co2Data.type == DeviceDataType.sensorError.index) {
+        debugPrint('Sensor error detected for device: $deviceId');
+
+        // Extract error info from the original data if available (11-byte format)
+        int errorCode = co2Data.value;
+        int recoveryAttempts = 0;
+
+        // If we have the full 11-byte response, extract recovery attempts from byte 5
+        if (data.length >= 11) {
+          recoveryAttempts = data[5];
+        }
+
+        // Update sensor error provider
+        ref.read(sensorErrorProvider(deviceId).notifier).setError(
+              errorCode: errorCode,
+              recoveryAttempts: recoveryAttempts,
+            );
+
+        // Set state to null to indicate error (UI will show "----")
+        state = null;
+
+        // Store error in database for diagnostics
+        if (co2Data.isLiveCo2) {
+          _isarService.write((isar) {
+            isar.deviceDatas.put(co2Data);
+          });
+        }
+        return;
+      }
+
+      // Normal CO2 reading - clear any previous error
+      ref.read(sensorErrorProvider(deviceId).notifier).clearError();
+
       state = co2Data.value == 0 ? null : co2Data.value;
 
       // Store data in database FIRST (before calculating zone analysis)

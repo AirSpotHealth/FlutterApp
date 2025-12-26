@@ -253,10 +253,25 @@ class ResponseCommandParser {
 
   final IsarService isarService = IsarService();
 
+  /// Parse CO2 value response
+  /// When CO2 = 0xFFFF (65535), sensor has failed - bytes 4-5 contain error info
   DeviceData parseCo2Value(List<int> data) {
+    // Short format (6 bytes)
     if (data.length < 10) {
       final value = (data[4] * 256 + (data[5] & 0xff));
       final datetime = DateTime.now();
+
+      // Check for sensor error (0xFFFF = 65535)
+      if (value == 0xFFFF) {
+        debugPrint('SENSOR ERROR detected (short format): CO2 = 0xFFFF');
+        return DeviceData(
+          deviceId: deviceId,
+          dateTime: datetime,
+          value: 0, // Error code not available in short format
+          type: DeviceDataType.sensorError.index,
+          isLiveCo2: true,
+        );
+      }
 
       return DeviceData(
         deviceId: deviceId,
@@ -267,20 +282,40 @@ class ResponseCommandParser {
       );
     }
 
+    // Standard format (11 bytes)
+    // When CO2 = 0xFFFF, bytes 4-7 contain error info instead of timestamp:
+    // byte 4 = error code, byte 5 = recovery attempts, bytes 6-7 = reserved
+    final co2Value = (data[8] * 256 + (data[9] & 0xff));
+
+    // Check for sensor error (0xFFFF = 65535)
+    if (co2Value == 0xFFFF) {
+      final errorCode = data[4];
+      final recoveryAttempts = data[5];
+      debugPrint(
+          'SENSOR ERROR detected: CO2 = 0xFFFF, errorCode = $errorCode, recoveryAttempts = $recoveryAttempts');
+
+      return DeviceData(
+        deviceId: deviceId,
+        dateTime: DateTime.now(),
+        // Store error code in value, recovery attempts info will be handled by provider
+        value: errorCode,
+        type: DeviceDataType.sensorError.index,
+        isLiveCo2: true,
+      );
+    }
+
+    // Normal CO2 reading
     int datetimeMillis =
         (data[4] << 24) | (data[5] << 16) | (data[6] << 8) | data[7];
-
-    final value = (data[8] * 256 + (data[9] & 0xff));
-
     final datetime = BleDataService.parseDeviceTimestamp(datetimeMillis);
 
     debugPrint(
-        'CO2 Value: $value, DateTime: ${datetime.toIso8601String()}, millis: $datetimeMillis');
+        'CO2 Value: $co2Value, DateTime: ${datetime.toIso8601String()}, millis: $datetimeMillis');
 
     return DeviceData(
       deviceId: deviceId,
       dateTime: datetime,
-      value: value,
+      value: co2Value,
       type: DeviceDataType.co2.index,
       isLiveCo2: true,
     );

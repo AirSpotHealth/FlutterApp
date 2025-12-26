@@ -37,6 +37,11 @@ class Constants {
     'SUPABASE_ANON_KEY',
   );
 
+  // API key
+  static const String apiKey = String.fromEnvironment(
+    'API_KEY',
+  );
+
   // Google Ids
   static const String googleClientId = String.fromEnvironment(
     'GOOGLE_CLIENT_ID',

@@ -71,4 +71,6 @@ class Assets {
   static const String factoryReset = 'assets/images/ic_factory_reset.png';
   static const String flightMode = 'assets/images/ic_flight_mode.png';
   static const String liveActivity = 'assets/images/ic_live_activity.png';
+
+  static const String reportIssue = 'assets/images/ic_report.png';
 }
