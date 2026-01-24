@@ -76,39 +76,60 @@ class SupabaseService {
   Future<void> signInWithGoogle() async {
     try {
       if (kIsWeb) {
-        // Web Flow
+        // Web Flow (redirect)
         await _client.auth.signInWithOAuth(
           OAuthProvider.google,
+          redirectTo: '${Uri.base.origin}/auth/callback',
         );
-      } else {
-        // Native Flow
-        // 1. Google Sign In
-        final GoogleSignIn googleSignIn = GoogleSignIn(
-          clientId: Constants.iosClientId,
-          serverClientId: Constants.googleClientId,
-        );
-
-        final googleUser = await googleSignIn.signIn();
-        final googleAuth = await googleUser?.authentication;
-        final accessToken = googleAuth?.accessToken;
-        final idToken = googleAuth?.idToken;
-
-        if (accessToken == null) {
-          throw 'No Access Token found.';
-        }
-        if (idToken == null) {
-          throw 'No ID Token found.';
-        }
-
-        // 2. Supabase Sign In
-        await _client.auth.signInWithIdToken(
-          provider: OAuthProvider.google,
-          idToken: idToken,
-          accessToken: accessToken,
-        );
+        return;
       }
+
+      // Native Flow (google_sign_in v7+)
+      // Supabase needs: idToken + accessToken for Google. :contentReference[oaicite:1]{index=1}
+      const scopes = <String>['email', 'profile'];
+
+      final googleSignIn = GoogleSignIn.instance;
+
+      // NOTE:
+      // - serverClientId = "Web client ID" from Google Cloud OAuth credentials
+      // - clientId (iOS) only needed for iOS (from Google Cloud iOS OAuth client)
+      // This matches the v7 initialization style. :contentReference[oaicite:2]{index=2}
+      await googleSignIn.initialize(
+        serverClientId: Constants.googleClientId, // <-- your WEB client id
+        clientId: Constants
+            .iosClientId, // <-- your iOS client id (keep if you need iOS)
+      );
+
+      // Attempts silent / lightweight auth first; you can replace with `authenticate()` if you prefer.
+      final googleUser =
+          await googleSignIn.attemptLightweightAuthentication() ??
+              await googleSignIn.authenticate();
+
+      // Get ID token
+      final idToken = googleUser.authentication.idToken;
+      if (idToken == null) {
+        throw const AuthException('No ID Token found.');
+      }
+
+      // Get Access Token (v7+ requires scopes authorization to obtain it)
+      final authorization =
+          await googleUser.authorizationClient.authorizationForScopes(scopes) ??
+              await googleUser.authorizationClient.authorizeScopes(scopes);
+
+      final accessToken = authorization.accessToken;
+      if (accessToken.isEmpty) {
+        throw const AuthException('No Access Token found.');
+      }
+
+      await _client.auth.signInWithIdToken(
+        provider: OAuthProvider.google,
+        idToken: idToken,
+        accessToken: accessToken,
+      );
     } catch (e) {
-      debugPrint('Error signing in with Google: $e');
+      // keep your logging style
+      // ignore: avoid_print
+      print('Error signing in with Google: $e');
       rethrow;
     }
   }

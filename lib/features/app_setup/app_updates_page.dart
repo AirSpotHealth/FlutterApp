@@ -7,7 +7,7 @@ import 'package:airspothealth/features/app_setup/providers/dev_mode_provider.dar
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:new_version_plus/new_version_plus.dart';
+import 'package:new_version_plus/model/version_status.dart';
 
 class AppUpdatesPage extends ConsumerWidget {
   const AppUpdatesPage({super.key});

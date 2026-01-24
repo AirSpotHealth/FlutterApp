@@ -1,9 +1,9 @@
 PODS:
+  - device_info_plus (0.0.1):
+    - Flutter
   - file_saver (0.0.1):
     - Flutter
   - Flutter (1.0.0)
-  - home_widget (0.0.1):
-    - Flutter
   - iOSDFULibrary (4.15.3):
     - ZIPFoundation (= 0.9.19)
   - isar_plus_flutter_libs (1.0.0):
@@ -15,19 +15,16 @@ PODS:
     - Flutter
   - sign_in_with_apple (0.0.1):
     - Flutter
-  - system_date_time_format (0.0.1):
-    - Flutter
   - ZIPFoundation (0.9.19)
 
 DEPENDENCIES:
+  - device_info_plus (from `.symlinks/plugins/device_info_plus/ios`)
   - file_saver (from `.symlinks/plugins/file_saver/ios`)
   - Flutter (from `Flutter`)
-  - home_widget (from `.symlinks/plugins/home_widget/ios`)
   - isar_plus_flutter_libs (from `.symlinks/plugins/isar_plus_flutter_libs/ios`)
   - nordic_dfu (from `.symlinks/plugins/nordic_dfu/ios`)
   - permission_handler_apple (from `.symlinks/plugins/permission_handler_apple/ios`)
   - sign_in_with_apple (from `.symlinks/plugins/sign_in_with_apple/ios`)
-  - system_date_time_format (from `.symlinks/plugins/system_date_time_format/ios`)
 
 SPEC REPOS:
   trunk:
@@ -35,12 +32,12 @@ SPEC REPOS:
     - ZIPFoundation
 
 EXTERNAL SOURCES:
+  device_info_plus:
+    :path: ".symlinks/plugins/device_info_plus/ios"
   file_saver:
     :path: ".symlinks/plugins/file_saver/ios"
   Flutter:
     :path: Flutter
-  home_widget:
-    :path: ".symlinks/plugins/home_widget/ios"
   isar_plus_flutter_libs:
     :path: ".symlinks/plugins/isar_plus_flutter_libs/ios"
   nordic_dfu:
@@ -49,19 +46,16 @@ EXTERNAL SOURCES:
     :path: ".symlinks/plugins/permission_handler_apple/ios"
   sign_in_with_apple:
     :path: ".symlinks/plugins/sign_in_with_apple/ios"
-  system_date_time_format:
-    :path: ".symlinks/plugins/system_date_time_format/ios"
 
 SPEC CHECKSUMS:
+  device_info_plus: 71ffc6ab7634ade6267c7a93088ed7e4f74e5896
   file_saver: 6cdbcddd690cb02b0c1a0c225b37cd805c2bf8b6
   Flutter: cabc95a1d2626b1b06e7179b784ebcf0c0cde467
-  home_widget: f169fc41fd807b4d46ab6615dc44d62adbf9f64f
   iOSDFULibrary: 198c36ebe5a31bf2ca04ee8fb40837176a423e85
   isar_plus_flutter_libs: bea5f6058f18eae2da310c97a84bfdf73657b2fd
   nordic_dfu: e4fb6f461f4a290b28ea4b1dfb69071665cdfa3e
   permission_handler_apple: 4ed2196e43d0651e8ff7ca3483a069d469701f2d
   sign_in_with_apple: c5dcc141574c8c54d5ac99dd2163c0c72ad22418
-  system_date_time_format: d2ff596217fdbb6f04710511579fd3c36c6db598
   ZIPFoundation: b8c29ea7ae353b309bc810586181fd073cb3312c
 
 PODFILE CHECKSUM: 3f1f31a4c004606fb12c807abf3244227d0573fc
