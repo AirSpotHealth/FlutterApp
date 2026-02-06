@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:airspothealth/core/models/ble_device.dart';
+import 'package:airspothealth/core/models/device_model.dart';
 import 'package:airspothealth/core/providers/ble_connected_devices_provider.dart';
 import 'package:airspothealth/core/providers/ble_device_communication_provider.dart';
 import 'package:airspothealth/core/providers/ble_saved_devices_provider.dart';
@@ -107,11 +108,16 @@ class _BleDeviceConnectionNotifier
 
   void _refreshAndAddDevice() {
     ref.read(bleConnectedDevicesProvider.notifier).refresh();
+
+    // Detect device model from device name
+    final deviceModel = DeviceModel.fromDeviceName(device.advName);
+
     ref.read(bleSavedDevicesProvider.notifier).addDevice(BleDevice(
           deviceId: device.remoteId.str,
           name: device.advName,
           platform: device.platformName,
           address: device.remoteId.str,
+          deviceModel: deviceModel,
         ));
 
     // Refresh widget device list so the new device appears in widget configuration
@@ -184,8 +190,9 @@ class _BleDeviceConnectionNotifier
 
   void _handleDeviceReconnection() async {
     try {
-      debugPrint('Device reconnected: $arg - Live Activity will restart automatically with fresh data');
-      
+      debugPrint(
+          'Device reconnected: $arg - Live Activity will restart automatically with fresh data');
+
       // Update widget with reconnected state if it exists
       final widgetData = WidgetService().getWidgetData(arg);
       if (widgetData != null) {
@@ -198,7 +205,7 @@ class _BleDeviceConnectionNotifier
         );
         debugPrint('✅ Widget updated with reconnected state for: $arg');
       }
-      
+
       // Note: Live Activity restart will be handled automatically in LiveActivityService
       // when fresh CO2 data arrives via BleDeviceCommunicationProvider.setHomeValue()
       // This ensures we get a fresh 8-hour timer on iOS

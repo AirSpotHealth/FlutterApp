@@ -1,5 +1,6 @@
 import 'package:airspothealth/core/providers/ble_connected_devices_provider.dart';
 import 'package:airspothealth/core/services/supabase_service.dart';
+import 'package:airspothealth/core/theme/app_colors.dart';
 import 'package:airspothealth/features/device_graph/models/graph_data_duration.dart';
 import 'package:airspothealth/features/device_settings/models/device_sensor_config_data.dart';
 import 'package:airspothealth/features/device_settings/models/progress_model.dart';
@@ -9,6 +10,7 @@ import 'package:airspothealth/features/device_settings/providers/sensor_configur
 import 'package:airspothealth/features/device_settings/widgets/cloud_sync_controls.dart';
 import 'package:airspothealth/features/device_settings/widgets/cloud_sync_hero.dart';
 import 'package:airspothealth/features/device_settings/widgets/cloud_sync_status_wrap.dart';
+import 'package:airspothealth/features/device_settings/widgets/settings_card.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -104,7 +106,11 @@ class _CloudSyncPageState extends ConsumerState<CloudSyncPage> {
         }
       },
       child: Scaffold(
+        backgroundColor: AppColors.backgroundSecondary,
         appBar: AppBar(
+          backgroundColor: Colors.transparent,
+          elevation: 0,
+          scrolledUnderElevation: 0,
           title: const Text('Cloud Sync'),
         ),
         body: SafeArea(
@@ -121,11 +127,18 @@ class _CloudSyncPageState extends ConsumerState<CloudSyncPage> {
                   statusMessage: syncState.statusMessage,
                 ),
                 const SizedBox(height: 16),
-                CloudSyncStatusWrap(
-                  isConnected: isConnected,
-                  serialNumber: serialNumber,
-                  userEmail: user?.email,
-                  lastSyncedDate: lastSyncedDate,
+                SettingsCard(
+                  children: [
+                    Padding(
+                      padding: const EdgeInsets.all(16.0),
+                      child: CloudSyncStatusWrap(
+                        isConnected: isConnected,
+                        serialNumber: serialNumber,
+                        userEmail: user?.email,
+                        lastSyncedDate: lastSyncedDate,
+                      ),
+                    ),
+                  ],
                 ),
                 const SizedBox(height: 16),
                 CloudSyncControls(
@@ -142,7 +155,7 @@ class _CloudSyncPageState extends ConsumerState<CloudSyncPage> {
                       await _supabaseService.signInWithGoogle();
                       setState(() {});
                     } catch (e) {
-                      if (!mounted) return;
+                      if (!context.mounted) return;
                       ScaffoldMessenger.of(context).showSnackBar(
                         SnackBar(content: Text('Sign in failed: $e')),
                       );

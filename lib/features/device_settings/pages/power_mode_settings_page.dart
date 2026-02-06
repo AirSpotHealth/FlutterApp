@@ -4,6 +4,7 @@ import 'package:airspothealth/core/theme/app_colors.dart';
 import 'package:airspothealth/core/utils/assets.dart';
 import 'package:airspothealth/core/utils/constants.dart';
 import 'package:airspothealth/features/device_settings/widgets/device_settings_name_widget.dart';
+import 'package:airspothealth/features/device_settings/widgets/settings_card.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -18,8 +19,11 @@ class PowerModeSettingsPage extends ConsumerWidget {
         ref.watch(deviceSettingsProvider(deviceId));
 
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: AppColors.backgroundSecondary,
       appBar: AppBar(
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        scrolledUnderElevation: 0,
         title: DeviceSettingsNameWidget(
           deviceId: deviceId,
           suffixText: 'Reading Rate',
@@ -28,16 +32,19 @@ class PowerModeSettingsPage extends ConsumerWidget {
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
-          Text(
-            'Choose how frequently your device takes ${Constants.co2Text} readings. More frequent updates will use more battery.',
-            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  color: Colors.grey[600],
-                ),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 4),
+            child: Text(
+              'Choose how frequently your device takes ${Constants.co2Text} readings. More frequent updates will use more battery.',
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                    color: Colors.grey[600],
+                  ),
+            ),
           ),
           const SizedBox(height: 24),
-          Column(
+          SettingsCard(
             children: [
-              _PowerModeCard(
+              _PowerModeTile(
                 asset: Assets.powerModeOnDemand,
                 title: 'Now',
                 updateRate: 'Manual update only',
@@ -48,8 +55,7 @@ class PowerModeSettingsPage extends ConsumerWidget {
                   deviceSettings.copyWith(powerMode: PowerMode.onDemand),
                 ),
               ),
-              const SizedBox(height: 12),
-              _PowerModeCard(
+              _PowerModeTile(
                 asset: Assets.powerMode3min,
                 title: '3 min',
                 updateRate: 'Updates every 3 minutes',
@@ -60,8 +66,7 @@ class PowerModeSettingsPage extends ConsumerWidget {
                   deviceSettings.copyWith(powerMode: PowerMode.low),
                 ),
               ),
-              const SizedBox(height: 12),
-              _PowerModeCard(
+              _PowerModeTile(
                 asset: Assets.powerMode1min,
                 title: '1 min',
                 updateRate: 'Updates every minute',
@@ -72,13 +77,13 @@ class PowerModeSettingsPage extends ConsumerWidget {
                   deviceSettings.copyWith(powerMode: PowerMode.medium),
                 ),
               ),
-              const SizedBox(height: 12),
-              _PowerModeCard(
+              _PowerModeTile(
                 asset: Assets.powerMode5sec,
                 title: '5 sec',
                 updateRate: 'Updates every 5 seconds',
                 batteryLife: '~12 hours on full charge',
                 isSelected: deviceSettings.powerMode == PowerMode.high,
+                isLast: true,
                 onTap: () => _updatePowerMode(
                   ref,
                   deviceSettings.copyWith(powerMode: PowerMode.high),
@@ -98,14 +103,15 @@ class PowerModeSettingsPage extends ConsumerWidget {
   }
 }
 
-class _PowerModeCard extends StatelessWidget {
-  const _PowerModeCard({
+class _PowerModeTile extends StatelessWidget {
+  const _PowerModeTile({
     required this.onTap,
     required this.isSelected,
     required this.asset,
     required this.title,
     required this.updateRate,
     required this.batteryLife,
+    this.isLast = false,
   });
 
   final VoidCallback onTap;
@@ -114,131 +120,105 @@ class _PowerModeCard extends StatelessWidget {
   final String title;
   final String updateRate;
   final String batteryLife;
+  final bool isLast;
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(
-            color:
-                isSelected ? AppColors.primaryColorDark : Colors.grey.shade200,
-            width: isSelected ? 2 : 1,
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        child: Container(
+          decoration: BoxDecoration(
+            border: isLast
+                ? null
+                : Border(bottom: BorderSide(color: Colors.grey.shade100)),
           ),
-          color: isSelected
-              ? AppColors.primaryColorDark.withValues(alpha: 0.05)
-              : Colors.white,
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.03),
-              blurRadius: 8,
-              offset: const Offset(0, 2),
-            ),
-          ],
-        ),
-        padding: const EdgeInsets.all(16),
-        child: Row(
-          children: [
-            Container(
-              width: 48,
-              height: 48,
-              padding: const EdgeInsets.all(8),
-              decoration: BoxDecoration(
-                color: isSelected
-                    ? AppColors.primaryColorDark.withValues(alpha: 0.1)
-                    : Colors.grey.shade50,
-                borderRadius: BorderRadius.circular(12),
+          padding: const EdgeInsets.all(16),
+          child: Row(
+            children: [
+              Container(
+                width: 48,
+                height: 48,
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: isSelected
+                      ? AppColors.primaryColor.withValues(alpha: 0.1)
+                      : Colors.grey.shade50,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Image.asset(
+                  asset,
+                  width: 32,
+                  height: 32,
+                  color: isSelected ? AppColors.primaryColor : Colors.grey,
+                ),
               ),
-              child: Image.asset(
-                asset,
-                width: 32,
-                height: 32,
-              ),
-            ),
-            const SizedBox(width: 16),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: [
-                      Text(
-                        title,
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w600,
-                          color: isSelected
-                              ? AppColors.primaryColorDark
-                              : Colors.black87,
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      if (isSelected)
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 8, vertical: 2),
-                          decoration: BoxDecoration(
-                            color: AppColors.primaryColorDark
-                                .withValues(alpha: 0.1),
-                            borderRadius: BorderRadius.circular(12),
+              const SizedBox(width: 16),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Text(
+                          title,
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
+                            color: isSelected
+                                ? AppColors.primaryColor
+                                : Colors.black87,
                           ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      updateRate,
+                      style: TextStyle(
+                        fontSize: 14,
+                        color: Colors.grey[600],
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Row(
+                      children: [
+                        Icon(
+                          Icons.battery_charging_full,
+                          size: 16,
+                          color: isSelected
+                              ? AppColors.primaryColor
+                              : Colors.grey[400],
+                        ),
+                        const SizedBox(width: 4),
+                        Expanded(
                           child: Text(
-                            'Selected',
+                            batteryLife,
                             style: TextStyle(
-                              fontSize: 12,
-                              color: AppColors.primaryColorDark,
-                              fontWeight: FontWeight.w500,
+                              fontSize: 13,
+                              color: isSelected
+                                  ? AppColors.primaryColor
+                                  : Colors.grey[600],
+                              fontWeight: isSelected
+                                  ? FontWeight.w500
+                                  : FontWeight.normal,
                             ),
                           ),
                         ),
-                    ],
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    updateRate,
-                    style: TextStyle(
-                      fontSize: 14,
-                      color: Colors.grey[600],
+                      ],
                     ),
-                  ),
-                  const SizedBox(height: 4),
-                  Row(
-                    children: [
-                      Icon(
-                        Icons.battery_charging_full,
-                        size: 16,
-                        color: isSelected
-                            ? AppColors.primaryColorDark
-                            : Colors.grey[400],
-                      ),
-                      const SizedBox(width: 4),
-                      Expanded(
-                        child: Text(
-                          batteryLife,
-                          style: TextStyle(
-                            fontSize: 13,
-                            color: isSelected
-                                ? AppColors.primaryColorDark
-                                : Colors.grey[600],
-                            fontWeight: isSelected
-                                ? FontWeight.w500
-                                : FontWeight.normal,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
+                  ],
+                ),
               ),
-            ),
-            Icon(
-              isSelected ? Icons.check_circle : Icons.radio_button_unchecked,
-              color: isSelected ? AppColors.primaryColorDark : Colors.grey[300],
-              size: 24,
-            ),
-          ],
+              if (isSelected)
+                const Icon(
+                  Icons.check_circle,
+                  color: AppColors.primaryColor,
+                  size: 24,
+                ),
+            ],
+          ),
         ),
       ),
     );

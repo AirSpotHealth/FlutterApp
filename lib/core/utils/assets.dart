@@ -7,6 +7,7 @@ class Assets {
 
   static const String device = 'assets/images/ic_device.png';
   static const String airMap = 'assets/images/air_map_icon.png';
+  static const String airspotMap = 'assets/images/ic_airmap.png';
   static const String airGraph = 'assets/images/air_graph_icon.png';
   static const String solutions = 'assets/images/solutions_icon.png';
   static const String findMyDevice = 'assets/images/find_my_icon.png';

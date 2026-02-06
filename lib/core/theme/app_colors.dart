@@ -39,4 +39,8 @@ class AppColors {
 
   /// Shadow colors
   static const shadowPrimary = Color(0x0F000000);
+
+  // UI Icon Colors
+  static const purple = Color(0xFFA855F7); // purple-500
+  static const indigo = Color(0xFF6366F1); // indigo-500
 }

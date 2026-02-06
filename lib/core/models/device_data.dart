@@ -12,6 +12,8 @@ class DeviceData {
     this.type = 0,
     this.isLiveCo2 = false,
     this.synced = false,
+    this.temperature,
+    this.humidity,
   });
 
   @Index()
@@ -30,6 +32,12 @@ class DeviceData {
   @Index()
   final byte type;
 
+  // Temperature in Celsius (nullable for backward compatibility)
+  final double? temperature;
+
+  // Humidity in %RH (nullable for backward compatibility)
+  final double? humidity;
+
   String get id =>
       deviceId +
       dateTime.millisecondsSinceEpoch.toString() +
@@ -43,6 +51,8 @@ class DeviceData {
     DeviceDataType? type,
     bool? isLiveCo2,
     bool? synced,
+    double? temperature,
+    double? humidity,
   }) {
     return DeviceData(
       deviceId: deviceId ?? this.deviceId,
@@ -51,6 +61,8 @@ class DeviceData {
       type: type?.index ?? this.type,
       isLiveCo2: isLiveCo2 ?? this.isLiveCo2,
       synced: synced ?? this.synced,
+      temperature: temperature ?? this.temperature,
+      humidity: humidity ?? this.humidity,
     );
   }
 
@@ -63,7 +75,9 @@ class DeviceData {
         other.dateTime == dateTime &&
         other.value == value &&
         other.type == type &&
-        other.isLiveCo2 == isLiveCo2;
+        other.isLiveCo2 == isLiveCo2 &&
+        other.temperature == temperature &&
+        other.humidity == humidity;
   }
 
   @override
@@ -72,11 +86,13 @@ class DeviceData {
       dateTime.hashCode ^
       value.hashCode ^
       type.hashCode ^
-      isLiveCo2.hashCode;
+      isLiveCo2.hashCode ^
+      (temperature?.hashCode ?? 0) ^
+      (humidity?.hashCode ?? 0);
 
   @override
   String toString() =>
-      'DeviceData(deviceId: $deviceId, dateTime: $dateTime, value: $value, type: ${DeviceDataType.values[type]}, isLiveCo2: $isLiveCo2)';
+      'DeviceData(deviceId: $deviceId, dateTime: $dateTime, value: $value, type: ${DeviceDataType.values[type]}, isLiveCo2: $isLiveCo2, temperature: $temperature, humidity: $humidity)';
 
   @ignore
   String get hexString {
@@ -119,6 +135,6 @@ class DeviceData {
   }
 
   String toCsvString() {
-    return '$deviceId,$dateTime,$value,$type';
+    return '$deviceId,$dateTime,$value,$type${temperature != null ? ',$temperature' : ''}${humidity != null ? ',$humidity' : ''}';
   }
 }

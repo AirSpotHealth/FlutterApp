@@ -1,8 +1,11 @@
 import 'package:airspothealth/core/providers/device_settings_provider.dart';
-import 'package:airspothealth/core/utils/extensions.dart';
+import 'package:airspothealth/core/theme/app_colors.dart';
+import 'package:airspothealth/core/utils/assets.dart';
 import 'package:airspothealth/features/device_settings/widgets/co2_ppm_range_picker_widget.dart';
 import 'package:airspothealth/features/device_settings/widgets/device_settings_name_widget.dart';
 import 'package:airspothealth/features/device_settings/widgets/device_ui_mode_widget.dart';
+import 'package:airspothealth/features/device_settings/widgets/settings_card.dart';
+import 'package:airspothealth/features/device_settings/widgets/settings_tile.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -31,48 +34,59 @@ class _DeviceScreenSettingsPageState
     final deviceSettings = ref.watch(deviceSettingsProvider(widget.deviceId));
 
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: AppColors.backgroundSecondary,
       appBar: AppBar(
-          title: DeviceSettingsNameWidget(
-        deviceId: widget.deviceId,
-        suffixText: 'Screen Settings',
-      )),
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        scrolledUnderElevation: 0,
+        title: DeviceSettingsNameWidget(
+          deviceId: widget.deviceId,
+          suffixText: 'Screen Settings',
+        ),
+      ),
       body: ListView(
         controller: _scrollController,
         padding: const EdgeInsets.all(16),
         children: [
-          DeviceUIModeWidget(deviceId: widget.deviceId),
-          const SizedBox(height: 8),
-          const Divider(),
-          const SizedBox(height: 8),
-          Co2PpmRangePickerWidget(deviceId: widget.deviceId),
-          const SizedBox(height: 8),
-          const Divider(),
-          const SizedBox(height: 8),
-          Row(
+          SettingsCard(
             children: [
-              Expanded(
-                child: Text(
-                  'Screen on Continuously',
-                  style: context.textTheme.bodyMedium?.weight600,
-                ),
+              Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: DeviceUIModeWidget(deviceId: widget.deviceId),
               ),
-              Switch(
+            ],
+          ),
+          const SizedBox(height: 24),
+          SettingsCard(
+            children: [
+              Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: Co2PpmRangePickerWidget(deviceId: widget.deviceId),
+              ),
+            ],
+          ),
+          const SizedBox(height: 24),
+          SettingsCard(
+            children: [
+              SettingsTile(
+                assetPath: Assets.screenSettings,
+                iconBgColor: AppColors.primaryColor.withValues(alpha: 0.1),
+                title: 'Screen on Continuously',
+                subtitle:
+                    'To maintain battery power the screen is on for 10 seconds in low and medium power modes and 1 minute in high power mode.',
+                isLast: true,
+                action: Switch.adaptive(
                   value: deviceSettings.continuosScreenEnabled,
+                  activeThumbColor: AppColors.primaryColor,
                   onChanged: (value) {
                     ref
                         .read(deviceSettingsProvider(widget.deviceId).notifier)
                         .updateSettings(deviceSettings.copyWith(
                             continuosScreenEnabled: value));
-                  }),
+                  },
+                ),
+              ),
             ],
-          ),
-          const SizedBox(height: 12),
-          Text(
-            'To maintain battery power the screen is on for 10 seconds in low and medium power modes and 1 minute in high power mode.',
-            style: context.textTheme.bodySmall?.weight500?.copyWith(
-              color: context.textTheme.bodySmall?.color?.withValues(alpha: .7),
-            ),
           ),
           const SizedBox(height: 16),
         ],

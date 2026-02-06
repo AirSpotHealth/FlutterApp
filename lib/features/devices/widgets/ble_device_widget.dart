@@ -15,7 +15,6 @@ import 'package:airspothealth/features/device_settings/providers/firmware_remote
 import 'package:airspothealth/features/device_settings/providers/sensor_error_provider.dart';
 import 'package:airspothealth/features/devices/widgets/device_alias_editor.dart';
 import 'package:airspothealth/features/devices/widgets/device_battery_level_widget.dart';
-import 'package:airspothealth/features/devices/widgets/device_value_refresh_widget.dart';
 import 'package:airspothealth/features/devices/widgets/device_value_widget.dart';
 import 'package:airspothealth/features/report_issue/providers/issue_reporting_provider.dart';
 import 'package:flutter/material.dart';
@@ -44,51 +43,131 @@ class BleDeviceWidget extends ConsumerWidget {
       onLongPress: () => _showForgetDeviceSheet(ref, bleDevice.deviceId),
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 300),
-        padding: const EdgeInsets.all(12),
+        padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
           color: Colors.white,
-          borderRadius: BorderRadius.circular(10),
+          borderRadius: BorderRadius.circular(16),
           border: Border.all(
             color: deviceConnected
-                ? AppColors.primaryColor
+                ? AppColors.primaryColor.withValues(alpha: 0.3)
                 : AppColors.neutralGrey,
             width: 1,
           ),
           boxShadow: [
-            if (deviceConnected)
-              BoxShadow(
-                color: AppColors.primaryColor.withValues(alpha: 0.2),
-                blurRadius: 10,
-                offset: const Offset(0, 2),
-              ),
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.05),
+              blurRadius: 10,
+              offset: const Offset(0, 2),
+            ),
           ],
         ),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            _buildConnectionRow(ref, deviceConnectionState, deviceConnected),
-            _buildDeviceInfoRow(context, ref, deviceConnected, remoteVersion),
+            // Device name and status row
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Expanded(
+                  child: Text(
+                    deviceConnected
+                        ? (bleDevice.alias ?? bleDevice.name)
+                        : (bleDevice.alias == null ||
+                                bleDevice.alias == "Airspot")
+                            ? bleDevice.name
+                            : bleDevice.alias!,
+                    style: context.textTheme.titleMedium?.copyWith(
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+                if (deviceConnected)
+                  Container(
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: AppColors.brandColorGreen.withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Text(
+                      'Connected',
+                      style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w500,
+                        color: AppColors.brandColorGreen,
+                      ),
+                    ),
+                  )
+                else if (deviceConnectionState == BluetoothBondState.bonding)
+                  Container(
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: AppColors.brandColorAmber.withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Text(
+                      'Connecting...',
+                      style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w500,
+                        color: AppColors.brandColorAmber,
+                      ),
+                    ),
+                  ),
+              ],
+            ),
             if (deviceConnected) ...[
               const SizedBox(height: 16),
+              // Main sensor data display
               Row(
-                crossAxisAlignment: CrossAxisAlignment.end,
                 children: [
-                  const SizedBox(width: 8),
-                  DeviceBatteryLevelWidget(deviceId: bleDevice.deviceId),
                   Expanded(
-                      child: Align(
-                          alignment: Alignment.center,
-                          child:
-                              DeviceValueWidget(deviceId: bleDevice.deviceId))),
-                  DeviceValueRefreshWidget(deviceId: bleDevice.deviceId),
+                    child: DeviceValueWidget(deviceId: bleDevice.deviceId),
+                  ),
+                  DeviceBatteryLevelWidget(deviceId: bleDevice.deviceId),
+                ],
+              ),
+              const SizedBox(height: 12),
+              // Action buttons row
+              Row(
+                children: [
+                  Expanded(
+                    child: _buildActionButton(
+                      context,
+                      icon: Icons.bar_chart,
+                      label: 'Activity Logs',
+                      onTap: () => context.pushNamed(
+                        RouteNames.deviceGraph,
+                        pathParameters: {'deviceId': bleDevice.deviceId},
+                      ),
+                    ),
+                  ),
                   const SizedBox(width: 8),
+                  Expanded(
+                    child: _buildActionButton(
+                      context,
+                      icon: Icons.settings,
+                      label: 'Settings',
+                      onTap: () => context.pushNamed(
+                        RouteNames.deviceSettings,
+                        pathParameters: {'deviceId': bleDevice.deviceId},
+                      ),
+                    ),
+                  ),
                 ],
               ),
               // Show sensor error row if error is detected
               _SensorErrorRow(
                 deviceId: bleDevice.deviceId,
                 firmware: bleDevice.firmwareVersion,
+              ),
+            ] else ...[
+              const SizedBox(height: 16),
+              ConnectButtonRow(
+                deviceId: bleDevice.deviceId,
+                bondState: deviceConnectionState,
               ),
             ],
           ],
@@ -187,6 +266,39 @@ class BleDeviceWidget extends ConsumerWidget {
           ),
         );
       },
+    );
+  }
+
+  Widget _buildActionButton(
+    BuildContext context, {
+    required IconData icon,
+    required String label,
+    required VoidCallback onTap,
+  }) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 10),
+        decoration: BoxDecoration(
+          color: AppColors.primaryColor.withValues(alpha: 0.1),
+          borderRadius: BorderRadius.circular(8),
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(icon, size: 16, color: AppColors.primaryColor),
+            const SizedBox(width: 6),
+            Text(
+              label,
+              style: TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.w500,
+                color: AppColors.primaryColor,
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 
