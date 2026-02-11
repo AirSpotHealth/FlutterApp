@@ -36,6 +36,51 @@ class SyncService {
     }
   }
 
+  /// Immediately upload a single reading (for real-time dashboard updates)
+  Future<void> uploadImmediateReading(DeviceData reading,
+      {String? targetDeviceId}) async {
+    // Basic checks
+    if (_supabaseService.currentUser == null) return;
+
+    try {
+      // 1. Upload to Supabase
+      await _supabaseService
+          .uploadReadings([reading], targetDeviceId: targetDeviceId);
+
+      // 2. Mark as synced locally
+      // We need to re-read the object from Isar to ensure we have the latest version/id if needed,
+      // but since we just saved it in the provider, we can likely just update it.
+      // However, to be safe and use Isar correctly:
+      await _isarService.writeAsync((isar) {
+        // We find the specific record by deviceId + timestamp + type
+        // Or if we have the ID, use that. DeviceData has an ID.
+        // But the reading passed in might not have the ID set if it was just created?
+        // Wait, DeviceData in the provider was just saved.
+        // Let's look at how it's saved in provider.
+        // It calls isar.deviceDatas.put(co2Data).
+        // So the object passed here should be the one we want to update.
+        // Let's query it by composite key to be sure.
+        final readingToUpdate = isar.deviceDatas
+            .where()
+            .deviceIdEqualTo(reading.deviceId)
+            .dateTimeEqualTo(reading.dateTime)
+            .typeEqualTo(reading.type)
+            .findFirst();
+
+        if (readingToUpdate != null) {
+          readingToUpdate.synced = true;
+          isar.deviceDatas.put(readingToUpdate);
+        }
+      });
+
+      debugPrint(
+          'Real-time upload success for ${reading.deviceId} at ${reading.dateTime}');
+    } catch (e) {
+      // If it fails, we just log it. The background sync will pick it up later.
+      debugPrint('Real-time upload failed (will retry in background): $e');
+    }
+  }
+
   Future<void> _uploadUnsyncedData({String? targetDeviceId}) async {
     // 1. Get unsynced data from Isar
     // We need to query for synced == false.

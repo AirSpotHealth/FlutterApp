@@ -82,7 +82,7 @@ class CloudSyncNotifier
     }
   }
 
-  Future<void> sync({GraphDataDuration? duration}) async {
+  Future<void> sync({int numDays = 7}) async {
     // Reset state
     state = state.copyWith(
       isLoading: true,
@@ -106,8 +106,6 @@ class CloudSyncNotifier
       }
 
       if (serialNumber == null) {
-        // Try to fetch it if missing?
-        // For now, assume it should be there if page is loaded
         throw Exception(
             'Could not get device Serial Number. Please wait for sensor config to load.');
       }
@@ -116,31 +114,69 @@ class CloudSyncNotifier
       state = state.copyWith(statusMessage: 'Registering device...');
       await SupabaseService().claimDevice(serialNumber);
 
-      // 2. Request History
-      final selectedDuration = duration ?? GraphDataDuration.today;
-      state = state.copyWith(
-          statusMessage:
-              'Fetching historical data from device (${selectedDuration.durationString})...');
+      // 2. Build list of single-day durations (most recent first)
+      final now = DateTime.now();
+      int daysSucceeded = 0;
+      int daysFailed = 0;
 
-      final historyNotifier =
-          ref.read(deviceHistoryDataRequestProvider(_deviceId).notifier);
+      for (int i = 0; i < numDays; i++) {
+        final dayDate = now.subtract(Duration(days: i));
+        final dayStart = DateTime(dayDate.year, dayDate.month, dayDate.day);
+        final dayEnd = i == 0
+            ? now // Today: use current time as end
+            : DateTime(dayDate.year, dayDate.month, dayDate.day, 23, 59, 59);
 
-      historyNotifier.request(selectedDuration);
+        final dayDuration = GraphDataDuration.custom(
+          DateTimeRange(start: dayStart, end: dayEnd),
+        );
 
-      // 3. Wait for History
-      await _waitForHistoryFetch();
+        final dayLabel = i == 0
+            ? 'Today'
+            : i == 1
+                ? 'Yesterday'
+                : '${dayDate.day}/${dayDate.month}';
 
-      // 4. Upload
-      state = state.copyWith(statusMessage: 'Uploading data to Cloud...');
+        state = state.copyWith(
+          statusMessage: 'Fetching $dayLabel (${i + 1}/$numDays)...',
+        );
+
+        try {
+          // 3. Request history for this single day
+          final historyNotifier =
+              ref.read(deviceHistoryDataRequestProvider(_deviceId).notifier);
+          historyNotifier.request(dayDuration);
+
+          // 4. Wait for the BLE fetch to complete
+          await _waitForHistoryFetch();
+
+          // 5. Upload any newly saved unsynced data
+          state = state.copyWith(
+            statusMessage: 'Uploading $dayLabel (${i + 1}/$numDays)...',
+          );
+          await _syncService.syncData(targetDeviceId: serialNumber);
+
+          daysSucceeded++;
+        } catch (e) {
+          daysFailed++;
+          debugPrint('Sync: Failed to sync day $dayLabel: $e');
+          // Continue to next day instead of aborting
+        }
+      }
+
+      // 6. Final catch-all upload for any remaining unsynced data
+      state = state.copyWith(statusMessage: 'Final upload...');
       await _syncService.syncData(targetDeviceId: serialNumber);
 
-      // 5. Success
+      // 7. Success
       final lastSynced = await _syncService.getLastSyncedDate(serialNumber);
+      final resultMsg = daysFailed > 0
+          ? 'Synced $daysSucceeded of $numDays days ($daysFailed failed)'
+          : 'Successfully synced $numDays days of data';
+
       state = state.copyWith(
         isLoading: false,
         statusMessage: 'Sync complete',
-        successMessage:
-            'Successfully synced data for ${selectedDuration.durationString}',
+        successMessage: resultMsg,
         lastSyncedDate: lastSynced,
       );
     } catch (e) {
@@ -149,7 +185,6 @@ class CloudSyncNotifier
         statusMessage: 'Something went wrong',
         errorMessage: e.toString(),
       );
-      // We could also expose the specific error 'e' if needed
       debugPrint('Sync error: $e');
     }
   }

@@ -6,6 +6,7 @@ import 'package:airspothealth/core/models/device_data.dart';
 import 'package:airspothealth/core/models/device_data_type.dart';
 import 'package:airspothealth/core/models/device_settings.dart';
 import 'package:airspothealth/core/models/live_activity_model.dart';
+import 'package:airspothealth/core/providers/auto_sync_provider.dart';
 import 'package:airspothealth/core/providers/ble_connected_devices_provider.dart';
 import 'package:airspothealth/core/providers/device_settings_provider.dart';
 import 'package:airspothealth/core/providers/notification_preferences_provider.dart';
@@ -16,6 +17,7 @@ import 'package:airspothealth/core/services/co2_monitoring_service.dart';
 import 'package:airspothealth/core/services/data_logger_service.dart';
 import 'package:airspothealth/core/services/isar_service.dart';
 import 'package:airspothealth/core/services/live_activity_service.dart';
+import 'package:airspothealth/core/services/sync_service.dart';
 import 'package:airspothealth/core/services/widget_service.dart';
 import 'package:airspothealth/core/services/zone_analysis_service.dart';
 import 'package:airspothealth/core/utils/device_cmd_utils.dart';
@@ -23,6 +25,8 @@ import 'package:airspothealth/core/utils/extensions.dart';
 import 'package:airspothealth/core/utils/local_date_format.dart';
 import 'package:airspothealth/features/app_setup/providers/dev_mode_provider.dart';
 import 'package:airspothealth/features/device_graph/providers/ble_device_provider.dart';
+import 'package:airspothealth/features/device_settings/models/device_sensor_config_data.dart';
+import 'package:airspothealth/features/device_settings/models/progress_model.dart';
 import 'package:airspothealth/features/device_settings/providers/sensor_configuration_provider.dart';
 import 'package:airspothealth/features/device_settings/providers/sensor_error_provider.dart';
 import 'package:airspothealth/features/devices/providers/device_battery_level_provider.dart';
@@ -238,6 +242,12 @@ class _BleDeviceCommunicationNotifier extends FamilyNotifier<dynamic, String> {
           isar.deviceDatas.put(co2Data);
         });
         // Note: Zone cache will be invalidated automatically when data count changes
+
+        // Trigger auto-sync to cloud (debounced, non-blocking)
+        _triggerAutoSync();
+
+        // Trigger real-time upload for this specific reading (immediate)
+        _triggerRealtimeUpload(co2Data);
       }
 
       // Update home widget with new CO2 value (after data is stored)
@@ -474,6 +484,58 @@ class _BleDeviceCommunicationNotifier extends FamilyNotifier<dynamic, String> {
       );
     }
     return success;
+  }
+
+  /// Triggers auto-sync to the cloud after new data is saved locally.
+  /// Reads the serial number from sensor config and name/alias from BleDevice.
+  void _triggerAutoSync() {
+    try {
+      // Get serial number from sensor configuration (hardware serial)
+      final sensorConfigState = ref.read(sensorConfigurationProvider(deviceId));
+      String? serialNumber;
+      if (sensorConfigState is AsyncSuccess<DeviceSensorConfigData?>) {
+        serialNumber =
+            (sensorConfigState.data as DeviceSensorConfigData?)?.serialNumber;
+      }
+
+      if (serialNumber == null || serialNumber.isEmpty) {
+        debugPrint(
+            'AutoSync: No serial number available for $deviceId, skipping');
+        return;
+      }
+
+      // Get device name and alias from Isar
+      final bleDevice = _isarService.read<BleDevice?>((isar) {
+        return isar.bleDevices.where().deviceIdEqualTo(deviceId).findFirst();
+      });
+
+      ref.read(autoSyncProvider.notifier).triggerSync(
+            serialNumber: serialNumber,
+            deviceName: bleDevice?.name ?? device?.advName,
+            deviceAlias: bleDevice?.alias,
+          );
+    } catch (e) {
+      debugPrint('AutoSync: Error triggering sync for $deviceId: $e');
+    }
+  }
+
+  /// Triggers immediate upload of a single reading for real-time dashboard updates.
+  void _triggerRealtimeUpload(DeviceData co2Data) {
+    try {
+      // Get serial number from sensor configuration (hardware serial)
+      final sensorConfigState = ref.read(sensorConfigurationProvider(deviceId));
+      String? serialNumber;
+      if (sensorConfigState is AsyncSuccess<DeviceSensorConfigData?>) {
+        serialNumber =
+            (sensorConfigState.data as DeviceSensorConfigData?)?.serialNumber;
+      }
+
+      // Use the singleton instance directly
+      SyncService()
+          .uploadImmediateReading(co2Data, targetDeviceId: serialNumber);
+    } catch (e) {
+      debugPrint('Realtime Upload Error: $e');
+    }
   }
 
   void _checkIfLogData(dynamic value, DateTime dateTime,

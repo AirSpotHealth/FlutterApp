@@ -6,6 +6,7 @@ import 'package:airspothealth/core/utils/assets.dart';
 import 'package:airspothealth/core/utils/extensions.dart';
 import 'package:airspothealth/core/widgets/app_bottomsheet.dart';
 import 'package:airspothealth/core/widgets/button.dart';
+import 'package:airspothealth/core/widgets/sync_status_indicator.dart';
 import 'package:airspothealth/core/widgets/tappable_widget.dart';
 import 'package:airspothealth/features/add_device/providers/ble_device_connection_provider.dart';
 import 'package:airspothealth/features/add_device/providers/ble_search_results_provider.dart';
@@ -217,6 +218,8 @@ class BleDeviceWidget extends ConsumerWidget {
         style: ref.context.textTheme.labelLarge
             ?.copyWith(color: AppColors.brandColorGreen),
       ),
+      const SizedBox(width: 6),
+      SyncStatusIndicator(deviceId: bleDevice.deviceId, size: 18),
       const SizedBox(width: 8),
       GestureDetector(
         onTap: () => ref.context.pushNamed(

@@ -19,6 +19,7 @@ import 'package:airspothealth/features/device_graph/providers/device_history_dat
 import 'package:airspothealth/features/device_settings/models/setting_item.dart';
 import 'package:airspothealth/features/device_settings/widgets/alarm_setting_widget.dart';
 import 'package:airspothealth/features/device_settings/widgets/auto_connect_setting_widget.dart';
+import 'package:airspothealth/features/device_settings/widgets/cloud_sync_setting_widget.dart';
 import 'package:airspothealth/features/device_settings/widgets/device_data_dump_widget.dart';
 import 'package:airspothealth/features/device_settings/widgets/device_settings_name_widget.dart';
 import 'package:airspothealth/features/device_settings/widgets/device_variant_widget.dart';
@@ -140,8 +141,7 @@ class _DeviceSettingsPageState extends ConsumerState<DeviceSettingsPage> {
       body: ListView(
         padding: const EdgeInsets.only(left: 16, right: 16, bottom: 16),
         children: [
-          // TODO: Re-enable when cloud sync is ready for production
-          // CloudSyncSettingWidget(deviceId: widget.deviceId),
+          CloudSyncSettingWidget(deviceId: widget.deviceId),
           AlarmSettingWidget(deviceId: widget.deviceId),
           VibrateSettingWidget(deviceId: widget.deviceId),
           AutoConnectSettingWidget(deviceId: widget.deviceId),

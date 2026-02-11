@@ -139,27 +139,48 @@ class SupabaseService {
   }
 
   // Device Ownership
-  Future<void> claimDevice(String deviceId) async {
+  Future<void> claimDevice(
+    String deviceId, {
+    String? deviceName,
+    String? deviceAlias,
+  }) async {
     final user = currentUser;
     if (user == null) throw Exception('User not logged in');
 
     try {
-      await _client.from('user_devices').insert({
+      final record = <String, dynamic>{
         'user_id': user.id,
         'device_id': deviceId,
-        'claimed_at': DateTime.now().toIso8601String(),
-      });
-    } catch (e) {
-      // Handle unique constraint violation (device already claimed)
-      // Postgres error code 23505 is unique_violation
-      if (e.toString().contains('23505')) {
-        debugPrint('Device already claimed: $deviceId');
-        return;
+        'claimed_at': DateTime.now().toUtc().toIso8601String(),
+      };
+
+      // Only include name/alias fields if they have values
+      if (deviceName != null && deviceName.isNotEmpty) {
+        record['device_name'] = deviceName;
       }
+      if (deviceAlias != null && deviceAlias.isNotEmpty) {
+        record['device_alias'] = deviceAlias;
+      }
+
+      await _client.from('user_devices').upsert(
+            record,
+            onConflict: 'device_id',
+          );
+
+      // Also sync the friendly name to the devices table (for dashboard)
+      final friendlyName = (deviceAlias?.isNotEmpty == true)
+          ? deviceAlias
+          : (deviceName?.isNotEmpty == true)
+              ? deviceName
+              : deviceId;
+      await _client
+          .from('devices')
+          .update({'name': friendlyName}).eq('device_id', deviceId);
+
+      debugPrint(
+          'Device claimed/updated: $deviceId (name: $deviceName, alias: $deviceAlias)');
+    } catch (e) {
       debugPrint('Error claiming device: $e');
-      // If it's not a duplicate error, we might want to rethrow or handle it
-      // For now, let's log and continue, assuming it might be a permission issue or similar
-      // that shouldn't block the flow if the device is already there.
     }
   }
 
@@ -177,7 +198,10 @@ class SupabaseService {
 
     for (var r in readings) {
       final deviceId = targetDeviceId ?? r.deviceId;
-      final timestamp = r.dateTime.toIso8601String();
+      // IMPORTANT: Always convert to UTC before sending to Supabase.
+      // Dart's toIso8601String() on local DateTimes omits timezone info,
+      // and Supabase would interpret it as UTC, causing offset errors.
+      final timestamp = r.dateTime.toUtc().toIso8601String();
       final type = r.type;
       final key = '$deviceId-$timestamp-$type';
 
@@ -187,7 +211,7 @@ class SupabaseService {
         'value': r.value,
         'type': type,
         'user_id': user.id, // RLS will also enforce this
-        'created_at': DateTime.now().toIso8601String(),
+        'created_at': DateTime.now().toUtc().toIso8601String(),
       };
     }
 
