@@ -100,6 +100,7 @@ class SyncService {
         return isar.deviceDatas
             .where()
             .syncedEqualTo(false)
+            .isLiveCo2EqualTo(false)
             .dateTimeBetween(
                 minDate, DateTime.now().add(const Duration(days: 1)))
             .findAll(limit: batchSize);

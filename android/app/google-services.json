@@ -12,7 +12,12 @@
           "package_name": "com.air.spot"
         }
       },
-      "oauth_client": [],
+      "oauth_client": [
+        {
+          "client_id": "1041325410797-p19s7uj5oe76i4ep973seueklmi3388u.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
       "api_key": [
         {
           "current_key": "AIzaSyAmXaVa4ZybZMTbP0lv34enrOLgQPUKIgg"
@@ -20,7 +25,20 @@
       ],
       "services": {
         "appinvite_service": {
-          "other_platform_oauth_client": []
+          "other_platform_oauth_client": [
+            {
+              "client_id": "1041325410797-p19s7uj5oe76i4ep973seueklmi3388u.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "1041325410797-4kkrjp9ctlifrn9u60ddag9r0sh3oht8.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.airspot.lohas",
+                "app_store_id": "6450158035"
+              }
+            }
+          ]
         }
       }
     }
