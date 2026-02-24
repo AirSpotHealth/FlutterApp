@@ -1,5 +1,6 @@
 import 'package:airspothealth/core/providers/auto_sync_preference_provider.dart';
 import 'package:airspothealth/core/providers/auto_sync_provider.dart';
+import 'package:airspothealth/core/providers/ble_saved_devices_provider.dart';
 import 'package:airspothealth/core/services/supabase_service.dart';
 import 'package:airspothealth/core/theme/app_colors.dart';
 import 'package:airspothealth/features/device_settings/models/device_sensor_config_data.dart';
@@ -83,7 +84,18 @@ class _CloudSyncPageState extends ConsumerState<CloudSyncPage> {
                   ),
                   const SizedBox(height: 12),
                   _DeviceInfoCard(
-                    serialNumber: serialNumber ?? 'Loading...',
+                    deviceName: () {
+                      final saved = ref
+                          .watch(bleSavedDevicesProvider)
+                          .where((d) => d.deviceId == widget.deviceId)
+                          .firstOrNull;
+                      if (saved != null) {
+                        return (saved.alias?.isNotEmpty == true)
+                            ? saved.alias!
+                            : saved.name;
+                      }
+                      return serialNumber ?? 'Loading...';
+                    }(),
                     userEmail: user.email ?? 'Unknown',
                   ),
                   const SizedBox(height: 24),
@@ -381,11 +393,11 @@ class _AutoSyncToggleCard extends StatelessWidget {
 
 class _DeviceInfoCard extends StatelessWidget {
   const _DeviceInfoCard({
-    required this.serialNumber,
+    required this.deviceName,
     required this.userEmail,
   });
 
-  final String serialNumber;
+  final String deviceName;
   final String userEmail;
 
   @override
@@ -408,7 +420,7 @@ class _DeviceInfoCard extends StatelessWidget {
           _InfoRow(
             icon: Icons.memory,
             label: 'Device',
-            value: serialNumber,
+            value: deviceName,
           ),
           Divider(color: AppColors.neutralGreyLight, height: 20),
           _InfoRow(

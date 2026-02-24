@@ -4,7 +4,7 @@ import ActivityKit
 import UserNotifications
 
 @main
-@objc class AppDelegate: FlutterAppDelegate {
+@objc class AppDelegate: FlutterAppDelegate, FlutterImplicitEngineDelegate {
   let channelName : String = "liveActivityChannel"
   var liveActivityManager: Any?
 
@@ -20,13 +20,10 @@ import UserNotifications
       UNUserNotificationCenter.current().delegate = self as? UNUserNotificationCenterDelegate
     }
 
-    // Live Activity Channel
-    let controller : FlutterViewController = window?.rootViewController as! FlutterViewController
-    liveActivityChannel = FlutterMethodChannel(name: channelName, binaryMessenger: controller.binaryMessenger) 
     if #available(iOS 16.2, *) {
       liveActivityManager = LiveActivityManager()
     }
-    
+
     // Set up notification listener for iOS 17+ LiveActivityIntent refresh requests
     NotificationCenter.default.addObserver(
         self,
@@ -66,13 +63,30 @@ import UserNotifications
         name: Notification.Name("AutoDisableLiveActivity"),
         object: nil
     )
-    
+
+    return super.application(application, didFinishLaunchingWithOptions: launchOptions)
+  }
+
+  // MARK: - FlutterImplicitEngineDelegate
+  // Called when the implicit Flutter engine is initialized (UIScene lifecycle).
+  // Plugin registration and method channel setup must happen here instead of
+  // didFinishLaunchingWithOptions to avoid crashing under the new UIScene lifecycle.
+  func didInitializeImplicitFlutterEngine(_ engineBridge: FlutterImplicitEngineBridge) {
+    // Register all Flutter plugins with the engine
+    GeneratedPluginRegistrant.register(with: engineBridge.pluginRegistry)
+
+    // Set up the Live Activity method channel using the scene-aware messenger
+    liveActivityChannel = FlutterMethodChannel(
+        name: channelName,
+        binaryMessenger: engineBridge.applicationRegistrar.messenger()
+    )
+
     liveActivityChannel?.setMethodCallHandler { [weak self] (call: FlutterMethodCall, result: @escaping FlutterResult) in
         guard #available(iOS 16.2, *), let liveActivityManager = self?.liveActivityManager as? LiveActivityManager else {
             result(FlutterError(code: "MANAGER_NOT_INITIALIZED", message: "LiveActivityManager not initialized or not supported on this iOS version", details: nil))
             return
         }
-        
+
         switch call.method {
         case "startLiveActivity":
             liveActivityManager.startLiveActivity(data: call.arguments as? Dictionary<String,Any>)
@@ -131,9 +145,6 @@ import UserNotifications
             result(FlutterMethodNotImplemented)
         }
     }
-      
-    GeneratedPluginRegistrant.register(with: self)
-    return super.application(application, didFinishLaunchingWithOptions: launchOptions)
   }
     
   @objc func handleRefreshNotification() {

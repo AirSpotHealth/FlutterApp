@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:airspothealth/core/providers/ble_saved_devices_provider.dart';
 import 'package:airspothealth/core/services/supabase_service.dart';
 import 'package:airspothealth/core/services/sync_service.dart';
 import 'package:airspothealth/features/device_graph/models/graph_data_duration.dart';
@@ -112,7 +113,19 @@ class CloudSyncNotifier
 
       // 1.5 Claim Device (Ensure ownership for RLS)
       state = state.copyWith(statusMessage: 'Registering device...');
-      await SupabaseService().claimDevice(serialNumber);
+      // Resolve the friendly name from saved BLE devices.
+      // Pass name and alias separately so Supabase populates both columns.
+      final savedDevice = ref
+          .read(bleSavedDevicesProvider)
+          .where((d) => d.deviceId == _deviceId)
+          .firstOrNull;
+      await SupabaseService().claimDevice(
+        serialNumber,
+        deviceName: savedDevice?.name,
+        deviceAlias: (savedDevice?.alias?.isNotEmpty == true)
+            ? savedDevice!.alias
+            : null,
+      );
 
       // 2. Build list of single-day durations (most recent first)
       final now = DateTime.now();
