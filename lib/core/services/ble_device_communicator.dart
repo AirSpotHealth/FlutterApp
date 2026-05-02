@@ -15,6 +15,12 @@ class BleDeviceCommunicator {
   StreamSubscription<List<int>>? _notifySubscription;
   Completer<void>? _initCompleter;
 
+  bool _isSlimDevice = false;
+
+  /// True if this device exposed the MCUmgr SMP service during discovery.
+  /// Set after [initialize] completes; used to select the correct DFU path.
+  bool get isSlimDevice => _isSlimDevice;
+
   final StreamController<List<int>> _dataStreamController =
       StreamController.broadcast();
   Stream<List<int>> get dataStream => _dataStreamController.stream;
@@ -35,6 +41,12 @@ class BleDeviceCommunicator {
       }
       try {
         final services = await device.discoverServices();
+
+        // Detect Slim device by presence of MCUmgr SMP service
+        _isSlimDevice = services.any((s) =>
+            s.uuid.toString().toUpperCase() == Constants.smpServiceUuid);
+        debugPrint('Device $deviceId isSlim=$_isSlimDevice');
+
         final service = services.firstWhereOrNull(
             (s) => s.uuid.toString().toUpperCase() == Constants.serviceUuid);
         if (service == null) {
@@ -84,6 +96,7 @@ class BleDeviceCommunicator {
   void reset() {
     _writeCharacteristic = null;
     _initCompleter = null;
+    _isSlimDevice = false;
     _notifySubscription?.cancel();
     _notifySubscription = null;
   }

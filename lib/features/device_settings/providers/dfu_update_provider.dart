@@ -1,11 +1,13 @@
 import 'dart:io';
 
+import 'package:airspothealth/core/models/device_model.dart';
 import 'package:airspothealth/core/providers/ble_device_communication_provider.dart';
 import 'package:airspothealth/core/providers/ble_saved_devices_provider.dart';
 import 'package:airspothealth/core/services/network_service.dart';
 import 'package:airspothealth/features/add_device/providers/ble_device_connection_provider.dart';
 import 'package:airspothealth/features/device_graph/providers/device_history_data_request_provider.dart';
 import 'package:airspothealth/features/device_settings/models/progress_model.dart';
+import 'package:airspothealth/features/device_settings/service/slim_dfu_service.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:nordic_dfu/nordic_dfu.dart';
 import 'package:path_provider/path_provider.dart';
@@ -59,6 +61,37 @@ class _DfuUpdateNotifier extends AutoDisposeNotifier<AsyncProgressValue> {
   }
 
   void _uploadDfu(String deviceId, String filePath) {
+    final device =
+        ref.read(bleSavedDevicesProvider.notifier).getDeviceById(deviceId);
+    if (device?.deviceModel == DeviceModel.airspotSlim) {
+      _uploadSlimDfu(deviceId, filePath);
+      return;
+    }
+    _uploadNordicDfu(deviceId, filePath);
+  }
+
+  void _uploadSlimDfu(String deviceId, String filePath) {
+    SlimDfuService.uploadFromFile(
+      deviceId: deviceId,
+      filePath: filePath,
+      onProgress: (progress) {
+        state = AsyncInProgress(progress, message: 'Uploading firmware... ${(progress * 100).toInt()}%');
+      },
+      onStatus: (status) {
+        state = AsyncInProgress(
+          state is AsyncInProgress ? (state as AsyncInProgress).progress : 0.0,
+          message: status,
+        );
+      },
+    ).then((_) {
+      state = const AsyncInProgress(1.0, message: 'DFU completed, rebooting...');
+      _disconnectDevice(deviceId);
+    }).catchError((e) {
+      state = AsyncFailure('Update failed: $e');
+    });
+  }
+
+  void _uploadNordicDfu(String deviceId, String filePath) {
     NordicDfu().startDfu(
       deviceId,
       filePath,

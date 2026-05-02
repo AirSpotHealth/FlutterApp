@@ -47,16 +47,28 @@ class _BleSavedDevicesNotifier extends Notifier<List<BleDevice>> {
       return;
     }
 
-    // Detect device model if not already set
-    final deviceWithModel = device.deviceModel == null
-        ? device.copyWith(deviceModel: DeviceModel.fromDeviceName(device.name))
-        : device;
-
     ref.read(isarServiceProvider).write((isar) {
-      isar.bleDevices.put(deviceWithModel);
+      isar.bleDevices.put(device);
     });
 
-    state = [...state, deviceWithModel];
+    state = [...state, device];
+  }
+
+  /// Update device model after BLE service discovery confirms device type.
+  /// Called once per connection after [BleDeviceCommunicator.initialize] runs.
+  void updateDeviceModel(String deviceId, DeviceModel model) {
+    final existing =
+        state.firstWhereOrNull((d) => d.deviceId == deviceId);
+    if (existing == null) return;
+    if (existing.deviceModel == model) return;
+
+    final updated = existing.copyWith(deviceModel: model);
+    ref.read(isarServiceProvider).write((isar) {
+      isar.bleDevices.put(updated);
+    });
+    state =
+        state.map((d) => d.deviceId == deviceId ? updated : d).toList();
+    debugPrint('Device $deviceId model updated to $model');
   }
 
   void removeDeviceById(String deviceId) {

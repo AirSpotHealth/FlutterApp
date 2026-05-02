@@ -29,6 +29,11 @@ class Constants {
     defaultValue: '6E400002-B5A3-F393-E0A9-E50E24DCCA9E',
   );
 
+  // MCUmgr SMP service — present on Slim (nRF54L05/NCS) devices only
+  static const String smpServiceUuid = '8D53DC1D-1DB7-4CD3-868B-8A527460AA84';
+  static const String smpCharacteristicUuid =
+      'DA2E7828-FBCE-4E01-AE9E-261174997C48';
+
   // Supabase Configuration - loaded from environment variables
   static const String supabaseUrl = String.fromEnvironment(
     'SUPABASE_URL',

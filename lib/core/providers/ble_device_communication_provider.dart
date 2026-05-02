@@ -3,6 +3,7 @@ import 'dart:io';
 
 import 'package:airspothealth/core/models/ble_device.dart';
 import 'package:airspothealth/core/models/device_data.dart';
+import 'package:airspothealth/core/models/device_model.dart';
 import 'package:airspothealth/core/models/device_data_type.dart';
 import 'package:airspothealth/core/models/device_settings.dart';
 import 'package:airspothealth/core/models/live_activity_model.dart';
@@ -21,6 +22,7 @@ import 'package:airspothealth/core/services/zone_analysis_service.dart';
 import 'package:airspothealth/core/utils/device_cmd_utils.dart';
 import 'package:airspothealth/core/utils/extensions.dart';
 import 'package:airspothealth/core/utils/local_date_format.dart';
+import 'package:airspothealth/core/providers/ble_saved_devices_provider.dart';
 import 'package:airspothealth/features/app_setup/providers/dev_mode_provider.dart';
 import 'package:airspothealth/features/device_graph/providers/ble_device_provider.dart';
 import 'package:airspothealth/features/device_settings/providers/sensor_configuration_provider.dart';
@@ -181,8 +183,17 @@ class _BleDeviceCommunicationNotifier extends FamilyNotifier<dynamic, String> {
   void setConnected() {
     _communicator.reset();
     _communicator.initialize().then((_) {
+      _updateDeviceModel();
       _getInitialData();
     });
+  }
+
+  void _updateDeviceModel() {
+    final model = _communicator.isSlimDevice
+        ? DeviceModel.airspotSlim
+        : DeviceModel.airspotScreen;
+    ref.read(bleSavedDevicesProvider.notifier).updateDeviceModel(arg, model);
+    debugPrint('Device $arg model set to $model');
   }
 
   void _handleNotificationData(List<int> data) async {

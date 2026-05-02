@@ -109,15 +109,12 @@ class _BleDeviceConnectionNotifier
   void _refreshAndAddDevice() {
     ref.read(bleConnectedDevicesProvider.notifier).refresh();
 
-    // Detect device model from device name
-    final deviceModel = DeviceModel.fromDeviceName(device.advName);
-
+    // deviceModel set after service discovery in _updateDeviceModel()
     ref.read(bleSavedDevicesProvider.notifier).addDevice(BleDevice(
           deviceId: device.remoteId.str,
           name: device.advName,
           platform: device.platformName,
           address: device.remoteId.str,
-          deviceModel: deviceModel,
         ));
 
     // Refresh widget device list so the new device appears in widget configuration
