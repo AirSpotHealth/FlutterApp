@@ -1,4 +1,5 @@
 import 'package:airspothealth/core/models/ble_device.dart';
+import 'package:airspothealth/core/models/device_model.dart';
 import 'package:airspothealth/core/providers/device_settings_provider.dart';
 import 'package:airspothealth/core/router/route_names.dart';
 import 'package:airspothealth/core/services/live_activity_service.dart';
@@ -123,6 +124,16 @@ class _DeviceSettingsPageState extends ConsumerState<DeviceSettingsPage>
                 fontSize: 10,
                 fontWeight: FontWeight.w600,
                 letterSpacing: 1.0,
+              ),
+            ),
+            const SizedBox(height: 1),
+            Text(
+              (device.deviceModel ?? DeviceModel.fromDeviceName(device.name))
+                  .displayName,
+              style: const TextStyle(
+                color: Colors.black38,
+                fontSize: 10,
+                fontWeight: FontWeight.w500,
               ),
             ),
           ],

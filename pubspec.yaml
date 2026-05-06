@@ -25,19 +25,19 @@ dependencies:
   http: ^1.6.0
   home_widget: ^0.9.0
   nordic_dfu: ^6.2.0
-  file_picker: ^10.3.8
+  file_picker: ^11.0.2
   intl: ^0.20.2
   shimmer: ^3.0.0
-  archive: ^3.6.0
+  archive: ^4.0.9
   package_info_plus: ^9.0.0
   file_saver: ^0.3.1
   new_version_plus: ^1.0.1
   # awesome_notifications_core: ^0.10.1
-  flutter_local_notifications: ^19.5.0
+  flutter_local_notifications: ^21.0.0
   # awesome_notifications: ^0.10.1
   firebase_core: ^4.4.0
   firebase_messaging: ^16.1.1
-  font_awesome_flutter: ^10.12.0
+  font_awesome_flutter: ^11.0.0
   animated_icon: ^1.0.0
   geolocator: ^14.0.2
   share_plus: ^12.0.1
@@ -48,7 +48,7 @@ dependencies:
   isar_plus: ^1.2.1
   isar_plus_flutter_libs: ^1.2.1
   supabase_flutter: ^2.12.0
-  sign_in_with_apple: ^7.0.1
+  sign_in_with_apple: ^8.0.0
   google_sign_in: ^7.2.0
 
 dev_dependencies:

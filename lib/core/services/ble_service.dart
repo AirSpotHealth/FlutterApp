@@ -1,7 +1,9 @@
 import 'dart:async';
 
 import 'package:airspothealth/core/models/ble_device.dart';
+import 'package:airspothealth/core/models/device_model.dart';
 import 'package:airspothealth/core/services/isar_service.dart';
+import 'package:airspothealth/core/utils/constants.dart';
 import 'package:flutter_blue_plus/flutter_blue_plus.dart';
 import 'package:isar_plus/isar_plus.dart';
 
@@ -14,6 +16,20 @@ class BLEService {
 
   /// Singleton instance of this class.
   static final BLEService instance = BLEService._();
+
+  // Keyed by remoteId — updated on every scan result batch.
+  final Map<String, ScanResult> _scanResultCache = {};
+
+  /// Returns the [DeviceModel] detected from advertisement data for [deviceId],
+  /// or null if the device hasn't been seen in a scan yet.
+  DeviceModel? deviceModelFromScan(String deviceId) {
+    final result = _scanResultCache[deviceId];
+    if (result == null) return null;
+    final hasSlimUuid = result.advertisementData.serviceUuids.any(
+      (uuid) => uuid.toString().toUpperCase() == Constants.smpServiceUuid,
+    );
+    return hasSlimUuid ? DeviceModel.airspotSlim : DeviceModel.airspotScreen;
+  }
 
   /// Method to check if Bluetooth is available on the device.
   Future<bool> isAvailable() async => FlutterBluePlus.isSupported;
@@ -70,9 +86,12 @@ class BLEService {
   Stream<List<BluetoothDevice>> scanResults({bool distinct = true}) {
     if (!distinct) {
       return FlutterBluePlus.scanResults.map(
-        (List<ScanResult> scanResults) => scanResults
-            .map((ScanResult scanResult) => scanResult.device)
-            .toList(),
+        (List<ScanResult> scanResults) {
+          for (final r in scanResults) {
+            _scanResultCache[r.device.remoteId.str] = r;
+          }
+          return scanResults.map((r) => r.device).toList();
+        },
       );
     }
 
@@ -82,11 +101,16 @@ class BLEService {
         (Isar isar) => isar.bleDevices.where().findAll());
 
     return FlutterBluePlus.scanResults.asyncMap(
-      (List<ScanResult> scanResults) => scanResults
-          .map((ScanResult scanResult) => scanResult.device)
-          .where((BluetoothDevice bd) => !connectedDevices.any(
-              (BleDevice bleDevice) => bleDevice.deviceId == bd.remoteId.str))
-          .toList(),
+      (List<ScanResult> scanResults) {
+        for (final r in scanResults) {
+          _scanResultCache[r.device.remoteId.str] = r;
+        }
+        return scanResults
+            .map((r) => r.device)
+            .where((BluetoothDevice bd) => !connectedDevices.any(
+                (BleDevice bleDevice) => bleDevice.deviceId == bd.remoteId.str))
+            .toList();
+      },
     );
   }
 }

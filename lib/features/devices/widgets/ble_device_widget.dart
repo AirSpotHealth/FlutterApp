@@ -1,4 +1,6 @@
 import 'package:airspothealth/core/models/ble_device.dart';
+import 'package:airspothealth/core/models/device_model.dart';
+import 'package:airspothealth/core/widgets/device_model_icon.dart';
 import 'package:airspothealth/core/router/route_names.dart';
 import 'package:airspothealth/core/theme/app_colors.dart';
 import 'package:airspothealth/core/utils/app_utils.dart';
@@ -82,6 +84,11 @@ class BleDeviceWidget extends ConsumerWidget {
                     ),
                   ),
                 ),
+                DeviceModelIcon(
+                  model: bleDevice.deviceModel ?? DeviceModel.airspotScreen,
+                  size: 18,
+                ),
+                const SizedBox(width: 8),
                 if (deviceConnected)
                   Container(
                     padding:

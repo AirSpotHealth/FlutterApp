@@ -3,12 +3,12 @@ import 'dart:convert';
 import 'dart:io';
 import 'dart:typed_data';
 
+import 'package:airspothealth/core/utils/constants.dart';
+import 'package:airspothealth/core/utils/extensions.dart';
 import 'package:archive/archive_io.dart';
 import 'package:crypto/crypto.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_blue_plus/flutter_blue_plus.dart';
-import 'package:airspothealth/core/utils/constants.dart';
-import 'package:airspothealth/core/utils/extensions.dart';
 
 /// MCUmgr SMP firmware upload for AirSpot Slim (nRF54L05 / Zephyr / NCS).
 ///
@@ -94,9 +94,8 @@ class SlimDfuService {
       );
 
       final completer = Completer<Map<String, dynamic>>();
-      final sub = smpChar.lastValueStream
-          .where((d) => d.length >= 8)
-          .listen((data) {
+      final sub =
+          smpChar.lastValueStream.where((d) => d.length >= 8).listen((data) {
         if (!completer.isCompleted) {
           completer.complete(_parseSmpResponse(data));
         }
@@ -192,7 +191,9 @@ class SlimDfuService {
     }
 
     final builder = BytesBuilder();
-    for (final p in parts) builder.add(p);
+    for (final p in parts) {
+      builder.add(p);
+    }
     return builder.toBytes();
   }
 
@@ -215,8 +216,7 @@ class SlimDfuService {
     await Future.delayed(const Duration(milliseconds: 500));
   }
 
-  static Future<void> _osReset(
-      BluetoothCharacteristic char, int seq) async {
+  static Future<void> _osReset(BluetoothCharacteristic char, int seq) async {
     // Send OS reset: group=0, id=5, empty map payload
     final frame = _buildSmpFrame(
       op: _opWriteRequest,

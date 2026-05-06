@@ -37,8 +37,8 @@ class _BleSavedDevicesNotifier extends Notifier<List<BleDevice>> {
     final existingDevice = state.firstWhereOrNull((d) => d.deviceId == device.deviceId);
     if (existingDevice != null) {
       // If device exists but doesn't have a model set, update it
-      if (existingDevice.deviceModel == null && device.deviceModel != null) {
-        final updatedDevice = existingDevice.copyWith(deviceModel: device.deviceModel);
+      if (existingDevice.deviceModelValue == null && device.deviceModelValue != null) {
+        final updatedDevice = existingDevice.copyWith(deviceModelValue: device.deviceModelValue);
         ref.read(isarServiceProvider).write((isar) {
           isar.bleDevices.put(updatedDevice);
         });
@@ -60,9 +60,9 @@ class _BleSavedDevicesNotifier extends Notifier<List<BleDevice>> {
     final existing =
         state.firstWhereOrNull((d) => d.deviceId == deviceId);
     if (existing == null) return;
-    if (existing.deviceModel == model) return;
+    if (existing.deviceModelValue == model.index) return;
 
-    final updated = existing.copyWith(deviceModel: model);
+    final updated = existing.copyWith(deviceModelValue: model.index);
     ref.read(isarServiceProvider).write((isar) {
       isar.bleDevices.put(updated);
     });

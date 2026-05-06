@@ -18,7 +18,7 @@ class BleDevice {
     this.firmwareVersion = '-.-.-',
     this.lastFetchedStartDate,
     this.lastFetchedEndDate,
-    this.deviceModel,
+    this.deviceModelValue,
   });
 
   @Id()
@@ -43,9 +43,15 @@ class BleDevice {
   final DateTime? lastFetchedStartDate;
   final DateTime? lastFetchedEndDate;
 
-  /// Device model type (Screen, Slim, or unknown)
-  /// If null or unknown, defaults to Screen capabilities for backward compatibility
-  final DeviceModel? deviceModel;
+  /// Stored as int index so Isar can persist it natively.
+  /// Read via the [deviceModel] getter below.
+  final int? deviceModelValue;
+
+  /// Computed from [deviceModelValue]. Not stored directly in Isar.
+  @ignore
+  DeviceModel? get deviceModel => deviceModelValue != null
+      ? DeviceModel.values[deviceModelValue!]
+      : null;
 
   BleDevice copyWith({
     String? deviceId,
@@ -56,7 +62,7 @@ class BleDevice {
     String? firmwareVersion,
     DateTime? lastFetchedStartDate,
     DateTime? lastFetchedEndDate,
-    DeviceModel? deviceModel,
+    int? deviceModelValue,
   }) {
     return BleDevice(
       deviceId: deviceId ?? this.deviceId,
@@ -67,7 +73,7 @@ class BleDevice {
       firmwareVersion: firmwareVersion ?? this.firmwareVersion,
       lastFetchedStartDate: lastFetchedStartDate ?? this.lastFetchedStartDate,
       lastFetchedEndDate: lastFetchedEndDate ?? this.lastFetchedEndDate,
-      deviceModel: deviceModel ?? this.deviceModel,
+      deviceModelValue: deviceModelValue ?? this.deviceModelValue,
     );
   }
 

@@ -1,7 +1,6 @@
 import 'dart:async';
 
 import 'package:airspothealth/core/models/ble_device.dart';
-import 'package:airspothealth/core/models/device_model.dart';
 import 'package:airspothealth/core/providers/ble_connected_devices_provider.dart';
 import 'package:airspothealth/core/providers/ble_device_communication_provider.dart';
 import 'package:airspothealth/core/providers/ble_saved_devices_provider.dart';
@@ -38,13 +37,21 @@ class _BleDeviceConnectionNotifier
       deviceSubscription?.cancel();
     });
 
-    return _bleService
-                .connectedDevices()
-                .firstWhereOrNull((device) => device.remoteId.str == arg)
-                ?.isConnected ==
-            true
-        ? BluetoothBondState.bonded
-        : BluetoothBondState.none;
+    final alreadyConnected = _bleService
+            .connectedDevices()
+            .firstWhereOrNull((device) => device.remoteId.str == arg)
+            ?.isConnected ==
+        true;
+
+    if (alreadyConnected) {
+      // Device was connected before this provider was built (auto-connect).
+      // Run model detection now so the UI reflects the correct device type.
+      Future.microtask(() =>
+          ref.read(bleDeviceCommunicationProvider(arg).notifier).setConnected());
+      return BluetoothBondState.bonded;
+    }
+
+    return BluetoothBondState.none;
   }
 
   bool get isConnected => state == BluetoothBondState.bonded;
@@ -109,12 +116,15 @@ class _BleDeviceConnectionNotifier
   void _refreshAndAddDevice() {
     ref.read(bleConnectedDevicesProvider.notifier).refresh();
 
-    // deviceModel set after service discovery in _updateDeviceModel()
+    // Detect model from advertisement data if a scan result is cached;
+    // falls back to GATT service discovery in _updateDeviceModel().
+    final deviceModel = _bleService.deviceModelFromScan(device.remoteId.str);
     ref.read(bleSavedDevicesProvider.notifier).addDevice(BleDevice(
           deviceId: device.remoteId.str,
           name: device.advName,
           platform: device.platformName,
           address: device.remoteId.str,
+          deviceModelValue: deviceModel?.index,
         ));
 
     // Refresh widget device list so the new device appears in widget configuration

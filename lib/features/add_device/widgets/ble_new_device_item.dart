@@ -1,4 +1,7 @@
+import 'package:airspothealth/core/models/device_model.dart';
+import 'package:airspothealth/core/services/ble_service.dart';
 import 'package:airspothealth/core/theme/app_colors.dart';
+import 'package:airspothealth/core/widgets/device_model_icon.dart';
 import 'package:airspothealth/features/add_device/providers/ble_device_connection_provider.dart';
 import 'package:airspothealth/features/devices/widgets/device_connect_button.dart';
 import 'package:flutter/material.dart';
@@ -27,6 +30,10 @@ class BleNewDeviceItem extends ConsumerWidget {
     final BluetoothBondState deviceStatus =
         ref.watch(bleDeviceConnectionProvider(device.remoteId.str));
 
+    final DeviceModel detectedModel =
+        BLEService.instance.deviceModelFromScan(device.remoteId.str) ??
+            DeviceModel.airspotScreen;
+
     return ListTile(
       dense: true,
       key: ValueKey(device.remoteId),
@@ -38,8 +45,11 @@ class BleNewDeviceItem extends ConsumerWidget {
       ),
       tileColor: Colors.white,
       title: Text(device.platformName),
-      subtitle: Text(device.advName),
-      leading: const Icon(Icons.bluetooth, color: AppColors.primaryColor),
+      subtitle: Text(
+        device.advName,
+        style: const TextStyle(color: AppColors.neutralGrey),
+      ),
+      leading: DeviceModelIcon(model: detectedModel),
       trailing: DeviceConnectButton(deviceId: device.remoteId.str),
     );
   }
