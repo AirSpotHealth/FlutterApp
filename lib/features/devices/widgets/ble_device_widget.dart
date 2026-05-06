@@ -3,26 +3,20 @@ import 'package:airspothealth/core/models/device_model.dart';
 import 'package:airspothealth/core/widgets/device_model_icon.dart';
 import 'package:airspothealth/core/router/route_names.dart';
 import 'package:airspothealth/core/theme/app_colors.dart';
-import 'package:airspothealth/core/utils/app_utils.dart';
-import 'package:airspothealth/core/utils/assets.dart';
 import 'package:airspothealth/core/utils/extensions.dart';
 import 'package:airspothealth/core/widgets/app_bottomsheet.dart';
 import 'package:airspothealth/core/widgets/button.dart';
 import 'package:airspothealth/core/widgets/tappable_widget.dart';
 import 'package:airspothealth/features/add_device/providers/ble_device_connection_provider.dart';
 import 'package:airspothealth/features/add_device/providers/ble_search_results_provider.dart';
-import 'package:airspothealth/features/device_settings/models/remote_version.dart';
 import 'package:airspothealth/features/device_settings/providers/device_forget_status_provider.dart';
-import 'package:airspothealth/features/device_settings/providers/firmware_remote_version_provider.dart';
 import 'package:airspothealth/features/device_settings/providers/sensor_error_provider.dart';
-import 'package:airspothealth/features/devices/widgets/device_alias_editor.dart';
 import 'package:airspothealth/features/devices/widgets/device_battery_level_widget.dart';
 import 'package:airspothealth/features/devices/widgets/device_value_widget.dart';
 import 'package:airspothealth/features/report_issue/providers/issue_reporting_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_blue_plus/flutter_blue_plus.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:go_router/go_router.dart';
 
 class BleDeviceWidget extends ConsumerWidget {
@@ -35,9 +29,6 @@ class BleDeviceWidget extends ConsumerWidget {
     final BluetoothBondState deviceConnectionState =
         ref.watch(bleDeviceConnectionProvider(bleDevice.deviceId));
 
-    final AsyncValue<RemoteVersion?> remoteVersion =
-        ref.watch(firmwareRemoteVersionProvider);
-
     final bool deviceConnected =
         deviceConnectionState == BluetoothBondState.bonded;
 
@@ -47,19 +38,18 @@ class BleDeviceWidget extends ConsumerWidget {
         duration: const Duration(milliseconds: 300),
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: AppColors.surface,
           borderRadius: BorderRadius.circular(16),
           border: Border.all(
             color: deviceConnected
-                ? AppColors.primaryColor.withValues(alpha: 0.3)
-                : AppColors.neutralGrey,
-            width: 1,
+                ? AppColors.primaryColor.withValues(alpha: 0.25)
+                : AppColors.dividerLight,
           ),
-          boxShadow: [
+          boxShadow: const [
             BoxShadow(
-              color: Colors.black.withValues(alpha: 0.05),
-              blurRadius: 10,
-              offset: const Offset(0, 2),
+              color: AppColors.shadowPrimary,
+              blurRadius: 8,
+              offset: Offset(0, 2),
             ),
           ],
         ),
@@ -183,54 +173,6 @@ class BleDeviceWidget extends ConsumerWidget {
     );
   }
 
-  Widget _buildConnectionRow(WidgetRef ref,
-      BluetoothBondState deviceConnectionState, bool deviceConnected) {
-    if (deviceConnected) {
-      return Row(children: _getConnectedWidgets(ref));
-    } else {
-      return ConnectButtonRow(
-          deviceId: bleDevice.deviceId, bondState: deviceConnectionState);
-    }
-  }
-
-  Widget _buildDeviceInfoRow(BuildContext context, WidgetRef ref,
-      bool deviceConnected, AsyncValue<RemoteVersion?> remoteVersion) {
-    return Row(
-      children: [
-        Text(
-          deviceConnected
-              ? bleDevice.name
-              : (bleDevice.alias == null || bleDevice.alias == "Airspot")
-                  ? bleDevice.name
-                  : bleDevice.alias!,
-          style: context.textTheme.labelLarge,
-        ),
-        if (deviceConnected &&
-            remoteVersion is AsyncData<RemoteVersion?> &&
-            remoteVersion.value != null &&
-            AppUtils.isVersionGreater(
-                bleDevice.firmwareVersion, remoteVersion.value!.versionName))
-          Expanded(
-            child: GestureDetector(
-              onTap: () {
-                context.pushNamed(
-                  RouteNames.deviceUpdate,
-                  pathParameters: {'deviceId': bleDevice.deviceId},
-                );
-              },
-              child: Text(
-                'Tap to update firmware',
-                style: context.textTheme.labelLarge?.copyWith(
-                  color: AppColors.brandColorRed,
-                ),
-                textAlign: TextAlign.end,
-              ),
-            ),
-          ),
-      ],
-    );
-  }
-
   void _showForgetDeviceSheet(WidgetRef ref, String deviceId) {
     showModalBottomSheet(
       context: ref.context,
@@ -250,12 +192,12 @@ class BleDeviceWidget extends ConsumerWidget {
                   ),
                 ),
                 const SizedBox(height: 12),
-                const Text(
+                Text(
                   'Are you sure you want to forget this device?',
-                  style: TextStyle(
-                    fontSize: 16,
-                    color: AppColors.neutralGrey,
-                  ),
+                  style: Theme.of(context)
+                      .textTheme
+                      .bodyMedium
+                      ?.copyWith(color: AppColors.textSecondary),
                 ),
                 const SizedBox(height: 12),
                 Button(
@@ -309,82 +251,6 @@ class BleDeviceWidget extends ConsumerWidget {
     );
   }
 
-  List<Widget> _getConnectedWidgets(WidgetRef ref) {
-    return [
-      GestureDetector(
-        onTap: () =>
-            _showDeviceAliasDialog(ref, bleDevice.deviceId, bleDevice.alias),
-        child: const FaIcon(
-          FontAwesomeIcons.solidPenToSquare,
-          color: AppColors.primaryColor,
-          size: 16,
-        ),
-      ),
-      const SizedBox(width: 6),
-      Expanded(
-        child: Text(
-          bleDevice.alias ?? 'No Nickname',
-          style: ref.context.textTheme.labelLarge?.copyWith(
-            color: bleDevice.alias == null
-                ? AppColors.neutralGrey
-                : AppColors.textSecondary,
-          ),
-        ),
-      ),
-      Text(
-        'connected',
-        style: ref.context.textTheme.labelLarge
-            ?.copyWith(color: AppColors.brandColorGreen),
-      ),
-      const SizedBox(width: 8),
-      GestureDetector(
-        onTap: () => ref.context.pushNamed(
-          RouteNames.deviceGraph,
-          pathParameters: {'deviceId': bleDevice.deviceId},
-        ),
-        child: Image.asset(
-          Assets.deviceGraph,
-          width: 28,
-          errorBuilder: (context, error, stackTrace) {
-            return const Icon(
-              Icons.line_axis,
-              size: 28,
-            );
-          },
-        ),
-      ),
-      const SizedBox(width: 12),
-      GestureDetector(
-        onTap: () => ref.context.pushNamed(
-          RouteNames.deviceSettings,
-          pathParameters: {'deviceId': bleDevice.deviceId},
-        ),
-        child: Image.asset(
-          Assets.deviceSettings,
-          width: 28,
-          errorBuilder: (context, error, stackTrace) {
-            return const Icon(
-              Icons.settings,
-              size: 28,
-            );
-          },
-        ),
-      ),
-      const SizedBox(width: 8),
-    ];
-  }
-
-  void _showDeviceAliasDialog(WidgetRef ref, String deviceId, String? alias) {
-    showModalBottomSheet(
-      context: ref.context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (context) => DeviceAliasEditor(
-        deviceId: deviceId,
-        currentAlias: alias,
-      ),
-    );
-  }
 }
 
 class ConnectButtonRow extends ConsumerWidget {
@@ -431,16 +297,20 @@ class ConnectButtonRow extends ConsumerWidget {
                   .connect();
             },
             child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              padding:
+                  const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
               decoration: BoxDecoration(
                 color: AppColors.primaryColor,
-                borderRadius: BorderRadius.circular(5),
+                borderRadius: BorderRadius.circular(12),
               ),
               child: Text(
                 bondState == BluetoothBondState.bonding
                     ? 'Connecting...'
                     : 'Connect',
-                style: TextStyle(color: Colors.white),
+                style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 14,
+                    fontWeight: FontWeight.w500),
               ),
             ),
           ),

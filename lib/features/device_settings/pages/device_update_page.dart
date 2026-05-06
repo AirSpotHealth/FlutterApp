@@ -45,7 +45,7 @@ class _DeviceUpdatePageState extends ConsumerState<DeviceUpdatePage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.backgroundSecondary,
+      backgroundColor: AppColors.surfaceBackground,
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
@@ -104,7 +104,7 @@ class _DeviceUpdatePageState extends ConsumerState<DeviceUpdatePage> {
 
   // allow zip file to be uploaded
   void _showLocalFilePicker(WidgetRef ref, String deviceId) {
-    FilePicker.platform.pickFiles(
+    FilePicker.pickFiles(
       type: FileType.custom,
       allowedExtensions: ['zip'],
     ).then((result) {

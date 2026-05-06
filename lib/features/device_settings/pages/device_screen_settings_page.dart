@@ -34,7 +34,7 @@ class _DeviceScreenSettingsPageState
     final deviceSettings = ref.watch(deviceSettingsProvider(widget.deviceId));
 
     return Scaffold(
-      backgroundColor: AppColors.backgroundSecondary,
+      backgroundColor: AppColors.surfaceBackground,
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,

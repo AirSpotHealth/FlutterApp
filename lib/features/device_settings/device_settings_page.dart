@@ -87,32 +87,18 @@ class _DeviceSettingsPageState extends ConsumerState<DeviceSettingsPage>
         .isConnected;
 
     return Scaffold(
-      backgroundColor: AppColors.backgroundSecondary,
+      backgroundColor: AppColors.surfaceBackground,
       appBar: AppBar(
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        scrolledUnderElevation: 0,
-        leading: Padding(
-          padding: const EdgeInsets.all(8.0),
-          child: CircleAvatar(
-            backgroundColor: AppColors.backgroundPrimary,
-            child: IconButton(
-              icon: const Icon(Icons.arrow_back_ios_new,
-                  color: Colors.black54, size: 20),
-              onPressed: () => context.pop(),
-            ),
-          ),
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back_ios_new, size: 18),
+          onPressed: () => context.pop(),
         ),
         centerTitle: true,
         title: Column(
           children: [
             Text(
               device.alias ?? device.name,
-              style: const TextStyle(
-                color: Colors.black87,
-                fontSize: 16,
-                fontWeight: FontWeight.w600,
-              ),
+              style: Theme.of(context).textTheme.titleMedium,
             ),
             const SizedBox(height: 2),
             Text(
@@ -123,35 +109,25 @@ class _DeviceSettingsPageState extends ConsumerState<DeviceSettingsPage>
                     : AppColors.brandColorRed,
                 fontSize: 10,
                 fontWeight: FontWeight.w600,
-                letterSpacing: 1.0,
+                letterSpacing: 0.8,
               ),
             ),
             const SizedBox(height: 1),
             Text(
               (device.deviceModel ?? DeviceModel.fromDeviceName(device.name))
                   .displayName,
-              style: const TextStyle(
-                color: Colors.black38,
-                fontSize: 10,
-                fontWeight: FontWeight.w500,
-              ),
+              style: Theme.of(context).textTheme.labelSmall,
             ),
           ],
         ),
         actions: [
           if (devMode)
-            Padding(
-              padding: const EdgeInsets.only(right: 8.0),
-              child: CircleAvatar(
-                backgroundColor: AppColors.backgroundPrimary,
-                child: IconButton(
-                  icon: const Icon(Icons.more_horiz, color: Colors.black54),
-                  onPressed: () {
-                    context.pushNamed(RouteNames.dataLog,
-                        pathParameters: {'deviceId': widget.deviceId});
-                  },
-                ),
-              ),
+            IconButton(
+              icon: const Icon(Icons.more_horiz),
+              onPressed: () {
+                context.pushNamed(RouteNames.dataLog,
+                    pathParameters: {'deviceId': widget.deviceId});
+              },
             ),
         ],
       ),

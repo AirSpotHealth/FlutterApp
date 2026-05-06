@@ -35,19 +35,18 @@ class BleNewDeviceItem extends ConsumerWidget {
             DeviceModel.airspotScreen;
 
     return ListTile(
-      dense: true,
       key: ValueKey(device.remoteId),
       shape: RoundedRectangleBorder(
-        borderRadius: const BorderRadius.all(Radius.circular(10)),
+        borderRadius: const BorderRadius.all(Radius.circular(12)),
         side: deviceStatus == BluetoothBondState.bonded
-            ? const BorderSide(color: AppColors.primaryColor, width: 1)
-            : BorderSide.none,
+            ? const BorderSide(color: AppColors.primaryColor)
+            : const BorderSide(color: AppColors.dividerLight),
       ),
-      tileColor: Colors.white,
+      tileColor: AppColors.surface,
       title: Text(device.platformName),
       subtitle: Text(
         device.advName,
-        style: const TextStyle(color: AppColors.neutralGrey),
+        style: const TextStyle(color: AppColors.textSecondary, fontSize: 12),
       ),
       leading: DeviceModelIcon(model: detectedModel),
       trailing: DeviceConnectButton(deviceId: device.remoteId.str),

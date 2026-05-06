@@ -58,51 +58,74 @@ class _HomePageState extends ConsumerState<HomePage> {
     final savedDevices = ref.watch(bleSavedDevicesProvider);
 
     return Scaffold(
-      backgroundColor: AppColors.backgroundSecondary,
+      backgroundColor: AppColors.surfaceBackground,
       body: CustomScrollView(
         slivers: [
-          // Header with greeting
+          // Clean top app bar
+          SliverAppBar(
+            backgroundColor: AppColors.surface,
+            surfaceTintColor: Colors.transparent,
+            elevation: 0,
+            scrolledUnderElevation: 0,
+            pinned: false,
+            floating: true,
+            toolbarHeight: 60,
+            title: const AppLogo(testEnabled: true),
+            actions: [
+              IconButton(
+                icon: const Icon(Icons.person_outline,
+                    color: AppColors.textPrimary),
+                onPressed: () => context.pushNamed(RouteNames.appSetup),
+              ),
+            ],
+          ),
+
+          // Greeting banner
           SliverToBoxAdapter(
             child: Container(
-              decoration: const BoxDecoration(
-                color: AppColors.primaryColor,
-                borderRadius: BorderRadius.only(
-                  bottomLeft: Radius.circular(24),
-                  bottomRight: Radius.circular(24),
+              margin: const EdgeInsets.fromLTRB(16, 8, 16, 0),
+              padding: const EdgeInsets.all(20),
+              decoration: BoxDecoration(
+                gradient: const LinearGradient(
+                  colors: [AppColors.primaryColor, AppColors.primaryColorDark],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
                 ),
+                borderRadius: BorderRadius.circular(20),
               ),
-              padding: const EdgeInsets.fromLTRB(20, 60, 20, 24),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+              child: Row(
                 children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      const AppLogo(testEnabled: true),
-                      IconButton(
-                        icon: const Icon(Icons.person, color: Colors.white),
-                        onPressed: () {
-                          context.pushNamed(RouteNames.appSetup);
-                        },
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 24),
-                  Text(
-                    'Hello, ${_getUserName()}!',
-                    style: const TextStyle(
-                      fontSize: 28,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.white,
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Hello, ${_getUserName()}!',
+                          style: const TextStyle(
+                            fontSize: 22,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.white,
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        const Text(
+                          'Here is your home update.',
+                          style: TextStyle(
+                            fontSize: 14,
+                            color: Colors.white70,
+                          ),
+                        ),
+                      ],
                     ),
                   ),
-                  const SizedBox(height: 8),
-                  const Text(
-                    'Here is your home update.',
-                    style: TextStyle(
-                      fontSize: 16,
-                      color: Colors.white70,
+                  Container(
+                    width: 48,
+                    height: 48,
+                    decoration: BoxDecoration(
+                      color: Colors.white.withValues(alpha: 0.2),
+                      borderRadius: BorderRadius.circular(12),
                     ),
+                    child: const Icon(Icons.air, color: Colors.white, size: 28),
                   ),
                 ],
               ),
@@ -112,7 +135,7 @@ class _HomePageState extends ConsumerState<HomePage> {
           // My Devices Card
           SliverToBoxAdapter(
             child: Padding(
-              padding: const EdgeInsets.all(16),
+              padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
               child: _buildMyDevicesCard(context, savedDevices),
             ),
           ),
@@ -120,7 +143,7 @@ class _HomePageState extends ConsumerState<HomePage> {
           // Feature Cards Grid
           SliverToBoxAdapter(
             child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
+              padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
               child: _buildFeatureGrid(context),
             ),
           ),
@@ -134,7 +157,7 @@ class _HomePageState extends ConsumerState<HomePage> {
           ),
 
           const SliverToBoxAdapter(
-            child: SizedBox(height: 24),
+            child: SizedBox(height: 32),
           ),
         ],
       ),
@@ -153,13 +176,14 @@ class _HomePageState extends ConsumerState<HomePage> {
       child: Container(
         padding: const EdgeInsets.all(20),
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: AppColors.surface,
           borderRadius: BorderRadius.circular(16),
-          boxShadow: [
+          border: Border.all(color: AppColors.dividerLight),
+          boxShadow: const [
             BoxShadow(
-              color: Colors.black.withValues(alpha: 0.05),
-              blurRadius: 10,
-              offset: const Offset(0, 2),
+              color: AppColors.shadowPrimary,
+              blurRadius: 8,
+              offset: Offset(0, 2),
             ),
           ],
         ),
@@ -235,11 +259,10 @@ class _HomePageState extends ConsumerState<HomePage> {
 
   Widget _buildDevicePreview(
       BuildContext context, BleDevice device, int index) {
-    // This is a simplified preview - will be enhanced with actual device data
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: AppColors.backgroundSecondary,
+        color: AppColors.surfaceBackground,
         borderRadius: BorderRadius.circular(12),
       ),
       child: Column(
@@ -355,13 +378,14 @@ class _HomePageState extends ConsumerState<HomePage> {
       child: Container(
         padding: EdgeInsets.all(isLarge ? 20 : 16),
         decoration: BoxDecoration(
-          color: isLarge ? AppColors.primaryColor : Colors.white,
+          color: isLarge ? AppColors.primaryColor : AppColors.surface,
           borderRadius: BorderRadius.circular(16),
-          boxShadow: [
+          border: isLarge ? null : Border.all(color: AppColors.dividerLight),
+          boxShadow: const [
             BoxShadow(
-              color: Colors.black.withValues(alpha: 0.05),
-              blurRadius: 10,
-              offset: const Offset(0, 2),
+              color: AppColors.shadowPrimary,
+              blurRadius: 8,
+              offset: Offset(0, 2),
             ),
           ],
         ),
@@ -413,13 +437,14 @@ class _HomePageState extends ConsumerState<HomePage> {
       child: Container(
         padding: const EdgeInsets.all(20),
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: AppColors.surface,
           borderRadius: BorderRadius.circular(16),
-          boxShadow: [
+          border: Border.all(color: AppColors.dividerLight),
+          boxShadow: const [
             BoxShadow(
-              color: Colors.black.withValues(alpha: 0.05),
-              blurRadius: 10,
-              offset: const Offset(0, 2),
+              color: AppColors.shadowPrimary,
+              blurRadius: 8,
+              offset: Offset(0, 2),
             ),
           ],
         ),

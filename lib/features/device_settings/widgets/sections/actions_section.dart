@@ -6,6 +6,7 @@ import 'package:airspothealth/core/providers/device_settings_provider.dart';
 import 'package:airspothealth/core/theme/app_colors.dart';
 import 'package:airspothealth/core/utils/assets.dart';
 import 'package:airspothealth/core/utils/device_cmd_utils.dart';
+import 'package:airspothealth/core/widgets/section_header.dart';
 import 'package:airspothealth/features/add_device/providers/ble_device_connection_provider.dart';
 import 'package:airspothealth/features/device_settings/widgets/settings_card.dart';
 import 'package:airspothealth/features/device_settings/widgets/settings_tile.dart';
@@ -32,23 +33,13 @@ class ActionsSection extends ConsumerWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Padding(
-          padding: const EdgeInsets.only(left: 4, bottom: 12),
-          child: Text(
-            'ACTIONS',
-            style: const TextStyle(
-              color: Colors.grey,
-              fontSize: 12,
-              fontWeight: FontWeight.bold,
-              letterSpacing: 1.0,
-            ),
-          ),
-        ),
+        const SectionHeader(title: 'Actions'),
         SettingsCard(
           children: [
             SettingsTile(
               assetPath: Assets.flightMode,
               iconBgColor: AppColors.brandColorAmber.withValues(alpha: 0.1),
+              iconColor: AppColors.brandColorAmber,
               title: 'Flight Mode',
               action: Row(
                 mainAxisSize: MainAxisSize.min,
@@ -94,7 +85,8 @@ class ActionsSection extends ConsumerWidget {
             ),
             SettingsTile(
               assetPath: Assets.disconnectIcon,
-              iconBgColor: Colors.transparent,
+              iconBgColor: AppColors.brandColorRed.withValues(alpha: 0.1),
+              iconColor: AppColors.brandColorRed,
               title: 'Disconnect Device',
               onTap: () {
                 ref
@@ -103,11 +95,12 @@ class ActionsSection extends ConsumerWidget {
                 context.pop();
               },
               action: const Icon(Icons.arrow_forward_ios,
-                  size: 14, color: Colors.grey),
+                  size: 14, color: AppColors.textTertiary),
             ),
             SettingsTile(
               assetPath: Assets.forgetIcon,
-              iconBgColor: Colors.transparent,
+              iconBgColor: AppColors.brandColorRed.withValues(alpha: 0.08),
+              iconColor: AppColors.brandColorRed,
               title: 'Forget This Device',
               isLast: true,
               onTap: () {
@@ -125,7 +118,7 @@ class ActionsSection extends ConsumerWidget {
                 );
               },
               action: const Icon(Icons.arrow_forward_ios,
-                  size: 14, color: Colors.grey),
+                  size: 14, color: AppColors.textTertiary),
             ),
           ],
         ),
@@ -150,23 +143,24 @@ class ActionsSection extends ConsumerWidget {
             width: double.infinity,
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              color: AppColors.backgroundPrimary,
+              color: AppColors.surface,
               borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: Colors.grey.shade200),
-              boxShadow: [
+              border: Border.all(color: AppColors.dividerLight),
+              boxShadow: const [
                 BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.02),
-                  blurRadius: 10,
-                  offset: const Offset(0, 2),
+                  color: AppColors.shadowPrimary,
+                  blurRadius: 8,
+                  offset: Offset(0, 2),
                 ),
               ],
             ),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Icon(Icons.power_settings_new, color: AppColors.brandColorRed),
+                const Icon(Icons.power_settings_new,
+                    color: AppColors.brandColorRed),
                 const SizedBox(width: 8),
-                Text(
+                const Text(
                   'Power Off Device',
                   style: TextStyle(
                     color: AppColors.brandColorRed,

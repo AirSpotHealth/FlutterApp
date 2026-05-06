@@ -3,7 +3,9 @@ import 'package:airspothealth/core/providers/ble_device_communication_provider.d
 import 'package:airspothealth/core/providers/ble_saved_devices_provider.dart';
 import 'package:airspothealth/core/providers/isar_service_provider.dart';
 import 'package:airspothealth/core/router/route_names.dart';
+import 'package:airspothealth/core/theme/app_colors.dart';
 import 'package:airspothealth/core/utils/device_cmd_utils.dart';
+import 'package:airspothealth/core/widgets/section_header.dart';
 import 'package:airspothealth/features/device_graph/providers/device_history_data_request_provider.dart';
 import 'package:airspothealth/features/device_settings/widgets/device_data_dump_widget.dart';
 import 'package:airspothealth/features/device_settings/widgets/device_variant_widget.dart';
@@ -29,31 +31,20 @@ class DeveloperSection extends ConsumerWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Padding(
-          padding: const EdgeInsets.only(left: 4, bottom: 12),
-          child: Text(
-            'DEVELOPER SETTINGS',
-            style: const TextStyle(
-              color: Colors.grey,
-              fontSize: 12,
-              fontWeight: FontWeight.bold,
-              letterSpacing: 1.0,
-            ),
-          ),
-        ),
+        const SectionHeader(title: 'Developer Settings'),
         SettingsCard(
           children: [
             SettingsTile(
               icon: Icons.settings_input_component,
-              iconColor: Colors.grey,
-              iconBgColor: Colors.transparent,
+              iconColor: AppColors.indigo,
+              iconBgColor: AppColors.indigo.withValues(alpha: 0.1),
               title: 'Sensor Configuration',
               onTap: () {
                 context.pushNamed(RouteNames.sensorConfiguration,
                     pathParameters: {'deviceId': deviceId});
               },
               action: const Icon(Icons.arrow_forward_ios,
-                  size: 14, color: Colors.grey),
+                  size: 14, color: AppColors.textTertiary),
             ),
             Container(
                 padding: const EdgeInsets.all(16),
@@ -105,8 +96,8 @@ class DeveloperSection extends ConsumerWidget {
       onTap: onTap,
       child: Container(
         padding: const EdgeInsets.symmetric(vertical: 12),
-        decoration: BoxDecoration(
-            border: Border(bottom: BorderSide(color: Colors.grey.shade200))),
+        decoration: const BoxDecoration(
+            border: Border(bottom: BorderSide(color: AppColors.dividerLight))),
         child: Row(
           children: [
             Icon(icon, size: 20),

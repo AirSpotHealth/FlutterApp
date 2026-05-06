@@ -1,7 +1,9 @@
 import 'package:airspothealth/core/providers/app_notification_preferences_provider.dart';
 import 'package:airspothealth/core/router/route_names.dart';
+import 'package:airspothealth/core/theme/app_colors.dart';
 import 'package:airspothealth/core/utils/assets.dart';
 import 'package:airspothealth/core/utils/extensions.dart';
+import 'package:airspothealth/core/widgets/section_header.dart';
 import 'package:airspothealth/features/app_setup/providers/dev_mode_provider.dart';
 import 'package:airspothealth/features/device_settings/models/setting_item.dart';
 import 'package:airspothealth/features/device_settings/widgets/setting_item_widget.dart';
@@ -43,7 +45,6 @@ class AppSetupPage extends ConsumerWidget {
     final notificationPrefs = ref.watch(appNotificationPreferencesProvider);
 
     return Scaffold(
-      backgroundColor: Colors.grey[100],
       appBar: AppBar(
         title: const Text('Settings'),
       ),
@@ -64,25 +65,7 @@ class AppSetupPage extends ConsumerWidget {
 
           const SizedBox(height: 16),
 
-          // Notification Preferences Section Header
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 2, vertical: 6),
-            child: Row(
-              children: [
-                const Icon(Icons.notifications_outlined,
-                    size: 18, color: Colors.grey),
-                const SizedBox(width: 6),
-                Text(
-                  'Notification Preferences',
-                  style: context.textTheme.bodyMedium?.copyWith(
-                    fontWeight: FontWeight.w600,
-                    fontSize: 14,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(height: 6),
+          const SectionHeader(title: 'Notification Preferences'),
 
           _buildNotificationToggle(
             context,
@@ -148,37 +131,26 @@ class AppSetupPage extends ConsumerWidget {
   }) {
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(8),
-        boxShadow: [
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: AppColors.dividerLight),
+        boxShadow: const [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.05),
+            color: AppColors.shadowPrimary,
             blurRadius: 6,
-            offset: const Offset(0, 1),
+            offset: Offset(0, 2),
           ),
         ],
       ),
       child: ListTile(
-        contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 0),
+        contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 2),
         leading: Icon(
           icon,
           size: 20,
-          color: value ? context.theme.primaryColor : Colors.grey,
+          color: value ? AppColors.primaryColor : AppColors.textTertiary,
         ),
-        title: Text(
-          title,
-          style: const TextStyle(
-            fontSize: 14,
-            fontWeight: FontWeight.w500,
-          ),
-        ),
-        subtitle: Text(
-          subtitle,
-          style: const TextStyle(
-            fontSize: 11,
-            color: Colors.grey,
-          ),
-        ),
+        title: Text(title, style: Theme.of(context).textTheme.titleSmall),
+        subtitle: Text(subtitle, style: Theme.of(context).textTheme.labelMedium),
         trailing: Switch(
           value: value,
           onChanged: onChanged,

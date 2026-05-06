@@ -1,3 +1,4 @@
+import 'package:airspothealth/core/theme/app_colors.dart';
 import 'package:flutter/material.dart';
 
 class SettingsCard extends StatelessWidget {
@@ -10,14 +11,14 @@ class SettingsCard extends StatelessWidget {
     return Container(
       clipBehavior: Clip.antiAlias,
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: AppColors.surface,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.grey.shade200),
-        boxShadow: [
+        border: Border.all(color: AppColors.dividerLight),
+        boxShadow: const [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.02),
-            blurRadius: 10,
-            offset: const Offset(0, 2),
+            color: AppColors.shadowPrimary,
+            blurRadius: 8,
+            offset: Offset(0, 2),
           ),
         ],
       ),

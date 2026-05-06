@@ -3,6 +3,7 @@ import 'package:airspothealth/core/providers/device_settings_provider.dart';
 import 'package:airspothealth/core/router/route_names.dart';
 import 'package:airspothealth/core/theme/app_colors.dart';
 import 'package:airspothealth/core/utils/assets.dart';
+import 'package:airspothealth/core/widgets/section_header.dart';
 import 'package:airspothealth/features/device_settings/widgets/settings_card.dart';
 import 'package:airspothealth/features/device_settings/widgets/settings_tile.dart';
 import 'package:flutter/material.dart';
@@ -30,18 +31,7 @@ class DeviceControlsSection extends ConsumerWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Padding(
-          padding: const EdgeInsets.only(left: 4, bottom: 12),
-          child: Text(
-            'DEVICE CONTROLS',
-            style: const TextStyle(
-              color: Colors.grey,
-              fontSize: 12,
-              fontWeight: FontWeight.bold,
-              letterSpacing: 1.0,
-            ),
-          ),
-        ),
+        const SectionHeader(title: 'Device Controls'),
         SettingsCard(
           children: [
             if (hasAlarm)

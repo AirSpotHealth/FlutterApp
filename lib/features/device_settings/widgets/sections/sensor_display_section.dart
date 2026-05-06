@@ -6,6 +6,7 @@ import 'package:airspothealth/core/services/live_activity_service.dart';
 import 'package:airspothealth/core/theme/app_colors.dart';
 import 'package:airspothealth/core/utils/assets.dart';
 import 'package:airspothealth/core/utils/device_cmd_utils.dart';
+import 'package:airspothealth/core/widgets/section_header.dart';
 import 'package:airspothealth/features/device_settings/widgets/settings_card.dart';
 import 'package:airspothealth/features/device_settings/widgets/settings_tile.dart';
 import 'package:flutter/material.dart';
@@ -33,24 +34,14 @@ class SensorDisplaySection extends ConsumerWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Padding(
-          padding: const EdgeInsets.only(left: 4, bottom: 12),
-          child: Text(
-            'SENSOR & DISPLAY',
-            style: const TextStyle(
-              color: Colors.grey,
-              fontSize: 12,
-              fontWeight: FontWeight.bold,
-              letterSpacing: 1.0,
-            ),
-          ),
-        ),
+        const SectionHeader(title: 'Sensor & Display'),
         SettingsCard(
           children: [
             if (supportsTimeSettings)
               SettingsTile(
                 assetPath: Assets.timeSettings,
-                iconBgColor: Colors.transparent,
+                iconBgColor: AppColors.primaryColor.withValues(alpha: 0.1),
+                iconColor: AppColors.primaryColor,
                 title: 'Time Settings',
                 onTap: () {
                   if (!_checkConnection(context, isConnected)) return;
@@ -58,12 +49,13 @@ class SensorDisplaySection extends ConsumerWidget {
                       pathParameters: {'deviceId': deviceId});
                 },
                 action: const Icon(Icons.arrow_forward_ios,
-                    size: 14, color: Colors.grey),
+                    size: 14, color: AppColors.textTertiary),
               ),
             if (deviceId.isNotEmpty)
               SettingsTile(
                 assetPath: Assets.powerModeSettings,
-                iconBgColor: Colors.transparent,
+                iconBgColor: AppColors.brandColorGreen.withValues(alpha: 0.1),
+                iconColor: AppColors.brandColorGreen,
                 title: 'CO2 Reading Rate',
                 subtitle: settings.powerMode.name,
                 onTap: () {
@@ -72,12 +64,13 @@ class SensorDisplaySection extends ConsumerWidget {
                       pathParameters: {'deviceId': deviceId});
                 },
                 action: const Icon(Icons.arrow_forward_ios,
-                    size: 14, color: Colors.grey),
+                    size: 14, color: AppColors.textTertiary),
               ),
             if (supportsScreenSettings)
               SettingsTile(
                 assetPath: Assets.screenSettings,
-                iconBgColor: Colors.transparent,
+                iconBgColor: AppColors.indigo.withValues(alpha: 0.1),
+                iconColor: AppColors.indigo,
                 title: 'Device Screen Settings',
                 onTap: () {
                   if (!_checkConnection(context, isConnected)) return;
@@ -85,17 +78,12 @@ class SensorDisplaySection extends ConsumerWidget {
                       pathParameters: {'deviceId': deviceId});
                 },
                 action: const Icon(Icons.arrow_forward_ios,
-                    size: 14, color: Colors.grey),
+                    size: 14, color: AppColors.textTertiary),
               ),
             SettingsTile(
-              icon: Icons
-                  .notifications_active, // Keep icon for notifications as requested? User said "existing icons", Assets has no notification icon other than Alarm?
-              // Wait, previous code used Icons.notifications_active with color grey.
-              // I will use icon here since I don't see a "notification_settings" asset in provided Assets list, only alarm/vibrate/dnd.
-              // Actually, user said "cant see them icons... its all appearing greyed" refers to my Assets usages.
-              // I will use Icon for now unless I find an asset.
-              iconColor: Colors.grey,
-              iconBgColor: Colors.transparent,
+              icon: Icons.notifications_active,
+              iconColor: AppColors.brandColorAmber,
+              iconBgColor: AppColors.brandColorAmber.withValues(alpha: 0.1),
               title: 'Notification Settings',
               onTap: () {
                 if (!_checkConnection(context, isConnected)) return;
@@ -103,11 +91,12 @@ class SensorDisplaySection extends ConsumerWidget {
                     pathParameters: {'deviceId': deviceId});
               },
               action: const Icon(Icons.arrow_forward_ios,
-                  size: 14, color: Colors.grey),
+                  size: 14, color: AppColors.textTertiary),
             ),
             SettingsTile(
               assetPath: Assets.liveActivity,
-              iconBgColor: Colors.transparent,
+              iconBgColor: AppColors.purple.withValues(alpha: 0.1),
+              iconColor: AppColors.purple,
               title: 'Live Activity',
               isLast: true,
               action: Switch.adaptive(

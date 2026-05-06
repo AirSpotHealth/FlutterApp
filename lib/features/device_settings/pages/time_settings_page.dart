@@ -77,7 +77,7 @@ class _TimeSettingsPageState extends ConsumerState<TimeSettingsPage> {
         ref.watch(deviceSettingsProvider(widget.deviceId)).autoSyncTime;
 
     return Scaffold(
-      backgroundColor: AppColors.backgroundSecondary,
+      backgroundColor: AppColors.surfaceBackground,
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
