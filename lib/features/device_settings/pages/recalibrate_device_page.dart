@@ -1,7 +1,8 @@
+import 'package:airspothealth/core/models/device_model.dart';
 import 'package:airspothealth/core/models/device_settings.dart';
+import 'package:airspothealth/core/providers/ble_saved_devices_provider.dart';
 import 'package:airspothealth/core/providers/device_settings_provider.dart';
 import 'package:airspothealth/core/theme/app_colors.dart';
-import 'package:airspothealth/core/utils/assets.dart';
 import 'package:airspothealth/core/utils/extensions.dart';
 import 'package:airspothealth/core/widgets/button.dart';
 import 'package:airspothealth/features/device_settings/models/progress_model.dart';
@@ -11,8 +12,6 @@ import 'package:airspothealth/features/device_settings/widgets/altitude_pressure
 import 'package:airspothealth/features/device_settings/widgets/device_settings_name_widget.dart';
 import 'package:airspothealth/features/device_settings/widgets/manual_calibration_widget.dart';
 import 'package:airspothealth/features/device_settings/widgets/next_calibration_date_widget.dart';
-import 'package:airspothealth/features/device_settings/widgets/settings_card.dart';
-import 'package:airspothealth/features/device_settings/widgets/settings_tile.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -44,22 +43,22 @@ class RecalibrateDevicePage extends ConsumerWidget {
         ref.watch(deviceSettingsProvider(deviceId));
     final AsyncProgressValue calibrationStatus =
         ref.watch(recalibrationTimeProvider(deviceId));
+    final bool isSlim =
+        ref.read(bleSavedDevicesProvider.notifier).getDeviceById(deviceId)?.deviceModel ==
+        DeviceModel.airspotSlim;
 
     debugPrint("CALIB TARGET: ${deviceSettings.recalibrationTarget}");
 
     return Scaffold(
-      backgroundColor: AppColors.surfaceBackground,
+      backgroundColor: Colors.white,
       appBar: AppBar(
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        scrolledUnderElevation: 0,
         title: DeviceSettingsNameWidget(
           deviceId: deviceId,
           suffixText: 'Calibrate',
         ),
       ),
       body: calibrationStatus.isNone
-          ? _buildCalibrationSettings(calibrationStatus, deviceSettings, ref)
+          ? _buildCalibrationSettings(calibrationStatus, deviceSettings, ref, isSlim: isSlim)
           : _buildCalibrationStatusWidget(
               calibrationStatus, deviceSettings, ref),
     );
@@ -68,81 +67,54 @@ class RecalibrateDevicePage extends ConsumerWidget {
   Widget _buildCalibrationSettings(
     AsyncProgressValue calibrationStatus,
     DeviceSettings deviceSettings,
-    WidgetRef ref,
-  ) {
+    WidgetRef ref, {
+    required bool isSlim,
+  }) {
     return ListView(
       padding: const EdgeInsets.all(16),
       physics: const AlwaysScrollableScrollPhysics(),
       shrinkWrap: true,
       children: [
-        SettingsCard(
-          children: [
-            SettingsTile(
-              assetPath: Assets.recalibrateSettings,
-              iconBgColor: AppColors.brandColorGreen.withValues(alpha: 0.1),
-              title: 'Auto Calibration',
-              subtitle:
-                  'Automatically calibrate the sensor based on the lowest CO₂ reading in the previous 7 days.',
-              isLast: !deviceSettings.autoCalibration,
-              action: Switch.adaptive(
-                value: deviceSettings.autoCalibration,
-                activeThumbColor: AppColors.primaryColor,
-                onChanged: calibrationStatus.isInProgress
-                    ? null
-                    : (value) {
-                        ref
-                            .read(deviceSettingsProvider(deviceId).notifier)
-                            .updateSettings(deviceSettings.copyWith(
-                                autoCalibration: value));
-                      },
-              ),
+        if (!isSlim) ...[
+          SwitchListTile(
+            contentPadding: EdgeInsets.zero,
+            title: const Text('Auto Calibration',
+                style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold)),
+            subtitle: const Text(
+              'Automatically calibrate the sensor based on the lowest CO₂ reading in the previous 7 days.',
+              style: TextStyle(fontSize: 12, color: Colors.black),
             ),
-            if (deviceSettings.autoCalibration)
-              Padding(
-                padding: const EdgeInsets.all(16.0),
-                child: NextCalibrationDateWidget(deviceId: deviceId),
-              ),
-          ],
-        ),
-        const SizedBox(height: 12),
-        const Padding(
-          padding: EdgeInsets.symmetric(horizontal: 4),
-          child: Text(
-            'If Auto Calibration is enabled, AirSpot will calibrate itself on the assumption that it has made measurements in fresh air at least once a week. It is usually best to leave this OFF unless you are sure AirSpot will be measuring fresh air at least every few days. See full manual for details.',
-            style: TextStyle(fontSize: 12, color: Colors.grey),
+            value: deviceSettings.autoCalibration,
+            onChanged: calibrationStatus.isInProgress
+                ? null
+                : (value) {
+                    ref
+                        .read(deviceSettingsProvider(deviceId).notifier)
+                        .updateSettings(
+                            deviceSettings.copyWith(autoCalibration: value));
+                  },
           ),
+          const SizedBox(height: 4),
+          Text(
+            'If Auto Calibration is enabled, AirSpot will calibrate itself on the assumption that it has made measurements in fresh air at least once a week. It is usually best to leave this OFF unless you are sure AirSpot will be measuring fresh air at least every few days. See full manual for details.',
+            style: TextStyle(fontSize: 12, color: Colors.black),
+          ),
+          if (deviceSettings.autoCalibration)
+            NextCalibrationDateWidget(deviceId: deviceId),
+          const SizedBox(height: 8),
+          const Divider(),
+        ],
+        ManualCalibrationWidget(
+          deviceId: deviceId,
+          calibrationTarget: deviceSettings.recalibrationTarget,
         ),
-        const SizedBox(height: 24),
-        SettingsCard(
-          children: [
-            Padding(
-              padding: const EdgeInsets.all(16.0),
-              child: ManualCalibrationWidget(
-                deviceId: deviceId,
-                calibrationTarget: deviceSettings.recalibrationTarget,
-              ),
-            ),
-          ],
-        ),
-        const SizedBox(height: 24),
-        SettingsCard(
-          children: [
-            Padding(
-              padding: const EdgeInsets.all(16.0),
-              child: AltitudePressureScalingWidget(deviceId: deviceId),
-            ),
-          ],
-        ),
-        const SizedBox(height: 24),
-        SettingsCard(
-          children: [
-            Padding(
-              padding: const EdgeInsets.all(16.0),
-              child: ResetSensorWidget(deviceId: deviceId),
-            ),
-          ],
-        ),
-        const SizedBox(height: 20),
+        if (!isSlim) ...[
+          const Divider(),
+          AltitudePressureScalingWidget(deviceId: deviceId),
+          const SizedBox(height: 8),
+        ],
+        const Divider(),
+        ResetSensorWidget(deviceId: deviceId),
       ],
     );
   }
@@ -253,32 +225,30 @@ class ResetSensorWidget extends ConsumerWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       mainAxisSize: MainAxisSize.min,
       children: [
-        const Text(
-          'Reset Sensor',
-          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-        ),
-        const SizedBox(height: 4),
-        const Text(
-          "If you are experiencing issues with your AirSpot's accuracy, you can reset the sensor to its factory settings. This will erase all calibration data and settings.",
-          style: TextStyle(fontSize: 12, color: Colors.black54),
-        ),
-        const SizedBox(height: 16),
-        SizedBox(
-          width: double.infinity,
-          child: Button(
-            disabled: resetSensorStatus.isInProgress,
-            backgroundColor: AppColors.brandColorRed,
-            onPressed: () {
-              if (resetSensorStatus.isInProgress) return;
-
-              ref
-                  .read(deviceSensorResetProvider(deviceId).notifier)
-                  .resetSensor();
-            },
-            child: resetSensorStatus.isInProgress
-                ? const CupertinoActivityIndicator(color: Colors.white)
-                : const Text('Reset Sensor'),
+        ListTile(
+          title: Text(
+            'Reset Sensor',
+            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
           ),
+          subtitle: const Text(
+            "If you are experiencing issues with your AirSpot's accuracy, you can reset the sensor to its factory settings. This will erase all calibration data and settings.",
+            style: TextStyle(fontSize: 12, color: Colors.black),
+          ),
+          contentPadding: EdgeInsets.zero,
+        ),
+        Button(
+          disabled: resetSensorStatus.isInProgress,
+          backgroundColor: AppColors.brandColorRed,
+          onPressed: () {
+            if (resetSensorStatus.isInProgress) return;
+
+            ref
+                .read(deviceSensorResetProvider(deviceId).notifier)
+                .resetSensor();
+          },
+          child: resetSensorStatus.isInProgress
+              ? const CupertinoActivityIndicator()
+              : const Text('Reset Sensor'),
         ),
       ],
     );

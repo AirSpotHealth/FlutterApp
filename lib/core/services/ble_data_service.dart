@@ -79,6 +79,7 @@ class BleDataService {
       ResponseCommand.locateMyAirspot: parser.parseLocateMyAirspot,
       ResponseCommand.dataEraseDone: parser.parseEraseDataDone,
       ResponseCommand.batteryLevel: parser.parseBatteryLevel,
+      ResponseCommand.lowBatteryLockout: parser.parseLowBatteryLockout,
       ResponseCommand.dndMode: (_) => null,
       ResponseCommand.populateFakeData: (_) => null,
       ResponseCommand.resetSensorResult: (_) => parser.parseOneByte(data, 4),
@@ -134,6 +135,14 @@ class BleDataService {
         ref.read(deviceDataEraseProvider(deviceId).notifier).setSuccess();
         break;
       case ResponseCommand.batteryLevel:
+        ref
+            .read(deviceBatteryLevelProvider(deviceId).notifier)
+            .updateBatteryLevel(value);
+        break;
+      case ResponseCommand.lowBatteryLockout:
+        // Device is about to drop BLE to protect a near-empty cell. Carry the
+        // lockout flag on the battery state so the UI can show a charging-wait
+        // banner instead of treating the disconnect as an error.
         ref
             .read(deviceBatteryLevelProvider(deviceId).notifier)
             .updateBatteryLevel(value);
@@ -399,6 +408,14 @@ class ResponseCommandParser {
 
   BatteryState parseBatteryLevel(List<int> data) =>
       BatteryState(data[4], data[5] == 0x01);
+
+  /// Frame: `FF AA 46 02 [battery%] [charging] CKSUM`. Marks the battery state
+  /// as low-battery lockout so the UI shows a charging-wait state.
+  BatteryState parseLowBatteryLockout(List<int> data) => BatteryState(
+        data.length > 4 ? data[4] : null,
+        data.length > 5 && data[5] == 0x01,
+        lowBatteryLockout: true,
+      );
 
   bool parseSetCo2Ppm(List<int> data) => _parseBoolean(data, 4);
 
@@ -929,6 +946,7 @@ enum ResponseCommand {
   locateMyAirspot(0x10),
   dataEraseDone(0xFD),
   batteryLevel(0x20),
+  lowBatteryLockout(0x46),
   dndMode(0x22),
   populateFakeData(0x23),
   resetSensorResult(0x24),

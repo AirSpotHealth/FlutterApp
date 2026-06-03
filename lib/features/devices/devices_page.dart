@@ -16,53 +16,51 @@ class DevicesPage extends ConsumerWidget {
     final List<BleDevice> savedDevicesList = ref.watch(bleSavedDevicesProvider);
 
     return Scaffold(
-      appBar: AppBar(
-        title: const AppLogo(),
-        actions: [
-          if (savedDevicesList.length > 3)
-            TextButton.icon(
-              onPressed: () => context.pushNamed(RouteNames.addDevice),
-              icon: const Icon(Icons.add, size: 18),
-              label: const Text('Add Device'),
-            ),
-          const SizedBox(width: 8),
-        ],
-      ),
-      body: savedDevicesList.isEmpty
-          ? Center(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(Icons.bluetooth_searching,
-                      size: 64, color: AppColors.textDisabled),
-                  const SizedBox(height: 16),
-                  Text('No devices yet',
-                      style: Theme.of(context).textTheme.titleMedium),
-                  const SizedBox(height: 8),
-                  Text('Tap Add Device to get started',
-                      style: Theme.of(context)
-                          .textTheme
-                          .bodyMedium
-                          ?.copyWith(color: AppColors.textSecondary)),
-                ],
+        appBar: AppBar(
+          backgroundColor: AppColors.primaryColor,
+          title: const Padding(
+              padding: EdgeInsets.only(top: 12), child: AppLogo()),
+          centerTitle: true,
+          actions: [
+            if (savedDevicesList.length > 3)
+              GestureDetector(
+                onTap: () => context.pushNamed(RouteNames.addDevice),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(Icons.add, size: 20),
+                    const SizedBox(width: 2),
+                    const Text(
+                      'Add Device',
+                      style: TextStyle(fontSize: 14, color: Colors.white),
+                    )
+                  ],
+                ),
               ),
-            )
-          : ListView.separated(
-              separatorBuilder: (context, index) =>
-                  const SizedBox(height: 12),
-              itemCount: savedDevicesList.length,
-              padding: const EdgeInsets.all(16),
-              physics: const AlwaysScrollableScrollPhysics(),
-              itemBuilder: (context, index) =>
-                  BleDeviceWidget(bleDevice: savedDevicesList[index]),
-            ),
-      floatingActionButton: savedDevicesList.length < 4
-          ? FloatingActionButton.extended(
-              label: const Text('Add Device'),
-              icon: const Icon(Icons.add),
-              onPressed: () => context.pushNamed(RouteNames.addDevice),
-            )
-          : null,
-    );
+            const SizedBox(width: 16),
+          ],
+        ),
+        body: savedDevicesList.isEmpty
+            ? const Center(child: Text('No devices connected'))
+            : ListView.separated(
+                separatorBuilder: (context, index) =>
+                    const SizedBox(height: 12),
+                itemCount: savedDevicesList.length,
+                padding: const EdgeInsets.all(16),
+                physics: AlwaysScrollableScrollPhysics(),
+                itemBuilder: (context, index) =>
+                    BleDeviceWidget(bleDevice: savedDevicesList[index]),
+              ),
+        floatingActionButton: savedDevicesList.length < 4
+            ? _buildAddDeviceButton(context)
+            : null);
   }
+
+  FloatingActionButton _buildAddDeviceButton(BuildContext context) =>
+      FloatingActionButton.extended(
+        label: const Text('Add Device'),
+        icon: const Icon(Icons.add),
+        onPressed: () => context.pushNamed(RouteNames.addDevice),
+      );
 }

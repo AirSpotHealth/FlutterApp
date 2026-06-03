@@ -52,6 +52,9 @@ class RouteNames {
   /// screen settings route
   static const String screenSettings = '/screen-settings';
 
+  /// Slim LED and CO₂ threshold guide (no e-ink screen)
+  static const String slimStatusLed = '/slim-status-led';
+
   /// recalibrate settings route
   static const String recalibrateSettings = '/recalibrate-settings';
 

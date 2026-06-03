@@ -122,7 +122,7 @@ class DeviceMockWidget extends ConsumerWidget {
         const Spacer(),
         Stack(
           children: [
-            const Icon(
+            const FaIcon(
               FontAwesomeIcons.batteryEmpty,
               color: Colors.white,
               size: 16,

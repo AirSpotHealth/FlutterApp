@@ -1,7 +1,8 @@
 // ignore_for_file: use_build_context_synchronously
 
-import 'package:airspothealth/core/theme/app_colors.dart';
-import 'package:airspothealth/core/utils/assets.dart';
+import 'package:airspothealth/core/models/device_capabilities.dart';
+import 'package:airspothealth/core/models/device_model.dart';
+import 'package:airspothealth/core/providers/ble_saved_devices_provider.dart';
 import 'package:airspothealth/core/utils/extensions.dart';
 import 'package:airspothealth/core/widgets/app_logo.dart';
 import 'package:airspothealth/core/widgets/tappable_widget.dart';
@@ -10,8 +11,6 @@ import 'package:airspothealth/features/device_settings/providers/firmware_remote
 import 'package:airspothealth/features/device_settings/widgets/device_firmware_update_dialog.dart';
 import 'package:airspothealth/features/device_settings/widgets/device_settings_name_widget.dart';
 import 'package:airspothealth/features/device_settings/widgets/device_version_update_widget.dart';
-import 'package:airspothealth/features/device_settings/widgets/settings_card.dart';
-import 'package:airspothealth/features/device_settings/widgets/settings_tile.dart';
 import 'package:airspothealth/features/devices/providers/device_battery_level_provider.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
@@ -39,64 +38,70 @@ class _DeviceUpdatePageState extends ConsumerState<DeviceUpdatePage> {
   }
 
   Future<void> _fetchRemoteVersion() async {
-    ref.read(firmwareRemoteVersionProvider.notifier).fetchRemoteVersion();
+    ref.read(firmwareRemoteVersionProvider(deviceId).notifier).fetchRemoteVersion();
   }
 
   @override
   Widget build(BuildContext context) {
+    final device =
+        ref.read(bleSavedDevicesProvider.notifier).getDeviceById(deviceId);
+    final caps = DeviceCapabilities.fromModel(
+      device?.deviceModel ?? DeviceModel.unknown,
+    );
+    if (!caps.supportsDeviceUpdate()) {
+      return Scaffold(
+        appBar: AppBar(
+          title: DeviceSettingsNameWidget(
+            deviceId: deviceId,
+            suffixText: 'Device Update',
+          ),
+        ),
+        body: Padding(
+          padding: const EdgeInsets.all(24),
+          child: Text(
+            'Over-the-air updates are not available for this device yet. '
+            'Firmware is updated with a J-Link programmer (see firmware README).',
+            style: Theme.of(context).textTheme.bodyLarge,
+          ),
+        ),
+      );
+    }
+
     return Scaffold(
-      backgroundColor: AppColors.surfaceBackground,
+      backgroundColor: Colors.white,
       appBar: AppBar(
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        scrolledUnderElevation: 0,
         title: DeviceSettingsNameWidget(
           deviceId: deviceId,
           suffixText: 'Device Update',
         ),
       ),
       body: RefreshIndicator.adaptive(
-        onRefresh: _fetchRemoteVersion,
+        onRefresh:
+            _fetchRemoteVersion, // refresh the remote version on pull down
         child: ListView(padding: const EdgeInsets.all(16), children: [
-          SettingsCard(
-            children: [
-              Container(
-                width: double.infinity,
-                padding: const EdgeInsets.symmetric(vertical: 24),
-                alignment: Alignment.center,
-                child: TappableWidget(
-                  onTap: () {
-                    final batteryState =
-                        ref.read(deviceBatteryLevelProvider(deviceId));
-                    if (!batteryState.isCharging &&
-                        batteryState.level != null &&
-                        batteryState.level! < 20) {
-                      context.showSnackBar(
-                          'Battery too low for updating. Please connect charger.');
-                      return;
-                    }
-                    _showLocalFilePicker(ref, deviceId);
-                  },
-                  tapCount: 8,
-                  child: const SizedBox(
-                    height: 64,
-                    child: AppLogo(),
-                  ),
-                ),
-              ),
-            ],
+          TappableWidget(
+            onTap: () {
+              final batteryState =
+                  ref.read(deviceBatteryLevelProvider(deviceId));
+              if (!batteryState.isCharging &&
+                  batteryState.level != null &&
+                  batteryState.level! < 20) {
+                context.showSnackBar(
+                    'Battery too low for updating. Please connect charger.');
+                return;
+              }
+              _showLocalFilePicker(ref, deviceId);
+            },
+            tapCount: 8,
+            child: const SizedBox(
+              height: 64,
+              child: AppLogo(),
+            ),
           ),
-          const SizedBox(height: 24),
+          const SizedBox(height: 16),
           CurrentDeviceVersionWidget(deviceId: deviceId),
-          const SizedBox(height: 24),
-          SettingsCard(
-            children: [
-              Padding(
-                padding: const EdgeInsets.all(16.0),
-                child: DeviceVersionUpdateWidget(deviceId: deviceId),
-              ),
-            ],
-          ),
+          const SizedBox(height: 16),
+          DeviceVersionUpdateWidget(deviceId: deviceId),
         ]),
       ),
     );
@@ -108,19 +113,27 @@ class _DeviceUpdatePageState extends ConsumerState<DeviceUpdatePage> {
       type: FileType.custom,
       allowedExtensions: ['zip'],
     ).then((result) {
-      if (result != null) {
-        showAdaptiveDialog(
-          context: ref.context,
-          barrierDismissible: false,
-          builder: (context) => DeviceFirmwareUpdateDialog.local(
-            deviceId: deviceId,
-            localFilePath: result.files.single.path,
-            currentVersion: ref.read(bleDeviceVersionProvider(deviceId)),
-          ),
-        );
-      } else {
+      if (result == null) {
         ref.context.showSnackBar('No file selected');
+        return;
       }
+
+      final path = result.files.single.path;
+      if (path == null) {
+        ref.context.showSnackBar(
+            'Could not access the selected file. Copy it to On My iPhone first.');
+        return;
+      }
+
+      showAdaptiveDialog(
+        context: ref.context,
+        barrierDismissible: false,
+        builder: (context) => DeviceFirmwareUpdateDialog.local(
+          deviceId: deviceId,
+          localFilePath: path,
+          currentVersion: ref.read(bleDeviceVersionProvider(deviceId)),
+        ),
+      );
     }).catchError((e) {
       ref.context.showSnackBar('Error selecting file: $e');
     });
@@ -136,29 +149,19 @@ class CurrentDeviceVersionWidget extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final String? version = ref.read(bleDeviceVersionProvider(deviceId));
 
-    return SettingsCard(
-      children: [
-        SettingsTile(
-          assetPath: Assets.deviceUpdate,
-          iconBgColor: AppColors.primaryColor.withValues(alpha: 0.1),
-          title: 'Installed Version',
-          isLast: true,
-          action: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-            decoration: BoxDecoration(
-              color: Colors.grey.shade100,
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: Text(
-              version ?? 'N/A',
-              style: const TextStyle(
-                fontWeight: FontWeight.bold,
-                color: Colors.black87,
-              ),
-            ),
-          ),
-        ),
-      ],
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.grey.shade200,
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Row(
+        children: [
+          const Text('Installed Version: '),
+          const Spacer(),
+          Text(version ?? 'N/A'),
+        ],
+      ),
     );
   }
 }

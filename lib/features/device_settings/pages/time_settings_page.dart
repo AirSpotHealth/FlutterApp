@@ -1,13 +1,10 @@
 import 'package:airspothealth/core/providers/ble_device_communication_provider.dart';
 import 'package:airspothealth/core/providers/device_settings_provider.dart';
 import 'package:airspothealth/core/theme/app_colors.dart';
-import 'package:airspothealth/core/utils/assets.dart';
 import 'package:airspothealth/core/utils/device_cmd_utils.dart';
 import 'package:airspothealth/core/utils/extensions.dart';
 import 'package:airspothealth/core/utils/local_date_format.dart';
 import 'package:airspothealth/features/device_settings/widgets/device_settings_name_widget.dart';
-import 'package:airspothealth/features/device_settings/widgets/settings_card.dart';
-import 'package:airspothealth/features/device_settings/widgets/settings_tile.dart';
 import 'package:bottom_picker/bottom_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -22,6 +19,14 @@ class TimeSettingsPage extends ConsumerStatefulWidget {
 }
 
 class _TimeSettingsPageState extends ConsumerState<TimeSettingsPage> {
+  static const _styles = {
+    'title': TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
+    'subtitle': TextStyle(fontSize: 14, color: Colors.grey),
+  };
+
+  static const _padding = EdgeInsets.all(16.0);
+  static const _horizontalPadding = EdgeInsets.zero;
+
   late int _selectedHour;
   late int _selectedMinute;
 
@@ -75,80 +80,62 @@ class _TimeSettingsPageState extends ConsumerState<TimeSettingsPage> {
   Widget build(BuildContext context) {
     final autoSyncTime =
         ref.watch(deviceSettingsProvider(widget.deviceId)).autoSyncTime;
+    final bool is12Hour =
+        LocalDateFormat.instance.systemTimeFormat.pattern!.contains('a');
 
     return Scaffold(
-      backgroundColor: AppColors.surfaceBackground,
+      backgroundColor: Colors.white,
       appBar: AppBar(
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        scrolledUnderElevation: 0,
         title: DeviceSettingsNameWidget(
           deviceId: widget.deviceId,
           suffixText: 'Time Settings',
         ),
       ),
       body: ListView(
-        padding: const EdgeInsets.all(16.0),
+        padding: _padding,
         children: [
-          Padding(
-            padding: const EdgeInsets.only(left: 4, bottom: 12),
-            child: Text(
-              'CONFIGURATION',
-              style: const TextStyle(
-                color: Colors.grey,
-                fontSize: 12,
-                fontWeight: FontWeight.bold,
-                letterSpacing: 1.0,
-              ),
-            ),
-          ),
-          SettingsCard(children: [
-            SettingsTile(
-              assetPath: Assets.timeSettings,
-              iconBgColor: AppColors.primaryColor.withValues(alpha: 0.1),
-              title: 'Sync with mobile device',
-              isLast: autoSyncTime,
-              action: Switch.adaptive(
-                value: autoSyncTime,
-                activeThumbColor: AppColors.primaryColor,
-                onChanged: _updateAutoSync,
-              ),
-            ),
-            if (!autoSyncTime) _buildManualTimePicker(),
-          ]),
+          _buildAutoSyncTile(autoSyncTime),
+          if (!autoSyncTime) ...[
+            const Divider(),
+            _buildManualTimePicker(is12Hour),
+          ]
         ],
       ),
     );
   }
 
-  Widget _buildManualTimePicker() {
-    final bool is12Hour =
-        LocalDateFormat.instance.systemTimeFormat.pattern!.contains('a');
+  Widget _buildAutoSyncTile(bool autoSyncTime) {
+    return SwitchListTile(
+      contentPadding: _horizontalPadding,
+      title: Text('Sync with mobile device', style: _styles['title']),
+      value: autoSyncTime,
+      onChanged: _updateAutoSync,
+    );
+  }
 
-    return SettingsTile(
-      icon: Icons.access_time,
-      iconBgColor: Colors.orange.withValues(alpha: 0.1),
-      iconColor: Colors.orange,
-      title: 'Manual Time',
-      subtitle: is12Hour
-          ? DateTime.now()
-              .copyWith(
-                hour: _selectedHour,
-                minute: _selectedMinute,
-              )
-              .format12Hour()
-          : '${_selectedHour.toString().padLeft(2, '0')}:${_selectedMinute.toString().padLeft(2, '0')}',
-      isLast: true,
+  Widget _buildManualTimePicker(bool is12Hour) {
+    return ListTile(
+      contentPadding: _horizontalPadding,
+      title: Text('Manual Time', style: _styles['title']),
+      leading: const Icon(Icons.access_time),
+      subtitle: Text(
+        is12Hour
+            ? DateTime.now()
+                .copyWith(
+                  hour: _selectedHour,
+                  minute: _selectedMinute,
+                )
+                .format12Hour()
+            : '${_selectedHour.toString().padLeft(2, '0')}:${_selectedMinute.toString().padLeft(2, '0')}',
+        style: _styles['subtitle'],
+      ),
       onTap: () => _showTimePicker(context, is12Hour),
     );
   }
 
   void _showTimePicker(BuildContext context, bool is12Hour) {
     BottomPicker.time(
-      headerBuilder: (context) => const Text(
-        'Select time',
-        style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
-      ),
+      headerBuilder: (context) => Text('Select time', style: _styles['title']),
       initialTime: Time(
         hours: _selectedHour,
         minutes: _selectedMinute,

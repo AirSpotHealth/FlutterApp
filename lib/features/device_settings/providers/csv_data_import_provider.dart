@@ -30,7 +30,7 @@ class CsvDataImportNotifier
       state = AsyncInProgress(0.1, message: 'Selecting CSV file...');
 
       // Pick a CSV file
-      final result = await FilePicker.platform.pickFiles(
+      final result = await FilePicker.pickFiles(
           // type: FileType.custom,
           // allowedExtensions: ['csv'],
           );

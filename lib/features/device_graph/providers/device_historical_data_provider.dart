@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:airspothealth/core/models/ble_device.dart';
 import 'package:airspothealth/core/models/device_data.dart';
 import 'package:airspothealth/core/models/device_data_type.dart';
+import 'package:airspothealth/core/models/device_model.dart';
 import 'package:airspothealth/core/providers/ble_device_communication_provider.dart';
 import 'package:airspothealth/core/services/isar_service.dart';
 import 'package:airspothealth/core/utils/app_utils.dart';
@@ -99,10 +100,14 @@ class _DeviceHistoricalDataNotifier extends AutoDisposeFamilyAsyncNotifier<
       state = AsyncData(event);
     });
 
-    final String deviceFirmwareVersion =
-        ref.read(bleDeviceProvider(deviceId)).firmwareVersion;
+    final BleDevice bleDevice = ref.read(bleDeviceProvider(deviceId));
+    final bool isSlim = bleDevice.deviceModel == DeviceModel.airspotSlim;
+    final String deviceFirmwareVersion = bleDevice.firmwareVersion;
 
-    if (!AppUtils.isNewFirmwareVersion(deviceFirmwareVersion)) {
+    // Slim always uses the half-page history protocol. The date-range "old"
+    // protocol is not implemented by Slim firmware (it would mis-read the date
+    // bytes as a half-page index), so never fall back to it for Slim.
+    if (!isSlim && !AppUtils.isNewFirmwareVersion(deviceFirmwareVersion)) {
       requestHistoricalDataOld();
     } else {
       ref.read(deviceHistoryDataRequestProvider(deviceId).notifier).request(

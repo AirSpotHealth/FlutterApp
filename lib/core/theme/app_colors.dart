@@ -18,42 +18,25 @@ class AppColors {
   static const neutralWhite = Color(0xFFFFFFFF);
 
   /// Text colors
-  static const textPrimary = Color(0xFF1A1A2E);
-  static const textSecondary = Color(0xFF6B7280);
-  static const textTertiary = Color(0xFF9CA3AF);
-  static const textDisabled = Color(0xFFD1D5DB);
+  static const textPrimary = Color(0xFF333333);
+  static const textSecondary = Color(0xFF666666);
+  static const textTertiary = Color(0xFF999999);
+  static const textDisabled = Color(0xFFCCCCCC);
 
   static const textOnPrimary = Color(0xFFFFFFFF);
-  static const textOnSecondary = Color(0xFF1A1A2E);
-  static const textOnTertiary = Color(0xFF1A1A2E);
+  static const textOnSecondary = Color(0xFF333333);
+  static const textOnTertiary = Color(0xFF333333);
 
-  /// Background / surface colors
+  /// Background colors
   static const backgroundPrimary = Color(0xFFFFFFFF);
-  static const backgroundSecondary = Color(0xFFF7F8FA);
-  static const backgroundTertiary = Color(0xFFEFF0F3);
-
-  /// Surface tokens
-  static const surface = Color(0xFFFFFFFF);
-  static const surfaceBackground = Color(0xFFF7F8FA);
-  static const primarySurface = Color(0xFFE8F6FB);
-
-  /// Dividers
-  static const dividerLight = Color(0xFFF0F1F3);
-  static const dividerMid = Color(0xFFE5E7EB);
-
-  /// Section label (iOS-style caps label)
-  static const sectionLabel = Color(0xFF8A8A8E);
+  static const backgroundSecondary = Color(0xFFF5F5F5);
+  static const backgroundTertiary = Color(0xFFE5E5E5);
 
   /// Border colors
-  static const borderPrimary = Color(0xFFE5E7EB);
-  static const borderSecondary = Color(0xFFD1D5DB);
-  static const borderTertiary = Color(0xFF9CA3AF);
+  static const borderPrimary = Color(0xFFE5E5E5);
+  static const borderSecondary = Color(0xFFCCCCCC);
+  static const borderTertiary = Color(0xFF999999);
 
   /// Shadow colors
-  static const shadowPrimary = Color(0x0A000000);
-  static const shadowMedium = Color(0x14000000);
-
-  // UI Icon Colors
-  static const purple = Color(0xFFA855F7);
-  static const indigo = Color(0xFF6366F1);
+  static const shadowPrimary = Color(0x0F000000);
 }

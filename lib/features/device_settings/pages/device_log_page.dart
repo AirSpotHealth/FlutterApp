@@ -51,11 +51,7 @@ class DeviceLogPage extends ConsumerWidget {
     final BleDevice device = ref.read(bleDeviceProvider(deviceId));
 
     return Scaffold(
-        backgroundColor: AppColors.surfaceBackground,
         appBar: AppBar(
-          backgroundColor: Colors.transparent,
-          elevation: 0,
-          scrolledUnderElevation: 0,
           title: Text('${device.alias ?? device.name} log'),
           actions: [
             IconButton(

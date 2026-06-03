@@ -37,6 +37,9 @@ abstract class DeviceCapabilities {
   /// Whether the device supports locate functionality
   bool supportsLocate();
 
+  /// Slim RGB LED guide and CO₂ threshold settings (no screen)
+  bool supportsSlimLedStatus();
+
   /// Factory method to create appropriate capabilities instance based on device model
   factory DeviceCapabilities.fromModel(DeviceModel model) {
     switch (model) {
@@ -85,6 +88,9 @@ class AirSpotScreenCapabilities implements DeviceCapabilities {
 
   @override
   bool supportsLocate() => true;
+
+  @override
+  bool supportsSlimLedStatus() => false;
 }
 
 /// Capabilities for AirSpot Slim device
@@ -114,11 +120,14 @@ class AirSpotSlimCapabilities implements DeviceCapabilities {
   bool supportsManualFlightMode() => false; // Auto-calculated based on pressure
 
   @override
-  bool supportsDeviceUpdate() => true;
+  bool supportsDeviceUpdate() => false; // OTA disabled — use J-Link until SMP DFU is stable
 
   @override
-  bool supportsCalibration() => true;
+  bool supportsCalibration() => true; // Manual calibration supported (no auto-calib)
 
   @override
-  bool supportsLocate() => true;
+  bool supportsLocate() => false;
+
+  @override
+  bool supportsSlimLedStatus() => true;
 }

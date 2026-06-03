@@ -38,7 +38,7 @@ class _BluetoothStateNotifier extends Notifier<BluetoothAdapterState> {
         if (device.settings?.autoConnect == false) continue;
         ref
             .read(bleDeviceConnectionProvider(device.deviceId).notifier)
-            .connect();
+            .connectBackground();
       }
     });
   }

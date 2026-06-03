@@ -122,7 +122,7 @@ class ExportDataButton extends ConsumerWidget {
 
     return PopupMenuButton(
       icon: switch (progress) {
-        AsyncSuccess() => FaIcon(
+        AsyncSuccess() => Icon(
             Icons.download_done,
             color: Colors.white,
           ),

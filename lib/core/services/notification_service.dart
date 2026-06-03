@@ -215,12 +215,12 @@ class NotificationService {
     );
 
     await _notificationsPlugin.show(
-      DateTime.now()
+      id: DateTime.now()
           .millisecondsSinceEpoch
           .limitToBitSize(31), // ID must be a 32-bit int
-      title,
-      body,
-      notificationDetails,
+      title: title,
+      body: body,
+      notificationDetails: notificationDetails,
       payload: payload?.toString(), // Payload needs to be a String
     );
   }
@@ -330,10 +330,10 @@ class NotificationService {
     );
 
     await _notificationsPlugin.show(
-      DateTime.now().millisecondsSinceEpoch.limitToBitSize(31),
-      title,
-      body,
-      notificationDetails,
+      id: DateTime.now().millisecondsSinceEpoch.limitToBitSize(31),
+      title: title,
+      body: body,
+      notificationDetails: notificationDetails,
       payload: url, // Pass URL as payload for tap handling
     );
   }
@@ -457,10 +457,10 @@ class NotificationService {
 
     try {
       await _notificationsPlugin.show(
-        notificationId,
-        title,
-        body,
-        notificationDetails,
+        id: notificationId,
+        title: title,
+        body: body,
+        notificationDetails: notificationDetails,
         payload: 'co2_alert:$deviceName:$co2Value',
       );
       debugPrint('✅ Notification.show() called successfully');
@@ -546,10 +546,10 @@ class NotificationService {
 
     try {
       await _notificationsPlugin.show(
-        999999, // Unique test ID
-        'Test Notification',
-        'If you see this, notifications are working correctly!',
-        notificationDetails,
+        id: 999999, // Unique test ID
+        title: 'Test Notification',
+        body: 'If you see this, notifications are working correctly!',
+        notificationDetails: notificationDetails,
         payload: 'test',
       );
       debugPrint('✅ Test notification sent successfully');

@@ -25,10 +25,26 @@ class BLEService {
   DeviceModel? deviceModelFromScan(String deviceId) {
     final result = _scanResultCache[deviceId];
     if (result == null) return null;
-    final hasSlimUuid = result.advertisementData.serviceUuids.any(
-      (uuid) => uuid.toString().toUpperCase() == Constants.smpServiceUuid,
-    );
+    final hasSlimUuid = result.advertisementData.serviceUuids
+        .any((uuid) => uuid == Constants.smpServiceGuid);
     return hasSlimUuid ? DeviceModel.airspotSlim : DeviceModel.airspotScreen;
+  }
+
+  /// Detects [DeviceModel] via GATT service discovery on an already-connected
+  /// device. Use as a fallback when [deviceModelFromScan] returns null (e.g.,
+  /// auto-reconnect with an empty scan cache).
+  Future<DeviceModel> deviceModelFromGatt(BluetoothDevice device) async {
+    final fromScan = deviceModelFromScan(device.remoteId.str);
+    if (fromScan != null) {
+      return fromScan;
+    }
+
+    final services = await device.discoverServices(
+      timeout: Constants.gattDiscoverTimeoutSeconds,
+    );
+    final hasSlimService =
+        services.any((s) => s.uuid == Constants.smpServiceGuid);
+    return hasSlimService ? DeviceModel.airspotSlim : DeviceModel.airspotScreen;
   }
 
   /// Method to check if Bluetooth is available on the device.
@@ -69,9 +85,16 @@ class BLEService {
   Future<List<BluetoothDevice>> get bondedDevices =>
       FlutterBluePlus.bondedDevices;
 
-  /// Method to connect to a Bluetooth device.
-  Future<void> connect(BluetoothDevice device) async =>
+  /// Direct connection for user-initiated connect (faster than [connectBackground]).
+  Future<void> connectDirect(BluetoothDevice device) async =>
+      device.connect(license: License.free, autoConnect: false);
+
+  /// Background reconnection when the app resumes or Bluetooth turns on.
+  Future<void> connectBackground(BluetoothDevice device) async =>
       device.connect(license: License.free, autoConnect: true, mtu: null);
+
+  @Deprecated('Use connectDirect or connectBackground')
+  Future<void> connect(BluetoothDevice device) => connectDirect(device);
 
   /// Method to disconnect from a Bluetooth device.
   Future<void> disconnect(BluetoothDevice device) => device.disconnect();

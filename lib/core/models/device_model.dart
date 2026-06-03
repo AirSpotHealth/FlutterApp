@@ -30,14 +30,12 @@ enum DeviceModel {
     }
   }
 
-  /// Detect device model from device name
-  /// Looks for "Slim" in the name to identify AirSpot Slim
+  /// Detect device model from device name.
+  /// Both Screen and Slim advertise as "AirSpot-XXXXXX" — name alone cannot
+  /// distinguish them. Use [BLEService.deviceModelFromScan] (SMP UUID check)
+  /// for scan-time detection, or the persisted [BleDevice.deviceModel] field
+  /// for saved devices.
   static DeviceModel fromDeviceName(String name) {
-    final lowerName = name.toLowerCase();
-    if (lowerName.contains('slim')) {
-      return DeviceModel.airspotSlim;
-    }
-    // Default to Screen for backward compatibility
     return DeviceModel.airspotScreen;
   }
 }

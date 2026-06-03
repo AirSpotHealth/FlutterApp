@@ -169,7 +169,7 @@ class _ReportIssuePageState extends ConsumerState<ReportIssuePage> {
 
   Future<void> _pickAttachment() async {
     try {
-      final result = await FilePicker.platform.pickFiles(
+      final result = await FilePicker.pickFiles(
         type: FileType.image,
         allowMultiple: false,
       );

@@ -1,5 +1,4 @@
 import 'package:airspothealth/core/router/route_names.dart';
-import 'package:airspothealth/core/theme/app_colors.dart';
 import 'package:airspothealth/core/utils/assets.dart';
 import 'package:airspothealth/core/utils/extensions.dart';
 import 'package:airspothealth/core/utils/external_urls.dart';
@@ -25,12 +24,11 @@ class MenuItemWidget extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return ListTile(
-      shape: RoundedRectangleBorder(
-        borderRadius: const BorderRadius.all(Radius.circular(12)),
-        side: const BorderSide(color: AppColors.dividerLight),
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.all(Radius.circular(10)),
       ),
       contentPadding: dense ? null : const EdgeInsets.all(16),
-      tileColor: AppColors.surface,
+      tileColor: Colors.white,
       enabled: menuItem.enabled,
       title: Text(menuItem.title,
           style: context.textTheme.bodyMedium?.weight600
@@ -44,7 +42,7 @@ class MenuItemWidget extends StatelessWidget {
       ),
       trailing: menuItem.enabled
           ? const Icon(Icons.arrow_forward_ios, size: 16)
-          : FaIcon(FontAwesomeIcons.ban, size: 16),
+          : const FaIcon(FontAwesomeIcons.ban, size: 16),
       onTap: () {
         WidgetsBinding.instance.addPostFrameCallback((_) {
           if (menuItem.route != null) {

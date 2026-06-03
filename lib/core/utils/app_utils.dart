@@ -54,7 +54,10 @@ class AppUtils {
       return false;
     }
 
-    // it version is less than 3.0.0 then return false
+    // Screen devices: "new" history protocol (half-page) is used from 3.0.0+.
+    // NOTE: Slim devices use the new protocol regardless of their version
+    // string and are gated separately via DeviceModel.airspotSlim (see
+    // device_historical_data_provider). Do NOT rely on this heuristic for Slim.
     final List<String> versionList = firmwareVersion.split('.');
     if (versionList.length < 3) {
       return false;
@@ -62,9 +65,12 @@ class AppUtils {
 
     debugPrint('versionList: $versionList');
 
+    final int majorVersion = int.tryParse(versionList[0]) ?? 0;
     final int minorVersion = int.tryParse(versionList[1]) ?? 0;
 
-    if (minorVersion < 3) {
+    // >= 3.0.0 → new. (The legacy `minor >= 3` check is kept as a superset so
+    // no device previously classified "new" is downgraded.)
+    if (majorVersion < 3 && minorVersion < 3) {
       return false;
     }
 

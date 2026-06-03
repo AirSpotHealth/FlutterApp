@@ -1,12 +1,9 @@
 import 'package:airspothealth/core/models/device_settings.dart';
 import 'package:airspothealth/core/providers/device_settings_provider.dart';
 import 'package:airspothealth/core/theme/app_colors.dart';
-import 'package:airspothealth/core/utils/assets.dart';
 import 'package:airspothealth/core/utils/extensions.dart';
 import 'package:airspothealth/core/utils/local_date_format.dart';
 import 'package:airspothealth/features/device_settings/widgets/device_settings_name_widget.dart';
-import 'package:airspothealth/features/device_settings/widgets/settings_card.dart';
-import 'package:airspothealth/features/device_settings/widgets/settings_tile.dart';
 import 'package:bottom_picker/bottom_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -16,6 +13,13 @@ class DndSettingsPage extends ConsumerWidget {
 
   final String deviceId;
 
+  // Extract constants
+  static const _styles = {
+    'title': TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
+    'subtitle': TextStyle(fontSize: 14, color: Colors.grey),
+  };
+
+  static const _padding = EdgeInsets.symmetric(horizontal: 16.0);
   static const _defaultStartHour = 22;
   static const _defaultEndHour = 6;
 
@@ -24,55 +28,16 @@ class DndSettingsPage extends ConsumerWidget {
     final deviceSettings = ref.watch(deviceSettingsProvider(deviceId));
 
     return Scaffold(
-      backgroundColor: AppColors.surfaceBackground,
+      backgroundColor: Colors.white,
       appBar: AppBar(
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        scrolledUnderElevation: 0,
         title: DeviceSettingsNameWidget(
             deviceId: deviceId, suffixText: 'Do not disturb Settings'),
       ),
-      body: ListView(
-        padding: const EdgeInsets.all(16.0),
-        children: [
-          _buildDndSettingsCard(context, ref, deviceSettings),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildDndSettingsCard(
-      BuildContext context, WidgetRef ref, DeviceSettings deviceSettings) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Padding(
-          padding: const EdgeInsets.only(left: 4, bottom: 12),
-          child: Text(
-            'SCHEDULE',
-            style: const TextStyle(
-              color: Colors.grey,
-              fontSize: 12,
-              fontWeight: FontWeight.bold,
-              letterSpacing: 1.0,
-            ),
-          ),
-        ),
-        SettingsCard(
+      body: Padding(
+        padding: const EdgeInsets.all(12.0),
+        child: Column(
           children: [
-            SettingsTile(
-              assetPath: Assets.doNotDisturbSettings,
-              iconBgColor: AppColors.indigo.withValues(alpha: 0.1),
-              title: 'Do not disturb',
-              subtitle: 'Silences all alerts and sounds',
-              isLast: !deviceSettings.dndEnabled,
-              action: Switch.adaptive(
-                value: deviceSettings.dndEnabled,
-                activeThumbColor: AppColors.primaryColor,
-                onChanged: (value) =>
-                    _updateDndSettings(ref, deviceSettings, enabled: value),
-              ),
-            ),
+            _buildDndModeTile(context, ref, deviceSettings),
             if (deviceSettings.dndEnabled) ...[
               _buildTimeTile(
                 context,
@@ -85,35 +50,49 @@ class DndSettingsPage extends ConsumerWidget {
                 ref,
                 deviceSettings,
                 isStartTime: false,
-                isLast: true,
               ),
             ],
           ],
         ),
-      ],
+      ),
+    );
+  }
+
+  Widget _buildDndModeTile(
+      BuildContext context, WidgetRef ref, DeviceSettings deviceSettings) {
+    return ListTile(
+      contentPadding: _padding,
+      title: Text('Do not disturb', style: _styles['title']),
+      trailing: Switch(
+        value: deviceSettings.dndEnabled,
+        onChanged: (value) =>
+            _updateDndSettings(ref, deviceSettings, enabled: value),
+      ),
     );
   }
 
   Widget _buildTimeTile(
       BuildContext context, WidgetRef ref, DeviceSettings deviceSettings,
-      {required bool isStartTime, bool isLast = false}) {
+      {required bool isStartTime}) {
     final bool is12Hour =
         LocalDateFormat.instance.systemTimeFormat.pattern!.contains('a');
     final DateTime? time =
         isStartTime ? deviceSettings.dndStartTime : deviceSettings.dndEndTime;
 
-    return SettingsTile(
-      icon: isStartTime ? Icons.wb_sunny_outlined : Icons.nightlight_outlined,
-      iconBgColor:
-          (isStartTime ? Colors.orange : Colors.purple).withValues(alpha: 0.1),
-      iconColor: isStartTime ? Colors.orange : Colors.purple,
-      title: isStartTime ? 'Start time' : 'End time',
-      subtitle: time == null
-          ? 'Not set'
-          : is12Hour
-              ? time.format12Hour()
-              : '${time.hour.toString().padLeft(2, '0')}:${time.minute.toString().padLeft(2, '0')}',
-      isLast: isLast,
+    return ListTile(
+      contentPadding: _padding,
+      title: Text(
+        isStartTime ? 'Start time' : 'End time',
+        style: _styles['title'],
+      ),
+      subtitle: Text(
+        time == null
+            ? 'Not set'
+            : is12Hour
+                ? time.format12Hour()
+                : '${time.hour.toString().padLeft(2, '0')}:${time.minute.toString().padLeft(2, '0')}',
+        style: _styles['subtitle'],
+      ),
       onTap: () => _showTimePicker(
         context,
         ref,
@@ -138,7 +117,7 @@ class DndSettingsPage extends ConsumerWidget {
     BottomPicker.time(
       headerBuilder: (context) => Text(
         'Select ${isStartTime ? 'start' : 'end'} time',
-        style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
+        style: _styles['title'],
       ),
       initialTime: Time(
         hours: currentTime?.hour ?? defaultHour,

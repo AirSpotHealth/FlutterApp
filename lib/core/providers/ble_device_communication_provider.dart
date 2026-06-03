@@ -182,18 +182,39 @@ class _BleDeviceCommunicationNotifier extends FamilyNotifier<dynamic, String> {
 
   void setConnected() {
     _communicator.reset();
-    _communicator.initialize().then((_) {
+    _communicator.initialize().then((ready) {
+      if (!ready) {
+        debugPrint(
+            'BLE GATT setup failed for $deviceId — NUS service not available');
+        return;
+      }
       _updateDeviceModel();
       _getInitialData();
+      _syncSlimDevice();
     });
   }
 
   void _updateDeviceModel() {
-    final model = _communicator.isSlimDevice
-        ? DeviceModel.airspotSlim
-        : DeviceModel.airspotScreen;
-    ref.read(bleSavedDevicesProvider.notifier).updateDeviceModel(arg, model);
-    debugPrint('Device $arg model set to $model');
+    final saved =
+        ref.read(bleSavedDevicesProvider.notifier).getDeviceById(arg);
+    // Slim is identified from scan-response SMP UUID; without MCUmgr GATT we must
+    // not downgrade a known Slim to Screen on reconnect.
+    if (saved?.deviceModel == DeviceModel.airspotSlim) {
+      return;
+    }
+    if (_communicator.isSlimDevice) {
+      ref
+          .read(bleSavedDevicesProvider.notifier)
+          .updateDeviceModel(arg, DeviceModel.airspotSlim);
+      debugPrint('Device $arg model set to ${DeviceModel.airspotSlim}');
+      return;
+    }
+    if (saved?.deviceModel == null) {
+      ref
+          .read(bleSavedDevicesProvider.notifier)
+          .updateDeviceModel(arg, DeviceModel.airspotScreen);
+      debugPrint('Device $arg model set to ${DeviceModel.airspotScreen}');
+    }
   }
 
   void _handleNotificationData(List<int> data) async {
@@ -461,6 +482,27 @@ class _BleDeviceCommunicationNotifier extends FamilyNotifier<dynamic, String> {
     }
 
     ref.read(sensorConfigurationProvider(deviceId));
+  }
+
+  /// Push Slim-specific state: no buzzer/vibrator, LED thresholds from app.
+  Future<void> _syncSlimDevice() async {
+    final BleDevice? bleDevice = ref.read(bleDeviceProvider(deviceId));
+    if (bleDevice?.deviceModel != DeviceModel.airspotSlim) {
+      return;
+    }
+
+    final DeviceSettings settings =
+        ref.read(deviceSettingsProvider(deviceId));
+
+    final commands = [
+      DeviceCmdUtils.closeAlarm(),
+      DeviceCmdUtils.closeVibration(),
+      settings.thresholdsCmd,
+    ];
+
+    for (final command in commands) {
+      await sendCommand(command);
+    }
   }
 
   Future<bool> sendCommand(List<int> data) async {
