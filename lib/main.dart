@@ -34,7 +34,7 @@ void main() async {
   await [
     Supabase.initialize(
       url: Constants.supabaseUrl,
-      anonKey: Constants.supabaseAnonKey,
+      publishableKey: Constants.supabaseAnonKey,
     ),
     IsarService().initialize(),
     PrefsService().initialize(),

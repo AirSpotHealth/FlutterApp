@@ -87,11 +87,11 @@ class BLEService {
 
   /// Direct connection for user-initiated connect (faster than [connectBackground]).
   Future<void> connectDirect(BluetoothDevice device) async =>
-      device.connect(license: License.free, autoConnect: false);
+      device.connect(license: License.nonprofit, autoConnect: false);
 
   /// Background reconnection when the app resumes or Bluetooth turns on.
   Future<void> connectBackground(BluetoothDevice device) async =>
-      device.connect(license: License.free, autoConnect: true, mtu: null);
+      device.connect(license: License.nonprofit, autoConnect: true, mtu: null);
 
   @Deprecated('Use connectDirect or connectBackground')
   Future<void> connect(BluetoothDevice device) => connectDirect(device);
