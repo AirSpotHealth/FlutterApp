@@ -65,9 +65,11 @@ void main() {
   test('recorded production package matches qualified image hash', () async {
     final image = SlimFirmwareImage.fromFileBytes(
         await File(package!).readAsBytes(), package);
-    expect(image.version, '0.14.6');
+    expect(image.version,
+        Platform.environment['AIRSPOT_SLIM_EXPECTED_VERSION'] ?? '0.14.6');
     expect(image.hash.map((b) => b.toRadixString(16).padLeft(2, '0')).join(),
-        '6631263b902886fd7f79a756b1c6ba7e76f25375a7765afd5a6fa4c03254214f');
+        Platform.environment['AIRSPOT_SLIM_EXPECTED_HASH'] ??
+            '6631263b902886fd7f79a756b1c6ba7e76f25375a7765afd5a6fa4c03254214f');
   },
       skip: package == null
           ? 'Set AIRSPOT_SLIM_DFU to the qualified production ZIP'

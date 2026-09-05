@@ -38,6 +38,10 @@ class _RecalibrationTimeNotifier
     }
   }
 
+  void setRecalibrationFailed(String message) {
+    state = AsyncFailure(message);
+  }
+
   void setRecalibrationDone(int frc) {
     state = AsyncSuccess(frc);
   }

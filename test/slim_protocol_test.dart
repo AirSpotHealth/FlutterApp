@@ -52,6 +52,13 @@ void main() {
     expect(slim.parseCalibrateSensors(frame(0x0d, [0, 42, 1], length: 1)), -42);
     expect(slim.parseRecalibrationTime(frame(0x0f, [0, 60], length: 1)), 60);
   });
+  test('calibration failure is distinct from signed correction and Screen', () {
+    expect(slim.isCalibrationFailure(frame(0x0d, [0xff])), true);
+    expect(slim.isCalibrationFailure(frame(0x0d, [0xff, 0, 1], length: 1)), false);
+    expect(parser(DeviceModel.airspotScreen)
+        .isCalibrationFailure(frame(0x0d, [0xff])), false);
+    expect(ResponseCommand.fromValue(0x11), ResponseCommand.setCalibrationMode);
+  });
   test('post-update success requires valid fresh version and live frames', () {
     final check = SlimUpdateVerification('0.14.6');
     check.accept(frame(0x13, '0.14.5'.codeUnits));
