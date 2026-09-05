@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:io';
 
+import 'package:airspothealth/features/device_graph/providers/device_history_data_request_provider.dart';
 import 'package:airspothealth/core/models/ble_device.dart';
 import 'package:airspothealth/core/models/device_data.dart';
 import 'package:airspothealth/core/models/device_model.dart';
@@ -180,23 +181,31 @@ class _BleDeviceCommunicationNotifier extends FamilyNotifier<dynamic, String> {
     });
   }
 
-  void setConnected() {
-    _communicator.reset();
-    _communicator.initialize().then((ready) {
-      if (!ready) {
-        debugPrint(
-            'BLE GATT setup failed for $deviceId — NUS service not available');
-        return;
-      }
-      _updateDeviceModel();
-      _getInitialData();
-      _syncSlimDevice();
+  Future<bool>? _connectionSetup;
+
+  Future<bool> setConnected() {
+    if (_communicator.isSuspended) return Future.value(false);
+    return _connectionSetup ??= _initializeConnection().whenComplete(() {
+      _connectionSetup = null;
     });
   }
 
+  Future<bool> _initializeConnection() async {
+    _communicator.reset();
+    if (!await _communicator.initialize()) {
+      debugPrint('BLE GATT setup failed for $deviceId');
+      return false;
+    }
+    _updateDeviceModel();
+    await _getInitialData();
+    ref
+        .read(deviceHistoryDataRequestProvider(deviceId).notifier)
+        .resumeAfterUpdate();
+    return true;
+  }
+
   void _updateDeviceModel() {
-    final saved =
-        ref.read(bleSavedDevicesProvider.notifier).getDeviceById(arg);
+    final saved = ref.read(bleSavedDevicesProvider.notifier).getDeviceById(arg);
     // Slim is identified from scan-response SMP UUID; without MCUmgr GATT we must
     // not downgrade a known Slim to Screen on reconnect.
     if (saved?.deviceModel == DeviceModel.airspotSlim) {
@@ -484,28 +493,8 @@ class _BleDeviceCommunicationNotifier extends FamilyNotifier<dynamic, String> {
     ref.read(sensorConfigurationProvider(deviceId));
   }
 
-  /// Push Slim-specific state: no buzzer/vibrator, LED thresholds from app.
-  Future<void> _syncSlimDevice() async {
-    final BleDevice? bleDevice = ref.read(bleDeviceProvider(deviceId));
-    if (bleDevice?.deviceModel != DeviceModel.airspotSlim) {
-      return;
-    }
-
-    final DeviceSettings settings =
-        ref.read(deviceSettingsProvider(deviceId));
-
-    final commands = [
-      DeviceCmdUtils.closeAlarm(),
-      DeviceCmdUtils.closeVibration(),
-      settings.thresholdsCmd,
-    ];
-
-    for (final command in commands) {
-      await sendCommand(command);
-    }
-  }
-
   Future<bool> sendCommand(List<int> data) async {
+    if (_communicator.isSuspended) return false;
     if (device == null || device!.isConnected == false) {
       debugPrint('Device not found or not connected');
       return false;

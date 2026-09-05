@@ -120,7 +120,7 @@ class AirSpotSlimCapabilities implements DeviceCapabilities {
   bool supportsManualFlightMode() => false; // Auto-calculated based on pressure
 
   @override
-  bool supportsDeviceUpdate() => false; // OTA disabled — use J-Link until SMP DFU is stable
+  bool supportsDeviceUpdate() => true; // Local signed-image qualification.
 
   @override
   bool supportsCalibration() => true; // Manual calibration supported (no auto-calib)

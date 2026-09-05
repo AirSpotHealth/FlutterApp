@@ -73,7 +73,9 @@ class _DeviceFirmwareUpdateDialogState
       }
 
       if (newState is AsyncSuccess) {
-        context.showSnackBar('Firmware updated successfully');
+        context.showSnackBar(newState.data is String
+            ? newState.data as String
+            : 'Firmware updated successfully');
 
         Navigator.of(context).pop();
         Navigator.of(context).pop();
@@ -149,7 +151,9 @@ class _DeviceFirmwareUpdateDialogState
               onPressed: () => ref
                   .read(dfuUpdateProvider.notifier)
                   .updateFirmware(
-                      url: remoteVersion!.downloadUrl, deviceId: deviceId),
+                      url: remoteVersion!.downloadUrl,
+                      deviceId: deviceId,
+                      release: remoteVersion),
               child: Text(
                 widget.currentVersion == null ? 'Update Anyway!' : 'Update Now',
                 style: TextStyle(

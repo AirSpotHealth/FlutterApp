@@ -18,6 +18,13 @@ enum DeviceModel {
     return unknown;
   }
 
+  /// Persisted Slim identity or a discovered SMP service selects MCUboot DFU.
+  static DeviceModel forDfu(DeviceModel? savedModel,
+          {required bool hasSmpService}) =>
+      savedModel == DeviceModel.airspotSlim || hasSmpService
+          ? DeviceModel.airspotSlim
+          : DeviceModel.airspotScreen;
+
   /// Get display name for the device model
   String get displayName {
     switch (this) {

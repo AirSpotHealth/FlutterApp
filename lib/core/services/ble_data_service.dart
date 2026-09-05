@@ -1,5 +1,6 @@
 import 'dart:typed_data';
 
+import 'package:airspothealth/core/models/device_model.dart';
 import 'package:airspothealth/core/models/ble_device.dart';
 import 'package:airspothealth/core/models/device_data.dart';
 import 'package:airspothealth/core/models/device_data_type.dart';
@@ -579,7 +580,8 @@ class ResponseCommandParser {
 
     // check if the firmware is less than v3.0.0
     // if so, parse it in old format
-    if (!AppUtils.isNewFirmwareVersion(device.firmwareVersion)) {
+    if (device.deviceModel != DeviceModel.airspotSlim &&
+        !AppUtils.isNewFirmwareVersion(device.firmwareVersion)) {
       _parseCo2OldHistoryData(data);
 
       // return null to indicate that the data is not a page number and has been parsed and saved
@@ -616,9 +618,12 @@ class ResponseCommandParser {
       debugPrint('DATE: ${date.toIso8601String()}');
 
       // Extract the value (2 bytes)
-      final highByte = historyData[i + 4] & 0xFF;
-      final lowByte = historyData[i + 5] & 0xFF;
-      final value = (highByte << 8) | lowByte;
+      final firstByte = historyData[i + 4] & 0xFF;
+      final secondByte = historyData[i + 5] & 0xFF;
+      // Slim's protocol_send_history_data sends LSB first.
+      final value = device.deviceModel == DeviceModel.airspotSlim
+          ? (secondByte << 8) | firstByte
+          : (firstByte << 8) | secondByte;
 
       /// Extract the type (1 byte)
       final type = historyData[i + 6];
@@ -792,6 +797,13 @@ class ResponseCommandParser {
   }
 
   AscData parseAscData(List<int> data) {
+    if (device.deviceModel == DeviceModel.airspotSlim) {
+      if (data.length != 8) {
+        throw const FormatException('Invalid Slim calibration correction');
+      }
+      final correction = (data[4] << 8) | data[5];
+      return AscData(correction: data[6] == 1 ? -correction : correction);
+    }
     final count = (data[4] << 8) | data[5];
     int correction = (data[6] << 8) | data[7];
     if (data[8] == 0x01) {
@@ -884,8 +896,7 @@ class ResponseCommandParser {
         .toUpperCase();
 
     final sensorVariantByte = data[offset++];
-    final sensorVariant =
-        "SCD4$sensorVariantByte"; // User's change incorporated
+    final sensorVariant = DeviceVariant.fromValue(sensorVariantByte).name;
 
     // Note: Checksum is at data[offset] or data[data.length-1]
     // We are not verifying checksum here but it's good practice to do so.

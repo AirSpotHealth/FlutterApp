@@ -7,7 +7,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 enum DeviceVariant {
   scd40,
   scd41,
-  unknown;
+  unknown,
+  stcc4;
 
   static DeviceVariant fromValue(int value) {
     debugPrint('DeviceVariant: $value');
@@ -16,6 +17,8 @@ enum DeviceVariant {
         return DeviceVariant.scd40;
       case 1:
         return DeviceVariant.scd41;
+      case 2:
+        return DeviceVariant.stcc4;
       default:
         return DeviceVariant.unknown;
     }
@@ -27,6 +30,8 @@ enum DeviceVariant {
         return 'SCD40';
       case DeviceVariant.scd41:
         return 'SCD41';
+      case DeviceVariant.stcc4:
+        return 'STCC4';
       default:
         return 'Unknown';
     }

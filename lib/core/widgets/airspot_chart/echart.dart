@@ -28,16 +28,21 @@ class _EChartState extends State<EChart> {
   String get _currentOption => widget.option;
 
   bool _zoomed = false;
+  bool _ready = false;
 
   @override
   void initState() {
     super.initState();
 
-    _controller = WebViewController()
-      ..setBackgroundColor(const Color(0x00000000))
-      ..loadHtmlString(utf8.fuse(base64).decode(htmlBase64))
-      ..setJavaScriptMode(JavaScriptMode.unrestricted)
-      ..setNavigationDelegate(
+    _controller = WebViewController();
+    _configure();
+  }
+
+  Future<void> _configure() async {
+    try {
+      await _controller!.setBackgroundColor(const Color(0x00000000));
+      await _controller!.setJavaScriptMode(JavaScriptMode.unrestricted);
+      await _controller!.setNavigationDelegate(
         NavigationDelegate(
           onNavigationRequest: (NavigationRequest request) {
             try {
@@ -63,17 +68,18 @@ class _EChartState extends State<EChart> {
             }
             return NavigationDecision.navigate;
           },
+          onPageStarted: (_) => _ready = false,
           onPageFinished: (url) => init(),
           onWebResourceError: (e) {
             debugPrint('Chart error: ${e.description}');
           },
         ),
-      )
-      ..addJavaScriptChannel('Print',
+      );
+      await _controller!.addJavaScriptChannel('Print',
           onMessageReceived: (JavaScriptMessage javascriptMessage) {
         debugPrint('Chart message: ${javascriptMessage.message}');
-      })
-      ..addJavaScriptChannel('GraphBridge',
+      });
+      await _controller!.addJavaScriptChannel('GraphBridge',
           onMessageReceived: (JavaScriptMessage message) {
         try {
           final data = jsonDecode(message.message) as Map<String, dynamic>;
@@ -86,14 +92,23 @@ class _EChartState extends State<EChart> {
           debugPrint('GraphBridge parse error: $e');
         }
       });
+      if (mounted) {
+        await _controller!.loadHtmlString(utf8.fuse(base64).decode(htmlBase64));
+      }
+    } catch (error) {
+      debugPrint('Chart setup failed: $error');
+    }
   }
 
-  void init() {
-    debugPrint('Chart initialized.');
-    _controller?.runJavaScript('''
+  Future<void> init() async {
+    if (!mounted) return;
+    _ready = false;
+    final initialOption = _currentOption;
+    try {
+      await _controller!.runJavaScript('''
       $script;
       var chart = echarts.init(document.getElementById('chart'));
-      chart.setOption($_currentOption, true);
+      chart.setOption($initialOption, true);
       // Global tooltip auto-hide logic
 
       // Global tooltip debounce logic
@@ -213,11 +228,27 @@ class _EChartState extends State<EChart> {
 
       })();
     ''');
+      if (!mounted) return;
+      _ready = true;
+      debugPrint('Chart initialized.');
+      update(initialOption);
+    } catch (error) {
+      debugPrint('Chart initialization failed: $error');
+    }
+  }
+
+  Future<void> _runChartScript(String source) async {
+    if (!mounted || !_ready) return;
+    try {
+      await _controller!.runJavaScript(source);
+    } catch (error) {
+      debugPrint('Chart operation failed: $error');
+    }
   }
 
   void update(String preOption) {
     if (_currentOption != preOption) {
-      _controller?.runJavaScript('''
+      _runChartScript('''
         ( function() {
         try {
           const parsedOption = typeof $_currentOption === 'string' ? JSON.parse($_currentOption) : $_currentOption;
@@ -278,7 +309,7 @@ class _EChartState extends State<EChart> {
   }
 
   void _moveToLatestData() {
-    _controller?.runJavaScript('''
+    _runChartScript('''
       (function() {
         try {
           const data = chart.getOption().series[0].data;
@@ -353,6 +384,7 @@ class _EChartState extends State<EChart> {
   }
 
   void _toggleZoom() {
+    if (!_ready) return;
     final zoomScript = _zoomed
         ? '''
         (function() {
@@ -433,7 +465,7 @@ class _EChartState extends State<EChart> {
         })();
       ''';
 
-    _controller?.runJavaScript(zoomScript);
+    _runChartScript(zoomScript);
     setState(() {
       _zoomed = !_zoomed;
     });

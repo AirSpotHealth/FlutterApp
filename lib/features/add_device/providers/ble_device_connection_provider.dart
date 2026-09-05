@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:airspothealth/core/services/ble_communicator_service.dart';
 import 'package:airspothealth/core/models/ble_device.dart';
 import 'package:airspothealth/core/providers/ble_connected_devices_provider.dart';
 import 'package:airspothealth/core/providers/ble_device_communication_provider.dart';
@@ -67,10 +68,26 @@ class _BleDeviceConnectionNotifier
   /// User tapped Connect — use a direct GATT connection (not background autoConnect).
   void connect() => _startConnect(useBackgroundAutoConnect: false);
 
+  /// Reattach normal connection monitoring and await GATT restoration after SMP.
+  Future<void> restoreAfterUpdate() async {
+    _resetConnectionAttempt();
+    _startConnect(useBackgroundAutoConnect: false);
+    await device.connectionState
+        .firstWhere((value) => value == BluetoothConnectionState.connected)
+        .timeout(const Duration(seconds: 35));
+    final ready = await ref
+        .read(bleDeviceCommunicationProvider(arg).notifier)
+        .setConnected();
+    if (!ready || !device.isConnected) {
+      throw StateError('Could not restore device communication after update');
+    }
+  }
+
   /// App-level reconnect when Bluetooth turns on (background autoConnect).
   void connectBackground() => _startConnect(useBackgroundAutoConnect: true);
 
   void _startConnect({required bool useBackgroundAutoConnect}) {
+    if (BleCommunicatorService.instance.communicator(arg).isSuspended) return;
     if (isConnected || isConnecting || _connectInFlight) {
       debugPrint(
           'Connect skipped for $arg: state=$state inFlight=$_connectInFlight');
@@ -190,9 +207,8 @@ class _BleDeviceConnectionNotifier
     final deviceModel = _bleService.deviceModelFromScan(device.remoteId.str);
     ref.read(bleSavedDevicesProvider.notifier).addDevice(BleDevice(
           deviceId: device.remoteId.str,
-          name: device.advName.isNotEmpty
-              ? device.advName
-              : device.platformName,
+          name:
+              device.advName.isNotEmpty ? device.advName : device.platformName,
           platform: device.platformName,
           address: device.remoteId.str,
           deviceModelValue: deviceModel?.index,

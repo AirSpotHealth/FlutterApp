@@ -21,13 +21,13 @@ class BLEService {
   final Map<String, ScanResult> _scanResultCache = {};
 
   /// Returns the [DeviceModel] detected from advertisement data for [deviceId],
-  /// or null if the device hasn't been seen in a scan yet.
+  /// A missing SMP UUID is inconclusive: resolve it using connected GATT services.
   DeviceModel? deviceModelFromScan(String deviceId) {
     final result = _scanResultCache[deviceId];
     if (result == null) return null;
     final hasSlimUuid = result.advertisementData.serviceUuids
         .any((uuid) => uuid == Constants.smpServiceGuid);
-    return hasSlimUuid ? DeviceModel.airspotSlim : DeviceModel.airspotScreen;
+    return hasSlimUuid ? DeviceModel.airspotSlim : null;
   }
 
   /// Detects [DeviceModel] via GATT service discovery on an already-connected

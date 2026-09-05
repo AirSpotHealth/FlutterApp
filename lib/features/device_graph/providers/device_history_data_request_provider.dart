@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:typed_data';
 
+import 'package:airspothealth/core/services/ble_communicator_service.dart';
 import 'package:airspothealth/core/models/ble_device.dart';
 import 'package:airspothealth/core/models/device_data.dart';
 import 'package:airspothealth/core/models/device_data_type.dart';
@@ -46,12 +47,17 @@ class _DeviceHistoryDataRequestNotifier
   static final _unsyncedThresholdDate =
       DateTime.fromMillisecondsSinceEpoch(Constants.syncedTimeThreshold);
 
+  bool _pausedForUpdate = false;
   Timer? _flushTimer;
   Timer? _timeoutTimer;
   static const _requestTimeout = Duration(seconds: 30);
 
   @override
   build(String arg) {
+    ref.onDispose(() {
+      _flushTimer?.cancel();
+      _timeoutTimer?.cancel();
+    });
     bleDevice = ref.read(bleDeviceProvider(deviceId));
     return AsyncNone();
   }
@@ -78,7 +84,24 @@ class _DeviceHistoryDataRequestNotifier
     _requestData();
   }
 
+  void pauseForUpdate() {
+    _pausedForUpdate = true;
+    _timeoutTimer?.cancel();
+    _flushTimer?.cancel();
+    _commitData();
+    state = const AsyncNone();
+  }
+
+  void resumeAfterUpdate() {
+    if (BleCommunicatorService.instance.communicator(deviceId).isSuspended) return;
+    if (!_pausedForUpdate) return;
+    _pausedForUpdate = false;
+    final requested = duration;
+    if (requested != null) request(requested);
+  }
+
   void _requestData() {
+    if (BleCommunicatorService.instance.communicator(deviceId).isSuspended) return;
     debugPrint('REQUEST:Current page number: $currentPageNumber');
     _startTimeoutTimer();
 
@@ -114,6 +137,7 @@ class _DeviceHistoryDataRequestNotifier
   }
 
   void handleHistoricalDataResponse(dynamic data) {
+    if (BleCommunicatorService.instance.communicator(deviceId).isSuspended) return;
     // Cancel timeout timer when we get a response
     _timeoutTimer?.cancel();
 

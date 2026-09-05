@@ -38,7 +38,9 @@ class _DeviceUpdatePageState extends ConsumerState<DeviceUpdatePage> {
   }
 
   Future<void> _fetchRemoteVersion() async {
-    ref.read(firmwareRemoteVersionProvider(deviceId).notifier).fetchRemoteVersion();
+    ref
+        .read(firmwareRemoteVersionProvider(deviceId).notifier)
+        .fetchRemoteVersion();
   }
 
   @override
@@ -111,7 +113,13 @@ class _DeviceUpdatePageState extends ConsumerState<DeviceUpdatePage> {
   void _showLocalFilePicker(WidgetRef ref, String deviceId) {
     FilePicker.pickFiles(
       type: FileType.custom,
-      allowedExtensions: ['zip'],
+      allowedExtensions: ref
+                  .read(bleSavedDevicesProvider.notifier)
+                  .getDeviceById(deviceId)
+                  ?.deviceModel ==
+              DeviceModel.airspotSlim
+          ? ['zip', 'bin']
+          : ['zip'],
     ).then((result) {
       if (result == null) {
         ref.context.showSnackBar('No file selected');

@@ -18,6 +18,22 @@ class BleDeviceCommunicator {
 
   bool _isSlimDevice = false;
   bool _initialized = false;
+  bool _suspended = false;
+  bool get isSuspended => _suspended;
+  final Set<Future<void>> _pendingWrites = {};
+
+  Future<void> suspend() async {
+    _suspended = true;
+    await _initCompleter?.future;
+    await Future.wait(_pendingWrites.toList());
+    await _notifySubscription?.cancel();
+    reset();
+  }
+
+  void resume() {
+    reset();
+    _suspended = false;
+  }
 
   /// True if this device exposed the MCUmgr SMP service during discovery.
   /// Set after [initialize] completes; used to select the correct DFU path.
@@ -32,7 +48,8 @@ class BleDeviceCommunicator {
   BleDeviceCommunicator({required this.deviceId});
 
   /// Returns true when NUS write characteristic is ready for commands.
-  Future<bool> initialize() async {
+  Future<bool> initialize({bool duringUpdate = false}) async {
+    if (_suspended && !duringUpdate) return false;
     if (_initialized) {
       return true;
     }
@@ -58,12 +75,11 @@ class BleDeviceCommunicator {
 
         _logDiscoveredServices(services);
 
-        _isSlimDevice =
-            services.any((s) => s.uuid == Constants.smpServiceGuid);
+        _isSlimDevice = services.any((s) => s.uuid == Constants.smpServiceGuid);
         debugPrint('Device $deviceId isSlim=$_isSlimDevice');
 
-        final service = services.firstWhereOrNull(
-            (s) => s.uuid == Constants.nusServiceGuid);
+        final service = services
+            .firstWhereOrNull((s) => s.uuid == Constants.nusServiceGuid);
         if (service == null) {
           debugPrint(
               'NUS service (${Constants.nusServiceGuid.str128}) not found for $deviceId');
@@ -71,11 +87,11 @@ class BleDeviceCommunicator {
           continue;
         }
 
-        _writeCharacteristic = service.characteristics.firstWhereOrNull(
-            (c) => c.uuid == Constants.nusWriteGuid);
+        _writeCharacteristic = service.characteristics
+            .firstWhereOrNull((c) => c.uuid == Constants.nusWriteGuid);
 
-        final notifyCharacteristic = service.characteristics.firstWhereOrNull(
-            (c) => c.uuid == Constants.nusNotifyGuid);
+        final notifyCharacteristic = service.characteristics
+            .firstWhereOrNull((c) => c.uuid == Constants.nusNotifyGuid);
 
         if (_writeCharacteristic == null) {
           debugPrint('NUS write characteristic not found for $deviceId');
@@ -89,7 +105,7 @@ class BleDeviceCommunicator {
           await notifyCharacteristic.setNotifyValue(true);
           _notifySubscription?.cancel();
           _notifySubscription =
-              notifyCharacteristic.lastValueStream.listen((data) {
+              notifyCharacteristic.onValueReceived.listen((data) {
             _dataStreamController.add(data);
           });
           debugPrint('Subscribed to notifications for $deviceId');
@@ -118,6 +134,9 @@ class BleDeviceCommunicator {
     if (_initCompleter != null && !_initCompleter!.isCompleted) {
       _initCompleter!.complete();
     }
+    // A failed attempt must not poison every later initialize() call.
+    _initCompleter = null;
+    _writeCharacteristic = null;
     return false;
   }
 
@@ -152,9 +171,10 @@ class BleDeviceCommunicator {
     _notifySubscription = null;
   }
 
-  Future<bool> sendCommand(List<int> data) async {
+  Future<bool> sendCommand(List<int> data, {bool duringUpdate = false}) async {
+    if (_suspended && !duringUpdate) return false;
     if (_writeCharacteristic == null) {
-      final ok = await initialize();
+      final ok = await initialize(duringUpdate: duringUpdate);
       if (!ok || _writeCharacteristic == null) {
         debugPrint(
             'Write characteristic not found for $deviceId, cannot send command.');
@@ -168,7 +188,14 @@ class BleDeviceCommunicator {
     }
 
     try {
-      await _writeCharacteristic!.write(data);
+      if (_suspended && !duringUpdate) return false;
+      final write = _writeCharacteristic!.write(data);
+      _pendingWrites.add(write);
+      try {
+        await write;
+      } finally {
+        _pendingWrites.remove(write);
+      }
       debugPrint(
           'Command sent to $deviceId: ${BleDataService.bytesToHexStr(data)}');
       return true;
