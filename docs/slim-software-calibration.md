@@ -1,4 +1,4 @@
-# Slim software calibration (firmware 0.16.0)
+# Slim software calibration (firmware 0.16.x)
 
 Slim's Auto Calibration toggle now controls AirSpot's software algorithm. The
 STCC4 internal ASC remains paused, including when the toggle is on. Screen's
@@ -22,7 +22,10 @@ Reconnect already reads the device's initial settings and continues to do so.
   The new read-only 0x33 diagnostic confirmed paused internal ASC (`0x0084`).
 - Startup testing with software ASC on produced an automatic correction (+116 ppm
   total). Software ASC was turned off and the original zero correction restored
-  through sensor reset. A startup observation guard is proposed but not implemented.
+  through sensor reset. Firmware 0.16.1 adds a three-minute observation guard
+  after boot/reset. It excludes early readings from software automatic calibration
+  without blocking live readings or manual calibration. Low readings after the
+  guard still follow the automatic algorithm; this does not establish accuracy.
 - The updated app has not been installed or exercised on a physical phone.
   All 51 Flutter tests and the analyzer passed; firmware qualification notes carry
   the hardware results and unresolved startup-calibration behavior.
