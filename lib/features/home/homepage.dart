@@ -5,7 +5,6 @@ import 'package:airspothealth/core/theme/app_colors.dart';
 import 'package:airspothealth/core/widgets/app_logo.dart';
 import 'package:airspothealth/features/add_device/providers/ble_search_results_provider.dart';
 import 'package:airspothealth/features/app_setup/providers/app_version_provider.dart';
-import 'package:airspothealth/features/device_settings/providers/firmware_remote_version_provider.dart';
 import 'package:airspothealth/features/home/widgets/app_update_banner.dart';
 import 'package:airspothealth/features/home/widgets/menu_item_widget.dart';
 import 'package:flutter/material.dart';
@@ -28,13 +27,8 @@ class _HomePageState extends ConsumerState<HomePage> {
     // This ensures users receive FCM notifications even if they don't visit the App Setup page
     ref.read(appNotificationPreferencesProvider);
 
-    _checkFirmwareVersion();
     _checkAppVersion();
     _scanForDevices();
-  }
-
-  void _checkFirmwareVersion() {
-    ref.read(firmwareRemoteVersionProvider);
   }
 
   void _checkAppVersion() {

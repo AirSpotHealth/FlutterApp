@@ -1,63 +1,48 @@
 PODS:
   - device_info_plus (0.0.1):
     - Flutter
-  - file_saver (0.0.1):
-    - Flutter
   - Flutter (1.0.0)
-  - iOSDFULibrary (4.15.3):
+  - iOSMcuManagerLibrary (1.12):
+    - SwiftCBOR (= 0.5.0)
     - ZIPFoundation (= 0.9.19)
-  - isar_plus_flutter_libs (1.0.0):
+  - mcumgr_flutter (0.9.0):
     - Flutter
-  - nordic_dfu (1.0.0):
-    - Flutter
-    - iOSDFULibrary (~> 4.15.3)
-  - permission_handler_apple (9.3.0):
-    - Flutter
-  - sign_in_with_apple (0.0.1):
-    - Flutter
+    - FlutterMacOS
+    - iOSMcuManagerLibrary (= 1.12)
+    - SwiftProtobuf
+  - SwiftCBOR (0.5.0)
+  - SwiftProtobuf (1.37.0)
   - ZIPFoundation (0.9.19)
 
 DEPENDENCIES:
   - device_info_plus (from `.symlinks/plugins/device_info_plus/ios`)
-  - file_saver (from `.symlinks/plugins/file_saver/ios`)
   - Flutter (from `Flutter`)
-  - isar_plus_flutter_libs (from `.symlinks/plugins/isar_plus_flutter_libs/ios`)
-  - nordic_dfu (from `.symlinks/plugins/nordic_dfu/ios`)
-  - permission_handler_apple (from `.symlinks/plugins/permission_handler_apple/ios`)
-  - sign_in_with_apple (from `.symlinks/plugins/sign_in_with_apple/ios`)
+  - mcumgr_flutter (from `.symlinks/plugins/mcumgr_flutter/darwin`)
 
 SPEC REPOS:
   trunk:
-    - iOSDFULibrary
+    - iOSMcuManagerLibrary
+    - SwiftCBOR
+    - SwiftProtobuf
     - ZIPFoundation
 
 EXTERNAL SOURCES:
   device_info_plus:
     :path: ".symlinks/plugins/device_info_plus/ios"
-  file_saver:
-    :path: ".symlinks/plugins/file_saver/ios"
   Flutter:
     :path: Flutter
-  isar_plus_flutter_libs:
-    :path: ".symlinks/plugins/isar_plus_flutter_libs/ios"
-  nordic_dfu:
-    :path: ".symlinks/plugins/nordic_dfu/ios"
-  permission_handler_apple:
-    :path: ".symlinks/plugins/permission_handler_apple/ios"
-  sign_in_with_apple:
-    :path: ".symlinks/plugins/sign_in_with_apple/ios"
+  mcumgr_flutter:
+    :path: ".symlinks/plugins/mcumgr_flutter/darwin"
 
 SPEC CHECKSUMS:
   device_info_plus: 71ffc6ab7634ade6267c7a93088ed7e4f74e5896
-  file_saver: 6cdbcddd690cb02b0c1a0c225b37cd805c2bf8b6
-  Flutter: cabc95a1d2626b1b06e7179b784ebcf0c0cde467
-  iOSDFULibrary: 198c36ebe5a31bf2ca04ee8fb40837176a423e85
-  isar_plus_flutter_libs: bea5f6058f18eae2da310c97a84bfdf73657b2fd
-  nordic_dfu: e4fb6f461f4a290b28ea4b1dfb69071665cdfa3e
-  permission_handler_apple: 4ed2196e43d0651e8ff7ca3483a069d469701f2d
-  sign_in_with_apple: c5dcc141574c8c54d5ac99dd2163c0c72ad22418
+  Flutter: 71a624a5bc0c04062bf19101d501e466baf2fb47
+  iOSMcuManagerLibrary: f72db849f6dd66b1f26cd7eea776050a22c8591c
+  mcumgr_flutter: b9864b2ae8334b6ba2b33f9ab4fc0a67bbe75c7a
+  SwiftCBOR: aa87349b4ccddd19f861aa544f7c27d43dee5772
+  SwiftProtobuf: 3fafd1b2fb97e6d95ad9c8adb2215da9afec7c83
   ZIPFoundation: b8c29ea7ae353b309bc810586181fd073cb3312c
 
-PODFILE CHECKSUM: 3f1f31a4c004606fb12c807abf3244227d0573fc
+PODFILE CHECKSUM: 966087727954c3bf1639d9952d83e40873e13a60
 
 COCOAPODS: 1.16.2

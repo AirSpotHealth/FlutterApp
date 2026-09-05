@@ -1,3 +1,5 @@
+import 'package:airspothealth/core/models/device_model.dart';
+import 'package:airspothealth/core/services/ble_service.dart';
 import 'package:airspothealth/core/theme/app_colors.dart';
 import 'package:airspothealth/features/add_device/providers/ble_device_connection_provider.dart';
 import 'package:airspothealth/features/devices/widgets/device_connect_button.dart';
@@ -27,6 +29,10 @@ class BleNewDeviceItem extends ConsumerWidget {
     final BluetoothBondState deviceStatus =
         ref.watch(bleDeviceConnectionProvider(device.remoteId.str));
 
+    final bool isSlim =
+        BLEService.instance.deviceModelFromScan(device.remoteId.str) ==
+        DeviceModel.airspotSlim;
+
     return ListTile(
       dense: true,
       key: ValueKey(device.remoteId),
@@ -37,7 +43,30 @@ class BleNewDeviceItem extends ConsumerWidget {
             : BorderSide.none,
       ),
       tileColor: Colors.white,
-      title: Text(device.platformName),
+      title: Row(
+        children: [
+          Text(device.platformName),
+          if (isSlim) ...[
+            const SizedBox(width: 6),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+              decoration: BoxDecoration(
+                color: const Color(0xFFFFF3E0),
+                borderRadius: BorderRadius.circular(4),
+                border: Border.all(color: const Color(0xFFFE9A23), width: 0.8),
+              ),
+              child: const Text(
+                'Slim',
+                style: TextStyle(
+                  fontSize: 10,
+                  fontWeight: FontWeight.w600,
+                  color: Color(0xFFFE9A23),
+                ),
+              ),
+            ),
+          ],
+        ],
+      ),
       subtitle: Text(device.advName),
       leading: const Icon(Icons.bluetooth, color: AppColors.primaryColor),
       trailing: DeviceConnectButton(deviceId: device.remoteId.str),

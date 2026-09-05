@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:typed_data';
 
+import 'package:airspothealth/core/services/ble_communicator_service.dart';
 import 'package:airspothealth/core/models/ble_device.dart';
 import 'package:airspothealth/core/models/device_data.dart';
 import 'package:airspothealth/core/models/device_data_type.dart';
@@ -27,6 +28,8 @@ class _DeviceHistoryDataRequestNotifier
   String get deviceId => arg;
 
   int? currentPageNumber;
+  int? _startPageNumber;
+  bool _hasWrappedAround = false;
   int numberOfPagesFetched = 0;
 
   int numberOfBlankPagesFetched = 0;
@@ -44,12 +47,17 @@ class _DeviceHistoryDataRequestNotifier
   static final _unsyncedThresholdDate =
       DateTime.fromMillisecondsSinceEpoch(Constants.syncedTimeThreshold);
 
+  bool _pausedForUpdate = false;
   Timer? _flushTimer;
   Timer? _timeoutTimer;
   static const _requestTimeout = Duration(seconds: 30);
 
   @override
   build(String arg) {
+    ref.onDispose(() {
+      _flushTimer?.cancel();
+      _timeoutTimer?.cancel();
+    });
     bleDevice = ref.read(bleDeviceProvider(deviceId));
     return AsyncNone();
   }
@@ -70,11 +78,30 @@ class _DeviceHistoryDataRequestNotifier
     numberOfPagesFetched = 0;
     numberOfBlankPagesFetched = 0;
     currentPageNumber = null;
+    _startPageNumber = null;
+    _hasWrappedAround = false;
 
     _requestData();
   }
 
+  void pauseForUpdate() {
+    _pausedForUpdate = true;
+    _timeoutTimer?.cancel();
+    _flushTimer?.cancel();
+    _commitData();
+    state = const AsyncNone();
+  }
+
+  void resumeAfterUpdate() {
+    if (BleCommunicatorService.instance.communicator(deviceId).isSuspended) return;
+    if (!_pausedForUpdate) return;
+    _pausedForUpdate = false;
+    final requested = duration;
+    if (requested != null) request(requested);
+  }
+
   void _requestData() {
+    if (BleCommunicatorService.instance.communicator(deviceId).isSuspended) return;
     debugPrint('REQUEST:Current page number: $currentPageNumber');
     _startTimeoutTimer();
 
@@ -110,11 +137,14 @@ class _DeviceHistoryDataRequestNotifier
   }
 
   void handleHistoricalDataResponse(dynamic data) {
+    if (BleCommunicatorService.instance.communicator(deviceId).isSuspended) return;
     // Cancel timeout timer when we get a response
     _timeoutTimer?.cancel();
 
     if (data is int) {
       currentPageNumber = data;
+      _startPageNumber = data;
+      _hasWrappedAround = false;
       _requestData();
       return;
     }
@@ -135,7 +165,15 @@ class _DeviceHistoryDataRequestNotifier
     currentPageNumber = (currentPageNumber ?? 0) - 1;
 
     if (currentPageNumber! < 0) {
-      currentPageNumber = Constants.maxFlashPageCount - 1;
+      if (_hasWrappedAround || _shouldStopRingWrap()) {
+        debugPrint(
+            'REQUEST:End of flash scan at page 0 (start=$_startPageNumber, wrapped=$_hasWrappedAround)');
+        _saveData(deviceDataList);
+        handleHistoricalDataFetchComplete();
+        return;
+      }
+      _hasWrappedAround = true;
+      currentPageNumber = Constants.maxFlashPageIndex;
     }
 
     debugPrint(
@@ -185,6 +223,16 @@ class _DeviceHistoryDataRequestNotifier
     }
 
     _dataBuffer.clear();
+  }
+
+  /// Skip wrapping from page 0 → 16382 when the write pointer is still in the
+  /// low part of flash (partially-filled log). Full ring buffers need one wrap.
+  bool _shouldStopRingWrap() {
+    final start = _startPageNumber;
+    if (start == null) {
+      return true;
+    }
+    return start < Constants.maxFlashPageIndex;
   }
 
   bool _shouldFetchMoreData(List<DeviceData> deviceDataList) {
@@ -258,6 +306,8 @@ class _DeviceHistoryDataRequestNotifier
     requestedDateTimeRange = null;
     duration = null;
     currentPageNumber = null;
+    _startPageNumber = null;
+    _hasWrappedAround = false;
     numberOfPagesFetched = 0;
     state = AsyncSuccess(null);
   }
@@ -370,6 +420,8 @@ class _DeviceHistoryDataRequestNotifier
     state = AsyncNone();
 
     currentPageNumber = null;
+    _startPageNumber = null;
+    _hasWrappedAround = false;
     numberOfPagesFetched = 0;
     requestedDateTimeRange = null;
     pendingDateTimeRange = null;

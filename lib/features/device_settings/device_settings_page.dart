@@ -1,5 +1,7 @@
 import 'package:airspothealth/core/models/ble_device.dart';
+import 'package:airspothealth/core/models/device_capabilities.dart';
 import 'package:airspothealth/core/models/device_data.dart';
+import 'package:airspothealth/core/models/device_model.dart';
 import 'package:airspothealth/core/models/device_settings.dart';
 import 'package:airspothealth/core/providers/ble_device_communication_provider.dart';
 import 'package:airspothealth/core/providers/ble_saved_devices_provider.dart';
@@ -72,44 +74,53 @@ class _DeviceSettingsPageState extends ConsumerState<DeviceSettingsPage> {
     });
   }
 
-  static final _deviceSettingsList = <SettingItem>[
-    // SettingItem(
-    //   title: 'High ${Constants.co2Text} Alert',
-    //   assetIcon: Assets.co2Settings,
-    //   route: RouteNames.co2Settings,
-    //   enabled: true,
-    // ),
-    SettingItem(
-      title: 'Device Screen Settings',
-      assetIcon: Assets.screenSettings,
-      route: RouteNames.screenSettings,
-    ),
-    SettingItem(
-      title: 'Notification Settings',
-      assetIcon: Assets.alarmSettings,
-      route: RouteNames.notificationSettings,
-    ),
-    SettingItem(
-      title: 'Do Not Disturb',
-      assetIcon: Assets.doNotDisturbSettings,
-      route: RouteNames.doNotDisturbSettings,
-    ),
-    SettingItem(
-      title: 'AirSpot Device Update',
-      assetIcon: Assets.deviceUpdate,
-      route: RouteNames.deviceUpdate,
-    ),
-    SettingItem(
-      title: 'Calibrate Device',
-      assetIcon: Assets.recalibrateSettings,
-      route: RouteNames.recalibrateSettings,
-    ),
-    SettingItem(
-      title: 'Locate my Airspot',
-      assetIcon: Assets.findMyDevice,
-      route: RouteNames.findMyDevice,
-    )
-  ];
+  List<SettingItem> _capabilitySettingsItems(DeviceCapabilities caps) {
+    return [
+      if (caps.supportsScreenSettings())
+        SettingItem(
+          title: 'Device Screen Settings',
+          assetIcon: Assets.screenSettings,
+          route: RouteNames.screenSettings,
+        ),
+      if (caps.supportsNotificationSettings())
+        SettingItem(
+          title: 'Notification Settings',
+          assetIcon: Assets.alarmSettings,
+          route: RouteNames.notificationSettings,
+        ),
+      if (caps.supportsDnd())
+        SettingItem(
+          title: 'Do Not Disturb',
+          assetIcon: Assets.doNotDisturbSettings,
+          route: RouteNames.doNotDisturbSettings,
+        ),
+      if (caps.supportsDeviceUpdate())
+        SettingItem(
+          title: 'AirSpot Device Update',
+          assetIcon: Assets.deviceUpdate,
+          route: RouteNames.deviceUpdate,
+        ),
+      if (caps.supportsCalibration())
+        SettingItem(
+          title: 'Calibrate Device',
+          assetIcon: Assets.recalibrateSettings,
+          route: RouteNames.recalibrateSettings,
+        ),
+      if (caps.supportsLocate())
+        SettingItem(
+          title: 'Locate my Airspot',
+          assetIcon: Assets.findMyDevice,
+          route: RouteNames.findMyDevice,
+        ),
+      // Keep the LED & charging guide last — it's reference info, not a setting.
+      if (caps.supportsSlimLedStatus())
+        SettingItem(
+          title: 'LED & charging guide',
+          assetIcon: Assets.screenSettings,
+          route: RouteNames.slimStatusLed,
+        ),
+    ];
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -122,6 +133,10 @@ class _DeviceSettingsPageState extends ConsumerState<DeviceSettingsPage> {
       context.pop();
       return const SizedBox();
     }
+
+    final capabilities = DeviceCapabilities.fromModel(
+      device.deviceModel ?? DeviceModel.unknown,
+    );
 
     return Scaffold(
       backgroundColor: Colors.white,
@@ -142,14 +157,18 @@ class _DeviceSettingsPageState extends ConsumerState<DeviceSettingsPage> {
         padding: const EdgeInsets.only(left: 16, right: 16, bottom: 16),
         children: [
           CloudSyncSettingWidget(deviceId: widget.deviceId),
-          AlarmSettingWidget(deviceId: widget.deviceId),
-          VibrateSettingWidget(deviceId: widget.deviceId),
+          if (capabilities.hasAlarm())
+            AlarmSettingWidget(deviceId: widget.deviceId),
+          if (capabilities.hasVibration())
+            VibrateSettingWidget(deviceId: widget.deviceId),
           AutoConnectSettingWidget(deviceId: widget.deviceId),
           LiveActivitySettingWidget(deviceId: widget.deviceId),
-          _buildTimeSettingWidget(ref),
+          if (capabilities.supportsTimeSettings())
+            _buildTimeSettingWidget(ref),
           PowerModeSettingWidget(deviceId: widget.deviceId),
-          ..._buildSettingsList(ref),
-          FlightModeWidget(deviceId: widget.deviceId),
+          ..._buildSettingsList(ref, capabilities),
+          if (capabilities.supportsManualFlightMode())
+            FlightModeWidget(deviceId: widget.deviceId),
           // DeviceDataDownloadSettingWidget(deviceId: deviceId),
           DisconnectDeviceWidget(device: device),
           ForgetDeviceWidget(deviceId: widget.deviceId),
@@ -220,8 +239,9 @@ class _DeviceSettingsPageState extends ConsumerState<DeviceSettingsPage> {
     );
   }
 
-  Iterable<Widget> _buildSettingsList(WidgetRef ref) {
-    return _deviceSettingsList.map(
+  Iterable<Widget> _buildSettingsList(
+      WidgetRef ref, DeviceCapabilities capabilities) {
+    return _capabilitySettingsItems(capabilities).map(
       (item) => SettingItemWidget(
         item: item,
         onTap: () {

@@ -1,10 +1,10 @@
 import 'package:airspothealth/core/providers/ble_device_communication_provider.dart';
 import 'package:airspothealth/core/providers/device_settings_provider.dart';
-import 'package:airspothealth/core/theme/app_colors.dart';
 import 'package:airspothealth/core/utils/device_cmd_utils.dart';
 import 'package:airspothealth/core/utils/extensions.dart';
 import 'package:airspothealth/core/utils/local_date_format.dart';
 import 'package:airspothealth/features/device_settings/widgets/device_settings_name_widget.dart';
+import 'package:airspothealth/features/device_settings/widgets/device_time_picker_submit_button.dart';
 import 'package:bottom_picker/bottom_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -56,7 +56,7 @@ class _TimeSettingsPageState extends ConsumerState<TimeSettingsPage> {
 
   void _updateAutoSync(bool value) {
     ref.read(deviceSettingsProvider(widget.deviceId).notifier).updateSettings(
-          ref.watch(deviceSettingsProvider(widget.deviceId)).copyWith(
+          ref.read(deviceSettingsProvider(widget.deviceId)).copyWith(
                 autoSyncTime: value,
               ),
         );
@@ -141,21 +141,17 @@ class _TimeSettingsPageState extends ConsumerState<TimeSettingsPage> {
         minutes: _selectedMinute,
       ),
       dismissable: true,
-      buttonWidth: MediaQuery.of(context).size.width * 0.8,
-      buttonStyle: BoxDecoration(
-        color: AppColors.brandColorGreen,
-        borderRadius: BorderRadius.circular(10),
-      ),
       use24hFormat: !is12Hour,
-      onSubmit: (time) {
-        debugPrint('time: ${time.runtimeType}');
-        setState(() {
-          _selectedHour = time.hour;
-          _selectedMinute = time.minute;
-        });
-
-        _updateManualTime();
-      },
+      buttonBuilder: (instance, context) => DeviceTimePickerSubmitButton(
+        picker: instance,
+        onTimeSelected: (time) {
+          setState(() {
+            _selectedHour = time.hour;
+            _selectedMinute = time.minute;
+          });
+          _updateManualTime();
+        },
+      ),
     ).show(context);
   }
 }

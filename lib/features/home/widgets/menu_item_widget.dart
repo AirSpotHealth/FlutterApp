@@ -40,9 +40,9 @@ class MenuItemWidget extends StatelessWidget {
         menuItem.iconAsset,
         width: 32,
       ),
-      trailing: Icon(
-          menuItem.enabled ? Icons.arrow_forward_ios : FontAwesomeIcons.ban,
-          size: 16),
+      trailing: menuItem.enabled
+          ? const Icon(Icons.arrow_forward_ios, size: 16)
+          : const FaIcon(FontAwesomeIcons.ban, size: 16),
       onTap: () {
         WidgetsBinding.instance.addPostFrameCallback((_) {
           if (menuItem.route != null) {

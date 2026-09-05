@@ -1,4 +1,6 @@
+import 'package:airspothealth/core/models/device_model.dart';
 import 'package:airspothealth/core/models/device_settings.dart';
+import 'package:airspothealth/core/providers/ble_saved_devices_provider.dart';
 import 'package:airspothealth/core/providers/device_settings_provider.dart';
 import 'package:airspothealth/core/theme/app_colors.dart';
 import 'package:airspothealth/core/utils/extensions.dart';
@@ -41,6 +43,9 @@ class RecalibrateDevicePage extends ConsumerWidget {
         ref.watch(deviceSettingsProvider(deviceId));
     final AsyncProgressValue calibrationStatus =
         ref.watch(recalibrationTimeProvider(deviceId));
+    final bool isSlim =
+        ref.read(bleSavedDevicesProvider.notifier).getDeviceById(deviceId)?.deviceModel ==
+        DeviceModel.airspotSlim;
 
     debugPrint("CALIB TARGET: ${deviceSettings.recalibrationTarget}");
 
@@ -53,7 +58,7 @@ class RecalibrateDevicePage extends ConsumerWidget {
         ),
       ),
       body: calibrationStatus.isNone
-          ? _buildCalibrationSettings(calibrationStatus, deviceSettings, ref)
+          ? _buildCalibrationSettings(calibrationStatus, deviceSettings, ref, isSlim: isSlim)
           : _buildCalibrationStatusWidget(
               calibrationStatus, deviceSettings, ref),
     );
@@ -62,47 +67,52 @@ class RecalibrateDevicePage extends ConsumerWidget {
   Widget _buildCalibrationSettings(
     AsyncProgressValue calibrationStatus,
     DeviceSettings deviceSettings,
-    WidgetRef ref,
-  ) {
+    WidgetRef ref, {
+    required bool isSlim,
+  }) {
     return ListView(
       padding: const EdgeInsets.all(16),
       physics: const AlwaysScrollableScrollPhysics(),
       shrinkWrap: true,
       children: [
-        SwitchListTile(
-          contentPadding: EdgeInsets.zero,
-          title: const Text('Auto Calibration',
-              style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold)),
-          subtitle: const Text(
-            'Automatically calibrate the sensor based on the lowest CO₂ reading in the previous 7 days.',
+        if (!isSlim) ...[
+          SwitchListTile(
+            contentPadding: EdgeInsets.zero,
+            title: const Text('Auto Calibration',
+                style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold)),
+            subtitle: const Text(
+              'Automatically calibrate the sensor based on the lowest CO₂ reading in the previous 7 days.',
+              style: TextStyle(fontSize: 12, color: Colors.black),
+            ),
+            value: deviceSettings.autoCalibration,
+            onChanged: calibrationStatus.isInProgress
+                ? null
+                : (value) {
+                    ref
+                        .read(deviceSettingsProvider(deviceId).notifier)
+                        .updateSettings(
+                            deviceSettings.copyWith(autoCalibration: value));
+                  },
+          ),
+          const SizedBox(height: 4),
+          Text(
+            'If Auto Calibration is enabled, AirSpot will calibrate itself on the assumption that it has made measurements in fresh air at least once a week. It is usually best to leave this OFF unless you are sure AirSpot will be measuring fresh air at least every few days. See full manual for details.',
             style: TextStyle(fontSize: 12, color: Colors.black),
           ),
-          value: deviceSettings.autoCalibration,
-          onChanged: calibrationStatus.isInProgress
-              ? null
-              : (value) {
-                  ref
-                      .read(deviceSettingsProvider(deviceId).notifier)
-                      .updateSettings(
-                          deviceSettings.copyWith(autoCalibration: value));
-                },
-        ),
-        const SizedBox(height: 4),
-        Text(
-          'If Auto Calibration is enabled, AirSpot will calibrate itself on the assumption that it has made measurements in fresh air at least once a week. It is usually best to leave this OFF unless you are sure AirSpot will be measuring fresh air at least every few days. See full manual for details.',
-          style: TextStyle(fontSize: 12, color: Colors.black),
-        ),
-        if (deviceSettings.autoCalibration)
-          NextCalibrationDateWidget(deviceId: deviceId),
-        const SizedBox(height: 8),
-        const Divider(),
+          if (deviceSettings.autoCalibration)
+            NextCalibrationDateWidget(deviceId: deviceId),
+          const SizedBox(height: 8),
+          const Divider(),
+        ],
         ManualCalibrationWidget(
           deviceId: deviceId,
           calibrationTarget: deviceSettings.recalibrationTarget,
         ),
-        const Divider(),
-        AltitudePressureScalingWidget(deviceId: deviceId),
-        const SizedBox(height: 8),
+        if (!isSlim) ...[
+          const Divider(),
+          AltitudePressureScalingWidget(deviceId: deviceId),
+          const SizedBox(height: 8),
+        ],
         const Divider(),
         ResetSensorWidget(deviceId: deviceId),
       ],

@@ -1,4 +1,5 @@
 import 'package:airspothealth/core/models/ble_device.dart';
+import 'package:airspothealth/core/models/device_model.dart';
 import 'package:airspothealth/core/router/route_names.dart';
 import 'package:airspothealth/core/theme/app_colors.dart';
 import 'package:airspothealth/core/utils/app_utils.dart';
@@ -36,7 +37,7 @@ class BleDeviceWidget extends ConsumerWidget {
         ref.watch(bleDeviceConnectionProvider(bleDevice.deviceId));
 
     final AsyncValue<RemoteVersion?> remoteVersion =
-        ref.watch(firmwareRemoteVersionProvider);
+        ref.watch(firmwareRemoteVersionProvider(bleDevice.deviceId));
 
     final bool deviceConnected =
         deviceConnectionState == BluetoothBondState.bonded;
@@ -110,17 +111,37 @@ class BleDeviceWidget extends ConsumerWidget {
 
   Widget _buildDeviceInfoRow(BuildContext context, WidgetRef ref,
       bool deviceConnected, AsyncValue<RemoteVersion?> remoteVersion) {
+    final bool isSlim = bleDevice.deviceModel == DeviceModel.airspotSlim;
+    final String displayName = deviceConnected
+        ? bleDevice.name
+        : (bleDevice.alias == null || bleDevice.alias == "Airspot")
+            ? bleDevice.name
+            : bleDevice.alias!;
+
     return Row(
       children: [
-        Text(
-          deviceConnected
-              ? bleDevice.name
-              : (bleDevice.alias == null || bleDevice.alias == "Airspot")
-                  ? bleDevice.name
-                  : bleDevice.alias!,
-          style: context.textTheme.labelLarge,
-        ),
-        if (deviceConnected &&
+        Text(displayName, style: context.textTheme.labelLarge),
+        if (isSlim) ...[
+          const SizedBox(width: 6),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+            decoration: BoxDecoration(
+              color: const Color(0xFFFFF3E0),
+              borderRadius: BorderRadius.circular(4),
+              border: Border.all(color: const Color(0xFFFE9A23), width: 0.8),
+            ),
+            child: const Text(
+              'Slim',
+              style: TextStyle(
+                fontSize: 10,
+                fontWeight: FontWeight.w600,
+                color: Color(0xFFFE9A23),
+              ),
+            ),
+          ),
+        ],
+        if (!isSlim &&
+            deviceConnected &&
             remoteVersion is AsyncData<RemoteVersion?> &&
             remoteVersion.value != null &&
             AppUtils.isVersionGreater(

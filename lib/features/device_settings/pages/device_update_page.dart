@@ -1,5 +1,8 @@
 // ignore_for_file: use_build_context_synchronously
 
+import 'package:airspothealth/core/models/device_capabilities.dart';
+import 'package:airspothealth/core/models/device_model.dart';
+import 'package:airspothealth/core/providers/ble_saved_devices_provider.dart';
 import 'package:airspothealth/core/utils/extensions.dart';
 import 'package:airspothealth/core/widgets/app_logo.dart';
 import 'package:airspothealth/core/widgets/tappable_widget.dart';
@@ -35,11 +38,37 @@ class _DeviceUpdatePageState extends ConsumerState<DeviceUpdatePage> {
   }
 
   Future<void> _fetchRemoteVersion() async {
-    ref.read(firmwareRemoteVersionProvider.notifier).fetchRemoteVersion();
+    ref
+        .read(firmwareRemoteVersionProvider(deviceId).notifier)
+        .fetchRemoteVersion();
   }
 
   @override
   Widget build(BuildContext context) {
+    final device =
+        ref.read(bleSavedDevicesProvider.notifier).getDeviceById(deviceId);
+    final caps = DeviceCapabilities.fromModel(
+      device?.deviceModel ?? DeviceModel.unknown,
+    );
+    if (!caps.supportsDeviceUpdate()) {
+      return Scaffold(
+        appBar: AppBar(
+          title: DeviceSettingsNameWidget(
+            deviceId: deviceId,
+            suffixText: 'Device Update',
+          ),
+        ),
+        body: Padding(
+          padding: const EdgeInsets.all(24),
+          child: Text(
+            'Over-the-air updates are not available for this device yet. '
+            'Firmware is updated with a J-Link programmer (see firmware README).',
+            style: Theme.of(context).textTheme.bodyLarge,
+          ),
+        ),
+      );
+    }
+
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: AppBar(
@@ -82,23 +111,37 @@ class _DeviceUpdatePageState extends ConsumerState<DeviceUpdatePage> {
 
   // allow zip file to be uploaded
   void _showLocalFilePicker(WidgetRef ref, String deviceId) {
-    FilePicker.platform.pickFiles(
+    FilePicker.pickFiles(
       type: FileType.custom,
-      allowedExtensions: ['zip'],
+      allowedExtensions: ref
+                  .read(bleSavedDevicesProvider.notifier)
+                  .getDeviceById(deviceId)
+                  ?.deviceModel ==
+              DeviceModel.airspotSlim
+          ? ['zip', 'bin']
+          : ['zip'],
     ).then((result) {
-      if (result != null) {
-        showAdaptiveDialog(
-          context: ref.context,
-          barrierDismissible: false,
-          builder: (context) => DeviceFirmwareUpdateDialog.local(
-            deviceId: deviceId,
-            localFilePath: result.files.single.path,
-            currentVersion: ref.read(bleDeviceVersionProvider(deviceId)),
-          ),
-        );
-      } else {
+      if (result == null) {
         ref.context.showSnackBar('No file selected');
+        return;
       }
+
+      final path = result.files.single.path;
+      if (path == null) {
+        ref.context.showSnackBar(
+            'Could not access the selected file. Copy it to On My iPhone first.');
+        return;
+      }
+
+      showAdaptiveDialog(
+        context: ref.context,
+        barrierDismissible: false,
+        builder: (context) => DeviceFirmwareUpdateDialog.local(
+          deviceId: deviceId,
+          localFilePath: path,
+          currentVersion: ref.read(bleDeviceVersionProvider(deviceId)),
+        ),
+      );
     }).catchError((e) {
       ref.context.showSnackBar('Error selecting file: $e');
     });

@@ -1,4 +1,5 @@
 import 'package:airspothealth/core/utils/local_date_format.dart';
+import 'package:flutter_blue_plus/flutter_blue_plus.dart';
 import 'package:intl/intl.dart';
 
 class Constants {
@@ -28,6 +29,20 @@ class Constants {
     'BLUETOOTH_WRITE_UUID',
     defaultValue: '6E400002-B5A3-F393-E0A9-E50E24DCCA9E',
   );
+
+  // MCUmgr SMP service — present on Slim (nRF54L05/NCS) devices only
+  static const String smpServiceUuid = '8D53DC1D-1DB7-4CD3-868B-8A527460AA84';
+  static const String smpCharacteristicUuid =
+      'DA2E7828-FBCE-4E01-AE9E-261174997C48';
+
+  /// GATT discovery timeout. Slim (NUS + MCUmgr SMP) can exceed 15s on Android,
+  /// especially with default MTU 23 when using autoConnect.
+  static const int gattDiscoverTimeoutSeconds = 45;
+
+  static Guid get nusServiceGuid => Guid(serviceUuid);
+  static Guid get nusWriteGuid => Guid(writeUuid);
+  static Guid get nusNotifyGuid => Guid(notifyUuid);
+  static Guid get smpServiceGuid => Guid(smpServiceUuid);
 
   // Supabase Configuration - loaded from environment variables
   static const String supabaseUrl = String.fromEnvironment(
@@ -159,7 +174,11 @@ class Constants {
     }
 ''';
 
-  static const int maxFlashPageCount = 16384;
+  /// Half-page count for circular CO₂ flash log. Valid indices are
+  /// `0` .. [maxFlashPageIndex] (16382). Index 16383 is rejected by Slim firmware.
+  static const int maxFlashPageCount = 16383;
+
+  static int get maxFlashPageIndex => maxFlashPageCount - 1;
 
   static const int syncedTimeThreshold = 978267600000;
 

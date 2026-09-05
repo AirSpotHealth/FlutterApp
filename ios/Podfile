@@ -27,6 +27,28 @@ require File.expand_path(File.join('packages', 'flutter_tools', 'bin', 'podhelpe
 
 flutter_ios_podfile_setup
 
+# nordic_dfu 7.1.2 SPM: product package id must be IOS-DFU-Library, not NordicDFU.
+def patch_nordic_dfu_spm!
+  old = '.product(name: "NordicDFU", package: "NordicDFU")'
+  new = '.product(name: "NordicDFU", package: "IOS-DFU-Library")'
+  paths = []
+  paths += Dir[File.join(__dir__, 'Flutter/ephemeral/Packages/.packages/nordic_dfu-*/Package.swift')]
+  pub_cache = `cd #{File.join(__dir__, '..')} && flutter pub cache path 2>/dev/null`.strip
+  paths += Dir[File.join(pub_cache, 'hosted/pub.dev/nordic_dfu-*/darwin/nordic_dfu/Package.swift')] unless pub_cache.empty?
+  paths.uniq.each do |path|
+    next unless File.file?(path)
+
+    src = File.read(path)
+    fixed = src.gsub(old, new)
+    next if fixed == src
+
+    File.write(path, fixed)
+    puts "Patched nordic_dfu SPM: #{path}"
+  end
+end
+
+patch_nordic_dfu_spm!
+
 target 'Runner' do
   use_frameworks!
   use_modular_headers!
@@ -48,6 +70,69 @@ post_install do |installer|
         'PERMISSION_BLUETOOTH=1',
         'PERMISSION_LOCATION=1'
       ]
+    end
+  end
+
+  # Patch iOSMcuManagerLibrary so the FirmwareUpgradeManager can cope with an
+  # empty image list during the Validate step. The nRF54L05 in single-application
+  # MCUboot mode returns images:{} before any DFU has occurred, which the
+  # unpatched library hard-fails as "Invalid response".
+  manager_path = File.join(
+    File.dirname(__FILE__),
+    'Pods/iOSMcuManagerLibrary/iOSMcuManagerLibrary/Source/Managers/DFU/FirmwareUpgradeManager.swift'
+  )
+  if File.exist?(manager_path)
+    src = File.read(manager_path)
+    # Use explicit lines (not <<~) so indentation matches the Swift file exactly; squiggly
+    # heredocs strip leading spaces and the anchor never matched, skipping the patch.
+    old_8 = [
+      '        // Check that the image array exists.',
+      '        guard let responseImages = response.images, responseImages.count > 0 else {',
+      '            self.fail(error: FirmwareUpgradeError.invalidResponse(response))',
+      '            return',
+      '        }',
+    ].join("\n")
+    new_8 = [
+      '        // Allow nil / empty image list. Devices like nRF54L05 in single-application',
+      '        // MCUboot mode return an empty or map-encoded images field before any DFU has',
+      '        // occurred. The rest of the loop handles an empty slice gracefully.',
+      '        let responseImages = response.images ?? []',
+    ].join("\n")
+    old_12_comment = [
+      '            // Check that the image array exists.',
+      '            guard let responseImages = response.images, responseImages.count > 0 else {',
+      '                self.fail(error: FirmwareUpgradeError.invalidResponse(response))',
+      '                return',
+      '            }',
+    ].join("\n")
+    new_12_comment = [
+      '            // Allow nil / empty image list. Devices like nRF54L05 in single-application',
+      '            // MCUboot mode return an empty or map-encoded images field before any DFU has',
+      '            // occurred. The rest of the loop handles an empty slice gracefully.',
+      '            let responseImages = response.images ?? []',
+    ].join("\n")
+    old_12_plain = [
+      '            guard let responseImages = response.images, responseImages.count > 0 else {',
+      '                self.fail(error: FirmwareUpgradeError.invalidResponse(response))',
+      '                return',
+      '            }',
+    ].join("\n")
+    new_12_plain = [
+      '            // Allow nil / empty image list (nRF54L05 empty image state; see Podfile).',
+      '            let responseImages = response.images ?? []',
+    ].join("\n")
+
+    unless src.include?('Allow nil / empty image list')
+      # CocoaPods vendors this file as read-only; make it writable before patching.
+      File.chmod(File.stat(manager_path).mode | 0o200, manager_path)
+
+      patched = src.gsub(old_8, new_8).gsub(old_12_comment, new_12_comment).gsub(old_12_plain, new_12_plain)
+      if patched != src
+        File.write(manager_path, patched)
+        puts 'Patched FirmwareUpgradeManager.swift for nRF54L05 empty-image-list compatibility'
+      elsif src.include?('response.images, responseImages.count > 0')
+        puts '[!] iOSMcuManagerLibrary: nRF54 empty-image-list patch anchor not found; Slim DFU validate may fail. Check FirmwareUpgradeManager.swift listCallback.'
+      end
     end
   end
 end

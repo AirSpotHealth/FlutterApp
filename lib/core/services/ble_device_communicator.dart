@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:io';
 
 import 'package:airspothealth/core/services/ble_data_service.dart';
 import 'package:airspothealth/core/utils/constants.dart';
@@ -15,38 +16,87 @@ class BleDeviceCommunicator {
   StreamSubscription<List<int>>? _notifySubscription;
   Completer<void>? _initCompleter;
 
+  bool _isSlimDevice = false;
+  bool _initialized = false;
+  bool _suspended = false;
+  bool get isSuspended => _suspended;
+  final Set<Future<void>> _pendingWrites = {};
+
+  Future<void> suspend() async {
+    _suspended = true;
+    await _initCompleter?.future;
+    await Future.wait(_pendingWrites.toList());
+    await _notifySubscription?.cancel();
+    reset();
+  }
+
+  void resume() {
+    reset();
+    _suspended = false;
+  }
+
+  /// True if this device exposed the MCUmgr SMP service during discovery.
+  /// Set after [initialize] completes; used to select the correct DFU path.
+  bool get isSlimDevice => _isSlimDevice;
+
+  bool get isInitialized => _initialized;
+
   final StreamController<List<int>> _dataStreamController =
       StreamController.broadcast();
   Stream<List<int>> get dataStream => _dataStreamController.stream;
 
   BleDeviceCommunicator({required this.deviceId});
 
-  Future<void> initialize() async {
+  /// Returns true when NUS write characteristic is ready for commands.
+  Future<bool> initialize({bool duringUpdate = false}) async {
+    if (_suspended && !duringUpdate) return false;
+    if (_initialized) {
+      return true;
+    }
     if (_initCompleter != null) {
-      return _initCompleter!.future;
+      await _initCompleter!.future;
+      return _initialized;
     }
     _initCompleter = Completer<void>();
 
-    for (var i = 0; i < 3; i++) {
+    const maxAttempts = 3;
+    for (var attempt = 0; attempt < maxAttempts; attempt++) {
       if (device.isDisconnected) {
         debugPrint(
             'Device not connected, cannot initialize communicator for $deviceId');
         break;
       }
       try {
-        final services = await device.discoverServices();
-        final service = services.firstWhereOrNull(
-            (s) => s.uuid.toString().toUpperCase() == Constants.serviceUuid);
+        await _prepareConnectionForGatt();
+
+        final services = await device.discoverServices(
+          timeout: Constants.gattDiscoverTimeoutSeconds,
+        );
+
+        _logDiscoveredServices(services);
+
+        _isSlimDevice = services.any((s) => s.uuid == Constants.smpServiceGuid);
+        debugPrint('Device $deviceId isSlim=$_isSlimDevice');
+
+        final service = services
+            .firstWhereOrNull((s) => s.uuid == Constants.nusServiceGuid);
         if (service == null) {
-          debugPrint('Service not found for $deviceId');
-          break;
+          debugPrint(
+              'NUS service (${Constants.nusServiceGuid.str128}) not found for $deviceId');
+          await Future.delayed(const Duration(seconds: 1));
+          continue;
         }
 
-        _writeCharacteristic = service.characteristics.firstWhereOrNull(
-            (c) => c.uuid.toString().toUpperCase() == Constants.writeUuid);
+        _writeCharacteristic = service.characteristics
+            .firstWhereOrNull((c) => c.uuid == Constants.nusWriteGuid);
 
-        final notifyCharacteristic = service.characteristics.firstWhereOrNull(
-            (c) => c.uuid.toString().toUpperCase() == Constants.notifyUuid);
+        final notifyCharacteristic = service.characteristics
+            .firstWhereOrNull((c) => c.uuid == Constants.nusNotifyGuid);
+
+        if (_writeCharacteristic == null) {
+          debugPrint('NUS write characteristic not found for $deviceId');
+          continue;
+        }
 
         if (notifyCharacteristic != null) {
           if (device.isDisconnected) {
@@ -55,23 +105,28 @@ class BleDeviceCommunicator {
           await notifyCharacteristic.setNotifyValue(true);
           _notifySubscription?.cancel();
           _notifySubscription =
-              notifyCharacteristic.lastValueStream.listen((data) {
+              notifyCharacteristic.onValueReceived.listen((data) {
             _dataStreamController.add(data);
           });
           debugPrint('Subscribed to notifications for $deviceId');
         }
-        _initCompleter?.complete();
 
-        return; // Success
+        _initialized = true;
+        _initCompleter?.complete();
+        return true;
       } on PlatformException catch (e) {
-        debugPrint('Error initializing communicator (attempt ${i + 1}): $e');
-        if (e.message?.contains(Constants.serviceUuid.toLowerCase()) ?? false) {
-          await Future.delayed(const Duration(seconds: 1));
-          continue; // Retry
-        }
-        break;
+        debugPrint(
+            'Error initializing communicator (attempt ${attempt + 1}): $e');
+        await Future.delayed(const Duration(seconds: 1));
       } catch (e) {
-        debugPrint('Error initializing communicator for $deviceId: $e');
+        debugPrint(
+            'Error initializing communicator for $deviceId (attempt ${attempt + 1}): $e');
+        final isTimeout = e.toString().contains('Timed out') ||
+            e.toString().contains('timeout');
+        if (isTimeout && attempt < maxAttempts - 1) {
+          await Future.delayed(const Duration(seconds: 2));
+          continue;
+        }
         break;
       }
     }
@@ -79,19 +134,48 @@ class BleDeviceCommunicator {
     if (_initCompleter != null && !_initCompleter!.isCompleted) {
       _initCompleter!.complete();
     }
+    // A failed attempt must not poison every later initialize() call.
+    _initCompleter = null;
+    _writeCharacteristic = null;
+    return false;
+  }
+
+  Future<void> _prepareConnectionForGatt() async {
+    if (!Platform.isAndroid) {
+      return;
+    }
+    // Brief settle time after connect (autoConnect cannot request MTU during connect).
+    await Future.delayed(const Duration(milliseconds: 400));
+    if (device.isDisconnected) {
+      return;
+    }
+    try {
+      final mtu = await device.requestMtu(512);
+      debugPrint('Requested MTU for $deviceId: $mtu');
+    } catch (e) {
+      debugPrint('MTU request for $deviceId failed (non-fatal): $e');
+    }
+  }
+
+  void _logDiscoveredServices(List<BluetoothService> services) {
+    final uuids = services.map((s) => s.uuid.str128).join(', ');
+    debugPrint('GATT services for $deviceId (${services.length}): $uuids');
   }
 
   void reset() {
     _writeCharacteristic = null;
     _initCompleter = null;
+    _isSlimDevice = false;
+    _initialized = false;
     _notifySubscription?.cancel();
     _notifySubscription = null;
   }
 
-  Future<bool> sendCommand(List<int> data) async {
+  Future<bool> sendCommand(List<int> data, {bool duringUpdate = false}) async {
+    if (_suspended && !duringUpdate) return false;
     if (_writeCharacteristic == null) {
-      await initialize();
-      if (_writeCharacteristic == null) {
+      final ok = await initialize(duringUpdate: duringUpdate);
+      if (!ok || _writeCharacteristic == null) {
         debugPrint(
             'Write characteristic not found for $deviceId, cannot send command.');
         return false;
@@ -104,7 +188,14 @@ class BleDeviceCommunicator {
     }
 
     try {
-      await _writeCharacteristic!.write(data);
+      if (_suspended && !duringUpdate) return false;
+      final write = _writeCharacteristic!.write(data);
+      _pendingWrites.add(write);
+      try {
+        await write;
+      } finally {
+        _pendingWrites.remove(write);
+      }
       debugPrint(
           'Command sent to $deviceId: ${BleDataService.bytesToHexStr(data)}');
       return true;

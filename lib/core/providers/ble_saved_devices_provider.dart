@@ -1,5 +1,6 @@
 import 'package:airspothealth/core/models/ble_device.dart';
 import 'package:airspothealth/core/models/device_data.dart';
+import 'package:airspothealth/core/models/device_model.dart';
 import 'package:airspothealth/core/models/device_settings.dart';
 import 'package:airspothealth/core/providers/ble_device_communication_provider.dart';
 import 'package:airspothealth/core/providers/isar_service_provider.dart';
@@ -33,7 +34,16 @@ class _BleSavedDevicesNotifier extends Notifier<List<BleDevice>> {
 
   void addDevice(BleDevice device) {
     // check if device already exists
-    if (state.any((d) => d.deviceId == device.deviceId)) {
+    final existingDevice = state.firstWhereOrNull((d) => d.deviceId == device.deviceId);
+    if (existingDevice != null) {
+      // If device exists but doesn't have a model set, update it
+      if (existingDevice.deviceModelValue == null && device.deviceModelValue != null) {
+        final updatedDevice = existingDevice.copyWith(deviceModelValue: device.deviceModelValue);
+        ref.read(isarServiceProvider).write((isar) {
+          isar.bleDevices.put(updatedDevice);
+        });
+        state = state.map((d) => d.deviceId == device.deviceId ? updatedDevice : d).toList();
+      }
       return;
     }
 
@@ -42,6 +52,23 @@ class _BleSavedDevicesNotifier extends Notifier<List<BleDevice>> {
     });
 
     state = [...state, device];
+  }
+
+  /// Update device model after BLE service discovery confirms device type.
+  /// Called once per connection after [BleDeviceCommunicator.initialize] runs.
+  void updateDeviceModel(String deviceId, DeviceModel model) {
+    final existing =
+        state.firstWhereOrNull((d) => d.deviceId == deviceId);
+    if (existing == null) return;
+    if (existing.deviceModelValue == model.index) return;
+
+    final updated = existing.copyWith(deviceModelValue: model.index);
+    ref.read(isarServiceProvider).write((isar) {
+      isar.bleDevices.put(updated);
+    });
+    state =
+        state.map((d) => d.deviceId == deviceId ? updated : d).toList();
+    debugPrint('Device $deviceId model updated to $model');
   }
 
   void removeDeviceById(String deviceId) {

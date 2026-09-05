@@ -23,6 +23,16 @@ fi
 
 echo -e "${GREEN}✅ Flutter is installed${NC}"
 
+# Warn if xcode-select points at Xcode 26.4 without the iOS 26.4 platform (use 26.5)
+if command -v xcode-select &>/dev/null; then
+  xcode_path="$(xcode-select -p 2>/dev/null || true)"
+  if [[ "$xcode_path" == *"Xcode-26.4"* ]] && [[ -d "/Applications/Xcode.app/Contents/Developer" ]]; then
+    echo -e "${YELLOW}⚠️  xcode-select uses Xcode 26.4; iOS device builds need Xcode 26.5.${NC}"
+    echo -e "${YELLOW}   Run: sudo xcode-select -s /Applications/Xcode.app/Contents/Developer${NC}"
+    echo -e "${YELLOW}   Or: source scripts/use_xcode_26_5.sh before flutter run${NC}"
+  fi
+fi
+
 # Create .env file if it doesn't exist
 if [ ! -f ".env" ]; then
     echo -e "${YELLOW}📝 Creating .env file from template...${NC}"
@@ -63,6 +73,12 @@ fi
 # Get Flutter dependencies
 echo -e "${BLUE}📦 Getting Flutter dependencies...${NC}"
 flutter pub get
+
+# nordic_dfu 7.1.2 SPM package name fix (required for iOS builds with isar SPM)
+if [ -f "tool/patch_nordic_dfu_spm.sh" ]; then
+  echo -e "${BLUE}🔧 Patching nordic_dfu Swift Package Manager metadata...${NC}"
+  ./tool/patch_nordic_dfu_spm.sh
+fi
 
 echo -e "${GREEN}🎉 Setup complete!${NC}"
 echo ""

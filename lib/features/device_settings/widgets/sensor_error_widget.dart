@@ -5,8 +5,6 @@ import 'package:airspothealth/features/device_settings/models/setting_item.dart'
 import 'package:airspothealth/features/device_settings/widgets/setting_item_widget.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:font_awesome_flutter/font_awesome_flutter.dart';
-
 class SensorErrorWidget extends ConsumerStatefulWidget {
   const SensorErrorWidget({required this.deviceId, super.key});
 
@@ -27,7 +25,7 @@ class _SensorErrorWidgetState extends ConsumerState<SensorErrorWidget> {
           title: 'Test Sensor Error',
           leadingWidget: IconBgWidget(
             backgroundColor: Colors.teal,
-            child: FaIcon(
+            child: Icon(
               Icons.warning_amber,
               size: 22,
               color: Colors.black,

@@ -186,9 +186,9 @@ class DeviceCmdUtils {
   }
 
   static Uint8List getCo2History(int pageNumber) {
-    if (pageNumber < 0 || pageNumber > Constants.maxFlashPageCount - 1) {
+    if (pageNumber < 0 || pageNumber > Constants.maxFlashPageIndex) {
       throw Exception(
-          'Page offset must be between 0 and ${Constants.maxFlashPageCount - 1}');
+          'Page offset must be between 0 and ${Constants.maxFlashPageIndex}');
     }
 
     var byteArray = ByteData(2)..setInt16(0, pageNumber, Endian.big);

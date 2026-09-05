@@ -1,5 +1,6 @@
 import 'dart:typed_data';
 
+import 'package:airspothealth/core/models/device_model.dart';
 import 'package:airspothealth/core/models/ble_device.dart';
 import 'package:airspothealth/core/models/device_data.dart';
 import 'package:airspothealth/core/models/device_data_type.dart';
@@ -79,6 +80,7 @@ class BleDataService {
       ResponseCommand.locateMyAirspot: parser.parseLocateMyAirspot,
       ResponseCommand.dataEraseDone: parser.parseEraseDataDone,
       ResponseCommand.batteryLevel: parser.parseBatteryLevel,
+      ResponseCommand.lowBatteryLockout: parser.parseLowBatteryLockout,
       ResponseCommand.dndMode: (_) => null,
       ResponseCommand.populateFakeData: (_) => null,
       ResponseCommand.resetSensorResult: (_) => parser.parseOneByte(data, 4),
@@ -134,6 +136,14 @@ class BleDataService {
         ref.read(deviceDataEraseProvider(deviceId).notifier).setSuccess();
         break;
       case ResponseCommand.batteryLevel:
+        ref
+            .read(deviceBatteryLevelProvider(deviceId).notifier)
+            .updateBatteryLevel(value);
+        break;
+      case ResponseCommand.lowBatteryLockout:
+        // Device is about to drop BLE to protect a near-empty cell. Carry the
+        // lockout flag on the battery state so the UI can show a charging-wait
+        // banner instead of treating the disconnect as an error.
         ref
             .read(deviceBatteryLevelProvider(deviceId).notifier)
             .updateBatteryLevel(value);
@@ -255,7 +265,62 @@ class ResponseCommandParser {
 
   /// Parse CO2 value response
   /// When CO2 = 0xFFFF (65535), sensor has failed - bytes 4-5 contain error info
+  ///
+  /// Supported formats:
+  /// - Short format (6 bytes): CO2 only
+  /// - Standard format (11 bytes): Timestamp + CO2
+  /// - Extended format (15 bytes): Timestamp + CO2 + Temperature + Humidity (length byte = 0x0A)
   DeviceData parseCo2Value(List<int> data) {
+    // Check for new extended format (15 bytes with length byte = 0x0A)
+    if (data.length >= 15 && data[3] == 0x0A) {
+      // Extended format: Header (2) + Command (1) + Length (1) + Timestamp (4) + CO2 (2) + Temperature (2) + Humidity (2) + Checksum (1)
+      // Bytes: 0-1: Header, 2: Command, 3: Length (0x0A), 4-7: Timestamp, 8-9: CO2, 10-11: Temperature, 12-13: Humidity, 14: Checksum
+
+      final co2Value = (data[8] << 8) | (data[9] & 0xFF);
+
+      // Check for sensor error (0xFFFF = 65535)
+      if (co2Value == 0xFFFF) {
+        final errorCode = data[4];
+        final recoveryAttempts = data[5];
+        debugPrint(
+            'SENSOR ERROR detected (extended format): CO2 = 0xFFFF, errorCode = $errorCode, recoveryAttempts = $recoveryAttempts');
+
+        return DeviceData(
+          deviceId: deviceId,
+          dateTime: DateTime.now(),
+          value: errorCode,
+          type: DeviceDataType.sensorError.index,
+          isLiveCo2: true,
+        );
+      }
+
+      // Parse timestamp (bytes 4-7, Big Endian)
+      int datetimeMillis =
+          (data[4] << 24) | (data[5] << 16) | (data[6] << 8) | data[7];
+      final datetime = BleDataService.parseDeviceTimestamp(datetimeMillis);
+
+      // Parse temperature (bytes 10-11, signed 16-bit Big Endian, divide by 100.0)
+      final tempRaw = (data[10] << 8) | (data[11] & 0xFF);
+      final temperature = _parseSigned16Bit(tempRaw) / 100.0;
+
+      // Parse humidity (bytes 12-13, unsigned 16-bit Big Endian, divide by 100.0)
+      final humRaw = (data[12] << 8) | (data[13] & 0xFF);
+      final humidity = humRaw / 100.0;
+
+      debugPrint(
+          'CO2 Value: $co2Value, Temperature: ${temperature.toStringAsFixed(2)}°C, Humidity: ${humidity.toStringAsFixed(2)}%, DateTime: ${datetime.toIso8601String()}');
+
+      return DeviceData(
+        deviceId: deviceId,
+        dateTime: datetime,
+        value: co2Value,
+        type: DeviceDataType.co2.index,
+        isLiveCo2: true,
+        temperature: temperature,
+        humidity: humidity,
+      );
+    }
+
     // Short format (6 bytes)
     if (data.length < 10) {
       final value = (data[4] * 256 + (data[5] & 0xff));
@@ -321,6 +386,17 @@ class ResponseCommandParser {
     );
   }
 
+  /// Parse signed 16-bit integer from unsigned value
+  /// Handles two's complement representation
+  int _parseSigned16Bit(int unsignedValue) {
+    // If the MSB is set, it's negative
+    if (unsignedValue & 0x8000 != 0) {
+      // Convert from two's complement
+      return unsignedValue - 0x10000;
+    }
+    return unsignedValue;
+  }
+
   bool parseAlarm(List<int> data) => _parseBoolean(data, 4);
 
   bool parseVibration(List<int> data) => _parseBoolean(data, 4);
@@ -333,6 +409,14 @@ class ResponseCommandParser {
 
   BatteryState parseBatteryLevel(List<int> data) =>
       BatteryState(data[4], data[5] == 0x01);
+
+  /// Frame: `FF AA 46 02 [battery%] [charging] CKSUM`. Marks the battery state
+  /// as low-battery lockout so the UI shows a charging-wait state.
+  BatteryState parseLowBatteryLockout(List<int> data) => BatteryState(
+        data.length > 4 ? data[4] : null,
+        data.length > 5 && data[5] == 0x01,
+        lowBatteryLockout: true,
+      );
 
   bool parseSetCo2Ppm(List<int> data) => _parseBoolean(data, 4);
 
@@ -496,7 +580,8 @@ class ResponseCommandParser {
 
     // check if the firmware is less than v3.0.0
     // if so, parse it in old format
-    if (!AppUtils.isNewFirmwareVersion(device.firmwareVersion)) {
+    if (device.deviceModel != DeviceModel.airspotSlim &&
+        !AppUtils.isNewFirmwareVersion(device.firmwareVersion)) {
       _parseCo2OldHistoryData(data);
 
       // return null to indicate that the data is not a page number and has been parsed and saved
@@ -533,9 +618,12 @@ class ResponseCommandParser {
       debugPrint('DATE: ${date.toIso8601String()}');
 
       // Extract the value (2 bytes)
-      final highByte = historyData[i + 4] & 0xFF;
-      final lowByte = historyData[i + 5] & 0xFF;
-      final value = (highByte << 8) | lowByte;
+      final firstByte = historyData[i + 4] & 0xFF;
+      final secondByte = historyData[i + 5] & 0xFF;
+      // Slim's protocol_send_history_data sends LSB first.
+      final value = device.deviceModel == DeviceModel.airspotSlim
+          ? (secondByte << 8) | firstByte
+          : (firstByte << 8) | secondByte;
 
       /// Extract the type (1 byte)
       final type = historyData[i + 6];
@@ -709,6 +797,13 @@ class ResponseCommandParser {
   }
 
   AscData parseAscData(List<int> data) {
+    if (device.deviceModel == DeviceModel.airspotSlim) {
+      if (data.length != 8) {
+        throw const FormatException('Invalid Slim calibration correction');
+      }
+      final correction = (data[4] << 8) | data[5];
+      return AscData(correction: data[6] == 1 ? -correction : correction);
+    }
     final count = (data[4] << 8) | data[5];
     int correction = (data[6] << 8) | data[7];
     if (data[8] == 0x01) {
@@ -801,8 +896,7 @@ class ResponseCommandParser {
         .toUpperCase();
 
     final sensorVariantByte = data[offset++];
-    final sensorVariant =
-        "SCD4$sensorVariantByte"; // User's change incorporated
+    final sensorVariant = DeviceVariant.fromValue(sensorVariantByte).name;
 
     // Note: Checksum is at data[offset] or data[data.length-1]
     // We are not verifying checksum here but it's good practice to do so.
@@ -863,6 +957,7 @@ enum ResponseCommand {
   locateMyAirspot(0x10),
   dataEraseDone(0xFD),
   batteryLevel(0x20),
+  lowBatteryLockout(0x46),
   dndMode(0x22),
   populateFakeData(0x23),
   resetSensorResult(0x24),

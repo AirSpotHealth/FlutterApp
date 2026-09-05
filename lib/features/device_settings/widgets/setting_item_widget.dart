@@ -56,7 +56,7 @@ class SettingItemWidget extends StatelessWidget {
                         ),
                         const SizedBox(width: 8),
                         if (!item.enabled)
-                          const Icon(
+                          const FaIcon(
                             FontAwesomeIcons.ban,
                             size: 16,
                             color: Colors.grey,

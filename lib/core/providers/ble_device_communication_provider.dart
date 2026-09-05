@@ -1,8 +1,10 @@
 import 'dart:async';
 import 'dart:io';
 
+import 'package:airspothealth/features/device_graph/providers/device_history_data_request_provider.dart';
 import 'package:airspothealth/core/models/ble_device.dart';
 import 'package:airspothealth/core/models/device_data.dart';
+import 'package:airspothealth/core/models/device_model.dart';
 import 'package:airspothealth/core/models/device_data_type.dart';
 import 'package:airspothealth/core/models/device_settings.dart';
 import 'package:airspothealth/core/models/live_activity_model.dart';
@@ -23,6 +25,7 @@ import 'package:airspothealth/core/services/zone_analysis_service.dart';
 import 'package:airspothealth/core/utils/device_cmd_utils.dart';
 import 'package:airspothealth/core/utils/extensions.dart';
 import 'package:airspothealth/core/utils/local_date_format.dart';
+import 'package:airspothealth/core/providers/ble_saved_devices_provider.dart';
 import 'package:airspothealth/features/app_setup/providers/dev_mode_provider.dart';
 import 'package:airspothealth/features/device_graph/providers/ble_device_provider.dart';
 import 'package:airspothealth/features/device_settings/models/device_sensor_config_data.dart';
@@ -182,11 +185,49 @@ class _BleDeviceCommunicationNotifier extends FamilyNotifier<dynamic, String> {
     });
   }
 
-  void setConnected() {
-    _communicator.reset();
-    _communicator.initialize().then((_) {
-      _getInitialData();
+  Future<bool>? _connectionSetup;
+
+  Future<bool> setConnected() {
+    if (_communicator.isSuspended) return Future.value(false);
+    return _connectionSetup ??= _initializeConnection().whenComplete(() {
+      _connectionSetup = null;
     });
+  }
+
+  Future<bool> _initializeConnection() async {
+    _communicator.reset();
+    if (!await _communicator.initialize()) {
+      debugPrint('BLE GATT setup failed for $deviceId');
+      return false;
+    }
+    _updateDeviceModel();
+    await _getInitialData();
+    ref
+        .read(deviceHistoryDataRequestProvider(deviceId).notifier)
+        .resumeAfterUpdate();
+    return true;
+  }
+
+  void _updateDeviceModel() {
+    final saved = ref.read(bleSavedDevicesProvider.notifier).getDeviceById(arg);
+    // Slim is identified from scan-response SMP UUID; without MCUmgr GATT we must
+    // not downgrade a known Slim to Screen on reconnect.
+    if (saved?.deviceModel == DeviceModel.airspotSlim) {
+      return;
+    }
+    if (_communicator.isSlimDevice) {
+      ref
+          .read(bleSavedDevicesProvider.notifier)
+          .updateDeviceModel(arg, DeviceModel.airspotSlim);
+      debugPrint('Device $arg model set to ${DeviceModel.airspotSlim}');
+      return;
+    }
+    if (saved?.deviceModel == null) {
+      ref
+          .read(bleSavedDevicesProvider.notifier)
+          .updateDeviceModel(arg, DeviceModel.airspotScreen);
+      debugPrint('Device $arg model set to ${DeviceModel.airspotScreen}');
+    }
   }
 
   void _handleNotificationData(List<int> data) async {
@@ -463,6 +504,7 @@ class _BleDeviceCommunicationNotifier extends FamilyNotifier<dynamic, String> {
   }
 
   Future<bool> sendCommand(List<int> data) async {
+    if (_communicator.isSuspended) return false;
     if (device == null || device!.isConnected == false) {
       debugPrint('Device not found or not connected');
       return false;

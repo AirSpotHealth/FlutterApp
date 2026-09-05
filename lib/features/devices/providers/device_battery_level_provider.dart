@@ -21,10 +21,21 @@ class BatteryState {
   final int? level;
   final bool isCharging;
 
-  const BatteryState(this.level, this.isCharging);
+  /// True when the device has entered low-battery lockout: it is shutting down
+  /// BLE/sensors and will only resume after charging back up. The app should
+  /// show a "low battery — charging required" state, not a disconnect error.
+  final bool lowBatteryLockout;
 
-  BatteryState copyWith({int? level, bool? isCharging}) {
-    return BatteryState(level ?? this.level, isCharging ?? this.isCharging);
+  const BatteryState(this.level, this.isCharging,
+      {this.lowBatteryLockout = false});
+
+  BatteryState copyWith(
+      {int? level, bool? isCharging, bool? lowBatteryLockout}) {
+    return BatteryState(
+      level ?? this.level,
+      isCharging ?? this.isCharging,
+      lowBatteryLockout: lowBatteryLockout ?? this.lowBatteryLockout,
+    );
   }
 
   @override
@@ -33,12 +44,16 @@ class BatteryState {
 
     return other is BatteryState &&
         other.level == level &&
-        other.isCharging == isCharging;
+        other.isCharging == isCharging &&
+        other.lowBatteryLockout == lowBatteryLockout;
   }
 
   @override
-  int get hashCode => level.hashCode ^ isCharging.hashCode;
+  int get hashCode =>
+      level.hashCode ^ isCharging.hashCode ^ lowBatteryLockout.hashCode;
 
   @override
-  String toString() => 'BatteryState(level: $level, isCharging: $isCharging)';
+  String toString() =>
+      'BatteryState(level: $level, isCharging: $isCharging, '
+      'lowBatteryLockout: $lowBatteryLockout)';
 }

@@ -1,72 +1,52 @@
-import 'dart:async';
-
+import 'package:airspothealth/core/models/device_model.dart';
+import 'package:airspothealth/core/providers/ble_saved_devices_provider.dart';
 import 'package:airspothealth/core/services/network_service.dart';
 import 'package:airspothealth/core/utils/api_endpoints.dart';
 import 'package:airspothealth/features/device_settings/models/remote_version.dart';
+import 'package:airspothealth/features/device_settings/service/hosted_firmware.dart';
 import 'package:dio/dio.dart';
-import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 
-final firmwareRemoteVersionProvider = AsyncNotifierProvider.autoDispose<
-    _FirmwareRemoteVersionNotifier,
-    RemoteVersion?>(_FirmwareRemoteVersionNotifier.new);
+/// Scoped by deviceId and rebuilt when service discovery corrects its model.
+final firmwareRemoteVersionProvider = AsyncNotifierProvider.autoDispose
+    .family<_FirmwareRemoteVersionNotifier, RemoteVersion?, String>(
+  _FirmwareRemoteVersionNotifier.new,
+);
 
 class _FirmwareRemoteVersionNotifier
-    extends AutoDisposeAsyncNotifier<RemoteVersion?> {
-  final NetworkService _networkService = NetworkService.instance;
-
+    extends AutoDisposeFamilyAsyncNotifier<RemoteVersion?, String> {
   @override
-  FutureOr<RemoteVersion?> build() {
-    fetchRemoteVersion();
-    return future;
+  Future<RemoteVersion?> build(String deviceId) async {
+    final model = ref.watch(bleSavedDevicesProvider.select((devices) {
+      for (final device in devices) {
+        if (device.deviceId == deviceId) return device.deviceModel ?? DeviceModel.unknown;
+      }
+      return DeviceModel.unknown;
+    }));
+    final appVersion = (await PackageInfo.fromPlatform()).version;
+    try {
+      final result = await NetworkService.instance.get(
+        HostedFirmware.checkUrl(ApiEndpoints.versionCheck, model, appVersion),
+        {},
+      );
+      return result.statusCode == 200
+          ? HostedFirmware.parseResponse(result.data, model)
+          : null;
+    } on DioException catch (error) {
+      if (error.response?.statusCode == 404) return null;
+      throw StateError('Failed to fetch remote version: '
+          '${error.response?.statusCode ?? 'Network unavailable'}');
+    }
   }
 
   Future<void> fetchRemoteVersion() async {
-    state = const AsyncLoading();
-
+    ref.invalidateSelf();
+    // Errors are exposed by AsyncValue; button/pull-to-refresh callbacks need not throw.
     try {
-      String? currentVersion = (await PackageInfo.fromPlatform()).version;
-
-      // if the last character is a 0, it's a production build
-      // else it's a beta build
-      bool beta = false;
-
-      final List<String> parts = currentVersion.split('.');
-
-      if (parts.isNotEmpty) {
-        final String lastPart = parts.last;
-
-        if (lastPart.isNotEmpty) {
-          beta = lastPart != '0';
-        }
-      }
-
-      debugPrint('Beta mode: $beta');
-
-      final Response<dynamic> result = await _networkService.get(
-          "${ApiEndpoints.versionCheck}?beta=$beta&app_version=$currentVersion",
-          {});
-
-      if (result.statusCode == 200) {
-        final RemoteVersion remoteVersion =
-            RemoteVersion.fromJson(result.data as Map<String, dynamic>);
-
-        state = AsyncData(remoteVersion);
-      } else {
-        state = AsyncError(
-            'Failed to fetch remote version ${result.statusMessage}',
-            StackTrace.current);
-      }
-    } on DioException catch (e) {
-      if (e.response?.data?['error'] != null) {
-        state = AsyncError(
-            'Error: ${e.response?.data?['error']}', StackTrace.current);
-      } else {
-        state = AsyncError(
-            'Failed to fetch remote version\n${e.response?.data?['error'] ?? e.response?.statusCode}',
-            StackTrace.current);
-      }
+      await future;
+    } catch (_) {
+      // The widget renders the provider's error state.
     }
   }
 }

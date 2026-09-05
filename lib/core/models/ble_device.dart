@@ -1,3 +1,5 @@
+import 'package:airspothealth/core/models/device_capabilities.dart';
+import 'package:airspothealth/core/models/device_model.dart';
 import 'package:airspothealth/core/models/device_settings.dart';
 import 'package:airspothealth/core/services/isar_service.dart';
 import 'package:flutter/material.dart';
@@ -16,6 +18,7 @@ class BleDevice {
     this.firmwareVersion = '-.-.-',
     this.lastFetchedStartDate,
     this.lastFetchedEndDate,
+    this.deviceModelValue,
   });
 
   @Id()
@@ -40,6 +43,16 @@ class BleDevice {
   final DateTime? lastFetchedStartDate;
   final DateTime? lastFetchedEndDate;
 
+  /// Stored as int index so Isar can persist it natively.
+  /// Read via the [deviceModel] getter below.
+  final int? deviceModelValue;
+
+  /// Computed from [deviceModelValue]. Not stored directly in Isar.
+  @ignore
+  DeviceModel? get deviceModel => deviceModelValue != null
+      ? DeviceModel.values[deviceModelValue!]
+      : null;
+
   BleDevice copyWith({
     String? deviceId,
     String? name,
@@ -49,6 +62,7 @@ class BleDevice {
     String? firmwareVersion,
     DateTime? lastFetchedStartDate,
     DateTime? lastFetchedEndDate,
+    int? deviceModelValue,
   }) {
     return BleDevice(
       deviceId: deviceId ?? this.deviceId,
@@ -59,6 +73,7 @@ class BleDevice {
       firmwareVersion: firmwareVersion ?? this.firmwareVersion,
       lastFetchedStartDate: lastFetchedStartDate ?? this.lastFetchedStartDate,
       lastFetchedEndDate: lastFetchedEndDate ?? this.lastFetchedEndDate,
+      deviceModelValue: deviceModelValue ?? this.deviceModelValue,
     );
   }
 
@@ -66,9 +81,17 @@ class BleDevice {
   DeviceSettings? get settings => IsarService().read<DeviceSettings?>((isar) =>
       isar.deviceSettings.where().deviceIdEqualTo(deviceId).findFirst());
 
+  /// Get device capabilities based on device model
+  /// Defaults to Screen capabilities if model is unknown or null (backward compatibility)
+  @ignore
+  DeviceCapabilities get capabilities {
+    final model = deviceModel ?? DeviceModel.fromDeviceName(name);
+    return DeviceCapabilities.fromModel(model);
+  }
+
   @override
   String toString() {
-    return 'BleDevice{deviceId: $deviceId, name: $name, address: $address, platform: $platform, alias: $alias, firmwareVersion: $firmwareVersion, lastFetchedStartDate: $lastFetchedStartDate, lastFetchedEndDate: $lastFetchedEndDate}';
+    return 'BleDevice{deviceId: $deviceId, name: $name, address: $address, platform: $platform, alias: $alias, firmwareVersion: $firmwareVersion, deviceModel: $deviceModel, lastFetchedStartDate: $lastFetchedStartDate, lastFetchedEndDate: $lastFetchedEndDate}';
   }
 
   @ignore

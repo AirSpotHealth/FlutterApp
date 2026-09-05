@@ -17,7 +17,7 @@ class DeviceVersionUpdateWidget extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    ref.listen(firmwareRemoteVersionProvider, (oldState, newState) {
+    ref.listen(firmwareRemoteVersionProvider(deviceId), (oldState, newState) {
       if (newState is AsyncError) {
         context.showSnackBar(newState.error.toString());
         return;
@@ -25,7 +25,7 @@ class DeviceVersionUpdateWidget extends ConsumerWidget {
     });
 
     final AsyncValue<RemoteVersion?> remoteVersion =
-        ref.watch(firmwareRemoteVersionProvider);
+        ref.watch(firmwareRemoteVersionProvider(deviceId));
 
     final String? currentVersion = ref.read(bleDeviceVersionProvider(deviceId));
 
@@ -51,11 +51,11 @@ class DeviceVersionUpdateWidget extends ConsumerWidget {
               error: (error, stackTrace) => IconButton(
                 icon: const Icon(Icons.refresh),
                 onPressed: () => ref
-                    .read(firmwareRemoteVersionProvider.notifier)
+                    .read(firmwareRemoteVersionProvider(deviceId).notifier)
                     .fetchRemoteVersion(),
               ),
             ),
-            if (remoteVersion.value
+            if (remoteVersion.valueOrNull
                     ?.isVersionGreaterThanCurrentVersion(currentVersion) ??
                 false) ...[
               const SizedBox(width: 16),
@@ -73,7 +73,7 @@ class DeviceVersionUpdateWidget extends ConsumerWidget {
                   }
 
                   _showUpdateDialog(
-                      context, remoteVersion.value!, currentVersion);
+                      context, remoteVersion.valueOrNull!, currentVersion);
                 },
                 label: 'Update',
               ),
