@@ -17,6 +17,12 @@ Reconnect already reads the device's initial settings and continues to do so.
 - The optional production-image test accepts AIRSPOT_SLIM_DFU,
   AIRSPOT_SLIM_EXPECTED_VERSION and AIRSPOT_SLIM_EXPECTED_HASH so each candidate can
   be verified through the actual app ZIP/image parser.
-- Physical on/off toggle, reset, reconnect and reading comparison are pending a
-  reachable Slim. No nearby AirSpot advertisement or J-Link probe was available
-  during implementation; no device was flashed or recalibrated.
+- Physical Slim AirSpot-C58CC9 was updated to 0.16.0. Direct BLE tests verified
+  toggle off/on, saved-on reboot, and reset preserving both toggle states.
+  The new read-only 0x33 diagnostic confirmed paused internal ASC (`0x0084`).
+- Startup testing with software ASC on produced an automatic correction (+116 ppm
+  total). Software ASC was turned off and the original zero correction restored
+  through sensor reset. A startup observation guard is proposed but not implemented.
+- The updated app has not been installed or exercised on a physical phone.
+  All 51 Flutter tests and the analyzer passed; firmware qualification notes carry
+  the hardware results and unresolved startup-calibration behavior.
