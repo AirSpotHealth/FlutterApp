@@ -1,3 +1,4 @@
+import 'package:airspothealth/features/app_setup/providers/dev_mode_provider.dart';
 import 'package:airspothealth/core/providers/auto_sync_preference_provider.dart';
 import 'package:airspothealth/core/providers/auto_sync_provider.dart';
 import 'package:airspothealth/core/providers/ble_saved_devices_provider.dart';
@@ -32,6 +33,12 @@ class _CloudSyncPageState extends ConsumerState<CloudSyncPage> {
 
   @override
   Widget build(BuildContext context) {
+    if (!ref.watch(devModeProvider)) {
+      return Scaffold(
+          appBar: AppBar(title: const Text('Cloud Sync')),
+          body: const Center(
+              child: Text('Cloud sync is available in dev mode only.')));
+    }
     final sensorConfigState =
         ref.watch(sensorConfigurationProvider(widget.deviceId));
     final user = _supabaseService.currentUser;

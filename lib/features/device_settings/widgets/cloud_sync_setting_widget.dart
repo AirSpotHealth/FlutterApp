@@ -1,3 +1,4 @@
+import 'package:airspothealth/features/app_setup/providers/dev_mode_provider.dart';
 import 'package:airspothealth/features/device_settings/models/setting_item.dart';
 import 'package:airspothealth/features/device_settings/pages/cloud_sync_page.dart';
 import 'package:airspothealth/features/device_settings/widgets/setting_item_widget.dart';
@@ -14,6 +15,7 @@ class CloudSyncSettingWidget extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    if (!ref.watch(devModeProvider)) return const SizedBox.shrink();
     return SettingItemWidget(
       item: SettingItem(
         title: 'Cloud Sync',

@@ -1,3 +1,4 @@
+import 'package:airspothealth/core/services/cloud_sync_access.dart';
 import 'package:airspothealth/core/models/device_data.dart';
 import 'package:airspothealth/core/services/isar_service.dart';
 import 'package:airspothealth/core/services/supabase_service.dart';
@@ -15,6 +16,7 @@ class SyncService {
 
   // Trigger sync
   Future<void> syncData({String? targetDeviceId}) async {
+    CloudSyncAccess.requireEnabled();
     if (_supabaseService.currentUser == null) return;
 
     if (_isSyncing) {
@@ -39,6 +41,7 @@ class SyncService {
   /// Immediately upload a single reading (for real-time dashboard updates)
   Future<void> uploadImmediateReading(DeviceData reading,
       {String? targetDeviceId}) async {
+    if (!CloudSyncAccess.enabled) return;
     // Basic checks
     if (_supabaseService.currentUser == null) return;
 
@@ -94,6 +97,7 @@ class SyncService {
     final minDate = DateTime(2024, 1, 1);
 
     while (hasMore) {
+      CloudSyncAccess.requireEnabled();
       List<DeviceData> batch = [];
 
       batch = await _isarService.readAsync((isar) {

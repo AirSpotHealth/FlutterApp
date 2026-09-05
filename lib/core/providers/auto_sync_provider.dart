@@ -1,3 +1,4 @@
+import 'package:airspothealth/core/services/cloud_sync_access.dart';
 import 'dart:async';
 
 import 'package:airspothealth/core/models/device_data.dart';
@@ -11,13 +12,6 @@ import 'package:airspothealth/features/device_settings/models/progress_model.dar
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:isar_plus/isar_plus.dart';
-
-/// Feature gate for cloud sync — will be wired to subscription check later.
-/// For now, always enabled if user is logged in.
-bool isCloudSyncEnabled() {
-  // TODO: Check subscription status here when paid feature is implemented
-  return true;
-}
 
 /// Per-device sync status shown on device cards and the sync page.
 enum SyncStatus { idle, syncing, success, error }
@@ -102,13 +96,16 @@ class AutoSyncNotifier extends Notifier<AutoSyncState> {
   }) {
     // Gate checks
     if (_supabaseService.currentUser == null) return;
-    if (!isCloudSyncEnabled()) return;
+    if (!CloudSyncAccess.enabled) return;
     if (!ref.read(autoSyncPreferenceProvider)) return; // User toggle
     if (_activeSyncs.contains(serialNumber)) return;
 
     // Debounce: cancel existing timer and start a new one
     _debounceTimers[serialNumber]?.cancel();
     _debounceTimers[serialNumber] = Timer(_syncCooldown, () {
+      if (!CloudSyncAccess.enabled || !ref.read(autoSyncPreferenceProvider)) {
+        return;
+      }
       _performSync(
         serialNumber: serialNumber,
         deviceName: deviceName,
@@ -147,6 +144,7 @@ class AutoSyncNotifier extends Notifier<AutoSyncState> {
     String? bleDeviceId,
     int numDays = 1,
   }) async {
+    if (!CloudSyncAccess.enabled) return;
     if (_activeSyncs.contains(serialNumber)) return;
     _activeSyncs.add(serialNumber);
 
@@ -222,6 +220,7 @@ class AutoSyncNotifier extends Notifier<AutoSyncState> {
     final now = DateTime.now();
 
     for (int i = 0; i < numDays; i++) {
+      if (!CloudSyncAccess.enabled) return;
       final dayDate = now.subtract(Duration(days: i));
       final dayStart = DateTime(dayDate.year, dayDate.month, dayDate.day);
       final dayEnd = i == 0

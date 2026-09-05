@@ -1,3 +1,4 @@
+import 'package:airspothealth/core/providers/auto_sync_preference_provider.dart';
 import 'dart:async';
 import 'dart:io';
 
@@ -563,6 +564,9 @@ class _BleDeviceCommunicationNotifier extends FamilyNotifier<dynamic, String> {
 
   /// Triggers immediate upload of a single reading for real-time dashboard updates.
   void _triggerRealtimeUpload(DeviceData co2Data) {
+    if (!ref.read(devModeProvider) || !ref.read(autoSyncPreferenceProvider)) {
+      return;
+    }
     try {
       // Get serial number from sensor configuration (hardware serial)
       final sensorConfigState = ref.read(sensorConfigurationProvider(deviceId));

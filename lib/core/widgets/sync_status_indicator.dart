@@ -1,3 +1,4 @@
+import 'package:airspothealth/features/app_setup/providers/dev_mode_provider.dart';
 import 'package:airspothealth/core/providers/auto_sync_provider.dart';
 import 'package:airspothealth/core/theme/app_colors.dart';
 import 'package:airspothealth/features/device_settings/models/device_sensor_config_data.dart';
@@ -28,6 +29,7 @@ class SyncStatusIndicator extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    if (!ref.watch(devModeProvider)) return const SizedBox.shrink();
     // Look up the serial number from sensor configuration
     final sensorConfigState = ref.watch(sensorConfigurationProvider(deviceId));
     String? serialNumber;

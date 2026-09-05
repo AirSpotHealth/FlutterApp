@@ -1,3 +1,4 @@
+import 'package:airspothealth/core/services/cloud_sync_access.dart';
 import 'dart:async';
 
 import 'package:airspothealth/core/providers/ble_saved_devices_provider.dart';
@@ -84,6 +85,7 @@ class CloudSyncNotifier
   }
 
   Future<void> sync({int numDays = 7}) async {
+    if (!CloudSyncAccess.enabled) return;
     // Reset state
     state = state.copyWith(
       isLoading: true,
@@ -133,6 +135,7 @@ class CloudSyncNotifier
       int daysFailed = 0;
 
       for (int i = 0; i < numDays; i++) {
+        CloudSyncAccess.requireEnabled();
         final dayDate = now.subtract(Duration(days: i));
         final dayStart = DateTime(dayDate.year, dayDate.month, dayDate.day);
         final dayEnd = i == 0

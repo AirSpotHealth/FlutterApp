@@ -1,3 +1,4 @@
+import 'package:airspothealth/core/services/cloud_sync_access.dart';
 import 'dart:convert';
 
 import 'package:airspothealth/core/models/device_data.dart';
@@ -144,6 +145,7 @@ class SupabaseService {
     String? deviceName,
     String? deviceAlias,
   }) async {
+    CloudSyncAccess.requireEnabled();
     final user = currentUser;
     if (user == null) throw Exception('User not logged in');
 
@@ -187,6 +189,7 @@ class SupabaseService {
   // Data Sync
   Future<void> uploadReadings(List<DeviceData> readings,
       {String? targetDeviceId}) async {
+    CloudSyncAccess.requireEnabled();
     final user = currentUser;
     if (user == null) return;
 

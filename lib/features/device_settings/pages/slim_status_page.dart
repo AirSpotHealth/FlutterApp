@@ -36,45 +36,54 @@ class SlimStatusPage extends ConsumerWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
+                const Text(
+                    'For Slim firmware 0.15.0. The LED normally stays off; press the button to check status or air quality.'),
+                const SizedBox(height: 12),
                 _ledRow(
                   color: Colors.blue,
-                  title: 'Blue — gentle breathing',
+                  title: 'Single press — device status for 5 seconds',
                   body:
-                      'On and idle (not connected to the app). Off the charger it gives one soft breath every ~10 seconds to save battery; on the charger it breathes continuously.',
-                ),
-                _ledRow(
-                  color: Colors.white,
-                  title: 'White — breathing (~20 s at startup)',
-                  body:
-                      'Warming up: right after power-on the CO₂ sensor conditions itself for about 22 seconds. Readings aren’t ready until it finishes.',
+                      'Blue means currently connected to a phone. White means not connected. Red means low battery; a fast red flash means critically low battery.',
                 ),
                 _ledRow(
                   color: Colors.green,
-                  title: 'Green',
+                  title: 'Double press — air quality',
                   body:
-                      'Air quality is good — CO₂ below your green threshold (default ${settings.greenUpperLimit} ppm).',
+                      'Press twice within half a second. The last reading’s colour flashes for 5 seconds, then the fresh reading’s colour stays steady for 5 seconds before turning off.',
+                ),
+                _ledRow(
+                  color: Colors.green,
+                  title: 'Green — lower CO₂',
+                  body:
+                      'Below your green limit (${settings.greenUpperLimit} ppm).',
                 ),
                 _ledRow(
                   color: Colors.amber,
-                  title: 'Amber',
+                  title: 'Amber — moderate CO₂',
                   body:
-                      'CO₂ is moderate — between your green and yellow thresholds.',
+                      'At or above ${settings.greenUpperLimit} ppm and below ${settings.yellowUpperLimit} ppm.',
                 ),
                 _ledRow(
                   color: Colors.red,
-                  title: 'Red',
+                  title: 'Red — higher CO₂',
                   body:
-                      'CO₂ is high — above your yellow threshold (default ${settings.yellowUpperLimit} ppm). A slow red breath/flash instead means low battery (see below).',
+                      'At or above your yellow limit (${settings.yellowUpperLimit} ppm). A red status indication after a single press refers to battery level instead.',
                 ),
                 _ledRow(
                   color: Colors.green,
-                  title: 'Green — quick flash',
-                  body: 'The app just connected to the device.',
+                  title: 'Green — brief connection flash',
+                  body: 'A phone has just connected.',
                 ),
-                const SizedBox(height: 8),
-                Text(
-                  'The air-quality colour (green / amber / red) is shown when you’re connected and when the device is on the charger. When idle and unplugged it rests on the soft blue breath. Lower the CO₂ limits below to change when the colour switches.',
-                  style: Theme.of(context).textTheme.bodySmall,
+                _ledRow(
+                  color: Colors.blue,
+                  title: 'Blue pulse every 5 seconds',
+                  body:
+                      'Calibration is in progress. Button gestures are ignored until calibration finishes.',
+                ),
+                _ledRow(
+                  color: Colors.white,
+                  title: 'White — rapid flashing',
+                  body: 'Find My Device was requested from the app.',
                 ),
               ],
             ),
@@ -102,7 +111,7 @@ class SlimStatusPage extends ConsumerWidget {
                 ),
                 const SizedBox(height: 2),
                 Text(
-                  'Place the Slim on its wireless (Qi) charging pad. While charging, the LED briefly shows white and then the current air-quality colour.',
+                  'Place Slim on its wireless Qi charging pad. When powered on, placing it on the pad shows the same 5-second status indication as a single press, then the LED turns off. A dark LED does not mean charging has stopped. Check charging status in the app.',
                   style: Theme.of(context).textTheme.bodySmall,
                 ),
                 const SizedBox(height: 10),
@@ -114,7 +123,7 @@ class SlimStatusPage extends ConsumerWidget {
                 ),
                 const SizedBox(height: 2),
                 Text(
-                  'If the battery gets critically low, the Slim automatically shuts down Bluetooth and the sensors to protect the cell — it stops advertising and the app will show it as disconnected. This is normal. Just leave it on the charger: once it has charged back up enough, it restarts and reconnects on its own. While protecting itself it shows a slow red flash.',
+                  'If the battery gets critically low, the Slim automatically shuts down Bluetooth and the sensors to protect the cell — it stops advertising and the app will show it as disconnected. This is normal. Leave it on the charger: once sufficiently charged, it restarts and becomes available to reconnect. On entering protection while charging, it flashes red briefly, then goes dark; off the charger, it briefly fades red and goes dark.',
                   style: Theme.of(context).textTheme.bodySmall,
                 ),
                 const SizedBox(height: 12),
@@ -131,6 +140,14 @@ class SlimStatusPage extends ConsumerWidget {
                   label: const Text('Refresh battery status'),
                 ),
               ],
+            ),
+          ),
+          const SizedBox(height: 16),
+          _Section(
+            title: 'Power & restart',
+            child: Text(
+              'On the Qi pad, hold the button for 5 seconds to turn Slim off or on. The light fades out when turning off and fades in during the power-on hold. Release early to cancel power-on. A long hold off the charger does nothing.\n\nWhile powered on and charging, press 5 times quickly to restart Slim. This is a reboot, not a factory reset.',
+              style: Theme.of(context).textTheme.bodySmall,
             ),
           ),
           const SizedBox(height: 16),
