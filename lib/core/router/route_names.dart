@@ -73,6 +73,16 @@ class RouteNames {
   /// notification settings route
   static const String notificationSettings = '/notification-settings';
 
+  /// advanced notification settings (thresholds, timing, quiet hours)
+  static const String notificationAdvancedSettings =
+      '/notification-advanced-settings';
+
+  /// notification history (ventilation events)
+  static const String notificationHistory = '/notification-history';
+
+  /// single ventilation event detail
+  static const String ventilationEventDetail = '/ventilation-event-detail';
+
   /// sensor configuration route
   static const String sensorConfiguration = '/sensor-configuration';
 

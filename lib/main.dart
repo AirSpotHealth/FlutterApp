@@ -3,10 +3,12 @@ import 'package:airspothealth/core/services/isar_service.dart';
 import 'package:airspothealth/core/services/live_activity_service.dart';
 import 'package:airspothealth/core/services/notification_service.dart';
 import 'package:airspothealth/core/services/prefs_service.dart';
+import 'package:airspothealth/core/services/ventilation_notification_coordinator.dart';
 import 'package:airspothealth/core/theme/app_theme.dart';
 import 'package:airspothealth/core/utils/constants.dart';
 import 'package:airspothealth/core/utils/local_date_format.dart';
 import 'package:airspothealth/core/utils/storage_keys.dart';
+import 'package:airspothealth/core/widgets/ventilation_alert_card.dart';
 import 'package:airspothealth/features/home/widgets/services_banner.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart' hide DateUtils;
@@ -115,18 +117,22 @@ Future<void> _checkVersion() async {
   }
 }
 
-class AirspotApp extends StatefulWidget {
+class AirspotApp extends ConsumerStatefulWidget {
   const AirspotApp({super.key});
 
   @override
-  State<AirspotApp> createState() => _AirspotAppState();
+  ConsumerState<AirspotApp> createState() => _AirspotAppState();
 }
 
-class _AirspotAppState extends State<AirspotApp> with WidgetsBindingObserver {
+class _AirspotAppState extends ConsumerState<AirspotApp>
+    with WidgetsBindingObserver {
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
+    // Start the ventilation event coordinator early so restored events and
+    // queued notification actions are handled before the first reading.
+    ref.read(ventilationCoordinatorProvider);
   }
 
   @override
@@ -176,6 +182,9 @@ class _AirspotAppState extends State<AirspotApp> with WidgetsBindingObserver {
     // Check and restart any missing Live Activities for connected devices
     // This handles edge cases where toggle is ON but notification isn't showing
     LiveActivityService().checkAndRestartMissingLiveActivities();
+
+    // Apply Remind/Done chosen on a notification while we were backgrounded.
+    ref.read(ventilationCoordinatorProvider).onAppResumed();
   }
 
   void _handleAppTermination() {
@@ -206,6 +215,10 @@ class _AirspotAppState extends State<AirspotApp> with WidgetsBindingObserver {
         child: Stack(
           children: [
             child!,
+            const Align(
+              alignment: Alignment.topCenter,
+              child: VentilationAlertCard(),
+            ),
             const Align(
               alignment: Alignment.bottomCenter,
               child: ServicesBanner(),

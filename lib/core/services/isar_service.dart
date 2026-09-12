@@ -2,6 +2,7 @@ import 'package:airspothealth/core/models/ble_device.dart';
 import 'package:airspothealth/core/models/device_data.dart';
 import 'package:airspothealth/core/models/device_settings.dart';
 import 'package:airspothealth/core/models/notification_preferences.dart';
+import 'package:airspothealth/core/models/ventilation_event.dart';
 import 'package:isar_plus/isar_plus.dart';
 import 'package:path_provider/path_provider.dart';
 
@@ -26,6 +27,7 @@ class IsarService {
         DeviceDataSchema,
         DeviceSettingsSchema,
         NotificationPreferencesSchema,
+        VentilationEventSchema,
       ],
       directory: dir.path,
     );
@@ -77,4 +79,6 @@ class IsarService {
   IsarCollection<String, DeviceData> get deviceDatas => _isar.deviceDatas;
   IsarCollection<String, DeviceSettings> get deviceSettings =>
       _isar.deviceSettings;
+  IsarCollection<String, VentilationEvent> get ventilationEvents =>
+      _isar.ventilationEvents;
 }

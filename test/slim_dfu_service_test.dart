@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:typed_data';
 import 'package:airspothealth/features/device_settings/service/slim_dfu_service.dart';
 import 'package:airspothealth/features/device_settings/service/slim_firmware_image.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -52,6 +53,12 @@ class FakeManager implements FirmwareUpdateManager {
       case 'reconnect-error':
         states.add(FirmwareUpgradeState.reset);
         states.addError(StateError('reconnect timed out'));
+      case 'direct-reconnect-error':
+        states.add(FirmwareUpgradeState.reset);
+        await Future<void>.delayed(Duration.zero);
+        throw StateError('native update call failed after reset');
+      case 'direct-error':
+        throw StateError('native upload rejected');
       case 'error':
         states.addError(StateError('low battery: write rejected'));
       case 'closed':
@@ -81,10 +88,10 @@ class FakeManager implements FirmwareUpdateManager {
 
 void main() {
   final firmware = SlimFirmwareImage.parse(signedImage());
-  ImageSlot slot({bool confirmed = true}) => ImageSlot(
+  ImageSlot slot({bool confirmed = true, Uint8List? hash}) => ImageSlot(
       image: 0,
       slot: 0,
-      hash: firmware.hash,
+      hash: hash ?? firmware.hash,
       bootable: true,
       pending: false,
       confirmed: confirmed,
@@ -122,7 +129,7 @@ void main() {
   });
   test('reboot reconnect failure without confirmation still fails', () async {
     final manager = FakeManager()..outcome = 'reconnect-error';
-    await expectLater(run(manager), throwsStateError);
+    await expectLater(run(manager), throwsA(isA<SlimDfuException>()));
     expect(manager.cancelled, true);
   });
   test('polls through disconnection and unconfirmed startup, then ends early',
@@ -147,6 +154,63 @@ void main() {
     expect(manager.verificationReads, 3);
     expect(manager.uploads, 1);
   });
+  test('direct native error after reset still verifies confirmed image',
+      () async {
+    final manager = FakeManager()
+      ..outcome = 'direct-reconnect-error'
+      ..after = [slot()];
+    expect(await run(manager), false);
+    expect(manager.killed, true);
+  });
+  test('observed trial then previous image is classified as rollback',
+      () async {
+    final old = ImageSlot(
+        image: 0,
+        slot: 0,
+        hash: Uint8List.fromList([1, 2, 3]),
+        bootable: true,
+        pending: false,
+        confirmed: true,
+        active: true,
+        permanent: true,
+        version: '0.1.0');
+    final manager = FakeManager()
+      ..before = [old]
+      ..after = [old]
+      ..verificationResults.addAll([
+        [slot(confirmed: false)],
+        [old]
+      ]);
+    await expectLater(
+        SlimDfuService.upload(
+            deviceId: 'test',
+            firmware: firmware,
+            onProgress: (_) {},
+            onStatus: (_) {},
+            factory: FakeFactory(manager),
+            confirmationTimeout: const Duration(milliseconds: 5),
+            pollInterval: Duration.zero),
+        throwsA(isA<SlimDfuException>()
+            .having((e) => e.failure, 'failure', SlimDfuFailure.rolledBack)));
+  });
+  test('previous image without observed trial does not claim rollback',
+      () async {
+    final old = slot(hash: Uint8List.fromList([1, 2, 3]));
+    final manager = FakeManager()
+      ..before = [old]
+      ..after = [old];
+    await expectLater(
+        run(manager),
+        throwsA(isA<SlimDfuException>().having(
+            (e) => e.failure, 'failure', SlimDfuFailure.previousImageActive)));
+  });
+  test('unconfirmed target has a distinct outcome', () async {
+    final manager = FakeManager()..after = [slot(confirmed: false)];
+    await expectLater(
+        run(manager),
+        throwsA(isA<SlimDfuException>()
+            .having((e) => e.failure, 'failure', SlimDfuFailure.unconfirmed)));
+  });
   test('already-current image skips upload but still releases manager',
       () async {
     final manager = FakeManager()..before = [slot()];
@@ -156,11 +220,11 @@ void main() {
   });
   test('upload completion without confirmed target is failure', () async {
     final manager = FakeManager()..after = [slot(confirmed: false)];
-    await expectLater(run(manager), throwsStateError);
+    await expectLater(run(manager), throwsA(isA<SlimDfuException>()));
     expect(manager.cancelled, true);
     expect(manager.killed, true);
   });
-  for (final outcome in ['error', 'closed', 'timeout']) {
+  for (final outcome in ['error', 'direct-error', 'closed', 'timeout']) {
     test('$outcome ends with cleanup and no blind retry', () async {
       final manager = FakeManager()..outcome = outcome;
       await expectLater(run(manager), throwsA(anything));

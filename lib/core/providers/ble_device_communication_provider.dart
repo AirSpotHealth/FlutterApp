@@ -12,15 +12,14 @@ import 'package:airspothealth/core/models/live_activity_model.dart';
 import 'package:airspothealth/core/providers/auto_sync_provider.dart';
 import 'package:airspothealth/core/providers/ble_connected_devices_provider.dart';
 import 'package:airspothealth/core/providers/device_settings_provider.dart';
-import 'package:airspothealth/core/providers/notification_preferences_provider.dart';
 import 'package:airspothealth/core/services/ble_communicator_service.dart';
 import 'package:airspothealth/core/services/ble_data_service.dart';
 import 'package:airspothealth/core/services/ble_device_communicator.dart';
-import 'package:airspothealth/core/services/co2_monitoring_service.dart';
 import 'package:airspothealth/core/services/data_logger_service.dart';
 import 'package:airspothealth/core/services/isar_service.dart';
 import 'package:airspothealth/core/services/live_activity_service.dart';
 import 'package:airspothealth/core/services/sync_service.dart';
+import 'package:airspothealth/core/services/ventilation_notification_coordinator.dart';
 import 'package:airspothealth/core/services/widget_service.dart';
 import 'package:airspothealth/core/services/zone_analysis_service.dart';
 import 'package:airspothealth/core/utils/device_cmd_utils.dart';
@@ -376,32 +375,17 @@ class _BleDeviceCommunicationNotifier extends FamilyNotifier<dynamic, String> {
       // 5. Include current value as the latest
       final co2History = [...historicalData, co2Data.value];
 
-      // 6. Check CO2 levels and trigger notifications if needed
+      // 6. Feed the ventilation event engine (persistence, escalation,
+      //    reminders, recovery). Same path for Screen and Slim.
       try {
-        final notificationPrefs =
-            ref.read(notificationPreferencesProvider(deviceId));
-        final updatedPrefs = await Co2MonitoringService.checkAndNotify(
-          deviceId: deviceId,
-          deviceName: deviceName,
-          co2Value: co2Data.value,
-          preferences: notificationPrefs,
-        );
-
-        // Update preferences if they were modified (e.g., triggered thresholds changed)
-        if (updatedPrefs != null) {
-          debugPrint(
-              'BLE Provider - Updating preferences with triggered thresholds: ${updatedPrefs.triggeredThresholds}');
-          ref
-              .read(notificationPreferencesProvider(deviceId).notifier)
-              .updatePreferences((_) => updatedPrefs);
-        }
-
-        // Update last notification time if needed
-        if (notificationPrefs.smartphoneNotificationsEnabled) {
-          // This will be handled by the monitoring service
-        }
+        await ref.read(ventilationCoordinatorProvider).onReading(
+              deviceId: deviceId,
+              deviceName: deviceName,
+              value: co2Data.value,
+              at: DateTime.now(),
+            );
       } catch (e) {
-        debugPrint('BLE: Error checking CO2 notifications: $e');
+        debugPrint('BLE: Error evaluating ventilation event: $e');
       }
 
       // 7. Update LiveActivityService (for Live Activity notifications)
