@@ -11,6 +11,17 @@ class AppColors {
   static const brandColorRed = Color(0xFFD9001B);
   static const brandColorAmber = Color(0xFFFE9A23);
 
+  /// Ventilation-state palette (notification actions spec).
+  /// Always paired with the written state and an icon; never colour alone.
+  static const ventGreen = Color(0xFF43A047);
+  static const ventAmber = Color(0xFFF2A900);
+  static const ventRed = Color(0xFFE34B4B);
+  static const ventDarkRed = Color(0xFFA71930);
+  static const ventGreenPale = Color(0xFFE8F5E9);
+  static const ventAmberPale = Color(0xFFFFF8E1);
+  static const ventRedPale = Color(0xFFFDECEC);
+  static const ventDarkRedPale = Color(0xFFF9E3E7);
+
   /// Neutral colors
   static const neutralGrey = Color(0xFF9B9B9B);
   static const neutralGreyLight = Color(0xFFE5E5E5);

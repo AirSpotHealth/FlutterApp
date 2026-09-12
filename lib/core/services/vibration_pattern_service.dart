@@ -1,3 +1,6 @@
+import 'dart:io';
+
+import 'package:airspothealth/core/models/ventilation_level.dart';
 import 'package:flutter/foundation.dart';
 import 'package:vibration/vibration.dart';
 
@@ -50,6 +53,22 @@ class VibrationPatternService {
         } else {
           return [0, 400, 200, 400, 200, 400, 200, 400, 200, 400]; // 5 pulses
         }
+    }
+  }
+
+  /// Vibrate for a ventilation state: stronger as the state escalates.
+  /// Android only; iOS notifications use the system haptic.
+  static Future<void> triggerForLevel(VentilationLevel level) async {
+    if (!Platform.isAndroid) return;
+    switch (level) {
+      case VentilationLevel.none:
+        return;
+      case VentilationLevel.stuffy:
+        return triggerVibrationPattern(800);
+      case VentilationLevel.better:
+        return triggerVibrationPattern(1000);
+      case VentilationLevel.poor:
+        return triggerVibrationPattern(1500);
     }
   }
 

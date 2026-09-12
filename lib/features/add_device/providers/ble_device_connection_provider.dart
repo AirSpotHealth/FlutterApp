@@ -10,6 +10,7 @@ import 'package:airspothealth/core/router/app_router.dart';
 import 'package:airspothealth/core/router/route_names.dart';
 import 'package:airspothealth/core/services/ble_service.dart';
 import 'package:airspothealth/core/services/live_activity_service.dart';
+import 'package:airspothealth/core/services/ventilation_notification_coordinator.dart';
 import 'package:airspothealth/core/services/widget_service.dart';
 import 'package:airspothealth/core/utils/extensions.dart';
 import 'package:airspothealth/features/device_settings/models/progress_model.dart';
@@ -158,6 +159,7 @@ class _BleDeviceConnectionNotifier
 
     _refreshAndAddDevice();
     _handleDeviceReconnection();
+    ref.read(ventilationCoordinatorProvider).onConnected(arg);
     state = BluetoothBondState.bonded;
     ref.read(bleDeviceCommunicationProvider(arg).notifier).setConnected();
   }
@@ -190,6 +192,8 @@ class _BleDeviceConnectionNotifier
           BatteryState(null, false, lowBatteryLockout: lowBatteryLockout),
         );
     _updateLiveActivityOnDisconnect();
+    // Stale or missing readings must never satisfy persistence or recovery.
+    ref.read(ventilationCoordinatorProvider).onDisconnected(arg);
     _checkRouteAndPop(lowBatteryLockout);
     state = BluetoothBondState.none;
   }

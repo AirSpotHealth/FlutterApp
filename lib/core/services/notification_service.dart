@@ -1,6 +1,7 @@
 import 'dart:io';
 
-import 'package:airspothealth/core/services/vibration_pattern_service.dart';
+import 'package:airspothealth/core/models/ventilation_level.dart';
+import 'package:airspothealth/core/services/ventilation_action_handler.dart';
 import 'package:airspothealth/core/theme/app_colors.dart';
 import 'package:airspothealth/core/utils/extensions.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
@@ -33,15 +34,15 @@ class NotificationService {
         AndroidInitializationSettings(
             '@drawable/ic_notification'); // Proper notification icon
 
-    const DarwinInitializationSettings darwinInitializationSettings =
+    final DarwinInitializationSettings darwinInitializationSettings =
         DarwinInitializationSettings(
       requestAlertPermission: true,
       requestBadgePermission: true,
       requestSoundPermission: true,
-      // onDidReceiveLocalNotification: onDidReceiveLocalNotification, // Optional callback
+      notificationCategories: _ventilationCategories(),
     );
 
-    const InitializationSettings initializationSettings =
+    final InitializationSettings initializationSettings =
         InitializationSettings(
       android: androidInitializationSettings,
       iOS: darwinInitializationSettings,
@@ -59,6 +60,20 @@ class NotificationService {
       enableVibration: false,
     );
 
+    // Ventilation event alerts (smart notifications). Vibration is driven by
+    // VibrationPatternService so the pattern can scale with the state.
+    const AndroidNotificationChannel ventilationChannel =
+        AndroidNotificationChannel(
+      ventilationChannelId,
+      'Ventilation alerts',
+      description:
+          'Prompts when ventilation deteriorates or improves, with actions',
+      importance: Importance.high,
+      playSound: true,
+      enableVibration: false,
+    );
+
+    // Legacy channel kept for one release so users' channel settings persist.
     const AndroidNotificationChannel co2Channel = AndroidNotificationChannel(
       'co2_notifications', // id - separate from FCM
       'CO₂ Notifications', // name
@@ -80,6 +95,11 @@ class NotificationService {
             AndroidFlutterLocalNotificationsPlugin>()
         ?.createNotificationChannel(co2Channel);
 
+    await _notificationsPlugin
+        .resolvePlatformSpecificImplementation<
+            AndroidFlutterLocalNotificationsPlugin>()
+        ?.createNotificationChannel(ventilationChannel);
+
     // Request permission for Android 13+
     await _notificationsPlugin
         .resolvePlatformSpecificImplementation<
@@ -100,7 +120,20 @@ class NotificationService {
     final bool? initialized = await _notificationsPlugin.initialize(
       settings: initializationSettings,
       onDidReceiveNotificationResponse: onDidReceiveNotificationResponse,
+      onDidReceiveBackgroundNotificationResponse:
+          ventilationBackgroundNotificationResponse,
     );
+
+    // A notification action may have launched the app from a killed state.
+    try {
+      final launch = await _notificationsPlugin.getNotificationAppLaunchDetails();
+      final response = launch?.notificationResponse;
+      if (launch?.didNotificationLaunchApp == true && response != null) {
+        await VentilationActionHandler.handle(response, background: false);
+      }
+    } catch (e) {
+      debugPrint('Could not read notification launch details: $e');
+    }
 
     // Check iOS notification permissions after initialization
     if (Platform.isIOS) {
@@ -228,6 +261,10 @@ class NotificationService {
   /// Callback for when a notification is tapped (for local notifications)
   static void onDidReceiveNotificationResponse(
       NotificationResponse notificationResponse) async {
+    if (await VentilationActionHandler.handle(notificationResponse,
+        background: false)) {
+      return;
+    }
     final String? payload = notificationResponse.payload;
     if (payload != null) {
       debugPrint('notification payload: $payload');
@@ -360,118 +397,163 @@ class NotificationService {
     }
   }
 
-  /// Show CO2 notification based on preferences
-  static Future<void> showCO2Notification({
-    required String deviceName,
-    required int co2Value,
-    required int threshold,
-    String? customMessage,
-    bool vibrate = true,
-  }) async {
-    final message = customMessage ?? 'CO₂ level is $co2Value ppm';
+  static const ventilationChannelId = 'ventilation_alerts';
 
-    debugPrint('📱 CO2 Notification - Preparing to show notification');
-    debugPrint('📱 Platform: ${Platform.operatingSystem}');
-    debugPrint('📱 Device: $deviceName, CO2: $co2Value, Threshold: $threshold');
-    debugPrint('📱 Sound: always on, Vibrate: $vibrate');
+  /// One notification per device: reminders, escalations and recovery replace
+  /// the previous one instead of stacking.
+  static int ventilationNotificationId(String deviceId) =>
+      deviceId.hashCode.limitToBitSize(30);
 
-    // Check iOS permissions before showing notification
-    if (Platform.isIOS) {
-      final iosImpl =
-          _notificationsPlugin.resolvePlatformSpecificImplementation<
-              IOSFlutterLocalNotificationsPlugin>();
-      if (iosImpl != null) {
-        try {
-          final bool? hasPermissions = await iosImpl.requestPermissions(
-            alert: true,
-            badge: true,
-            sound: true,
-          );
-          debugPrint('📱 iOS notification permissions check: $hasPermissions');
-          if (hasPermissions == false) {
-            debugPrint(
-                '⚠️ iOS notification permissions not granted - notification may not appear');
-          }
-        } catch (e) {
-          debugPrint('⚠️ Error checking iOS permissions: $e');
-        }
-      }
+  /// iOS categories expose the action buttons in the expanded notification.
+  /// Labels are fixed at initialisation, so they show the default intervals.
+  static List<DarwinNotificationCategory> _ventilationCategories() {
+    const fg = {DarwinNotificationActionOption.foreground};
+    DarwinNotificationAction plain(String id, String title,
+            {bool foreground = false}) =>
+        DarwinNotificationAction.plain(id, title,
+            options: foreground ? fg : const {});
+    return [
+      DarwinNotificationCategory(VentilationLevel.stuffy.iosCategoryId, actions: [
+        plain(VentilationActionIds.takenAction,
+            VentilationActionIds.takenActionLabel,
+            foreground: true),
+        plain(VentilationActionIds.remind, VentilationActionIds.remindLabel(10)),
+      ]),
+      DarwinNotificationCategory(VentilationLevel.better.iosCategoryId, actions: [
+        plain(VentilationActionIds.whatCanIDo,
+            VentilationActionIds.whatCanIDoLabel,
+            foreground: true),
+        plain(VentilationActionIds.remind, VentilationActionIds.remindLabel(10)),
+      ]),
+      DarwinNotificationCategory(VentilationLevel.poor.iosCategoryId, actions: [
+        plain(VentilationActionIds.takenAction,
+            VentilationActionIds.takenActionLabel,
+            foreground: true),
+        plain(VentilationActionIds.remind, VentilationActionIds.remindLabel(5)),
+      ]),
+      DarwinNotificationCategory(VentilationLevel.none.iosCategoryId, actions: [
+        plain(VentilationActionIds.viewResult,
+            VentilationActionIds.viewResultLabel,
+            foreground: true),
+        plain(VentilationActionIds.done, VentilationActionIds.doneLabel),
+      ]),
+    ];
+  }
+
+  /// Android action buttons for a state. Two primary actions at most.
+  static List<AndroidNotificationAction> _androidActions(
+    VentilationLevel level,
+    VentilationNotificationKind kind, {
+    required int reminderMinutes,
+    required bool remindersEnabled,
+  }) {
+    AndroidNotificationAction ui(String id, String title) =>
+        AndroidNotificationAction(id, title,
+            showsUserInterface: true, cancelNotification: true);
+    AndroidNotificationAction bg(String id, String title) =>
+        AndroidNotificationAction(id, title,
+            showsUserInterface: false, cancelNotification: true);
+    final remind = remindersEnabled
+        ? [bg(VentilationActionIds.remind,
+            VentilationActionIds.remindLabel(reminderMinutes))]
+        : <AndroidNotificationAction>[];
+    if (kind == VentilationNotificationKind.recovery) {
+      return [
+        ui(VentilationActionIds.viewResult, VentilationActionIds.viewResultLabel),
+        bg(VentilationActionIds.done, VentilationActionIds.doneLabel),
+      ];
     }
+    switch (level) {
+      case VentilationLevel.better:
+        return [
+          ui(VentilationActionIds.whatCanIDo,
+              VentilationActionIds.whatCanIDoLabel),
+          ...remind,
+        ];
+      case VentilationLevel.stuffy:
+      case VentilationLevel.poor:
+      case VentilationLevel.none:
+        return [
+          ui(VentilationActionIds.takenAction,
+              VentilationActionIds.takenActionLabel),
+          ...remind,
+        ];
+    }
+  }
 
-    // Note: Vibration patterns are now handled by the vibration package
-    // instead of AndroidNotificationDetails.vibrationPattern
+  /// Show (or replace) the ventilation notification for a device.
+  static Future<void> showVentilationNotification({
+    required String deviceId,
+    required String deviceName,
+    required VentilationLevel level,
+    required VentilationNotificationKind kind,
+    required String title,
+    required String body,
+    required int reminderMinutes,
+    required bool remindersEnabled,
+    required String payload,
+  }) async {
+    final displayLevel =
+        kind == VentilationNotificationKind.recovery ? VentilationLevel.none : level;
+    final isHighPriority = level == VentilationLevel.poor &&
+        kind != VentilationNotificationKind.recovery;
 
-    // Format time (e.g. 10:30 AM)
-    final now = DateTime.now();
-    final hour =
-        now.hour > 12 ? now.hour - 12 : (now.hour == 0 ? 12 : now.hour);
-    final minute = now.minute.toString().padLeft(2, '0');
-    final period = now.hour >= 12 ? 'PM' : 'AM';
-    final timeString = '$hour:$minute $period';
-
-    final title = '$co2Value PPM ($timeString)';
-    final body = '$deviceName\n$message';
-
-    AndroidNotificationDetails androidNotificationDetails =
-        AndroidNotificationDetails(
-      'co2_notifications', // Channel ID - separate from FCM
-      'CO₂ Notifications', // Channel name
-      channelDescription: 'High CO₂ level notifications',
+    final androidDetails = AndroidNotificationDetails(
+      ventilationChannelId,
+      'Ventilation alerts',
+      channelDescription:
+          'Prompts when ventilation deteriorates or improves, with actions',
       importance: Importance.high,
-      priority: Priority.high,
-      playSound: true, // Always on - controlled by mobile ring settings
-      enableVibration: Platform.isAndroid && vibrate
-          ? false
-          : vibrate, // Disable default vibration - we use custom patterns
-      largeIcon: const DrawableResourceAndroidBitmap(
-          '@drawable/ic_launcher_foreground'), // Colorful logo
-      color: AppColors.brandColorRed,
-      ledColor: AppColors.brandColorRed,
-      ledOnMs: 1000,
-      ledOffMs: 500,
-      styleInformation: BigTextStyleInformation(
-        body,
-        contentTitle: title,
-        summaryText: null, // Removed summary text to keep it clean
-      ),
+      priority: isHighPriority ? Priority.max : Priority.high,
+      category: AndroidNotificationCategory.reminder,
+      visibility: NotificationVisibility.public,
+      playSound: true,
+      enableVibration: false, // VibrationPatternService handles patterns
+      autoCancel: true,
+      color: displayLevel.color,
+      colorized: false,
+      subText: deviceName.isEmpty ? null : deviceName,
+      largeIcon: DrawableResourceAndroidBitmap(displayLevel.androidLargeIcon),
+      styleInformation: BigTextStyleInformation(body, contentTitle: title),
+      actions: _androidActions(level, kind,
+          reminderMinutes: reminderMinutes, remindersEnabled: remindersEnabled),
     );
 
-    DarwinNotificationDetails darwinNotificationDetails =
-        DarwinNotificationDetails(
+    final darwinDetails = DarwinNotificationDetails(
       presentAlert: true,
       presentBadge: true,
-      presentSound: true, // Always on - controlled by mobile ring settings
+      presentSound: true,
       sound: 'default',
-      interruptionLevel: InterruptionLevel.timeSensitive,
+      categoryIdentifier: displayLevel.iosCategoryId,
+      threadIdentifier: deviceId,
+      interruptionLevel: isHighPriority
+          ? InterruptionLevel.timeSensitive
+          : InterruptionLevel.active,
     );
-
-    NotificationDetails notificationDetails = NotificationDetails(
-      android: androidNotificationDetails,
-      iOS: darwinNotificationDetails,
-      macOS: darwinNotificationDetails,
-    );
-
-    final notificationId =
-        co2Value.hashCode % 2147483647; // Ensure positive 32-bit int
-    debugPrint('📱 Showing notification with ID: $notificationId');
 
     try {
       await _notificationsPlugin.show(
-        id: notificationId,
+        id: ventilationNotificationId(deviceId),
         title: title,
         body: body,
-        notificationDetails: notificationDetails,
-        payload: 'co2_alert:$deviceName:$co2Value',
+        notificationDetails: NotificationDetails(
+          android: androidDetails,
+          iOS: darwinDetails,
+          macOS: darwinDetails,
+        ),
+        payload: payload,
       );
-      debugPrint('✅ Notification.show() called successfully');
+      debugPrint('Ventilation notification shown: $title / $body');
     } catch (e) {
-      debugPrint('❌ Error showing notification: $e');
-      debugPrint('❌ Stack trace: ${StackTrace.current}');
+      debugPrint('Error showing ventilation notification: $e');
     }
+  }
 
-    // Trigger vibration pattern if vibration is enabled
-    if (vibrate && Platform.isAndroid) {
-      await VibrationPatternService.triggerVibrationPattern(threshold);
+  static Future<void> cancelVentilationNotification(String deviceId) async {
+    try {
+      await _notificationsPlugin.cancel(id: ventilationNotificationId(deviceId));
+    } catch (e) {
+      debugPrint('Error cancelling ventilation notification: $e');
     }
   }
 

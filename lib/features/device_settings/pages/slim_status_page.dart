@@ -1,12 +1,19 @@
+import 'package:airspothealth/features/device_settings/widgets/slim_diagnostics_export.dart';
 import 'package:airspothealth/core/providers/ble_device_communication_provider.dart';
 import 'package:airspothealth/core/providers/device_settings_provider.dart';
+import 'package:airspothealth/core/utils/app_utils.dart';
 import 'package:airspothealth/core/utils/device_cmd_utils.dart';
 import 'package:airspothealth/core/utils/extensions.dart';
+import 'package:airspothealth/features/device_settings/providers/ble_device_version_provider.dart';
 import 'package:airspothealth/features/device_settings/widgets/co2_ppm_range_picker_widget.dart';
 import 'package:airspothealth/features/device_settings/widgets/device_settings_name_widget.dart';
 import 'package:airspothealth/features/devices/providers/device_battery_level_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+
+/// The 0x37 diagnostic journal command only exists from Slim firmware 0.17.0
+/// onward (still beta / not yet released). Older firmware times out on it.
+const _minDiagnosticsFirmwareVersion = '0.17.0';
 
 /// AirSpot Slim has no screen — the RGB LED shows CO₂ zones and charging status.
 /// This page explains LED behavior and exposes settings that affect the LED.
@@ -19,6 +26,10 @@ class SlimStatusPage extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final battery = ref.watch(deviceBatteryLevelProvider(deviceId));
     final settings = ref.watch(deviceSettingsProvider(deviceId));
+    final firmwareVersion = ref.watch(bleDeviceVersionProvider(deviceId));
+    final supportsDiagnostics = firmwareVersion != null &&
+        !AppUtils.isVersionGreater(
+            firmwareVersion, _minDiagnosticsFirmwareVersion);
 
     return Scaffold(
       backgroundColor: Colors.white,
@@ -31,6 +42,10 @@ class SlimStatusPage extends ConsumerWidget {
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
+          if (supportsDiagnostics) ...[
+            SlimDiagnosticsExport(deviceId: deviceId),
+            const SizedBox(height: 16),
+          ],
           _Section(
             title: 'What the LED means',
             child: Column(

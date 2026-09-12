@@ -119,9 +119,11 @@ class _DfuUpdateNotifier extends AutoDisposeNotifier<AsyncProgressValue> {
       // Query the connected device again, rather than trusting saved identity.
       final services =
           await BluetoothDevice.fromId(deviceId).discoverServices();
-      final hasSmp = services.any((service) => service.uuid == Constants.smpServiceGuid);
+      final hasSmp =
+          services.any((service) => service.uuid == Constants.smpServiceGuid);
       HostedFirmware.checkConnectedModel(release, hasSmpService: hasSmp);
-      targetModel = hasSmp ? DeviceModel.airspotSlim : DeviceModel.airspotScreen;
+      targetModel =
+          hasSmp ? DeviceModel.airspotSlim : DeviceModel.airspotScreen;
     }
     if (targetModel == DeviceModel.airspotSlim) {
       ref
@@ -145,6 +147,7 @@ class _DfuUpdateNotifier extends AutoDisposeNotifier<AsyncProgressValue> {
     final bluetoothDevice = BluetoothDevice.fromId(deviceId);
     final history =
         ref.read(deviceHistoryDataRequestProvider(deviceId).notifier);
+    var installationConfirmed = false;
     final alreadyCurrent = await SlimUpdateSession.run(
       suspend: () async {
         await communicator.suspend();
@@ -166,6 +169,7 @@ class _DfuUpdateNotifier extends AutoDisposeNotifier<AsyncProgressValue> {
                     : 0,
                 message: message),
           );
+          installationConfirmed = true;
           state = const AsyncInProgress(1,
               message: 'Reconnecting and checking live readings...');
           await bluetoothDevice.connect(
@@ -175,15 +179,32 @@ class _DfuUpdateNotifier extends AutoDisposeNotifier<AsyncProgressValue> {
           await SlimUpdateVerification.verify(communicator, firmware.version);
           return current;
         } catch (error) {
+          if (error is SlimDfuException || error is SlimUpdateHealthException) {
+            rethrow;
+          }
+          if (installationConfirmed) {
+            throw StateError(
+                'Firmware installation was confirmed, but app communication '
+                'could not be restored: $error');
+          }
           throw StateError('Slim update could not be verified: $error. '
               'If the device rejected the update for low battery, charge it and retry.');
         }
       },
       restore: () async {
         communicator.resume();
-        await ref
-            .read(bleDeviceConnectionProvider(deviceId).notifier)
-            .restoreAfterUpdate();
+        try {
+          await ref
+              .read(bleDeviceConnectionProvider(deviceId).notifier)
+              .restoreAfterUpdate();
+        } catch (error) {
+          if (installationConfirmed) {
+            throw StateError(
+                'Firmware installation was confirmed, but normal app '
+                'communication could not be restored: $error');
+          }
+          rethrow;
+        }
       },
     );
     state = AsyncSuccess(alreadyCurrent

@@ -25,6 +25,9 @@ class RecalibrateDevicePage extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     ref.listen<AsyncProgressValue>(recalibrationTimeProvider(deviceId),
         (_, nStatus) {
+      if (nStatus is AsyncFailure) {
+        context.showSnackBar(nStatus.error.toString());
+      }
       if (nStatus.isSuccess) {
         // Reset the calibration status after 5 seconds
         WidgetsBinding.instance.addPostFrameCallback((_) {

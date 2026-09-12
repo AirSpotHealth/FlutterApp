@@ -3,6 +3,20 @@ import 'dart:async';
 import 'package:airspothealth/core/services/ble_device_communicator.dart';
 import 'package:airspothealth/core/utils/device_cmd_utils.dart';
 
+class SlimUpdateHealthException implements Exception {
+  const SlimUpdateHealthException(
+      this.expectedVersion, this.observedVersion, this.hasLiveReading);
+  final String expectedVersion;
+  final String? observedVersion;
+  final bool hasLiveReading;
+
+  @override
+  String toString() =>
+      'Firmware installation was confirmed, but the device health '
+      'check failed: expected $expectedVersion, received '
+      '${observedVersion ?? "no version"}; valid live reading: $hasLiveReading.';
+}
+
 /// Only new, complete NUS notifications count as post-update evidence.
 class SlimUpdateVerification {
   SlimUpdateVerification(this.expectedVersion);
@@ -45,9 +59,8 @@ class SlimUpdateVerification {
         await Future<void>.delayed(const Duration(seconds: 2));
         if (evidence.complete && communicator.device.isConnected) return;
       } while (DateTime.now().isBefore(deadline));
-      throw StateError('Post-update check failed: expected $version, '
-          'received ${evidence.version ?? "no version"}; '
-          'valid live reading: ${evidence.hasLiveReading}');
+      throw SlimUpdateHealthException(
+          version, evidence.version, evidence.hasLiveReading);
     } finally {
       await subscription.cancel();
     }

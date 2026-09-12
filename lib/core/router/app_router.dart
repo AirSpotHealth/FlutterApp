@@ -21,7 +21,10 @@ import 'package:airspothealth/features/devices/devices_page.dart';
 import 'package:airspothealth/features/factory_test/factory_test_wrapper.dart';
 import 'package:airspothealth/features/find_my_device/find_my_device_page.dart';
 import 'package:airspothealth/features/home/homepage.dart';
+import 'package:airspothealth/features/notification_settings/notification_advanced_settings_page.dart';
+import 'package:airspothealth/features/notification_settings/notification_history_page.dart';
 import 'package:airspothealth/features/notification_settings/notification_settings_page.dart';
+import 'package:airspothealth/features/notification_settings/ventilation_event_detail_page.dart';
 import 'package:airspothealth/features/report_issue/report_issue_page.dart';
 import 'package:airspothealth/features/solutions/solutions_page.dart';
 import 'package:flutter/material.dart';
@@ -214,6 +217,38 @@ class AppRouter {
                       }
                       return NotificationSettingsPage(deviceId: deviceId);
                     },
+                    routes: [
+                      GoRoute(
+                        path: 'advanced',
+                        name: RouteNames.notificationAdvancedSettings,
+                        builder: (context, state) {
+                          final deviceId = state.pathParameters['deviceId']!;
+                          return NotificationAdvancedSettingsPage(
+                              deviceId: deviceId);
+                        },
+                      ),
+                    ],
+                  ),
+                  // Notification history and event detail
+                  GoRoute(
+                    path: 'notification-history',
+                    name: RouteNames.notificationHistory,
+                    builder: (context, state) {
+                      final deviceId = state.pathParameters['deviceId']!;
+                      return NotificationHistoryPage(deviceId: deviceId);
+                    },
+                    routes: [
+                      GoRoute(
+                        path: ':eventId',
+                        name: RouteNames.ventilationEventDetail,
+                        builder: (context, state) {
+                          final deviceId = state.pathParameters['deviceId']!;
+                          final eventId = state.pathParameters['eventId']!;
+                          return VentilationEventDetailPage(
+                              deviceId: deviceId, eventId: eventId);
+                        },
+                      ),
+                    ],
                   ),
                   // Route for find my device settings within device settings
                   GoRoute(

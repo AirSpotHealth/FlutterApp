@@ -2,188 +2,168 @@ import 'package:isar_plus/isar_plus.dart';
 
 part 'notification_preferences.g.dart';
 
-@Collection(ignore: {'copyWith'})
+/// Per-device smartphone notification preferences for the ventilation event
+/// engine. Engine state itself lives in [VentilationEvent]; this record only
+/// holds what the user configured.
+@Collection(ignore: {'copyWith', 'isInQuietHours'})
 class NotificationPreferences {
   /// The device id - used as primary key
   @Id()
   final String deviceId;
 
-  /// Enable smartphone notifications for high CO2
-  final bool smartphoneNotificationsEnabled;
+  /// Master switch: "Smart notifications".
+  final bool smartNotificationsEnabled;
 
-  /// Custom CO2 thresholds for notifications (can use alarm levels or custom)
-  final List<NotificationThreshold> notificationThresholds;
+  /// "Air is getting stuffy" (early prompt) enabled.
+  final bool notifyStuffy;
 
-  /// Notification vibration enabled
-  final bool notificationVibrationEnabled;
+  /// "Ventilation is poor" (high priority) enabled.
+  final bool notifyPoor;
 
-  /// Show notification even when app is in foreground
+  /// "Air improves again" (recovery) enabled.
+  final bool notifyImproved;
+
+  /// Vibrate with notifications.
+  final bool vibrationEnabled;
+
+  /// Show alerts while the app is open (in-app alert card).
   final bool showInForeground;
 
-  /// Cooldown mode: 'time' for time-based cooldown, 'once' for once-per-crossing
-  final String cooldownMode;
+  /// Offer "Remind me" and honour reminder requests.
+  final bool remindersEnabled;
 
-  /// Minimum time between notifications (in minutes) to avoid spam (only used when cooldownMode is 'time')
-  final int cooldownMinutes;
+  // ---- Advanced: thresholds (ppm) ----
+  final int stuffyThreshold;
+  final int betterThreshold;
+  final int poorThreshold;
 
-  /// Last notification time (to implement time-based cooldown)
-  final DateTime? lastNotificationTime;
+  // ---- Advanced: timing (minutes) ----
+  final int stuffyPersistMinutes;
+  final int betterPersistMinutes;
+  final int poorPersistMinutes;
+  final int reminderMinutes;
+  final int highPriorityReminderMinutes;
+  final int recoveryMinutes;
 
-  /// Last threshold value that triggered a notification (for time-based cooldown mode)
-  final int? lastTriggeredThresholdValue;
+  // ---- Advanced: quiet hours ----
+  final bool quietHoursEnabled;
+  final DateTime? quietHoursStart;
+  final DateTime? quietHoursEnd;
 
-  /// List of threshold IDs that have been triggered (for once-per-crossing mode)
-  final List<int> triggeredThresholds;
+  static const defaultStuffyThreshold = 800;
+  static const defaultBetterThreshold = 1000;
+  static const defaultPoorThreshold = 1500;
+  static const defaultStuffyPersistMinutes = 5;
+  static const defaultBetterPersistMinutes = 10;
+  static const defaultPoorPersistMinutes = 10;
+  static const defaultReminderMinutes = 10;
+  static const defaultHighPriorityReminderMinutes = 5;
+  static const defaultRecoveryMinutes = 5;
 
   NotificationPreferences({
     required this.deviceId,
-    this.smartphoneNotificationsEnabled = false,
-    this.notificationThresholds = defaultNotificationThresholds,
-    this.notificationVibrationEnabled = true, // Vibration enabled by default
+    this.smartNotificationsEnabled = false,
+    this.notifyStuffy = true,
+    this.notifyPoor = true,
+    this.notifyImproved = true,
+    this.vibrationEnabled = true,
     this.showInForeground = true,
-    this.cooldownMode = 'once',
-    this.cooldownMinutes = 5,
-    this.lastNotificationTime,
-    this.lastTriggeredThresholdValue,
-    this.triggeredThresholds = const [],
+    this.remindersEnabled = true,
+    this.stuffyThreshold = 800,
+    this.betterThreshold = 1000,
+    this.poorThreshold = 1500,
+    this.stuffyPersistMinutes = 5,
+    this.betterPersistMinutes = 10,
+    this.poorPersistMinutes = 10,
+    this.reminderMinutes = 10,
+    this.highPriorityReminderMinutes = 5,
+    this.recoveryMinutes = 5,
+    this.quietHoursEnabled = false,
+    this.quietHoursStart,
+    this.quietHoursEnd,
   });
 
   NotificationPreferences.empty({required this.deviceId})
-      : smartphoneNotificationsEnabled = false,
-        notificationThresholds = defaultNotificationThresholds,
-        notificationVibrationEnabled = true, // Vibration enabled by default
+      : smartNotificationsEnabled = false,
+        notifyStuffy = true,
+        notifyPoor = true,
+        notifyImproved = true,
+        vibrationEnabled = true,
         showInForeground = true,
-        cooldownMode = 'once',
-        cooldownMinutes = 5,
-        lastNotificationTime = null,
-        lastTriggeredThresholdValue = null,
-        triggeredThresholds = const [];
+        remindersEnabled = true,
+        stuffyThreshold = 800,
+        betterThreshold = 1000,
+        poorThreshold = 1500,
+        stuffyPersistMinutes = 5,
+        betterPersistMinutes = 10,
+        poorPersistMinutes = 10,
+        reminderMinutes = 10,
+        highPriorityReminderMinutes = 5,
+        recoveryMinutes = 5,
+        quietHoursEnabled = false,
+        quietHoursStart = null,
+        quietHoursEnd = null;
 
   NotificationPreferences copyWith({
-    String? deviceId,
-    bool? smartphoneNotificationsEnabled,
-    List<NotificationThreshold>? notificationThresholds,
-    bool? notificationVibrationEnabled,
+    bool? smartNotificationsEnabled,
+    bool? notifyStuffy,
+    bool? notifyPoor,
+    bool? notifyImproved,
+    bool? vibrationEnabled,
     bool? showInForeground,
-    String? cooldownMode,
-    int? cooldownMinutes,
-    DateTime? Function()? lastNotificationTime,
-    int? Function()? lastTriggeredThresholdValue,
-    List<int>? triggeredThresholds,
+    bool? remindersEnabled,
+    int? stuffyThreshold,
+    int? betterThreshold,
+    int? poorThreshold,
+    int? stuffyPersistMinutes,
+    int? betterPersistMinutes,
+    int? poorPersistMinutes,
+    int? reminderMinutes,
+    int? highPriorityReminderMinutes,
+    int? recoveryMinutes,
+    bool? quietHoursEnabled,
+    DateTime? Function()? quietHoursStart,
+    DateTime? Function()? quietHoursEnd,
   }) {
     return NotificationPreferences(
-      deviceId: deviceId ?? this.deviceId,
-      smartphoneNotificationsEnabled:
-          smartphoneNotificationsEnabled ?? this.smartphoneNotificationsEnabled,
-      notificationThresholds:
-          notificationThresholds ?? this.notificationThresholds,
-      notificationVibrationEnabled:
-          notificationVibrationEnabled ?? this.notificationVibrationEnabled,
+      deviceId: deviceId,
+      smartNotificationsEnabled:
+          smartNotificationsEnabled ?? this.smartNotificationsEnabled,
+      notifyStuffy: notifyStuffy ?? this.notifyStuffy,
+      notifyPoor: notifyPoor ?? this.notifyPoor,
+      notifyImproved: notifyImproved ?? this.notifyImproved,
+      vibrationEnabled: vibrationEnabled ?? this.vibrationEnabled,
       showInForeground: showInForeground ?? this.showInForeground,
-      cooldownMode: cooldownMode ?? this.cooldownMode,
-      cooldownMinutes: cooldownMinutes ?? this.cooldownMinutes,
-      lastNotificationTime: lastNotificationTime != null
-          ? lastNotificationTime()
-          : this.lastNotificationTime,
-      lastTriggeredThresholdValue: lastTriggeredThresholdValue != null
-          ? lastTriggeredThresholdValue()
-          : this.lastTriggeredThresholdValue,
-      triggeredThresholds: triggeredThresholds ?? this.triggeredThresholds,
+      remindersEnabled: remindersEnabled ?? this.remindersEnabled,
+      stuffyThreshold: stuffyThreshold ?? this.stuffyThreshold,
+      betterThreshold: betterThreshold ?? this.betterThreshold,
+      poorThreshold: poorThreshold ?? this.poorThreshold,
+      stuffyPersistMinutes: stuffyPersistMinutes ?? this.stuffyPersistMinutes,
+      betterPersistMinutes: betterPersistMinutes ?? this.betterPersistMinutes,
+      poorPersistMinutes: poorPersistMinutes ?? this.poorPersistMinutes,
+      reminderMinutes: reminderMinutes ?? this.reminderMinutes,
+      highPriorityReminderMinutes:
+          highPriorityReminderMinutes ?? this.highPriorityReminderMinutes,
+      recoveryMinutes: recoveryMinutes ?? this.recoveryMinutes,
+      quietHoursEnabled: quietHoursEnabled ?? this.quietHoursEnabled,
+      quietHoursStart:
+          quietHoursStart != null ? quietHoursStart() : this.quietHoursStart,
+      quietHoursEnd: quietHoursEnd != null ? quietHoursEnd() : this.quietHoursEnd,
     );
   }
 
-  /// Check if cooldown period has passed
-  bool get canSendNotification {
-    // For 'once' mode, cooldown is handled by the monitoring service
-    if (cooldownMode == 'once') return true;
-
-    // For 'time' mode, check time-based cooldown
-    if (lastNotificationTime == null) return true;
-    final now = DateTime.now();
-    final difference = now.difference(lastNotificationTime!);
-    return difference.inMinutes >= cooldownMinutes;
+  /// True when [at] falls inside the configured quiet-hours window.
+  /// Windows may cross midnight (e.g. 22:00 to 06:00). Only the time of day
+  /// of [quietHoursStart]/[quietHoursEnd] is used.
+  bool isInQuietHours(DateTime at) {
+    if (!quietHoursEnabled || quietHoursStart == null || quietHoursEnd == null) {
+      return false;
+    }
+    final start = quietHoursStart!.hour * 60 + quietHoursStart!.minute;
+    final end = quietHoursEnd!.hour * 60 + quietHoursEnd!.minute;
+    final now = at.hour * 60 + at.minute;
+    if (start == end) return false;
+    if (start < end) return now >= start && now < end;
+    return now >= start || now < end; // crosses midnight
   }
 }
-
-@embedded
-class NotificationThreshold {
-  final int id;
-  final int co2Threshold;
-  final bool enabled;
-  final String? message; // Custom message for this threshold
-
-  const NotificationThreshold({
-    required this.id,
-    required this.co2Threshold,
-    required this.enabled,
-    this.message,
-  });
-
-  NotificationThreshold copyWith({
-    int? id,
-    int? co2Threshold,
-    bool? enabled,
-    String? message,
-  }) {
-    return NotificationThreshold(
-      id: id ?? this.id,
-      co2Threshold: co2Threshold ?? this.co2Threshold,
-      enabled: enabled ?? this.enabled,
-      message: message ?? this.message,
-    );
-  }
-
-  @override
-  bool operator ==(Object other) =>
-      identical(this, other) ||
-      other is NotificationThreshold &&
-          runtimeType == other.runtimeType &&
-          id == other.id &&
-          co2Threshold == other.co2Threshold &&
-          enabled == other.enabled &&
-          message == other.message;
-
-  @override
-  int get hashCode =>
-      id.hashCode ^
-      co2Threshold.hashCode ^
-      enabled.hashCode ^
-      (message?.hashCode ?? 0);
-
-  factory NotificationThreshold.empty(int id) {
-    return NotificationThreshold(
-      id: id,
-      co2Threshold: 0,
-      enabled: false,
-      message: null,
-    );
-  }
-}
-
-// Default notification thresholds aligned with device alarm levels
-const defaultNotificationThresholds = [
-  NotificationThreshold(
-    id: 0,
-    co2Threshold: 800,
-    enabled: true,
-    message: 'CO₂ level is getting high',
-  ),
-  NotificationThreshold(
-    id: 1,
-    co2Threshold: 1000,
-    enabled: true,
-    message: 'Warning: High CO₂ detected',
-  ),
-  NotificationThreshold(
-    id: 2,
-    co2Threshold: 1200,
-    enabled: true,
-    message: 'Alert: Very high CO₂!',
-  ),
-  NotificationThreshold(
-    id: 3,
-    co2Threshold: 1500,
-    enabled: true,
-    message: 'Critical: Dangerous CO₂ levels!',
-  ),
-];

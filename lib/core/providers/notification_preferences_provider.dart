@@ -18,18 +18,13 @@ class NotificationPreferencesNotifier
 
   @override
   NotificationPreferences build(String deviceId) {
-    // Load preferences from database
     final prefs = _isarService.read<NotificationPreferences?>((isar) {
       return isar.notificationPreferences
           .where()
           .deviceIdEqualTo(deviceId)
           .findFirst();
     });
-
-    final result = prefs ?? NotificationPreferences.empty(deviceId: deviceId);
-    debugPrint(
-        'NotificationPreferencesProvider - Loaded preferences for device $deviceId: triggered thresholds = ${result.triggeredThresholds}');
-    return result;
+    return prefs ?? NotificationPreferences.empty(deviceId: deviceId);
   }
 
   /// Update notification preferences
@@ -40,12 +35,10 @@ class NotificationPreferencesNotifier
     try {
       final updated = update(state);
       state = updated;
-
       if (persist) {
         _isarService.write((isar) {
           isar.notificationPreferences.put(updated);
         });
-        debugPrint('Notification preferences saved for device: $deviceId');
       }
     } catch (e, stackTrace) {
       debugPrint('Error updating notification preferences: $e\n$stackTrace');
@@ -53,47 +46,61 @@ class NotificationPreferencesNotifier
     }
   }
 
-  /// Toggle smartphone notifications
-  Future<void> toggleSmartphoneNotifications(bool enabled) async {
-    await updatePreferences(
-      (prefs) => prefs.copyWith(smartphoneNotificationsEnabled: enabled),
-    );
-  }
+  Future<void> setSmartNotifications(bool enabled) => updatePreferences(
+      (p) => p.copyWith(smartNotificationsEnabled: enabled));
 
-  /// Update a specific notification threshold
-  Future<void> updateThreshold(
-      int index, NotificationThreshold threshold) async {
-    final thresholds =
-        List<NotificationThreshold>.from(state.notificationThresholds);
-    if (index >= 0 && index < thresholds.length) {
-      thresholds[index] = threshold;
-      await updatePreferences(
-        (prefs) => prefs.copyWith(notificationThresholds: thresholds),
-      );
-    }
-  }
+  Future<void> setNotifyStuffy(bool v) =>
+      updatePreferences((p) => p.copyWith(notifyStuffy: v));
 
-  /// Update cooldown mode
-  Future<void> updateCooldownMode(String mode) async {
-    await updatePreferences(
-      (prefs) => prefs.copyWith(cooldownMode: mode),
-    );
-  }
+  Future<void> setNotifyPoor(bool v) =>
+      updatePreferences((p) => p.copyWith(notifyPoor: v));
 
-  /// Update cooldown period (only used for time-based cooldown)
-  Future<void> updateCooldown(int minutes) async {
-    await updatePreferences(
-      (prefs) => prefs.copyWith(cooldownMinutes: minutes),
-    );
-  }
+  Future<void> setNotifyImproved(bool v) =>
+      updatePreferences((p) => p.copyWith(notifyImproved: v));
 
-  /// Update last notification time
-  Future<void> updateLastNotificationTime(DateTime time) async {
-    await updatePreferences(
-      (prefs) => prefs.copyWith(lastNotificationTime: () => time),
-      persist: true,
-    );
-  }
+  Future<void> setVibration(bool v) =>
+      updatePreferences((p) => p.copyWith(vibrationEnabled: v));
+
+  Future<void> setShowInForeground(bool v) =>
+      updatePreferences((p) => p.copyWith(showInForeground: v));
+
+  Future<void> setReminders(bool v) =>
+      updatePreferences((p) => p.copyWith(remindersEnabled: v));
+
+  Future<void> setThresholds({int? stuffy, int? better, int? poor}) =>
+      updatePreferences((p) => p.copyWith(
+            stuffyThreshold: stuffy,
+            betterThreshold: better,
+            poorThreshold: poor,
+          ));
+
+  Future<void> setTiming({
+    int? stuffyPersistMinutes,
+    int? betterPersistMinutes,
+    int? poorPersistMinutes,
+    int? reminderMinutes,
+    int? highPriorityReminderMinutes,
+    int? recoveryMinutes,
+  }) =>
+      updatePreferences((p) => p.copyWith(
+            stuffyPersistMinutes: stuffyPersistMinutes,
+            betterPersistMinutes: betterPersistMinutes,
+            poorPersistMinutes: poorPersistMinutes,
+            reminderMinutes: reminderMinutes,
+            highPriorityReminderMinutes: highPriorityReminderMinutes,
+            recoveryMinutes: recoveryMinutes,
+          ));
+
+  Future<void> setQuietHours({
+    bool? enabled,
+    DateTime? start,
+    DateTime? end,
+  }) =>
+      updatePreferences((p) => p.copyWith(
+            quietHoursEnabled: enabled,
+            quietHoursStart: start != null ? () => start : null,
+            quietHoursEnd: end != null ? () => end : null,
+          ));
 
   /// Reset to defaults
   Future<void> resetToDefaults() async {

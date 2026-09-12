@@ -1,4 +1,6 @@
 import 'dart:typed_data';
+import 'package:airspothealth/core/providers/ble_device_communication_provider.dart';
+import 'package:airspothealth/core/utils/device_cmd_utils.dart';
 
 import 'package:airspothealth/core/models/device_model.dart';
 import 'package:airspothealth/core/models/ble_device.dart';
@@ -101,7 +103,26 @@ class BleDataService {
             .read(recalibrationTimeProvider(deviceId).notifier)
             .setRecalibrationTime(value);
         break;
+      case ResponseCommand.setCalibrationMode:
+        if (bleDevice.deviceModel == DeviceModel.airspotSlim) {
+          if (data[4] == 0xff) {
+            ref.read(recalibrationTimeProvider(deviceId).notifier)
+                .setRecalibrationFailed('Could not save auto-calibration setting.');
+          }
+          ref.read(bleDeviceCommunicationProvider(deviceId).notifier)
+              .sendCommand(DeviceCmdUtils.getInitialData());
+          ref.read(bleDeviceCommunicationProvider(deviceId).notifier)
+              .sendCommand(DeviceCmdUtils.getAscDayCount());
+        }
+        break;
       case ResponseCommand.calibrateSensors:
+        if (parser.isCalibrationFailure(data)) {
+          ref.read(recalibrationTimeProvider(deviceId).notifier)
+              .setRecalibrationFailed('Calibration failed. Check the device and retry.');
+          ref.read(bleDeviceCommunicationProvider(deviceId).notifier)
+              .sendCommand(DeviceCmdUtils.getInitialData());
+          break;
+        }
         // If value is an int (not bool), it's the calibration done message
         if (value is int) {
           ref
@@ -761,6 +782,10 @@ class ResponseCommandParser {
     return result;
   }
 
+  bool isCalibrationFailure(List<int> data) =>
+      device.deviceModel == DeviceModel.airspotSlim &&
+      data.length == 6 && data[3] == 1 && data[4] == 0xff;
+
   dynamic parseCalibrateSensors(List<int> data) {
     // Check if this is a calibration done message (byte[3] == 0x01)
     if (data.length >= 8 && data[3] == 0x01) {
@@ -951,6 +976,7 @@ enum ResponseCommand {
   getCo2History(0x0C),
   calibrateSensors(0x0D),
   setContinuosDisplayResult(0x0E),
+  setCalibrationMode(0x11),
   firmwareVersion(0x13),
   recalibrationTime(0x0F),
   recalibrationConfirm(0x1F),

@@ -6,6 +6,30 @@ import 'package:mcumgr_flutter/models/firmware_upgrade_mode.dart';
 
 import 'slim_firmware_image.dart';
 
+enum SlimDfuFailure {
+  rolledBack,
+  previousImageActive,
+  unconfirmed,
+  unavailable
+}
+
+class SlimDfuException implements Exception {
+  const SlimDfuException(this.failure);
+  final SlimDfuFailure failure;
+
+  @override
+  String toString() => switch (failure) {
+        SlimDfuFailure.rolledBack =>
+          'The trial firmware rolled back to the previous image.',
+        SlimDfuFailure.previousImageActive =>
+          'The previous firmware is still active; the update was not installed.',
+        SlimDfuFailure.unconfirmed =>
+          'The target firmware started but did not pass device confirmation.',
+        SlimDfuFailure.unavailable =>
+          'Could not read the running firmware after reboot; installation is unverified.',
+      };
+}
+
 /// SMP owns the BLE connection until the expected image is active and confirmed.
 class SlimDfuService {
   static Future<bool> upload({
@@ -77,18 +101,18 @@ class SlimDfuService {
               StateError('Firmware update ended before completion'));
         }
       }));
-      await manager.update(
-        [Image(data: firmware.bytes, image: 0)],
-        configuration: const FirmwareUpgradeConfiguration(
-          firmwareUpgradeMode: FirmwareUpgradeMode.testOnly,
-          // Slim confirms itself after startup and a healthy sensor sample.
-          // Reconnect immediately; the bounded poll below waits for confirmation.
-          estimatedSwapTime: Duration.zero,
-          eraseAppSettings: false,
-          pipelineDepth: 1,
-        ),
-      ).timeout(timeout);
       try {
+        await manager.update(
+          [Image(data: firmware.bytes, image: 0)],
+          configuration: const FirmwareUpgradeConfiguration(
+            firmwareUpgradeMode: FirmwareUpgradeMode.testOnly,
+            // Slim confirms itself after startup and a healthy sensor sample.
+            // Reconnect immediately; the bounded poll below waits for confirmation.
+            estimatedSwapTime: Duration.zero,
+            eraseAppSettings: false,
+            pipelineDepth: 1,
+          ),
+        ).timeout(timeout);
         await finished;
       } catch (_) {
         // A native reconnect can time out while Slim is still starting.
@@ -98,11 +122,20 @@ class SlimDfuService {
       }
       onStatus('Waiting for startup checks and firmware confirmation...');
       final deadline = DateTime.now().add(confirmationTimeout);
+      var sawTargetActive = false;
+      ImageSlot? lastActive;
+      final previous =
+          before?.where((slot) => slot.image == 0 && slot.active).firstOrNull;
       do {
         try {
           final slots = await manager
               .readImageList()
               .timeout(const Duration(seconds: 20));
+          lastActive = slots
+              ?.where((slot) => slot.image == 0 && slot.active)
+              .firstOrNull;
+          sawTargetActive |=
+              lastActive != null && listEquals(lastActive.hash, firmware.hash);
           if (slots?.any(matches) == true) {
             completed = true;
             return false;
@@ -114,8 +147,17 @@ class SlimDfuService {
         }
         await Future<void>.delayed(pollInterval);
       } while (DateTime.now().isBefore(deadline));
-      throw StateError('Target firmware is not active and confirmed; '
-          'the device may have rolled back');
+      final previousActive = lastActive != null &&
+          previous != null &&
+          listEquals(lastActive.hash, previous.hash) &&
+          !listEquals(lastActive.hash, firmware.hash);
+      throw SlimDfuException(previousActive
+          ? (sawTargetActive
+              ? SlimDfuFailure.rolledBack
+              : SlimDfuFailure.previousImageActive)
+          : lastActive != null && listEquals(lastActive.hash, firmware.hash)
+              ? SlimDfuFailure.unconfirmed
+              : SlimDfuFailure.unavailable);
     } finally {
       if (pendingResult != null && !pendingResult.isCompleted) {
         pendingResult.complete();

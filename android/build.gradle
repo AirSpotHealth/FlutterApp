@@ -6,8 +6,18 @@ allprojects {
 }
 
 rootProject.buildDir = "../build"
-subprojects { afterEvaluate { android { compileSdkVersion 36 } } }
+// permission_handler_android 14 requires Android 37 APIs.
+subprojects { afterEvaluate { android { compileSdkVersion 37 } } }
 subprojects {
+    // file_picker 11 skips KGP on AGP 9, but our other plugins still require
+    // android.builtInKotlin=false. Compile its Kotlin sources explicitly until
+    // the project and all plugins can migrate to built-in Kotlin together.
+    if (project.name == "file_picker") {
+        plugins.withId("com.android.library") {
+            apply plugin: "org.jetbrains.kotlin.android"
+            android.kotlinOptions { jvmTarget = "17" }
+        }
+    }
     project.buildDir = "${rootProject.buildDir}/${project.name}"
 }
 subprojects {

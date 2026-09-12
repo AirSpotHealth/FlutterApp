@@ -1,5 +1,7 @@
 import 'package:airspothealth/core/providers/ble_device_communication_provider.dart';
 import 'package:airspothealth/core/providers/device_settings_provider.dart';
+import 'package:airspothealth/core/models/device_model.dart';
+import 'package:airspothealth/core/providers/ble_saved_devices_provider.dart';
 import 'package:airspothealth/core/utils/device_cmd_utils.dart';
 import 'package:airspothealth/features/device_settings/models/progress_model.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -33,6 +35,17 @@ class _DevicerSensorResetNotifier
   }
 
   void setSensorResetDone(int value) {
+    final isSlim = ref.read(bleSavedDevicesProvider.notifier)
+        .getDeviceById(arg)?.deviceModel == DeviceModel.airspotSlim;
+    if (isSlim) {
+      state = value == 1
+          ? AsyncSuccess(value)
+          : const AsyncFailure('Sensor reset failed. Reconnect and try again.');
+      // Slim returns operation status, not the auto-calibration preference.
+      ref.read(bleDeviceCommunicationProvider(arg).notifier)
+          .sendCommand(DeviceCmdUtils.getInitialData());
+      return;
+    }
     state = AsyncSuccess(value);
 
     ref.read(deviceSettingsProvider(arg).notifier).updateSetting(
