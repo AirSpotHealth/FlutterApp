@@ -1,3 +1,5 @@
+import 'package:airspothealth/features/device_graph/providers/device_history_data_request_provider.dart';
+import 'package:airspothealth/core/services/history_coverage_service.dart';
 import 'package:airspothealth/core/models/device_model.dart';
 import 'package:airspothealth/core/services/ble_communicator_service.dart';
 import 'package:airspothealth/features/device_settings/service/slim_factory_reset.dart';
@@ -53,10 +55,15 @@ class _DeviceFactoryResetNotifier
             .read(bleDeviceCommunicationProvider(deviceId).notifier)
             .sendCommand(DeviceCmdUtils.factoryReset());
       }
+      if ((communicator.isSlimDevice || model == DeviceModel.airspotSlim) &&
+          ref.exists(deviceHistoryDataRequestProvider(deviceId))) {
+        ref.read(deviceHistoryDataRequestProvider(deviceId).notifier).clear();
+      }
       ref.read(bleSavedDevicesProvider.notifier).resetDeviceFetchTime(deviceId);
       ref.read(isarServiceProvider).write((isar) {
         isar.deviceSettings.where().deviceIdEqualTo(deviceId).deleteAll();
         isar.deviceDatas.where().deviceIdEqualTo(deviceId).deleteAll();
+        HistoryCoverageService.clearDevice(isar, deviceId);
       });
       state = AsyncSuccess(true);
     } catch (error) {

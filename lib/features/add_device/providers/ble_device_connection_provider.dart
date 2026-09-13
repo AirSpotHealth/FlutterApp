@@ -1,5 +1,7 @@
 import 'dart:async';
 
+import 'package:airspothealth/features/device_graph/providers/device_history_data_request_provider.dart';
+
 import 'package:airspothealth/core/services/ble_communicator_service.dart';
 import 'package:airspothealth/core/models/ble_device.dart';
 import 'package:airspothealth/core/providers/ble_connected_devices_provider.dart';
@@ -191,6 +193,9 @@ class _BleDeviceConnectionNotifier
     ref.read(deviceBatteryLevelProvider(arg).notifier).updateBatteryLevel(
           BatteryState(null, false, lowBatteryLockout: lowBatteryLockout),
         );
+    if (ref.exists(deviceHistoryDataRequestProvider(arg))) {
+      ref.read(deviceHistoryDataRequestProvider(arg).notifier).handleDisconnected();
+    }
     _updateLiveActivityOnDisconnect();
     // Stale or missing readings must never satisfy persistence or recovery.
     ref.read(ventilationCoordinatorProvider).onDisconnected(arg);

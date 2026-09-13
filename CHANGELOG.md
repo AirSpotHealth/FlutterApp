@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- Fix Slim graph gaps between separate syncs by tracking completed download intervals. Existing readings are preserved; previously cached periods are rechecked when opened. Interrupted or failed downloads remain retryable.
 - Restrict cloud-sync controls, background jobs, and uploads to dev mode; immediate uploads also respect the auto-sync toggle.
 - Update the Slim LED and charging guide to match firmware 0.15.0 button gestures and timed indications.
 

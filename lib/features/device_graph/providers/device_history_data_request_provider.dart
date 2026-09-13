@@ -1,13 +1,16 @@
 import 'dart:async';
+import 'dart:collection';
 import 'dart:typed_data';
 
 import 'package:airspothealth/core/services/ble_communicator_service.dart';
 import 'package:airspothealth/core/models/ble_device.dart';
+import 'package:airspothealth/core/models/device_model.dart';
+import 'package:airspothealth/core/models/history_coverage.dart';
+import 'package:airspothealth/core/services/history_coverage_service.dart';
 import 'package:airspothealth/core/models/device_data.dart';
 import 'package:airspothealth/core/models/device_data_type.dart';
 import 'package:airspothealth/core/providers/ble_device_communication_provider.dart';
 import 'package:airspothealth/core/providers/isar_service_provider.dart';
-import 'package:airspothealth/core/services/isar_service.dart';
 import 'package:airspothealth/core/utils/constants.dart';
 import 'package:airspothealth/core/utils/device_cmd_utils.dart';
 import 'package:airspothealth/core/utils/extensions.dart';
@@ -17,6 +20,13 @@ import 'package:airspothealth/features/device_settings/models/progress_model.dar
 import 'package:airspothealth/features/device_settings/providers/device_data_download_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+
+// Injectable transport keeps the history state machine testable without BLE.
+final historyCommandSenderProvider =
+    Provider.family<Future<bool> Function(Uint8List), String>((ref, deviceId) =>
+        (command) => ref
+            .read(bleDeviceCommunicationProvider(deviceId).notifier)
+            .sendCommand(command));
 
 final deviceHistoryDataRequestProvider = NotifierProvider.family<
     _DeviceHistoryDataRequestNotifier,
@@ -41,6 +51,12 @@ class _DeviceHistoryDataRequestNotifier
 
   BleDevice? bleDevice;
 
+  bool get _isSlim => bleDevice?.deviceModel == DeviceModel.airspotSlim;
+  final Queue<HistoryCoverage> _missingIntervals = Queue();
+  HistoryCoverage? _activeInterval;
+  bool _reachedIntervalStart = false;
+  int _requestGeneration = 0;
+
   final List<DeviceData> _dataBuffer = [];
   static final int _batchSize = 400; // Save in batches of 400 records
 
@@ -57,6 +73,7 @@ class _DeviceHistoryDataRequestNotifier
     ref.onDispose(() {
       _flushTimer?.cancel();
       _timeoutTimer?.cancel();
+      _requestGeneration++;
     });
     bleDevice = ref.read(bleDeviceProvider(deviceId));
     return AsyncNone();
@@ -70,6 +87,14 @@ class _DeviceHistoryDataRequestNotifier
   }
 
   void request(GraphDataDuration duration) {
+    if (_isSlim) {
+      _requestGeneration++;
+      _timeoutTimer?.cancel();
+      _flushTimer?.cancel();
+      _missingIntervals.clear();
+      _activeInterval = null;
+      if (!_commitData()) return;
+    }
     this.duration = duration;
     requestedDateTimeRange = duration.dateTimeRange;
 
@@ -81,11 +106,44 @@ class _DeviceHistoryDataRequestNotifier
     _startPageNumber = null;
     _hasWrappedAround = false;
 
+    if (_isSlim) {
+      try {
+        final requested = HistoryCoverageService.requested(
+            deviceId, requestedDateTimeRange!, DateTime.now());
+        if (requested != null) {
+          _missingIntervals.addAll(
+              ref.read(historyCoverageServiceProvider).missing(requested));
+        }
+        _startNextInterval();
+      } catch (error) {
+        _fail('Could not read download coverage: $error');
+      }
+    } else {
+      _requestData();
+    }
+  }
+
+  void _startNextInterval() {
+    if (_missingIntervals.isEmpty) {
+      _finishRequest();
+      return;
+    }
+    _activeInterval = _missingIntervals.removeFirst();
+    pendingDateTimeRange = HistoryCoverageService.dateRange(_activeInterval!);
+    _reachedIntervalStart = false;
+    currentPageNumber = null;
+    _startPageNumber = null;
+    _hasWrappedAround = false;
+    numberOfPagesFetched = 0;
+    numberOfBlankPagesFetched = 0;
     _requestData();
   }
 
   void pauseForUpdate() {
     _pausedForUpdate = true;
+    _requestGeneration++;
+    _activeInterval = null;
+    _missingIntervals.clear();
     _timeoutTimer?.cancel();
     _flushTimer?.cancel();
     _commitData();
@@ -93,7 +151,9 @@ class _DeviceHistoryDataRequestNotifier
   }
 
   void resumeAfterUpdate() {
-    if (BleCommunicatorService.instance.communicator(deviceId).isSuspended) return;
+    if (BleCommunicatorService.instance.communicator(deviceId).isSuspended) {
+      return;
+    }
     if (!_pausedForUpdate) return;
     _pausedForUpdate = false;
     final requested = duration;
@@ -101,7 +161,9 @@ class _DeviceHistoryDataRequestNotifier
   }
 
   void _requestData() {
-    if (BleCommunicatorService.instance.communicator(deviceId).isSuspended) return;
+    if (BleCommunicatorService.instance.communicator(deviceId).isSuspended) {
+      return;
+    }
     debugPrint('REQUEST:Current page number: $currentPageNumber');
     _startTimeoutTimer();
 
@@ -109,7 +171,7 @@ class _DeviceHistoryDataRequestNotifier
       _sendCommand(DeviceCmdUtils.getCurrentFlashPage(),
           "Getting the last recorded data");
     } else {
-      _setPendingDateTimeRange();
+      if (!_isSlim) _setPendingDateTimeRange();
       _sendCommand(DeviceCmdUtils.getCo2History(currentPageNumber!),
           "Getting historical data for page $currentPageNumber");
     }
@@ -123,21 +185,66 @@ class _DeviceHistoryDataRequestNotifier
     });
   }
 
+  void _fail(String message) {
+    _timeoutTimer?.cancel();
+    _flushTimer?.cancel();
+    _activeInterval = null;
+    _missingIntervals.clear();
+    state = AsyncFailure(message);
+  }
+
   void _handleTimeout() {
+    if (_isSlim) {
+      _fail('Timeout occurred while waiting for device response');
+      return;
+    }
     state = AsyncFailure(
       'Timeout occurred while waiting for device response',
     );
   }
 
-  void _sendCommand(Uint8List command, String message) {
-    ref
-        .read(bleDeviceCommunicationProvider(deviceId).notifier)
-        .sendCommand(command);
-    state = AsyncInProgress(0.1, message: message);
+  void handleDisconnected() {
+    if (_isSlim && state is AsyncInProgress) {
+      _fail('Device disconnected before history download completed');
+    }
   }
 
-  void handleHistoricalDataResponse(dynamic data) {
-    if (BleCommunicatorService.instance.communicator(deviceId).isSuspended) return;
+  void _sendCommand(Uint8List command, String message) {
+    state = AsyncInProgress(0.1, message: message);
+    final generation = _requestGeneration;
+    ref.read(historyCommandSenderProvider(deviceId))(command).then((sent) {
+      if (_isSlim &&
+          generation == _requestGeneration &&
+          state is AsyncInProgress &&
+          !sent) {
+        _fail('Could not send history request');
+      }
+    }).catchError((Object error) {
+      if (_isSlim &&
+          generation == _requestGeneration &&
+          state is AsyncInProgress) {
+        _fail('Could not send history request: $error');
+      }
+    });
+  }
+
+  void handleHistoricalDataResponse(dynamic data, {int? pageNumber}) {
+    if (BleCommunicatorService.instance.communicator(deviceId).isSuspended) {
+      return;
+    }
+    if (_isSlim) {
+      if (state is! AsyncInProgress || _activeInterval == null) return;
+      if (data is int) {
+        // A delayed write-pointer response must not restart an active scan.
+        if (currentPageNumber != null) return;
+      } else if (data is! List<DeviceData> || data.isEmpty) {
+        _fail('Invalid Slim history response; please retry');
+        return;
+      } else if (currentPageNumber == null || pageNumber != currentPageNumber) {
+        // Ignore stale/duplicate pages without cancelling the response timeout.
+        return;
+      }
+    }
     // Cancel timeout timer when we get a response
     _timeoutTimer?.cancel();
 
@@ -160,6 +267,12 @@ class _DeviceHistoryDataRequestNotifier
     }
 
     final List<DeviceData> deviceDataList = data as List<DeviceData>;
+    if (_isSlim) {
+      _reachedIntervalStart |= deviceDataList.any((record) =>
+          record.type != DeviceDataType.empty.index &&
+          record.dateTime.isAfter(_unsyncedThresholdDate) &&
+          !record.dateTime.isAfter(pendingDateTimeRange!.start));
+    }
 
     numberOfPagesFetched++;
     currentPageNumber = (currentPageNumber ?? 0) - 1;
@@ -168,7 +281,7 @@ class _DeviceHistoryDataRequestNotifier
       if (_hasWrappedAround || _shouldStopRingWrap()) {
         debugPrint(
             'REQUEST:End of flash scan at page 0 (start=$_startPageNumber, wrapped=$_hasWrappedAround)');
-        _saveData(deviceDataList);
+        if (!_saveData(deviceDataList)) return;
         handleHistoricalDataFetchComplete();
         return;
       }
@@ -179,7 +292,7 @@ class _DeviceHistoryDataRequestNotifier
     debugPrint(
         'REQUEST:Current page number: $currentPageNumber, number of pages fetched: $numberOfPagesFetched');
 
-    _saveData(deviceDataList);
+    if (!_saveData(deviceDataList)) return;
 
     if (_shouldFetchMoreData(deviceDataList)) {
       _requestData();
@@ -188,11 +301,11 @@ class _DeviceHistoryDataRequestNotifier
     }
   }
 
-  void _saveData(List<DeviceData> deviceDataList) {
+  bool _saveData(List<DeviceData> deviceDataList) {
     // check if the whole data is empty i.e every value is 0
     if (deviceDataList.every((data) => data.value == 0)) {
       debugPrint('REQUEST:All data values are 0, skipping save.');
-      return;
+      return true;
     }
 
     _dataBuffer.addAll(deviceDataList
@@ -201,28 +314,34 @@ class _DeviceHistoryDataRequestNotifier
     debugPrint('REQUEST:Buffer size: ${_dataBuffer.length}');
 
     if (_dataBuffer.length >= _batchSize) {
-      _commitData();
+      return _commitData();
     } else {
       _startFlushTimer(); // Ensure it gets saved if no more data arrives
     }
+    return true;
   }
 
-  void _commitData() async {
+  bool _commitData() {
     debugPrint('REQUEST:Committing data: ${_dataBuffer.length}');
-    if (_dataBuffer.isEmpty) return;
+    if (_dataBuffer.isEmpty) return true;
 
     try {
       // Write to Isar database one by one to catch any failures
-      IsarService().write((isar) async {
+      ref.read(isarServiceProvider).write((isar) {
         isar.deviceDatas.putAll(_dataBuffer);
       });
 
       debugPrint("REQUEST:Successfully saved ${_dataBuffer.length} data");
     } catch (e) {
       debugPrint('REQUEST:Database save operation failed: error: $e');
+      if (_isSlim) {
+        _fail('Could not save history readings: $e');
+        return false;
+      }
     }
 
     _dataBuffer.clear();
+    return true;
   }
 
   /// Skip wrapping from page 0 → 16382 when the write pointer is still in the
@@ -281,6 +400,9 @@ class _DeviceHistoryDataRequestNotifier
   }
 
   void handleHistoricalDataFetchComplete() {
+    if (_isSlim && (state is! AsyncInProgress || _activeInterval == null)) {
+      return;
+    }
     // Cancel any pending timers
     _timeoutTimer?.cancel();
     _flushTimer?.cancel();
@@ -289,8 +411,28 @@ class _DeviceHistoryDataRequestNotifier
         'REQUEST:That was last: Total number of pages fetched: $numberOfPagesFetched');
 
     // Save any remaining buffered data
-    _commitData();
+    if (!_commitData()) return;
 
+    if (_isSlim && _activeInterval != null) {
+      if (state is! AsyncInProgress) return;
+      try {
+        // A scan stopped by the existing flash/blank-page limit cannot prove
+        // the entire requested interval was examined. Leave it retryable.
+        if (_reachedIntervalStart) {
+          ref.read(historyCoverageServiceProvider).complete(_activeInterval!);
+        }
+      } catch (error) {
+        _fail('Could not save download coverage: $error');
+        return;
+      }
+      _activeInterval = null;
+      _startNextInterval();
+      return;
+    }
+    _finishRequest();
+  }
+
+  void _finishRequest() {
     debugPrint(
         'REQUEST:Device data download provider: ${ref.read(deviceDataDownloadProvider(deviceId))}');
 
@@ -301,7 +443,7 @@ class _DeviceHistoryDataRequestNotifier
           .setDataDownloadedFromDevice();
     }
 
-    _saveLastFetchedDateTimeRange();
+    if (!_isSlim) _saveLastFetchedDateTimeRange();
 
     requestedDateTimeRange = null;
     duration = null;
@@ -413,6 +555,11 @@ class _DeviceHistoryDataRequestNotifier
   }
 
   void clear() {
+    _requestGeneration++;
+    _activeInterval = null;
+    _missingIntervals.clear();
+    // Cancellation never certifies the interrupted interval.
+    if (_isSlim) _dataBuffer.clear();
     // Cancel any pending timers
     _timeoutTimer?.cancel();
     _flushTimer?.cancel();

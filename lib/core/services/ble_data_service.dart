@@ -1,3 +1,4 @@
+import 'package:airspothealth/core/services/history_coverage_service.dart';
 import 'dart:typed_data';
 import 'package:airspothealth/core/providers/ble_device_communication_provider.dart';
 import 'package:airspothealth/core/utils/device_cmd_utils.dart';
@@ -151,8 +152,13 @@ class BleDataService {
         WidgetService().refreshDeviceList();
         break;
       case ResponseCommand.dataEraseDone:
+        if (bleDevice.deviceModel == DeviceModel.airspotSlim &&
+            ref.exists(deviceHistoryDataRequestProvider(deviceId))) {
+          ref.read(deviceHistoryDataRequestProvider(deviceId).notifier).clear();
+        }
         ref.read(isarServiceProvider).write((isar) {
           isar.deviceDatas.where().deviceIdEqualTo(deviceId).deleteAll();
+          HistoryCoverageService.clearDevice(isar, deviceId);
         });
         ref.read(deviceDataEraseProvider(deviceId).notifier).setSuccess();
         break;
@@ -183,7 +189,11 @@ class BleDataService {
             is! AsyncNone) {
           ref
               .read(deviceHistoryDataRequestProvider(deviceId).notifier)
-              .handleHistoricalDataResponse(value);
+              .handleHistoricalDataResponse(value,
+                  pageNumber: bleDevice.deviceModel == DeviceModel.airspotSlim &&
+                          value is List<DeviceData>
+                      ? (data[data.length - 3] << 8) | data[data.length - 2]
+                      : null);
         }
 
         if (value is List<DeviceData> &&
@@ -588,6 +598,21 @@ class ResponseCommandParser {
   bool parseSetAlias(List<int> data) => _parseBoolean(data, 4);
 
   dynamic parseGetCo2History(List<int> data) {
+    if (device.deviceModel == DeviceModel.airspotSlim) {
+      if (data.length < 7 ||
+          data[0] != 0xff ||
+          data[1] != 0xaa ||
+          data[2] != 0x0c ||
+          (data.take(data.length - 1).fold<int>(0, (a, b) => a + b) & 0xff) !=
+              data.last) {
+        return null;
+      }
+      final isPointer = data.length == 7 && data[3] == 1;
+      final isPage = data.length >= 15 &&
+          data[3] == data.length - 7 &&
+          (data.length - 7) % BleDataService.deviceDataLength == 0;
+      if (!isPointer && !isPage) return null;
+    }
     // Check if it is a page number response
     if (data.length == 7 && data[3] == 0x01) {
       // return the 4th and 5th bytes are the current page number as uint16_t

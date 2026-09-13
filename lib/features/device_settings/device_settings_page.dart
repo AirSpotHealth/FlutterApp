@@ -1,3 +1,4 @@
+import 'package:airspothealth/core/services/history_coverage_service.dart';
 import 'package:airspothealth/core/models/ble_device.dart';
 import 'package:airspothealth/core/models/device_capabilities.dart';
 import 'package:airspothealth/core/models/device_data.dart';
@@ -346,6 +347,7 @@ class DeleteLocalCacheWidget extends ConsumerWidget {
       onTap: () {
         ref.read(isarServiceProvider).write((isar) {
           isar.deviceDatas.where().deviceIdEqualTo(deviceId).deleteAll();
+          HistoryCoverageService.clearDevice(isar, deviceId);
         });
         // remove last fetched date from the cache
         ref

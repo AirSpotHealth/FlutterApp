@@ -37,6 +37,18 @@ void main() {
         8195);
     expect(slim.parseGetCo2History(frame(0x0c, [1, 2], length: 1)), 258);
   });
+  test('malformed Slim history cannot masquerade as a completed download', () {
+    final valid = frame(0x0c, [0, 0, 0, 1, 0x20, 3, 0, 0, 0, 1], length: 8);
+    final badChecksum = List<int>.from(valid)..last ^= 1;
+    expect(slim.parseGetCo2History(badChecksum), isNull);
+    expect(slim.parseGetCo2History(valid.sublist(0, 10)), isNull);
+    expect(slim.parseGetCo2History(frame(0x0c, [], length: 0)), isNull);
+    expect(
+        slim.parseGetCo2History(
+            frame(0x0c, valid.sublist(4, valid.length - 1), length: 16)),
+        isNull);
+    expect(slim.parseGetCo2History(frame(0x0c, [1], length: 1)), isNull);
+  });
   test('Slim calibration correction and sensor identity', () {
     expect(
         slim.parseAscData(frame(0x25, [0, 42, 1], length: 1)).correction, -42);

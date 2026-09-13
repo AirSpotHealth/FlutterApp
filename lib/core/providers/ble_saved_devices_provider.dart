@@ -1,3 +1,5 @@
+import 'package:airspothealth/features/device_graph/providers/device_history_data_request_provider.dart';
+import 'package:airspothealth/core/services/history_coverage_service.dart';
 import 'package:airspothealth/core/models/ble_device.dart';
 import 'package:airspothealth/core/models/device_data.dart';
 import 'package:airspothealth/core/models/device_model.dart';
@@ -77,10 +79,16 @@ class _BleSavedDevicesNotifier extends Notifier<List<BleDevice>> {
       return;
     }
 
+    if (state.firstWhere((d) => d.deviceId == deviceId).deviceModel ==
+            DeviceModel.airspotSlim &&
+        ref.exists(deviceHistoryDataRequestProvider(deviceId))) {
+      ref.read(deviceHistoryDataRequestProvider(deviceId).notifier).clear();
+    }
     ref.read(isarServiceProvider).write((isar) {
       isar.bleDevices.delete(deviceId);
       isar.deviceSettings.where().deviceIdEqualTo(deviceId).deleteAll();
       isar.deviceDatas.where().deviceIdEqualTo(deviceId).deleteAll();
+      HistoryCoverageService.clearDevice(isar, deviceId);
     });
 
     state = state.where((d) => d.deviceId != deviceId).toList();
@@ -222,6 +230,7 @@ class _BleSavedDevicesNotifier extends Notifier<List<BleDevice>> {
     }
 
     ref.read(isarServiceProvider).write((isar) {
+      HistoryCoverageService.clearDevice(isar, deviceId);
       isar.bleDevices.put(device.copyWith(
         lastFetchedStartDate: null,
         lastFetchedEndDate: null,

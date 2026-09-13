@@ -3,6 +3,7 @@ import 'package:airspothealth/core/models/device_data.dart';
 import 'package:airspothealth/core/models/device_settings.dart';
 import 'package:airspothealth/core/models/notification_preferences.dart';
 import 'package:airspothealth/core/models/ventilation_event.dart';
+import 'package:airspothealth/core/models/history_coverage.dart';
 import 'package:isar_plus/isar_plus.dart';
 import 'package:path_provider/path_provider.dart';
 
@@ -28,6 +29,7 @@ class IsarService {
         DeviceSettingsSchema,
         NotificationPreferencesSchema,
         VentilationEventSchema,
+        HistoryCoverageSchema,
       ],
       directory: dir.path,
     );
