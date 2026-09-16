@@ -1,3 +1,4 @@
+import 'package:airspothealth/core/services/cloud_device_identity.dart';
 import 'package:airspothealth/core/services/cloud_sync_access.dart';
 import 'dart:convert';
 
@@ -146,6 +147,7 @@ class SupabaseService {
     String? deviceAlias,
   }) async {
     CloudSyncAccess.requireEnabled();
+    requireUniqueCloudIdentity(deviceId);
     final user = currentUser;
     if (user == null) throw Exception('User not logged in');
 
@@ -183,6 +185,7 @@ class SupabaseService {
           'Device claimed/updated: $deviceId (name: $deviceName, alias: $deviceAlias)');
     } catch (e) {
       debugPrint('Error claiming device: $e');
+      rethrow;
     }
   }
 
@@ -201,6 +204,7 @@ class SupabaseService {
 
     for (var r in readings) {
       final deviceId = targetDeviceId ?? r.deviceId;
+      requireUniqueCloudIdentity(deviceId);
       // IMPORTANT: Always convert to UTC before sending to Supabase.
       // Dart's toIso8601String() on local DateTimes omits timezone info,
       // and Supabase would interpret it as UTC, causing offset errors.

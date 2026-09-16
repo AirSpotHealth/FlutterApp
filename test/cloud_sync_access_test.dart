@@ -62,9 +62,11 @@ void main() {
     await expectLater(SupabaseService().claimDevice('test'), throwsStateError);
     await expectLater(
         SupabaseService().uploadReadings([reading]), throwsStateError);
-    await expectLater(SyncService().syncData(), throwsStateError);
+    await expectLater(
+        SyncService().syncData(targetDeviceId: 'test', sourceDeviceId: 'test'),
+        throwsStateError);
     // Immediate background uploads silently stop and leave local data unsynced.
-    await SyncService().uploadImmediateReading(reading);
+    await SyncService().uploadImmediateReading(reading, targetDeviceId: 'test');
     expect(reading.synced, false);
   });
 

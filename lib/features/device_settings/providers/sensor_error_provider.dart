@@ -1,3 +1,5 @@
+import 'package:airspothealth/core/models/device_model.dart';
+import 'package:airspothealth/core/providers/ble_saved_devices_provider.dart';
 import 'package:airspothealth/core/models/device_data.dart';
 import 'package:airspothealth/core/models/device_data_type.dart';
 import 'package:airspothealth/core/models/sensor_error_state.dart';
@@ -23,6 +25,12 @@ class SensorErrorNotifier extends FamilyNotifier<SensorErrorState?, String> {
   }
 
   String get deviceId => arg;
+  bool get _isSlim =>
+      ref
+          .read(bleSavedDevicesProvider.notifier)
+          .getDeviceById(deviceId)
+          ?.deviceModel ==
+      DeviceModel.airspotSlim;
 
   /// Check if the most recent data for this device is a sensor error
   SensorErrorState? _checkForStoredError() {
@@ -53,6 +61,7 @@ class SensorErrorNotifier extends FamilyNotifier<SensorErrorState?, String> {
             'Found stored sensor error for $deviceId, errorCode: ${recentError.value}');
         return SensorErrorState(
           errorCode: recentError.value,
+          isSlim: _isSlim,
           recoveryAttempts: 3, // Assume exhausted if stored
           timestamp: recentError.dateTime,
           deviceId: deviceId,
@@ -73,6 +82,7 @@ class SensorErrorNotifier extends FamilyNotifier<SensorErrorState?, String> {
   }) {
     state = SensorErrorState(
       errorCode: errorCode,
+      isSlim: _isSlim,
       recoveryAttempts: recoveryAttempts,
       timestamp: DateTime.now(),
       deviceId: deviceId,

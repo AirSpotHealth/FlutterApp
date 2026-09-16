@@ -391,7 +391,9 @@ class _SensorErrorRow extends ConsumerWidget {
             const SizedBox(width: 8),
             Expanded(
               child: Text(
-                'Sensor issue detected. Try restarting or report the issue.',
+                sensorError.isSlim
+                    ? '${sensorError.errorMessage}. Try Refresh or Reset Sensor, or report the issue.'
+                    : 'Sensor issue detected. Try restarting or report the issue.',
                 style: TextStyle(
                   color: Colors.red.shade700,
                   fontSize: 12,

@@ -1,4 +1,5 @@
 import 'package:airspothealth/core/models/ble_device.dart';
+import 'package:airspothealth/core/models/device_data_type.dart';
 import 'package:airspothealth/core/models/device_model.dart';
 import 'package:airspothealth/core/models/device_capabilities.dart';
 import 'package:airspothealth/core/services/ble_data_service.dart';
@@ -19,6 +20,21 @@ void main() {
               model == DeviceModel.airspotSlim ? '0.14.6' : '3.0.0',
           deviceModelValue: model.index));
   final slim = parser(DeviceModel.airspotSlim);
+  test('Slim excludes Screen-only controls', () {
+    final slimCaps = DeviceCapabilities.fromModel(DeviceModel.airspotSlim);
+    expect(slimCaps.hasScreen(), isFalse);
+    expect(slimCaps.hasAlarm(), isFalse);
+    expect(slimCaps.hasVibration(), isFalse);
+    expect(slimCaps.supportsDnd(), isFalse);
+    expect(slimCaps.supportsManualFlightMode(), isFalse);
+    expect(slimCaps.supportsScreenSettings(), isFalse);
+    expect(slimCaps.supportsSlimLedStatus(), isTrue);
+    expect(slimCaps.supportsLocate(), isTrue);
+    expect(
+        DeviceCapabilities.fromModel(DeviceModel.airspotScreen)
+            .supportsManualFlightMode(),
+        isTrue);
+  });
   test('extended live reading and legacy battery response', () {
     final reading = slim
         .parseCo2Value(frame(1, [0, 0, 0, 1, 3, 32, 0xff, 0x9c, 0x13, 0x88]));
@@ -29,6 +45,23 @@ void main() {
     expect(battery.level, 85);
     expect(battery.isCharging, true);
   });
+  test(
+      'battery events include removal and unavailable ADC without losing pad state',
+      () {
+    expect(slim.parseBatteryLevel(frame(0x20, [60, 1], length: 1)).isCharging,
+        true);
+    expect(slim.parseBatteryLevel(frame(0x20, [60, 0], length: 1)).isCharging,
+        false);
+    final unavailable =
+        slim.parseBatteryLevel(frame(0x20, [255, 1], length: 1));
+    expect(unavailable.level, isNull);
+    expect(unavailable.isCharging, true);
+    expect(slim.parseLowBatteryLockout(frame(0x46, [255, 0])).level, isNull);
+    final error =
+        slim.parseCo2Value(frame(1, [0x43, 0, 0, 0, 255, 255, 0, 0, 0, 0]));
+    expect(error.type, DeviceDataType.sensorError.index);
+    expect(error.value, 0x43);
+  });
   test('Slim history uses little endian, Screen retains existing decoding', () {
     final page = frame(0x0c, [0, 0, 0, 1, 0x20, 3, 0, 0, 0, 1], length: 8);
     expect(slim.parseGetCo2History(page).single.value, 800);
@@ -36,6 +69,31 @@ void main() {
         parser(DeviceModel.airspotScreen).parseGetCo2History(page).single.value,
         8195);
     expect(slim.parseGetCo2History(frame(0x0c, [1, 2], length: 1)), 258);
+  });
+  test('diagnostic IDs and signed corrections preserve recovery payloads', () {
+    for (final model in [DeviceModel.airspotSlim, DeviceModel.airspotScreen]) {
+      final decoder = parser(model);
+      for (final item in [
+        [0x15, 5, DeviceDataType.sdkError.index, 5],
+        [0x16, 42, DeviceDataType.faultReset.index, 42],
+        [0x06, 65162, DeviceDataType.calibrationCorrection.index, -374],
+        [0x0d, 32768, DeviceDataType.calibrationCorrectionOld.index, -32768],
+        [0x0a, 60000, DeviceDataType.timeSync.index, 60000],
+        [0x00, 40000, DeviceDataType.co2.index, 40000],
+        [0xff, 65535, DeviceDataType.empty.index, 65535],
+      ]) {
+        final bytes = model == DeviceModel.airspotSlim
+            ? [item[1] & 255, item[1] >> 8]
+            : [item[1] >> 8, item[1] & 255];
+        final record = decoder
+            .parseGetCo2History(frame(
+                0x0c, [0, 0, 0, 1, ...bytes, item[0], 0, 0, 1],
+                length: 8))
+            .single;
+        expect(record.type, item[2]);
+        expect(record.value, item[3]);
+      }
+    }
   });
   test('malformed Slim history cannot masquerade as a completed download', () {
     final valid = frame(0x0c, [0, 0, 0, 1, 0x20, 3, 0, 0, 0, 1], length: 8);
@@ -66,9 +124,12 @@ void main() {
   });
   test('calibration failure is distinct from signed correction and Screen', () {
     expect(slim.isCalibrationFailure(frame(0x0d, [0xff])), true);
-    expect(slim.isCalibrationFailure(frame(0x0d, [0xff, 0, 1], length: 1)), false);
-    expect(parser(DeviceModel.airspotScreen)
-        .isCalibrationFailure(frame(0x0d, [0xff])), false);
+    expect(
+        slim.isCalibrationFailure(frame(0x0d, [0xff, 0, 1], length: 1)), false);
+    expect(
+        parser(DeviceModel.airspotScreen)
+            .isCalibrationFailure(frame(0x0d, [0xff])),
+        false);
     expect(ResponseCommand.fromValue(0x11), ResponseCommand.setCalibrationMode);
   });
   test('post-update success requires valid fresh version and live frames', () {

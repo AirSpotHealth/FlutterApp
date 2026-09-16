@@ -91,6 +91,7 @@ class AutoSyncNotifier extends Notifier<AutoSyncState> {
   /// [deviceAlias] is the user-defined alias.
   void triggerSync({
     required String serialNumber,
+    required String bleDeviceId,
     String? deviceName,
     String? deviceAlias,
   }) {
@@ -108,6 +109,7 @@ class AutoSyncNotifier extends Notifier<AutoSyncState> {
       }
       _performSync(
         serialNumber: serialNumber,
+        bleDeviceId: bleDeviceId,
         deviceName: deviceName,
         deviceAlias: deviceAlias,
       );
@@ -122,9 +124,9 @@ class AutoSyncNotifier extends Notifier<AutoSyncState> {
   /// day by day before uploading, to get stored data off the device.
   Future<void> syncNow({
     required String serialNumber,
+    required String bleDeviceId,
     String? deviceName,
     String? deviceAlias,
-    String? bleDeviceId,
     int numDays = 7,
   }) async {
     _debounceTimers[serialNumber]?.cancel();
@@ -139,10 +141,10 @@ class AutoSyncNotifier extends Notifier<AutoSyncState> {
 
   Future<void> _performSync({
     required String serialNumber,
+    required String bleDeviceId,
     String? deviceName,
     String? deviceAlias,
-    String? bleDeviceId,
-    int numDays = 1,
+    int numDays = 0,
   }) async {
     if (!CloudSyncAccess.enabled) return;
     if (_activeSyncs.contains(serialNumber)) return;
@@ -166,7 +168,7 @@ class AutoSyncNotifier extends Notifier<AutoSyncState> {
       );
 
       // 2. If bleDeviceId is provided, fetch BLE history day by day
-      if (bleDeviceId != null && numDays > 0) {
+      if (numDays > 0) {
         await _fetchHistoryChunked(
           bleDeviceId: bleDeviceId,
           serialNumber: serialNumber,
@@ -175,13 +177,14 @@ class AutoSyncNotifier extends Notifier<AutoSyncState> {
       }
 
       // 3. Upload all remaining unsynced data (catch-all)
-      await _syncService.syncData(targetDeviceId: serialNumber);
+      await _syncService.syncData(
+          targetDeviceId: serialNumber, sourceDeviceId: bleDeviceId);
 
       // 4. Get last sync time
       final lastSync = await _syncService.getLastSyncedDate(serialNumber);
 
       // 5. Get remaining unsynced count
-      final unsyncedCount = await _getUnsyncedCount(serialNumber);
+      final unsyncedCount = await _getUnsyncedCount(bleDeviceId);
 
       // 6. Update state: success
       state = state.copyWithDevice(
@@ -249,7 +252,8 @@ class AutoSyncNotifier extends Notifier<AutoSyncState> {
         await _waitForHistoryFetch(bleDeviceId);
 
         // Upload the data fetched so far
-        await _syncService.syncData(targetDeviceId: serialNumber);
+        await _syncService.syncData(
+            targetDeviceId: serialNumber, sourceDeviceId: bleDeviceId);
 
         debugPrint('ChunkedSync: $dayLabel complete');
       } catch (e) {
@@ -296,10 +300,15 @@ class AutoSyncNotifier extends Notifier<AutoSyncState> {
     );
   }
 
-  Future<int> _getUnsyncedCount(String serialNumber) async {
+  Future<int> _getUnsyncedCount(String bleDeviceId) async {
     try {
       return await _isarService.readAsync((isar) {
-        return isar.deviceDatas.where().syncedEqualTo(false).findAll().length;
+        return isar.deviceDatas
+            .where()
+            .deviceIdEqualTo(bleDeviceId)
+            .syncedEqualTo(false)
+            .findAll()
+            .length;
       });
     } catch (e) {
       return 0;

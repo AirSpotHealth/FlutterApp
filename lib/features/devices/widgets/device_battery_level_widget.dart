@@ -1,3 +1,5 @@
+import 'package:airspothealth/core/models/device_model.dart';
+import 'package:airspothealth/core/providers/ble_saved_devices_provider.dart';
 import 'package:airspothealth/features/devices/providers/device_battery_level_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -23,9 +25,12 @@ class DeviceBatteryLevelWidget extends ConsumerWidget {
     debugPrint(
         'Battery level: ${batteryState.level}, isCharging: ${batteryState.isCharging}');
 
+    final isSlim = ref.watch(bleSavedDevicesProvider).any((device) =>
+        device.deviceId == deviceId &&
+        device.deviceModel == DeviceModel.airspotSlim);
     return Tooltip(
       message: batteryState.isCharging
-          ? 'Charging'
+          ? (isSlim ? 'Charging pad detected' : 'Charging')
           : batteryState.level != null
               ? "${batteryState.level}%"
               : "Unknown",

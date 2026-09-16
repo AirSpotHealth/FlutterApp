@@ -485,7 +485,12 @@ class _BleDeviceCommunicationNotifier extends FamilyNotifier<dynamic, String> {
       await sendCommand(command);
     }
 
-    ref.read(sensorConfigurationProvider(deviceId));
+    // Refresh on reconnect: an OTA may replace a legacy placeholder identity.
+    if (ref.exists(sensorConfigurationProvider(deviceId))) {
+      await ref.read(sensorConfigurationProvider(deviceId).notifier).refresh();
+    } else {
+      ref.read(sensorConfigurationProvider(deviceId));
+    }
   }
 
   Future<bool> sendCommand(List<int> data) async {
@@ -537,6 +542,7 @@ class _BleDeviceCommunicationNotifier extends FamilyNotifier<dynamic, String> {
       });
 
       ref.read(autoSyncProvider.notifier).triggerSync(
+            bleDeviceId: deviceId,
             serialNumber: serialNumber,
             deviceName: bleDevice?.name ?? device?.advName,
             deviceAlias: bleDevice?.alias,
@@ -559,6 +565,8 @@ class _BleDeviceCommunicationNotifier extends FamilyNotifier<dynamic, String> {
         serialNumber =
             (sensorConfigState.data as DeviceSensorConfigData?)?.serialNumber;
       }
+
+      if (serialNumber == null || serialNumber.isEmpty) return;
 
       // Use the singleton instance directly
       SyncService()

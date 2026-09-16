@@ -4,6 +4,7 @@ import 'package:airspothealth/core/models/device_data_type.dart';
 class SensorErrorState {
   /// The error code from the device (byte 4 when CO2 = 0xFFFF)
   final int errorCode;
+  final bool isSlim;
 
   /// Number of recovery attempts made (byte 5 when CO2 = 0xFFFF)
   final int recoveryAttempts;
@@ -16,6 +17,7 @@ class SensorErrorState {
 
   const SensorErrorState({
     required this.errorCode,
+    this.isSlim = false,
     required this.recoveryAttempts,
     required this.timestamp,
     required this.deviceId,
@@ -25,11 +27,13 @@ class SensorErrorState {
   bool get isInError => true;
 
   /// Whether recovery attempts are exhausted (max is 3)
-  bool get isRecoveryExhausted => recoveryAttempts >= 3;
+  bool get isRecoveryExhausted => !isSlim && recoveryAttempts >= 3;
 
   /// Human-readable error message from the error code
   String get errorMessage =>
-      sensorErrorMap[errorCode] ?? 'Unknown Error (code: $errorCode)';
+      isSlim && errorCode == 0
+          ? 'Sensor reading unavailable'
+          : sensorErrorMap[errorCode] ?? 'Unknown Error (code: $errorCode)';
 
   /// Hex representation of error code
   String get errorCodeHex =>
@@ -41,7 +45,7 @@ Sensor Error Detected
 
 Error: $errorMessage
 Error Code: $errorCodeHex ($errorCode)
-Recovery Attempts: $recoveryAttempts/3${isRecoveryExhausted ? ' (exhausted)' : ''}
+${isSlim ? 'Recovery: automatic recovery status is unavailable; inspect device diagnostics.' : 'Recovery Attempts: $recoveryAttempts/3${isRecoveryExhausted ? ' (exhausted)' : ''}'}
 Detected At: ${timestamp.toIso8601String()}
 
 The device CO2 sensor has encountered an error. Please review the device diagnostics attached below.
@@ -57,12 +61,16 @@ The device CO2 sensor has encountered an error. Please review the device diagnos
       other is SensorErrorState &&
           runtimeType == other.runtimeType &&
           errorCode == other.errorCode &&
+          isSlim == other.isSlim &&
           recoveryAttempts == other.recoveryAttempts &&
           deviceId == other.deviceId;
 
   @override
   int get hashCode =>
-      errorCode.hashCode ^ recoveryAttempts.hashCode ^ deviceId.hashCode;
+      isSlim.hashCode ^
+      errorCode.hashCode ^
+      recoveryAttempts.hashCode ^
+      deviceId.hashCode;
 }
 
 /// Special CO2 value indicating sensor error (0xFFFF = 65535)

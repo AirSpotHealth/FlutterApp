@@ -69,9 +69,11 @@ class SensorErrorBanner extends ConsumerWidget {
 
           // Friendly help text
           Text(
-            sensorError.isRecoveryExhausted
-                ? "We're having trouble reading your CO2 sensor. Try restarting your device by turning it off and on again."
-                : 'We detected a sensor issue and are attempting to recover automatically. If this persists, try restarting your device.',
+            sensorError.isSlim
+                ? '${sensorError.errorMessage}. Try Refresh or Reset Sensor in calibration settings. If it persists, export diagnostics from the LED & charging guide.'
+                : sensorError.isRecoveryExhausted
+                    ? "We're having trouble reading your CO2 sensor. Try restarting your device by turning it off and on again."
+                    : 'We detected a sensor issue and are attempting to recover automatically. If this persists, try restarting your device.',
             style: TextStyle(
               color: Colors.grey.shade700,
               fontSize: 14,

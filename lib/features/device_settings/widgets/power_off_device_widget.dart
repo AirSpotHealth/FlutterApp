@@ -1,3 +1,5 @@
+import 'package:airspothealth/core/models/device_model.dart';
+import 'package:airspothealth/core/providers/ble_saved_devices_provider.dart';
 import 'package:airspothealth/core/providers/ble_device_communication_provider.dart';
 import 'package:airspothealth/core/theme/app_colors.dart';
 import 'package:airspothealth/core/utils/assets.dart';
@@ -28,6 +30,11 @@ class PowerOffDeviceWidget extends ConsumerWidget {
   }
 
   void _showPowerOffSheet(WidgetRef ref) {
+    final isSlim = ref
+            .read(bleSavedDevicesProvider.notifier)
+            .getDeviceById(deviceId)
+            ?.deviceModel ==
+        DeviceModel.airspotSlim;
     showModalBottomSheet(
       context: ref.context,
       builder: (context) => AppBottomSheet(
@@ -42,7 +49,9 @@ class PowerOffDeviceWidget extends ConsumerWidget {
               ),
               const SizedBox(height: 16),
               Text(
-                'This will put the device into sleep mode and you will need to press the button on the device to turn it back on. This is useful if you are not using the device for a long period of time and want to save battery.',
+                isSlim
+                    ? 'To turn Slim back on, place it on its Qi charging pad and hold the button for 5 seconds. A short press or a hold away from the charger will not turn it on.'
+                    : 'This will put the device into sleep mode and you will need to press the button on the device to turn it back on. This is useful if you are not using the device for a long period of time and want to save battery.',
                 style: context.textTheme.bodyMedium,
               ),
               const SizedBox(height: 20),

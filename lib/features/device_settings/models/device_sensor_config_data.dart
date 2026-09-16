@@ -23,7 +23,8 @@ class DeviceSensorConfigData {
   Map<String, dynamic> toJson() => {
         'Temperature Offset': temperatureOffset.toStringAsFixed(2),
         'Sensor Altitude': sensorAltitude,
-        'Ambient Pressure': ambientPressure,
+        'Ambient Pressure':
+            ambientPressure > 0 ? ambientPressure : 'Unavailable',
         'ASC Enabled': ascEnabled,
         'ASC Target': ascTarget,
         'Serial Number': serialNumber,

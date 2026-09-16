@@ -20,6 +20,8 @@ enum DeviceDataType {
   co2Retry,
   flightMode,
   scaling,
+  sdkError,
+  faultReset,
   empty;
 
   static DeviceDataType fromByte(int byte) =>
@@ -65,7 +67,8 @@ const deviceDataByteMap = {
   0x12: DeviceDataType.co2Retry,
   0x13: DeviceDataType.flightMode,
   0x14: DeviceDataType.scaling,
-  // 0x12: DeviceDataType.empty,
+  0x15: DeviceDataType.sdkError,
+  0x16: DeviceDataType.faultReset,
 };
 
 const deviceDataTypeMap = {
@@ -90,6 +93,8 @@ const deviceDataTypeMap = {
   DeviceDataType.co2Retry: 'CO2 Retry',
   DeviceDataType.flightMode: 'Flight Mode',
   DeviceDataType.scaling: 'Scaling',
+  DeviceDataType.sdkError: 'SDK Error',
+  DeviceDataType.faultReset: 'Fault Reset',
   DeviceDataType.empty: '-',
 };
 
@@ -106,6 +111,13 @@ const sensorErrorMap = {
   0x0A: 'CRC Checksum Failure',
   0x0B: 'Sensor Not Ready',
   0x0C: 'CO2 Reading Too High (>50000 ppm)',
+  // Slim-specific codes; also used by history and diagnostic exports.
+  0x40: 'Sensors starting or not ready',
+  0x41: 'Sensor communication failed',
+  0x42: 'Temperature or humidity sensor failed',
+  0x43: 'Pressure sensor failed',
+  0x44: 'CO₂ measurement failed',
+  0x45: 'CO₂ compensation or configuration failed',
 };
 
 const deviceDataOrder = [
@@ -130,4 +142,6 @@ const deviceDataOrder = [
   DeviceDataType.dfuUpdateFail,
   DeviceDataType.flightMode,
   DeviceDataType.scaling,
+  DeviceDataType.sdkError,
+  DeviceDataType.faultReset,
 ];

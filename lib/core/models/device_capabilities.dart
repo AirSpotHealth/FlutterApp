@@ -25,7 +25,7 @@ abstract class DeviceCapabilities {
   bool supportsDnd();
 
   /// Whether the device supports manual flight mode toggle
-  /// (Slim has auto-calculated flight mode, so manual toggle is not available)
+  /// Slim compensates CO2 using its pressure sensor and has no flight toggle.
   bool supportsManualFlightMode();
 
   /// Whether the device supports device update
@@ -117,7 +117,7 @@ class AirSpotSlimCapabilities implements DeviceCapabilities {
   bool supportsDnd() => false;
 
   @override
-  bool supportsManualFlightMode() => false; // Auto-calculated based on pressure
+  bool supportsManualFlightMode() => false; // Pressure compensation runs in the sensor pipeline.
 
   @override
   bool supportsDeviceUpdate() => true; // Local signed-image qualification.
@@ -126,7 +126,7 @@ class AirSpotSlimCapabilities implements DeviceCapabilities {
   bool supportsCalibration() => true; // Manual calibration supported (no auto-calib)
 
   @override
-  bool supportsLocate() => false;
+  bool supportsLocate() => true;
 
   @override
   bool supportsSlimLedStatus() => true;

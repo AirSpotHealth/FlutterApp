@@ -169,7 +169,8 @@ class CloudSyncNotifier
           state = state.copyWith(
             statusMessage: 'Uploading $dayLabel (${i + 1}/$numDays)...',
           );
-          await _syncService.syncData(targetDeviceId: serialNumber);
+          await _syncService.syncData(
+              targetDeviceId: serialNumber, sourceDeviceId: _deviceId);
 
           daysSucceeded++;
         } catch (e) {
@@ -181,7 +182,8 @@ class CloudSyncNotifier
 
       // 6. Final catch-all upload for any remaining unsynced data
       state = state.copyWith(statusMessage: 'Final upload...');
-      await _syncService.syncData(targetDeviceId: serialNumber);
+      await _syncService.syncData(
+          targetDeviceId: serialNumber, sourceDeviceId: _deviceId);
 
       // 7. Success
       final lastSynced = await _syncService.getLastSyncedDate(serialNumber);

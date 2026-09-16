@@ -1,3 +1,4 @@
+import 'package:airspothealth/core/services/cloud_device_identity.dart';
 import 'package:airspothealth/core/services/cloud_sync_access.dart';
 import 'package:airspothealth/core/models/device_data.dart';
 import 'package:airspothealth/core/services/isar_service.dart';
@@ -12,40 +13,41 @@ class SyncService {
 
   final IsarService _isarService = IsarService();
   final SupabaseService _supabaseService = SupabaseService();
-  bool _isSyncing = false;
+  final Set<String> _activeDevices = {};
 
   // Trigger sync
-  Future<void> syncData({String? targetDeviceId}) async {
+  Future<void> syncData(
+      {required String targetDeviceId, required String sourceDeviceId}) async {
+    requireUniqueCloudIdentity(targetDeviceId);
     CloudSyncAccess.requireEnabled();
     if (_supabaseService.currentUser == null) return;
 
-    if (_isSyncing) {
-      debugPrint('Sync already in progress.');
-      return;
+    if (!_activeDevices.add(sourceDeviceId)) {
+      throw StateError('This device is already syncing.');
     }
-
-    _isSyncing = true;
     debugPrint('Starting Cloud Sync...');
 
     try {
-      await _uploadUnsyncedData(targetDeviceId: targetDeviceId);
+      await _uploadUnsyncedData(
+          targetDeviceId: targetDeviceId, sourceDeviceId: sourceDeviceId);
     } catch (e) {
       debugPrint('Sync failed: $e');
       rethrow; // Rethrow to let the caller know it failed
     } finally {
-      _isSyncing = false;
+      _activeDevices.remove(sourceDeviceId);
       debugPrint('Cloud Sync finished.');
     }
   }
 
   /// Immediately upload a single reading (for real-time dashboard updates)
   Future<void> uploadImmediateReading(DeviceData reading,
-      {String? targetDeviceId}) async {
+      {required String targetDeviceId}) async {
     if (!CloudSyncAccess.enabled) return;
     // Basic checks
     if (_supabaseService.currentUser == null) return;
 
     try {
+      requireUniqueCloudIdentity(targetDeviceId);
       // 1. Upload to Supabase
       await _supabaseService
           .uploadReadings([reading], targetDeviceId: targetDeviceId);
@@ -84,7 +86,8 @@ class SyncService {
     }
   }
 
-  Future<void> _uploadUnsyncedData({String? targetDeviceId}) async {
+  Future<void> _uploadUnsyncedData(
+      {required String targetDeviceId, required String sourceDeviceId}) async {
     // 1. Get unsynced data from Isar
     // We need to query for synced == false.
     // Note: We need to update DeviceData model first to include 'synced' field.
@@ -93,21 +96,15 @@ class SyncService {
     const int batchSize = 500;
     bool hasMore = true;
 
-    // Safety check for timestamps (Year >= 2024)
-    final minDate = DateTime(2024, 1, 1);
-
     while (hasMore) {
       CloudSyncAccess.requireEnabled();
       List<DeviceData> batch = [];
 
       batch = await _isarService.readAsync((isar) {
-        return isar.deviceDatas
-            .where()
-            .syncedEqualTo(false)
-            .isLiveCo2EqualTo(false)
-            .dateTimeBetween(
-                minDate, DateTime.now().add(const Duration(days: 1)))
-            .findAll(limit: batchSize);
+        return pendingReadings(isar,
+            sourceDeviceId: sourceDeviceId,
+            now: DateTime.now(),
+            limit: batchSize);
       });
 
       if (batch.isEmpty) {
@@ -131,11 +128,26 @@ class SyncService {
         debugPrint('Synced batch of ${batch.length} records.');
       } catch (e) {
         debugPrint('Failed to upload batch: $e');
-        // Stop on error to retry later
-        hasMore = false;
+        rethrow; // Preserve unsynced records and report failure to the caller.
       }
     }
   }
+
+  /// Select only this physical device's history before mapping to a cloud ID.
+  static List<DeviceData> pendingReadings(
+    Isar isar, {
+    required String sourceDeviceId,
+    required DateTime now,
+    int limit = 500,
+  }) =>
+      isar.deviceDatas
+          .where()
+          .deviceIdEqualTo(sourceDeviceId)
+          .syncedEqualTo(false)
+          .isLiveCo2EqualTo(false)
+          .dateTimeBetween(
+              DateTime(2024, 1, 1), now.add(const Duration(days: 1)))
+          .findAll(limit: limit);
 
   Future<DateTime?> getLastSyncedDate(String deviceId) async {
     return _supabaseService.getLastSyncedDate(deviceId);

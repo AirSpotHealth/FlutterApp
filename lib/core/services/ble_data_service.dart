@@ -439,12 +439,12 @@ class ResponseCommandParser {
   bool parseDisconnect(List<int> data) => _parseBoolean(data, 4);
 
   BatteryState parseBatteryLevel(List<int> data) =>
-      BatteryState(data[4], data[5] == 0x01);
+      BatteryState(data[4] <= 100 ? data[4] : null, data[5] == 0x01);
 
   /// Frame: `FF AA 46 02 [battery%] [charging] CKSUM`. Marks the battery state
   /// as low-battery lockout so the UI shows a charging-wait state.
   BatteryState parseLowBatteryLockout(List<int> data) => BatteryState(
-        data.length > 4 ? data[4] : null,
+        data.length > 4 && data[4] <= 100 ? data[4] : null,
         data.length > 5 && data[5] == 0x01,
         lowBatteryLockout: true,
       );
@@ -681,12 +681,13 @@ class ResponseCommandParser {
       final deviceData0 = DeviceData(
         deviceId: deviceId,
         dateTime: date,
-        value: // if value is > 63000 and less than 65535, then it is a negative value
-            (parsedType != DeviceDataType.flightMode.index &&
-                    value > 33000 &&
-                    value <= 65535)
-                ? value - 65536
-                : value,
+        // Only correction/adjustment payloads are signed. In particular, the
+        // first-sync marker holds an unsigned 16-bit elapsed time.
+        value: (parsedType == DeviceDataType.calibrationCorrection.index ||
+                parsedType == DeviceDataType.calibrationCorrectionOld.index ||
+                parsedType == DeviceDataType.calibrationAdjustment.index)
+            ? value.toSigned(16)
+            : value,
         type: parsedType,
       );
 

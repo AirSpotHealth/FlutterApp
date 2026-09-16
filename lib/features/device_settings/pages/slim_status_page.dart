@@ -52,7 +52,7 @@ class SlimStatusPage extends ConsumerWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 const Text(
-                    'For Slim firmware 0.15.0. The LED normally stays off; press the button to check status or air quality.'),
+                    'The LED normally stays off; press the button to check status or air quality.'),
                 const SizedBox(height: 12),
                 _ledRow(
                   color: Colors.blue,
@@ -113,7 +113,7 @@ class SlimStatusPage extends ConsumerWidget {
                   battery.lowBatteryLockout
                       ? 'App shows: low battery — charging required${battery.level != null ? " (${battery.level}%)" : ""}'
                       : battery.isCharging
-                          ? 'App shows: charging${battery.level != null ? " (${battery.level}%)" : ""}'
+                          ? 'App shows: charging pad detected${battery.level != null ? " (${battery.level}%)" : ""}'
                           : 'App shows: ${battery.level != null ? "${battery.level}% battery" : "battery unknown"}',
                   style: const TextStyle(fontWeight: FontWeight.w600),
                 ),
@@ -126,7 +126,7 @@ class SlimStatusPage extends ConsumerWidget {
                 ),
                 const SizedBox(height: 2),
                 Text(
-                  'Place Slim on its wireless Qi charging pad. When powered on, placing it on the pad shows the same 5-second status indication as a single press, then the LED turns off. A dark LED does not mean charging has stopped. Check charging status in the app.',
+                  'Place Slim on its wireless Qi charging pad. When powered on, placing it on the pad shows the same 5-second status indication as a single press, then the LED turns off. A dark LED does not mean charging has stopped. The app reports whether the Qi pad is detected. This does not distinguish active battery charging, a full battery, or a charger fault.',
                   style: Theme.of(context).textTheme.bodySmall,
                 ),
                 const SizedBox(height: 10),
