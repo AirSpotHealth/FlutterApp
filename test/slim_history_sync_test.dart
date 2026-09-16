@@ -11,6 +11,7 @@ import 'package:airspothealth/core/services/isar_service.dart';
 import 'package:airspothealth/features/device_graph/models/graph_data_duration.dart';
 import 'package:airspothealth/features/device_graph/providers/ble_device_provider.dart';
 import 'package:airspothealth/features/device_graph/providers/device_history_data_request_provider.dart';
+import 'package:airspothealth/features/device_graph/providers/device_historical_data_provider.dart';
 import 'package:airspothealth/features/device_settings/models/progress_model.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -23,6 +24,8 @@ class TestIsarService implements IsarService {
   TestIsarService(this.isar);
   final Isar isar;
   bool failWrites = false;
+  @override
+  IsarCollection<String, DeviceData> get deviceDatas => isar.deviceDatas;
   @override
   void write(void Function(Isar) fn) {
     if (failWrites) throw StateError('disk write failed');
@@ -101,6 +104,41 @@ void main() {
     container.dispose();
     isar.close();
     directory.deleteSync(recursive: true);
+  });
+
+  test('opening the Slim graph initializes before starting a history request',
+      () async {
+    storage.write((isar) => isar.deviceDatas.putAll(readings(1, 2)));
+    final graph = deviceHistoricalDataProvider(
+        DeviceHistoryDataRequest('slim', range(1, 3)));
+    final listener = container.listen(graph, (_, __) {});
+    try {
+      final data = await container.read(graph.future);
+      expect(data.map((record) => record.value), [700, 800]);
+      expect(container.read(graph).hasError, false);
+      expect(container.read(provider), isA<AsyncInProgress>());
+      expect(commands, hasLength(1));
+
+      storage.write((isar) => isar.deviceDatas.put(DeviceData(
+          deviceId: 'slim',
+          dateTime: day(2).add(const Duration(hours: 1)),
+          value: 900)));
+      await Future<void>.delayed(const Duration(milliseconds: 30));
+      expect(container.read(graph).requireValue.map((record) => record.value),
+          [700, 800, 900]);
+    } finally {
+      listener.close();
+    }
+  });
+
+  test('disposing graph initialization does not start a download', () async {
+    final graph = deviceHistoricalDataProvider(
+        DeviceHistoryDataRequest('slim', range(1, 3)));
+    container.read(graph);
+    container.dispose();
+    container = createContainer();
+    await Future<void>.value();
+    expect(commands, isEmpty);
   });
 
   test('day 1 and day 4 downloads leave day 2 and 3 eligible', () {

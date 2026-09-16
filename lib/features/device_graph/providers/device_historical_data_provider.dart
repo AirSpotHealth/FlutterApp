@@ -5,6 +5,7 @@ import 'package:airspothealth/core/models/device_data.dart';
 import 'package:airspothealth/core/models/device_data_type.dart';
 import 'package:airspothealth/core/models/device_model.dart';
 import 'package:airspothealth/core/providers/ble_device_communication_provider.dart';
+import 'package:airspothealth/core/providers/isar_service_provider.dart';
 import 'package:airspothealth/core/services/isar_service.dart';
 import 'package:airspothealth/core/utils/app_utils.dart';
 import 'package:airspothealth/core/utils/device_cmd_utils.dart';
@@ -46,7 +47,7 @@ final deviceHistoricalDataProvider = AsyncNotifierProvider.family.autoDispose<
 
 class _DeviceHistoricalDataNotifier extends AutoDisposeFamilyAsyncNotifier<
     List<DeviceData>, DeviceHistoryDataRequest> {
-  final IsarService _isarService = IsarService();
+  IsarService get _isarService => ref.read(isarServiceProvider);
 
   String get deviceId => arg.deviceId;
 
@@ -83,21 +84,34 @@ class _DeviceHistoricalDataNotifier extends AutoDisposeFamilyAsyncNotifier<
   DateTimeRange get dateTimeRange => duration.dateTimeRange;
 
   @override
-  FutureOr<List<DeviceData>> build(arg) {
+  Future<List<DeviceData>> build(arg) async {
+    var active = true;
+    StreamSubscription<List<DeviceData>>? subscription;
+    ref.onDispose(() {
+      active = false;
+      subscription?.cancel();
+    });
+
+    // Starting a download changes other providers. Let Riverpod finish this
+    // provider's synchronous initialization before requesting history.
+    await Future<void>.value();
+    if (!active) return [];
+
     final endDate =
         dateTimeRange.end.isToday ? DateTime.now().endOfDay : dateTimeRange.end;
 
     // First, try to get data from the local database
-    _isarService.deviceDatas
+    final query = _isarService.deviceDatas
         .where()
         .deviceIdEqualTo(deviceId)
         .dateTimeBetween(dateTimeRange.start, endDate)
         .typeEqualTo(DeviceDataType.co2.index)
         .valueGreaterThan(0)
-        .sortByDateTime()
-        .watch(fireImmediately: true)
-        .listen((event) {
-      state = AsyncData(event);
+        .sortByDateTime();
+    subscription = query.watch().listen((event) {
+      if (active) state = AsyncData(event);
+    }, onError: (Object error, StackTrace stack) {
+      if (active) state = AsyncError(error, stack);
     });
 
     final BleDevice bleDevice = ref.read(bleDeviceProvider(deviceId));
@@ -116,7 +130,7 @@ class _DeviceHistoricalDataNotifier extends AutoDisposeFamilyAsyncNotifier<
               : GraphDataDuration.custom(dateTimeRange));
     }
 
-    return future;
+    return query.findAll();
   }
 
   void requestHistoricalDataOld({bool force = false}) {

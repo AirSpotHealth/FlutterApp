@@ -120,18 +120,21 @@ class BLEService {
 
     final IsarService isarService = IsarService();
 
-    final List<BleDevice> connectedDevices = isarService.read<List<BleDevice>>(
-        (Isar isar) => isar.bleDevices.where().findAll());
-
     return FlutterBluePlus.scanResults.asyncMap(
       (List<ScanResult> scanResults) {
+        // Saved devices can change while this stream remains subscribed (Forget
+        // Device). Never retain the list from when scanning first started.
+        final savedIds = isarService.read((Isar isar) => isar.bleDevices
+            .where()
+            .findAll()
+            .map((device) => device.deviceId)
+            .toSet());
         for (final r in scanResults) {
           _scanResultCache[r.device.remoteId.str] = r;
         }
         return scanResults
             .map((r) => r.device)
-            .where((BluetoothDevice bd) => !connectedDevices.any(
-                (BleDevice bleDevice) => bleDevice.deviceId == bd.remoteId.str))
+            .where((BluetoothDevice bd) => !savedIds.contains(bd.remoteId.str))
             .toList();
       },
     );

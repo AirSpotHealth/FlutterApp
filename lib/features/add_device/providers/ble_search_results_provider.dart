@@ -16,15 +16,20 @@ class _BleScanResultsNotifier
 
   @override
   (bool, List<BluetoothDevice>) build() {
-    _bleService.scanResults().listen((event) {
+    final resultsSubscription = _bleService.scanResults().listen((event) {
       state = (isScanning, event);
     });
 
-    _bleService.isScanning.listen((event) {
+    final scanningSubscription = _bleService.isScanning.listen((event) {
       state = (event, devices);
     });
 
-    return (false, <BluetoothDevice>[]);
+    ref.onDispose(() {
+      resultsSubscription.cancel();
+      scanningSubscription.cancel();
+    });
+
+    return (_bleService.isScanningNow, <BluetoothDevice>[]);
   }
 
   void startScan() {
