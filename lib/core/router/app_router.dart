@@ -15,6 +15,7 @@ import 'package:airspothealth/features/device_settings/pages/dnd_settings_page.d
 import 'package:airspothealth/features/device_settings/pages/power_mode_settings_page.dart';
 import 'package:airspothealth/features/device_settings/pages/recalibrate_device_page.dart';
 import 'package:airspothealth/features/device_settings/pages/slim_status_page.dart';
+import 'package:airspothealth/features/device_settings/pages/slim_led_settings_page.dart';
 import 'package:airspothealth/features/device_settings/pages/time_settings_page.dart';
 import 'package:airspothealth/features/device_settings/widgets/sensor_configuration_page.dart';
 import 'package:airspothealth/features/devices/devices_page.dart';
@@ -143,6 +144,17 @@ class AppRouter {
                         throw ErrorDescription('Device ID is required');
                       }
                       return DeviceScreenSettingsPage(deviceId: deviceId);
+                    },
+                  ),
+                  GoRoute(
+                    path: 'slim-led-settings',
+                    name: RouteNames.slimLedSettings,
+                    builder: (context, state) {
+                      final deviceId = state.pathParameters['deviceId'];
+                      if (deviceId == null) {
+                        throw ErrorDescription('Device ID is required');
+                      }
+                      return SlimLedSettingsPage(deviceId: deviceId);
                     },
                   ),
                   GoRoute(

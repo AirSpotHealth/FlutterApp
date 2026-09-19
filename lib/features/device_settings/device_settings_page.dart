@@ -83,6 +83,12 @@ class _DeviceSettingsPageState extends ConsumerState<DeviceSettingsPage> {
           assetIcon: Assets.screenSettings,
           route: RouteNames.screenSettings,
         ),
+      if (caps.supportsSlimLedStatus())
+        SettingItem(
+          title: 'CO₂ Zone Settings',
+          assetIcon: Assets.screenSettings,
+          route: RouteNames.slimLedSettings,
+        ),
       if (caps.supportsNotificationSettings())
         SettingItem(
           title: 'Notification Settings',

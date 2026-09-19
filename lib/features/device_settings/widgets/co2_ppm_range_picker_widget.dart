@@ -14,9 +14,15 @@ const int kMaxValue = 4000;
 const int kStepSize = 50;
 
 class Co2PpmRangePickerWidget extends ConsumerStatefulWidget {
-  const Co2PpmRangePickerWidget({required this.deviceId, super.key});
+  const Co2PpmRangePickerWidget({
+    required this.deviceId,
+    this.useAmberLabels = false,
+    super.key,
+  });
 
   final String deviceId;
+
+  final bool useAmberLabels;
 
   @override
   ConsumerState<Co2PpmRangePickerWidget> createState() =>
@@ -85,13 +91,15 @@ class _Co2PpmRangePickerWidgetState
               child: _ZoneValueDropdown(
                 deviceId: widget.deviceId,
                 currentValue: _selectedGreenValue,
-                label: 'Green Zone (Up to)',
+                label: widget.useAmberLabels
+                    ? 'Green → amber limit'
+                    : 'Green Zone (Up to)',
                 values: _ppmValues,
                 valueColor: AppColors.brandColorGreen,
                 onValueChanged: (int newValue) {
                   if (newValue >= _selectedYellowValue) {
                     context.showSnackBar(
-                        'Green zone cannot be greater than yellow zone');
+                        'Green zone cannot be greater than ${widget.useAmberLabels ? 'amber' : 'yellow'} zone');
                     return;
                   }
 
@@ -117,13 +125,15 @@ class _Co2PpmRangePickerWidgetState
               child: _ZoneValueDropdown(
                 deviceId: widget.deviceId,
                 currentValue: _selectedYellowValue,
-                label: 'Yellow Zone (Up to)',
+                label: widget.useAmberLabels
+                    ? 'Amber → red limit'
+                    : 'Yellow Zone (Up to)',
                 values: _ppmValues,
                 valueColor: AppColors.brandColorAmber,
                 onValueChanged: (int newValue) {
                   if (newValue < _selectedGreenValue) {
                     context.showSnackBar(
-                        'Yellow zone cannot be less than green zone');
+                        '${widget.useAmberLabels ? 'Amber' : 'Yellow'} zone cannot be less than green zone');
                     return;
                   }
 
@@ -152,7 +162,7 @@ class _Co2PpmRangePickerWidgetState
     // Simple validation: ensure green is less than yellow
     if (_selectedGreenValue >= _selectedYellowValue) {
       context.showSnackBar(
-          'Green ${Constants.co2Text} must be less than yellow ${Constants.co2Text}');
+          'Green ${Constants.co2Text} must be less than ${widget.useAmberLabels ? 'amber' : 'yellow'} ${Constants.co2Text}');
       return;
     }
 

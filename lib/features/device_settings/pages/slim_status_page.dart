@@ -5,7 +5,8 @@ import 'package:airspothealth/core/utils/app_utils.dart';
 import 'package:airspothealth/core/utils/device_cmd_utils.dart';
 import 'package:airspothealth/core/utils/extensions.dart';
 import 'package:airspothealth/features/device_settings/providers/ble_device_version_provider.dart';
-import 'package:airspothealth/features/device_settings/widgets/co2_ppm_range_picker_widget.dart';
+import 'package:airspothealth/core/router/route_names.dart';
+import 'package:go_router/go_router.dart';
 import 'package:airspothealth/features/device_settings/widgets/device_settings_name_widget.dart';
 import 'package:airspothealth/features/devices/providers/device_battery_level_provider.dart';
 import 'package:flutter/material.dart';
@@ -36,66 +37,101 @@ class SlimStatusPage extends ConsumerWidget {
       appBar: AppBar(
         title: DeviceSettingsNameWidget(
           deviceId: deviceId,
-          suffixText: 'LED & status',
+          suffixText: 'LED & charging guide',
         ),
       ),
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
-          if (supportsDiagnostics) ...[
-            SlimDiagnosticsExport(deviceId: deviceId),
-            const SizedBox(height: 16),
-          ],
-          _Section(
+          const _Section(
             title: 'What the LED means',
+            child: Text(
+                'The LED usually stays off; press the button to check status or CO₂ level:\n\n'
+                '• Single press — connection and battery status\n'
+                '• Double press — CO₂ level'),
+          ),
+          const SizedBox(height: 16),
+          _Section(
+            title: 'Single press — device status displayed for 5 seconds',
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                _ledRow(context,
+                    color: Colors.blue,
+                    title: 'Blue — connected to your phone'),
+                _ledRow(context,
+                    color: Colors.white, title: 'White — not connected'),
+                _ledRow(context, color: Colors.red, title: 'Red — low battery'),
+                _ledRow(
+                  context,
+                  color: Colors.red,
+                  title: 'Flashing red — critically low battery',
+                  body: 'Place the Slim on its charging pad.',
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 16),
+          _Section(
+            title: 'Double press — CO₂ level display',
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 const Text(
-                    'The LED normally stays off; press the button to check status or air quality.'),
+                    'Press twice within half a second. The last reading’s colour flashes for 5 seconds, then the fresh reading’s colour stays steady for 5 seconds before turning off.'),
                 const SizedBox(height: 12),
                 _ledRow(
-                  color: Colors.blue,
-                  title: 'Single press — device status for 5 seconds',
-                  body:
-                      'Blue means currently connected to a phone. White means not connected. Red means low battery; a fast red flash means critically low battery.',
-                ),
-                _ledRow(
-                  color: Colors.green,
-                  title: 'Double press — air quality',
-                  body:
-                      'Press twice within half a second. The last reading’s colour flashes for 5 seconds, then the fresh reading’s colour stays steady for 5 seconds before turning off.',
-                ),
-                _ledRow(
+                  context,
                   color: Colors.green,
                   title: 'Green — lower CO₂',
                   body:
                       'Below your green limit (${settings.greenUpperLimit} ppm).',
                 ),
                 _ledRow(
+                  context,
                   color: Colors.amber,
                   title: 'Amber — moderate CO₂',
                   body:
-                      'At or above ${settings.greenUpperLimit} ppm and below ${settings.yellowUpperLimit} ppm.',
+                      'At or above your green limit (${settings.greenUpperLimit} ppm) and below your amber limit (${settings.yellowUpperLimit} ppm).',
                 ),
                 _ledRow(
+                  context,
                   color: Colors.red,
                   title: 'Red — higher CO₂',
                   body:
-                      'At or above your yellow limit (${settings.yellowUpperLimit} ppm). A red status indication after a single press refers to battery level instead.',
+                      'At or above your amber limit (${settings.yellowUpperLimit} ppm). A red status indication after a single press refers to battery level instead.',
                 ),
+                TextButton(
+                  onPressed: () => context.pushNamed(
+                    RouteNames.slimLedSettings,
+                    pathParameters: {'deviceId': deviceId},
+                  ),
+                  child: const Text('Change CO₂ zones in CO₂ Zone Settings'),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 16),
+          _Section(
+            title: 'Lights you may see automatically',
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
                 _ledRow(
+                  context,
                   color: Colors.green,
                   title: 'Green — brief connection flash',
-                  body: 'A phone has just connected.',
+                  body: 'The Slim has just connected to your phone.',
                 ),
                 _ledRow(
+                  context,
                   color: Colors.blue,
                   title: 'Blue pulse every 5 seconds',
                   body:
                       'Calibration is in progress. Button gestures are ignored until calibration finishes.',
                 ),
                 _ledRow(
+                  context,
                   color: Colors.white,
                   title: 'White — rapid flashing',
                   body: 'Find My Device was requested from the app.',
@@ -104,42 +140,58 @@ class SlimStatusPage extends ConsumerWidget {
             ),
           ),
           const SizedBox(height: 16),
+          const _Section(
+            title: 'Charging your Slim',
+            child: Text(
+              'When placed on the charging pad, the Slim displays the same five-second status light as a single press.\n\n'
+              'The LED turns off after the initial status indication. This is normal—the LED does not remain illuminated while charging.',
+            ),
+          ),
+          const SizedBox(height: 16),
           _Section(
-            title: 'Battery & charging',
+            title: 'Battery and charging-pad status in the AIRSPOT app',
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
+                Image.asset(
+                  'assets/images/slim_battery_guide.jpeg',
+                  semanticLabel:
+                      'Example AIRSPOT device card with the battery icon at the lower left and an 88% battery tooltip.',
+                ),
+                const SizedBox(height: 12),
+                const Text(
+                  'The battery icon may show:\n'
+                  '• battery percentage\n'
+                  '• battery percentage unknown\n'
+                  '• low battery — charging required\n'
+                  '• charging pad detected',
+                ),
+                const SizedBox(height: 12),
                 Text(
                   battery.lowBatteryLockout
                       ? 'App shows: low battery — charging required${battery.level != null ? " (${battery.level}%)" : ""}'
                       : battery.isCharging
                           ? 'App shows: charging pad detected${battery.level != null ? " (${battery.level}%)" : ""}'
-                          : 'App shows: ${battery.level != null ? "${battery.level}% battery" : "battery unknown"}',
+                          : 'App shows: ${battery.level != null ? "${battery.level}% battery" : "battery percentage unknown"}',
                   style: const TextStyle(fontWeight: FontWeight.w600),
                 ),
                 const SizedBox(height: 12),
-                Text(
-                  'Charging',
-                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                        fontWeight: FontWeight.w600,
-                      ),
+                const Text(
+                  'To confirm charging, wait several minutes, use Refresh battery status under Low-battery protection below, and check that the percentage has increased. Tap the battery icon on the device card to view its status.',
                 ),
-                const SizedBox(height: 2),
-                Text(
-                  'Place Slim on its wireless Qi charging pad. When powered on, placing it on the pad shows the same 5-second status indication as a single press, then the LED turns off. A dark LED does not mean charging has stopped. The app reports whether the Qi pad is detected. This does not distinguish active battery charging, a full battery, or a charger fault.',
-                  style: Theme.of(context).textTheme.bodySmall,
-                ),
-                const SizedBox(height: 10),
-                Text(
-                  'Low-battery protection',
-                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                        fontWeight: FontWeight.w600,
-                      ),
-                ),
-                const SizedBox(height: 2),
-                Text(
-                  'If the battery gets critically low, the Slim automatically shuts down Bluetooth and the sensors to protect the cell — it stops advertising and the app will show it as disconnected. This is normal. Leave it on the charger: once sufficiently charged, it restarts and becomes available to reconnect. On entering protection while charging, it flashes red briefly, then goes dark; off the charger, it briefly fades red and goes dark.',
-                  style: Theme.of(context).textTheme.bodySmall,
+              ],
+            ),
+          ),
+          const SizedBox(height: 16),
+          _CollapsibleSection(
+            title: 'Low-battery protection',
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  'If the battery gets critically low, the Slim automatically shuts down Bluetooth and the sensors to protect the battery cell — the app will show it as disconnected.\n\n'
+                  'Leave the device on the charger: once sufficiently charged, it restarts and becomes available to reconnect.\n\n'
+                  'When the Slim enters low-battery protection mode while on the charging pad, the LED flashes red briefly and then turns off. If it enters this mode away from the charging pad, the LED briefly fades red and then turns off.',
                 ),
                 const SizedBox(height: 12),
                 OutlinedButton.icon(
@@ -157,37 +209,18 @@ class SlimStatusPage extends ConsumerWidget {
               ],
             ),
           ),
-          const SizedBox(height: 16),
-          _Section(
+          const _CollapsibleSection(
             title: 'Power & restart',
             child: Text(
-              'On the Qi pad, hold the button for 5 seconds to turn Slim off or on. The light fades out when turning off and fades in during the power-on hold. Release early to cancel power-on. A long hold off the charger does nothing.\n\nWhile powered on and charging, press 5 times quickly to restart Slim. This is a reboot, not a factory reset.',
-              style: Theme.of(context).textTheme.bodySmall,
+              '• While the Slim is on the charging pad, hold the button for five seconds to turn it off or on. The light fades out when turning off and fades in during the power-on hold.\n\n'
+              '• While the Slim is powered on and on the charging pad, press the button five times quickly to restart it.',
             ),
           ),
-          const SizedBox(height: 16),
-          _Section(
-            title: 'CO₂ levels for LED colours',
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'These limits are sent to the device and control when the LED turns green, amber, or red.',
-                  style: Theme.of(context).textTheme.bodySmall,
-                ),
-                const SizedBox(height: 12),
-                Co2PpmRangePickerWidget(deviceId: deviceId),
-              ],
+          if (supportsDiagnostics)
+            _CollapsibleSection(
+              title: 'Export diagnostics',
+              child: SlimDiagnosticsExport(deviceId: deviceId),
             ),
-          ),
-          const SizedBox(height: 16),
-          _Section(
-            title: 'Calibration',
-            child: Text(
-              'Use Settings → Calibrate Device while connected. Place the Slim outdoors in fresh air for at least 5 minutes, set target ~420–450 ppm, then tap the calibration icon.',
-              style: Theme.of(context).textTheme.bodySmall,
-            ),
-          ),
         ],
       ),
     );
@@ -205,9 +238,12 @@ class _Section extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          title,
-          style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+        Semantics(
+          header: true,
+          child: Text(
+            title,
+            style: Theme.of(context).textTheme.titleMedium,
+          ),
         ),
         const SizedBox(height: 8),
         child,
@@ -216,10 +252,31 @@ class _Section extends StatelessWidget {
   }
 }
 
-Widget _ledRow({
+class _CollapsibleSection extends StatelessWidget {
+  const _CollapsibleSection({required this.title, required this.child});
+
+  final String title;
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    return ExpansionTile(
+      key: PageStorageKey(title),
+      maintainState: true,
+      tilePadding: EdgeInsets.zero,
+      childrenPadding: const EdgeInsets.only(bottom: 16),
+      expandedCrossAxisAlignment: CrossAxisAlignment.start,
+      title: Text(title, style: Theme.of(context).textTheme.titleMedium),
+      children: [child],
+    );
+  }
+}
+
+Widget _ledRow(
+  BuildContext context, {
   required Color color,
   required String title,
-  required String body,
+  String? body,
 }) {
   return Padding(
     padding: const EdgeInsets.only(bottom: 12),
@@ -240,9 +297,15 @@ Widget _ledRow({
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(title, style: const TextStyle(fontWeight: FontWeight.w600)),
-              const SizedBox(height: 2),
-              Text(body, style: const TextStyle(fontSize: 13)),
+              Text(title,
+                  style: Theme.of(context)
+                      .textTheme
+                      .bodyMedium
+                      ?.copyWith(fontWeight: FontWeight.w600)),
+              if (body != null) ...[
+                const SizedBox(height: 2),
+                Text(body, style: Theme.of(context).textTheme.bodyMedium),
+              ],
             ],
           ),
         ),
