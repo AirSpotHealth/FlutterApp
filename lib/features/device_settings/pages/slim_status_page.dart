@@ -43,15 +43,14 @@ class SlimStatusPage extends ConsumerWidget {
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
-          const _Section(
+          const _CollapsibleSection(
             title: 'What the LED means',
             child: Text(
                 'The LED usually stays off; press the button to check status or CO₂ level:\n\n'
                 '• Single press — connection and battery status\n'
                 '• Double press — CO₂ level'),
           ),
-          const SizedBox(height: 16),
-          _Section(
+          _CollapsibleSection(
             title: 'Single press — device status displayed for 5 seconds',
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -71,8 +70,7 @@ class SlimStatusPage extends ConsumerWidget {
               ],
             ),
           ),
-          const SizedBox(height: 16),
-          _Section(
+          _CollapsibleSection(
             title: 'Double press — CO₂ level display',
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -101,18 +99,29 @@ class SlimStatusPage extends ConsumerWidget {
                   body:
                       'At or above your amber limit (${settings.yellowUpperLimit} ppm). A red status indication after a single press refers to battery level instead.',
                 ),
-                TextButton(
+              ],
+            ),
+          ),
+          _CollapsibleSection(
+            title: 'CO₂ Zone Settings',
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  'Choose the CO₂ levels at which your Slim’s LED changes from green to amber and from amber to red. These limits are sent to the device.',
+                ),
+                const SizedBox(height: 12),
+                OutlinedButton(
                   onPressed: () => context.pushNamed(
                     RouteNames.slimLedSettings,
                     pathParameters: {'deviceId': deviceId},
                   ),
-                  child: const Text('Change CO₂ zones in CO₂ Zone Settings'),
+                  child: const Text('Change CO₂ zones'),
                 ),
               ],
             ),
           ),
-          const SizedBox(height: 16),
-          _Section(
+          _CollapsibleSection(
             title: 'Lights you may see automatically',
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -139,16 +148,14 @@ class SlimStatusPage extends ConsumerWidget {
               ],
             ),
           ),
-          const SizedBox(height: 16),
-          const _Section(
+          const _CollapsibleSection(
             title: 'Charging your Slim',
             child: Text(
               'When placed on the charging pad, the Slim displays the same five-second status light as a single press.\n\n'
               'The LED turns off after the initial status indication. This is normal—the LED does not remain illuminated while charging.',
             ),
           ),
-          const SizedBox(height: 16),
-          _Section(
+          _CollapsibleSection(
             title: 'Battery and charging-pad status in the AIRSPOT app',
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -182,7 +189,6 @@ class SlimStatusPage extends ConsumerWidget {
               ],
             ),
           ),
-          const SizedBox(height: 16),
           _CollapsibleSection(
             title: 'Low-battery protection',
             child: Column(
@@ -227,31 +233,6 @@ class SlimStatusPage extends ConsumerWidget {
   }
 }
 
-class _Section extends StatelessWidget {
-  const _Section({required this.title, required this.child});
-
-  final String title;
-  final Widget child;
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Semantics(
-          header: true,
-          child: Text(
-            title,
-            style: Theme.of(context).textTheme.titleMedium,
-          ),
-        ),
-        const SizedBox(height: 8),
-        child,
-      ],
-    );
-  }
-}
-
 class _CollapsibleSection extends StatelessWidget {
   const _CollapsibleSection({required this.title, required this.child});
 
@@ -260,13 +241,24 @@ class _CollapsibleSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final divider = Border(
+      bottom: BorderSide(
+        color: Theme.of(context).dividerTheme.color ??
+            Theme.of(context).dividerColor,
+      ),
+    );
     return ExpansionTile(
       key: PageStorageKey(title),
       maintainState: true,
       tilePadding: EdgeInsets.zero,
       childrenPadding: const EdgeInsets.only(bottom: 16),
       expandedCrossAxisAlignment: CrossAxisAlignment.start,
-      title: Text(title, style: Theme.of(context).textTheme.titleMedium),
+      shape: divider,
+      collapsedShape: divider,
+      title: Semantics(
+        header: true,
+        child: Text(title, style: Theme.of(context).textTheme.titleMedium),
+      ),
       children: [child],
     );
   }

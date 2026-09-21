@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Move remaining Slim LED and charging guide topics into collapsible sections, including CO₂ Zone Settings and charging.
+
 - Move Slim CO₂ PPM zones to a dedicated CO₂ Zone Settings page, linked from its LED guide. Preserve Device Screen Settings for Screen devices and align the guide text with the app theme.
 
 - Refresh the Slim LED and charging guide with clearer status descriptions, a battery screenshot, and collapsible battery protection, power, and diagnostics sections.
