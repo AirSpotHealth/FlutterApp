@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Rename the Slim guide to Button, LED and Charging Guide, keep extra Single/Double press copy in dark grey, and shorten the battery-status heading to one line.
+
 - Place the Slim LED & charging guide under CO₂ reading rate, and CO₂ Zone Settings under Notification Settings. Keep Single and Double press colour lists visible, with extra detail on tap.
 
 - Move Slim CO₂ PPM zones to a dedicated CO₂ Zone Settings page, linked from its LED guide. Preserve Device Screen Settings for Screen devices and align the guide text with the app theme.

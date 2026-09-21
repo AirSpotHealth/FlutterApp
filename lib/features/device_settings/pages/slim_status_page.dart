@@ -1,23 +1,24 @@
-import 'package:airspothealth/features/device_settings/widgets/slim_diagnostics_export.dart';
 import 'package:airspothealth/core/providers/ble_device_communication_provider.dart';
 import 'package:airspothealth/core/providers/device_settings_provider.dart';
+import 'package:airspothealth/core/router/route_names.dart';
+import 'package:airspothealth/core/theme/app_colors.dart';
 import 'package:airspothealth/core/utils/app_utils.dart';
 import 'package:airspothealth/core/utils/device_cmd_utils.dart';
 import 'package:airspothealth/core/utils/extensions.dart';
 import 'package:airspothealth/features/device_settings/providers/ble_device_version_provider.dart';
-import 'package:airspothealth/core/router/route_names.dart';
-import 'package:go_router/go_router.dart';
 import 'package:airspothealth/features/device_settings/widgets/device_settings_name_widget.dart';
+import 'package:airspothealth/features/device_settings/widgets/slim_diagnostics_export.dart';
 import 'package:airspothealth/features/devices/providers/device_battery_level_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
 /// The 0x37 diagnostic journal command only exists from Slim firmware 0.17.0
 /// onward (still beta / not yet released). Older firmware times out on it.
 const _minDiagnosticsFirmwareVersion = '0.17.0';
 
 /// Extra Single / Double press copy shown after tap.
-const _extraInfoColor = Color(0xFFD1008A);
+const _extraInfoColor = AppColors.textSecondary;
 
 /// AirSpot Slim has no screen — the RGB LED shows CO₂ zones and charging status.
 /// This page explains LED behavior and exposes settings that affect the LED.
@@ -40,7 +41,7 @@ class SlimStatusPage extends ConsumerWidget {
       appBar: AppBar(
         title: DeviceSettingsNameWidget(
           deviceId: deviceId,
-          suffixText: 'LED & charging guide',
+          suffixText: 'Button, LED and Charging Guide',
         ),
       ),
       body: ListView(
@@ -53,7 +54,7 @@ class SlimStatusPage extends ConsumerWidget {
           ),
           _PressSection(
             key: const ValueKey('single-press'),
-            title: 'Single press',
+            title: 'Single button press',
             intro: 'Device status is displayed for 5 seconds.',
             rows: const [
               _LedItem(
@@ -69,7 +70,7 @@ class SlimStatusPage extends ConsumerWidget {
           ),
           _PressSection(
             key: const ValueKey('double-press'),
-            title: 'Double press',
+            title: 'Double button press',
             intro:
                 'Press twice within half a second. The last reading’s colour flashes for 5 seconds, then the fresh reading’s colour stays steady for 5 seconds before turning off.',
             rows: [
@@ -147,7 +148,7 @@ class SlimStatusPage extends ConsumerWidget {
             ),
           ),
           _CollapsibleSection(
-            title: 'Battery and charging-pad status in the AIRSPOT app',
+            title: 'Battery and charging-pad status',
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -175,7 +176,7 @@ class SlimStatusPage extends ConsumerWidget {
                 ),
                 const SizedBox(height: 12),
                 const Text(
-                  'To confirm charging, wait several minutes, use Refresh battery status under Low-battery protection below, and check that the percentage has increased. Tap the battery icon on the device card to view its status.',
+                  'To confirm charging, wait several minutes, tap the battery icon to refresh the battery status, and check that the percentage has increased.',
                 ),
               ],
             ),

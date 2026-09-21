@@ -83,10 +83,10 @@ class _DeviceSettingsPageState extends ConsumerState<DeviceSettingsPage> {
           assetIcon: Assets.screenSettings,
           route: RouteNames.screenSettings,
         ),
-      // Directly under CO₂ reading rate — people need this when the LED is the display.
+      // Directly under CO₂ reading rate — people need this when the button and LED are the display.
       if (caps.supportsSlimLedStatus())
         SettingItem(
-          title: 'LED & charging guide',
+          title: 'Button, LED and Charging Guide',
           assetIcon: Assets.screenSettings,
           route: RouteNames.slimStatusLed,
         ),
