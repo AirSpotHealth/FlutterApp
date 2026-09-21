@@ -2,7 +2,7 @@
 
 ## Unreleased
 
-- Move remaining Slim LED and charging guide topics into collapsible sections, including CO₂ Zone Settings and charging.
+- Place the Slim LED & charging guide under CO₂ reading rate, and CO₂ Zone Settings under Notification Settings. Keep Single and Double press colour lists visible, with extra detail on tap.
 
 - Move Slim CO₂ PPM zones to a dedicated CO₂ Zone Settings page, linked from its LED guide. Preserve Device Screen Settings for Screen devices and align the guide text with the app theme.
 

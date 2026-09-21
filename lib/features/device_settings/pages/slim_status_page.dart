@@ -16,6 +16,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 /// onward (still beta / not yet released). Older firmware times out on it.
 const _minDiagnosticsFirmwareVersion = '0.17.0';
 
+/// Extra Single / Double press copy shown after tap.
+const _extraInfoColor = Color(0xFFD1008A);
+
 /// AirSpot Slim has no screen — the RGB LED shows CO₂ zones and charging status.
 /// This page explains LED behavior and exposes settings that affect the LED.
 class SlimStatusPage extends ConsumerWidget {
@@ -46,61 +49,49 @@ class SlimStatusPage extends ConsumerWidget {
           const _CollapsibleSection(
             title: 'What the LED means',
             child: Text(
-                'The LED usually stays off; press the button to check status or CO₂ level:\n\n'
-                '• Single press — connection and battery status\n'
-                '• Double press — CO₂ level'),
+                'The LED usually stays off; press the button to check status or CO₂ level.'),
           ),
-          _CollapsibleSection(
-            title: 'Single press — device status displayed for 5 seconds',
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                _ledRow(context,
-                    color: Colors.blue,
-                    title: 'Blue — connected to your phone'),
-                _ledRow(context,
-                    color: Colors.white, title: 'White — not connected'),
-                _ledRow(context, color: Colors.red, title: 'Red — low battery'),
-                _ledRow(
-                  context,
-                  color: Colors.red,
-                  title: 'Flashing red — critically low battery',
-                  body: 'Place the Slim on its charging pad.',
-                ),
-              ],
-            ),
+          _PressSection(
+            key: const ValueKey('single-press'),
+            title: 'Single press',
+            intro: 'Device status is displayed for 5 seconds.',
+            rows: const [
+              _LedItem(
+                  color: Colors.blue, title: 'Blue — connected to your phone'),
+              _LedItem(color: Colors.white, title: 'White — not connected'),
+              _LedItem(color: Colors.red, title: 'Red — low battery'),
+              _LedItem(
+                color: Colors.red,
+                title: 'Flashing red — critically low battery',
+                detail: 'Place the Slim on its charging pad.',
+              ),
+            ],
           ),
-          _CollapsibleSection(
-            title: 'Double press — CO₂ level display',
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Text(
-                    'Press twice within half a second. The last reading’s colour flashes for 5 seconds, then the fresh reading’s colour stays steady for 5 seconds before turning off.'),
-                const SizedBox(height: 12),
-                _ledRow(
-                  context,
-                  color: Colors.green,
-                  title: 'Green — lower CO₂',
-                  body:
-                      'Below your green limit (${settings.greenUpperLimit} ppm).',
-                ),
-                _ledRow(
-                  context,
-                  color: Colors.amber,
-                  title: 'Amber — moderate CO₂',
-                  body:
-                      'At or above your green limit (${settings.greenUpperLimit} ppm) and below your amber limit (${settings.yellowUpperLimit} ppm).',
-                ),
-                _ledRow(
-                  context,
-                  color: Colors.red,
-                  title: 'Red — higher CO₂',
-                  body:
-                      'At or above your amber limit (${settings.yellowUpperLimit} ppm). A red status indication after a single press refers to battery level instead.',
-                ),
-              ],
-            ),
+          _PressSection(
+            key: const ValueKey('double-press'),
+            title: 'Double press',
+            intro:
+                'Press twice within half a second. The last reading’s colour flashes for 5 seconds, then the fresh reading’s colour stays steady for 5 seconds before turning off.',
+            rows: [
+              _LedItem(
+                color: Colors.green,
+                title: 'Green — lower CO₂',
+                detail:
+                    'Below your green limit (${settings.greenUpperLimit} ppm).',
+              ),
+              _LedItem(
+                color: Colors.amber,
+                title: 'Amber — moderate CO₂',
+                detail:
+                    'At or above your green limit (${settings.greenUpperLimit} ppm) and below your amber limit (${settings.yellowUpperLimit} ppm).',
+              ),
+              _LedItem(
+                color: Colors.red,
+                title: 'Red — higher CO₂',
+                detail:
+                    'At or above your amber limit (${settings.yellowUpperLimit} ppm). A red status indication after a single press refers to battery level instead.',
+              ),
+            ],
           ),
           _CollapsibleSection(
             title: 'CO₂ Zone Settings',
@@ -233,6 +224,86 @@ class SlimStatusPage extends ConsumerWidget {
   }
 }
 
+class _LedItem {
+  const _LedItem({required this.color, required this.title, this.detail});
+
+  final Color color;
+  final String title;
+  final String? detail;
+}
+
+/// Always shows the colour list; extra copy appears when the heading is pressed.
+class _PressSection extends StatefulWidget {
+  const _PressSection({
+    super.key,
+    required this.title,
+    this.intro,
+    required this.rows,
+  });
+
+  final String title;
+  final String? intro;
+  final List<_LedItem> rows;
+
+  @override
+  State<_PressSection> createState() => _PressSectionState();
+}
+
+class _PressSectionState extends State<_PressSection> {
+  bool _expanded = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final divider = Border(
+      bottom: BorderSide(
+        color: Theme.of(context).dividerTheme.color ??
+            Theme.of(context).dividerColor,
+      ),
+    );
+    return DecoratedBox(
+      decoration: ShapeDecoration(shape: divider),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          ListTile(
+            contentPadding: EdgeInsets.zero,
+            title: Semantics(
+              header: true,
+              button: true,
+              expanded: _expanded,
+              child: Text(
+                widget.title,
+                style: Theme.of(context).textTheme.titleMedium,
+              ),
+            ),
+            trailing: Icon(_expanded ? Icons.expand_less : Icons.expand_more),
+            onTap: () => setState(() => _expanded = !_expanded),
+          ),
+          if (_expanded && widget.intro != null) ...[
+            Text(
+              widget.intro!,
+              style: Theme.of(context)
+                  .textTheme
+                  .bodyMedium
+                  ?.copyWith(color: _extraInfoColor),
+            ),
+            const SizedBox(height: 12),
+          ],
+          ...widget.rows.map(
+            (row) => _ledRow(
+              context,
+              color: row.color,
+              title: row.title,
+              body: _expanded ? row.detail : null,
+              bodyColor: _extraInfoColor,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
 class _CollapsibleSection extends StatelessWidget {
   const _CollapsibleSection({required this.title, required this.child});
 
@@ -269,6 +340,7 @@ Widget _ledRow(
   required Color color,
   required String title,
   String? body,
+  Color? bodyColor,
 }) {
   return Padding(
     padding: const EdgeInsets.only(bottom: 12),
@@ -296,7 +368,13 @@ Widget _ledRow(
                       ?.copyWith(fontWeight: FontWeight.w600)),
               if (body != null) ...[
                 const SizedBox(height: 2),
-                Text(body, style: Theme.of(context).textTheme.bodyMedium),
+                Text(
+                  body,
+                  style: Theme.of(context)
+                      .textTheme
+                      .bodyMedium
+                      ?.copyWith(color: bodyColor),
+                ),
               ],
             ],
           ),

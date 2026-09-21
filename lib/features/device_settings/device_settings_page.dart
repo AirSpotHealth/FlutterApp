@@ -83,17 +83,24 @@ class _DeviceSettingsPageState extends ConsumerState<DeviceSettingsPage> {
           assetIcon: Assets.screenSettings,
           route: RouteNames.screenSettings,
         ),
+      // Directly under CO₂ reading rate — people need this when the LED is the display.
       if (caps.supportsSlimLedStatus())
         SettingItem(
-          title: 'CO₂ Zone Settings',
+          title: 'LED & charging guide',
           assetIcon: Assets.screenSettings,
-          route: RouteNames.slimLedSettings,
+          route: RouteNames.slimStatusLed,
         ),
       if (caps.supportsNotificationSettings())
         SettingItem(
           title: 'Notification Settings',
           assetIcon: Assets.alarmSettings,
           route: RouteNames.notificationSettings,
+        ),
+      if (caps.supportsSlimLedStatus())
+        SettingItem(
+          title: 'CO₂ Zone Settings',
+          assetIcon: Assets.screenSettings,
+          route: RouteNames.slimLedSettings,
         ),
       if (caps.supportsDnd())
         SettingItem(
@@ -118,13 +125,6 @@ class _DeviceSettingsPageState extends ConsumerState<DeviceSettingsPage> {
           title: 'Locate my Airspot',
           assetIcon: Assets.findMyDevice,
           route: RouteNames.findMyDevice,
-        ),
-      // Keep the LED & charging guide last — it's reference info, not a setting.
-      if (caps.supportsSlimLedStatus())
-        SettingItem(
-          title: 'LED & charging guide',
-          assetIcon: Assets.screenSettings,
-          route: RouteNames.slimStatusLed,
         ),
     ];
   }
