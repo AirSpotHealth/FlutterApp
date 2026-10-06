@@ -1,0 +1,68 @@
+import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:airspothealth/features/device_settings/models/native_asc_state.dart';
+import 'package:airspothealth/features/device_settings/providers/native_asc_provider.dart';
+
+class NativeAscSettingWidget extends ConsumerWidget {
+  const NativeAscSettingWidget(
+      {required this.deviceId,
+      required this.firmwareVersion,
+      required this.manualControls,
+      super.key});
+  final String deviceId;
+  final String firmwareVersion;
+  final Widget manualControls;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    if (!NativeAscState.supported(firmwareVersion)) {
+      return Column(children: [
+        ListTile(
+            contentPadding: EdgeInsets.zero,
+            title: const Text('Auto Calibration'),
+            subtitle: Text(firmwareVersion == '0.17.12'
+                ? 'Auto calibration is enabled in this experimental firmware. Update to control it from the app.'
+                : 'Update Slim firmware to 0.18.0 or later to enable sensor auto calibration.')),
+        if (NativeAscState.canCalibrate(firmwareVersion, null)) manualControls,
+      ]);
+    }
+    final state = ref.watch(nativeAscProvider(deviceId));
+    final value = state.asData?.value;
+    return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+      SwitchListTile(
+          contentPadding: EdgeInsets.zero,
+          title: const Text('Auto Calibration',
+              style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold)),
+          subtitle: const Text(
+              'Let the sensor adjust its baseline automatically. It needs exposure to fresh air at least once a week.'),
+          value: value?.enabled ?? false,
+          onChanged: value?.verified == true && !state.isLoading
+              ? (enabled) => ref
+                  .read(nativeAscProvider(deviceId).notifier)
+                  .setEnabled(enabled)
+              : null),
+      if (state.isLoading)
+        const Padding(
+            padding: EdgeInsets.symmetric(vertical: 12),
+            child: Text('Checking the sensor setting…')),
+      if (state.hasError) ...[
+        Text(state.error.toString()),
+        TextButton(
+            onPressed: () =>
+                ref.read(nativeAscProvider(deviceId).notifier).refresh(),
+            child: const Text('Retry')),
+      ],
+      if (value?.enabled == true)
+        const Padding(
+            padding: EdgeInsets.symmetric(vertical: 12),
+            child: Text(
+                'Manual calibration is unavailable while auto calibration is on. Turning it off pauses learning and retains the sensor baseline.')),
+      if (value?.mode == 1)
+        const Padding(
+            padding: EdgeInsets.symmetric(vertical: 12),
+            child: Text(
+                'Auto calibration is paused. The sensor keeps its learned baseline; manual calibration can apply a new correction.')),
+      if (value?.manualAllowed == true) manualControls,
+    ]);
+  }
+}

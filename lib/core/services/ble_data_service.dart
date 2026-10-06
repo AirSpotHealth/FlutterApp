@@ -1,5 +1,7 @@
 import 'package:airspothealth/core/services/history_coverage_service.dart';
 import 'dart:typed_data';
+import 'package:airspothealth/features/device_settings/providers/native_asc_provider.dart';
+import 'package:airspothealth/features/device_settings/models/native_asc_state.dart';
 import 'package:airspothealth/core/providers/ble_device_communication_provider.dart';
 import 'package:airspothealth/core/utils/device_cmd_utils.dart';
 
@@ -58,6 +60,12 @@ class BleDataService {
   ) {
     if (data.length < 6) return null;
 
+    if (data[2] == 0x38 && bleDevice.deviceModel == DeviceModel.airspotSlim) {
+      if (ref.exists(nativeAscProvider(bleDevice.deviceId))) {
+        ref.read(nativeAscProvider(bleDevice.deviceId).notifier).receive(data);
+      }
+      return null;
+    }
     final responseCommand = ResponseCommand.fromValue(data[2]);
     final parser = ResponseCommandParser(bleDevice);
     final deviceId = bleDevice.deviceId;
@@ -107,20 +115,27 @@ class BleDataService {
       case ResponseCommand.setCalibrationMode:
         if (bleDevice.deviceModel == DeviceModel.airspotSlim) {
           if (data[4] == 0xff) {
-            ref.read(recalibrationTimeProvider(deviceId).notifier)
-                .setRecalibrationFailed('Could not save auto-calibration setting.');
+            ref
+                .read(recalibrationTimeProvider(deviceId).notifier)
+                .setRecalibrationFailed(
+                    'Could not save auto-calibration setting.');
           }
-          ref.read(bleDeviceCommunicationProvider(deviceId).notifier)
+          ref
+              .read(bleDeviceCommunicationProvider(deviceId).notifier)
               .sendCommand(DeviceCmdUtils.getInitialData());
-          ref.read(bleDeviceCommunicationProvider(deviceId).notifier)
+          ref
+              .read(bleDeviceCommunicationProvider(deviceId).notifier)
               .sendCommand(DeviceCmdUtils.getAscDayCount());
         }
         break;
       case ResponseCommand.calibrateSensors:
         if (parser.isCalibrationFailure(data)) {
-          ref.read(recalibrationTimeProvider(deviceId).notifier)
-              .setRecalibrationFailed('Calibration failed. Check the device and retry.');
-          ref.read(bleDeviceCommunicationProvider(deviceId).notifier)
+          ref
+              .read(recalibrationTimeProvider(deviceId).notifier)
+              .setRecalibrationFailed(
+                  'Calibration failed. Check the device and retry.');
+          ref
+              .read(bleDeviceCommunicationProvider(deviceId).notifier)
               .sendCommand(DeviceCmdUtils.getInitialData());
           break;
         }
@@ -129,6 +144,11 @@ class BleDataService {
           ref
               .read(recalibrationTimeProvider(deviceId).notifier)
               .setRecalibrationDone(value);
+          if (bleDevice.deviceModel == DeviceModel.airspotSlim &&
+              NativeAscState.supported(bleDevice.firmwareVersion) &&
+              ref.exists(nativeAscProvider(deviceId))) {
+            ref.read(nativeAscProvider(deviceId).notifier).refresh();
+          }
         }
         break;
       case ResponseCommand.recalibrationConfirm:
@@ -136,6 +156,11 @@ class BleDataService {
           ref
               .read(recalibrationTimeProvider(deviceId).notifier)
               .setRecalibrationDone(value);
+          if (bleDevice.deviceModel == DeviceModel.airspotSlim &&
+              NativeAscState.supported(bleDevice.firmwareVersion) &&
+              ref.exists(nativeAscProvider(deviceId))) {
+            ref.read(nativeAscProvider(deviceId).notifier).refresh();
+          }
         }
         break;
       case ResponseCommand.firmwareVersion:
@@ -190,10 +215,11 @@ class BleDataService {
           ref
               .read(deviceHistoryDataRequestProvider(deviceId).notifier)
               .handleHistoricalDataResponse(value,
-                  pageNumber: bleDevice.deviceModel == DeviceModel.airspotSlim &&
-                          value is List<DeviceData>
-                      ? (data[data.length - 3] << 8) | data[data.length - 2]
-                      : null);
+                  pageNumber:
+                      bleDevice.deviceModel == DeviceModel.airspotSlim &&
+                              value is List<DeviceData>
+                          ? (data[data.length - 3] << 8) | data[data.length - 2]
+                          : null);
         }
 
         if (value is List<DeviceData> &&
@@ -810,7 +836,9 @@ class ResponseCommandParser {
 
   bool isCalibrationFailure(List<int> data) =>
       device.deviceModel == DeviceModel.airspotSlim &&
-      data.length == 6 && data[3] == 1 && data[4] == 0xff;
+      data.length == 6 &&
+      data[3] == 1 &&
+      data[4] == 0xff;
 
   dynamic parseCalibrateSensors(List<int> data) {
     // Check if this is a calibration done message (byte[3] == 0x01)

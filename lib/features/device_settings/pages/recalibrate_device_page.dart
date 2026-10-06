@@ -12,6 +12,8 @@ import 'package:airspothealth/features/device_settings/widgets/altitude_pressure
 import 'package:airspothealth/features/device_settings/widgets/device_settings_name_widget.dart';
 import 'package:airspothealth/features/device_settings/widgets/manual_calibration_widget.dart';
 import 'package:airspothealth/features/device_settings/widgets/next_calibration_date_widget.dart';
+import 'package:airspothealth/features/device_settings/widgets/native_asc_setting_widget.dart';
+import 'package:airspothealth/features/device_graph/providers/ble_device_provider.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -46,8 +48,10 @@ class RecalibrateDevicePage extends ConsumerWidget {
         ref.watch(deviceSettingsProvider(deviceId));
     final AsyncProgressValue calibrationStatus =
         ref.watch(recalibrationTimeProvider(deviceId));
-    final bool isSlim =
-        ref.read(bleSavedDevicesProvider.notifier).getDeviceById(deviceId)?.deviceModel ==
+    final bool isSlim = ref
+            .read(bleSavedDevicesProvider.notifier)
+            .getDeviceById(deviceId)
+            ?.deviceModel ==
         DeviceModel.airspotSlim;
 
     debugPrint("CALIB TARGET: ${deviceSettings.recalibrationTarget}");
@@ -61,7 +65,8 @@ class RecalibrateDevicePage extends ConsumerWidget {
         ),
       ),
       body: calibrationStatus.isNone
-          ? _buildCalibrationSettings(calibrationStatus, deviceSettings, ref, isSlim: isSlim)
+          ? _buildCalibrationSettings(calibrationStatus, deviceSettings, ref,
+              isSlim: isSlim)
           : _buildCalibrationStatusWidget(
               calibrationStatus, deviceSettings, ref),
     );
@@ -107,17 +112,32 @@ class RecalibrateDevicePage extends ConsumerWidget {
           const SizedBox(height: 8),
           const Divider(),
         ],
-        ManualCalibrationWidget(
-          deviceId: deviceId,
-          calibrationTarget: deviceSettings.recalibrationTarget,
-        ),
+        if (isSlim)
+          NativeAscSettingWidget(
+              deviceId: deviceId,
+              firmwareVersion:
+                  ref.watch(bleDeviceProvider(deviceId)).firmwareVersion,
+              manualControls: Column(children: [
+                ManualCalibrationWidget(
+                    deviceId: deviceId,
+                    calibrationTarget: deviceSettings.recalibrationTarget),
+                const Divider(),
+                ResetSensorWidget(deviceId: deviceId),
+              ]))
+        else
+          ManualCalibrationWidget(
+            deviceId: deviceId,
+            calibrationTarget: deviceSettings.recalibrationTarget,
+          ),
         if (!isSlim) ...[
           const Divider(),
           AltitudePressureScalingWidget(deviceId: deviceId),
           const SizedBox(height: 8),
         ],
-        const Divider(),
-        ResetSensorWidget(deviceId: deviceId),
+        if (!isSlim) ...[
+          const Divider(),
+          ResetSensorWidget(deviceId: deviceId),
+        ],
       ],
     );
   }
@@ -233,9 +253,12 @@ class ResetSensorWidget extends ConsumerWidget {
             'Reset Sensor',
             style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
           ),
-          subtitle: const Text(
-            "If you are experiencing issues with your AirSpot's accuracy, you can reset the sensor to its factory settings. This will erase all calibration data and settings.",
-            style: TextStyle(fontSize: 12, color: Colors.black),
+          subtitle: Text(
+            ref.watch(bleDeviceProvider(deviceId)).deviceModel ==
+                    DeviceModel.airspotSlim
+                ? 'Restart the Slim sensor and clear its manual software correction. Its internal calibration history is retained.'
+                : "If you are experiencing issues with your AirSpot's accuracy, you can reset the sensor to its factory settings. This will erase all calibration data and settings.",
+            style: const TextStyle(fontSize: 12, color: Colors.black),
           ),
           contentPadding: EdgeInsets.zero,
         ),

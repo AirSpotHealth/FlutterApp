@@ -1,3 +1,6 @@
+import 'package:airspothealth/features/device_settings/models/native_asc_state.dart';
+import 'package:airspothealth/features/device_settings/providers/native_asc_provider.dart';
+import 'package:airspothealth/features/device_graph/providers/ble_device_provider.dart';
 import 'package:airspothealth/core/providers/ble_device_communication_provider.dart';
 import 'package:airspothealth/core/providers/device_settings_provider.dart';
 import 'package:airspothealth/core/models/device_model.dart';
@@ -19,6 +22,17 @@ class _DevicerSensorResetNotifier
   }
 
   void resetSensor() {
+    final device = ref.read(bleDeviceProvider(arg));
+    if (device.deviceModel == DeviceModel.airspotSlim &&
+        !NativeAscState.canCalibrate(
+            device.firmwareVersion,
+            NativeAscState.supported(device.firmwareVersion)
+                ? ref.read(nativeAscProvider(arg)).asData?.value
+                : null)) {
+      state = const AsyncFailure(
+          'Turn off auto calibration and confirm the sensor setting first.');
+      return;
+    }
     if (state is AsyncInProgress) return;
 
     state = AsyncInProgress(0, message: 'Resetting sensor...');
@@ -35,14 +49,18 @@ class _DevicerSensorResetNotifier
   }
 
   void setSensorResetDone(int value) {
-    final isSlim = ref.read(bleSavedDevicesProvider.notifier)
-        .getDeviceById(arg)?.deviceModel == DeviceModel.airspotSlim;
+    final isSlim = ref
+            .read(bleSavedDevicesProvider.notifier)
+            .getDeviceById(arg)
+            ?.deviceModel ==
+        DeviceModel.airspotSlim;
     if (isSlim) {
       state = value == 1
           ? AsyncSuccess(value)
           : const AsyncFailure('Sensor reset failed. Reconnect and try again.');
       // Slim returns operation status, not the auto-calibration preference.
-      ref.read(bleDeviceCommunicationProvider(arg).notifier)
+      ref
+          .read(bleDeviceCommunicationProvider(arg).notifier)
           .sendCommand(DeviceCmdUtils.getInitialData());
       return;
     }

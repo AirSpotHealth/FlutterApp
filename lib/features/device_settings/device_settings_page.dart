@@ -116,7 +116,9 @@ class _DeviceSettingsPageState extends ConsumerState<DeviceSettingsPage> {
         ),
       if (caps.supportsCalibration())
         SettingItem(
-          title: 'Calibrate Device',
+          title: caps.supportsSlimLedStatus()
+              ? 'CO₂ Calibration'
+              : 'Calibrate Device',
           assetIcon: Assets.recalibrateSettings,
           route: RouteNames.recalibrateSettings,
         ),
@@ -170,8 +172,7 @@ class _DeviceSettingsPageState extends ConsumerState<DeviceSettingsPage> {
             VibrateSettingWidget(deviceId: widget.deviceId),
           AutoConnectSettingWidget(deviceId: widget.deviceId),
           LiveActivitySettingWidget(deviceId: widget.deviceId),
-          if (capabilities.supportsTimeSettings())
-            _buildTimeSettingWidget(ref),
+          if (capabilities.supportsTimeSettings()) _buildTimeSettingWidget(ref),
           PowerModeSettingWidget(deviceId: widget.deviceId),
           ..._buildSettingsList(ref, capabilities),
           if (capabilities.supportsManualFlightMode())

@@ -1,3 +1,7 @@
+import 'package:airspothealth/core/models/device_model.dart';
+import 'package:airspothealth/features/device_settings/models/native_asc_state.dart';
+import 'package:airspothealth/features/device_settings/providers/native_asc_provider.dart';
+import 'package:airspothealth/features/device_graph/providers/ble_device_provider.dart';
 import 'package:airspothealth/core/providers/ble_device_communication_provider.dart';
 import 'package:airspothealth/core/utils/device_cmd_utils.dart';
 import 'package:airspothealth/features/add_device/providers/ble_device_connection_provider.dart';
@@ -17,6 +21,17 @@ class _RecalibrationTimeNotifier
   }
 
   void startRecalibration() {
+    final device = ref.read(bleDeviceProvider(arg));
+    if (device.deviceModel == DeviceModel.airspotSlim &&
+        !NativeAscState.canCalibrate(
+            device.firmwareVersion,
+            NativeAscState.supported(device.firmwareVersion)
+                ? ref.read(nativeAscProvider(arg)).asData?.value
+                : null)) {
+      state = const AsyncFailure(
+          'Turn off auto calibration and confirm the sensor setting first.');
+      return;
+    }
     if (ref.read(bleDeviceConnectionProvider(arg)) !=
         BluetoothBondState.bonded) {
       state = const AsyncFailure('Connect to the device before calibrating');

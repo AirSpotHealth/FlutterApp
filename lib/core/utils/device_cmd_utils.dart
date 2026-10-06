@@ -71,6 +71,12 @@ class DeviceCmdUtils {
     return _buildCommand([prefixHigh, prefixLow, 0x09, 1, 1]);
   }
 
+  static Uint8List getNativeAsc() =>
+      _buildCommand([prefixHigh, prefixLow, 0x38, 0]);
+
+  static Uint8List setNativeAsc(bool enabled) =>
+      _buildCommand([prefixHigh, prefixLow, 0x38, 1, enabled ? 1 : 0]);
+
   static Uint8List getDeviceSensorConfig() {
     return _buildCommand([prefixHigh, prefixLow, 0x30, 1, 1]);
   }
