@@ -24,6 +24,20 @@ Map<String, dynamic> metadata({String model = 'slim', String format = 'bin'}) =>
     };
 
 void main() {
+  for (final model in [DeviceModel.airspotScreen, DeviceModel.airspotSlim]) {
+    test('accepts missing or null release timestamp for $model', () {
+      final data = metadata(
+          model: model == DeviceModel.airspotSlim ? 'slim' : 'screen')
+        ..remove('created_at');
+      for (final payload in [data, {...data, 'created_at': null}]) {
+        final release = HostedFirmware.parseResponse(payload, model);
+        expect(release.createdAt, isNull);
+        expect(RemoteVersion.fromJson(release.copyWith().toJson()), release);
+      }
+      data['created_at'] = '2026-09-05';
+      expect(HostedFirmware.parseResponse(data, model).createdAt, '2026-09-05');
+    });
+  }
   for (final model in [
     DeviceModel.airspotScreen,
     DeviceModel.airspotSlim,
@@ -76,6 +90,7 @@ void main() {
       metadata()..['is_active'] = 'true',
       metadata()..['require_erase'] = 1,
       metadata()..['change_log'] = <String>[],
+      metadata()..['created_at'] = 123,
     ];
     for (final data in invalid) {
       expect(() => HostedFirmware.parseResponse(data, DeviceModel.airspotSlim),

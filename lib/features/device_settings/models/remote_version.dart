@@ -7,7 +7,8 @@ class RemoteVersion {
   final String availableFor;
   final bool isActive;
   final String fileUrl;
-  final String createdAt;
+  // Optional release metadata; some firmware API versions omit this field.
+  final String? createdAt;
   final String? changeLog;
   final bool requireErase;
   final String? deviceModel;
@@ -19,7 +20,7 @@ class RemoteVersion {
     required this.availableFor,
     required this.isActive,
     required this.fileUrl,
-    required this.createdAt,
+    this.createdAt,
     required this.requireErase,
     this.changeLog,
     this.deviceModel,
@@ -32,7 +33,6 @@ class RemoteVersion {
       'version_name',
       'available_for',
       'file_url',
-      'created_at'
     ]) {
       if (json[key] is! String || (json[key] as String).trim().isEmpty) {
         throw FormatException('Invalid firmware response: $key');
@@ -43,7 +43,7 @@ class RemoteVersion {
         throw FormatException('Invalid firmware response: $key');
       }
     }
-    for (final key in ['device_model', 'file_format', 'change_log']) {
+    for (final key in ['device_model', 'file_format', 'change_log', 'created_at']) {
       if (json[key] != null && json[key] is! String) {
         throw FormatException('Invalid firmware response: $key');
       }

@@ -88,19 +88,19 @@ void main() {
                   body: NativeAscSettingWidget(
             deviceId: 'test',
             firmwareVersion: '0.18.0',
-            manualControls: Text('Manual target and reset'),
+            manualControls: Text('Manual calibration target'),
           )))));
-      expect(find.text('Manual target and reset'),
+      expect(find.text('Manual calibration target'),
           mode == 2 ? findsNothing : findsOneWidget);
       expect(tester.widget<SwitchListTile>(find.byType(SwitchListTile)).value,
           mode == 2);
       // A subsequent failed response hides the controls; a successful off read restores them.
       notifier.receive(response(mode, error: -5));
       await tester.pump();
-      expect(find.text('Manual target and reset'), findsNothing);
+      expect(find.text('Manual calibration target'), findsNothing);
       notifier.receive(response(1));
       await tester.pump();
-      expect(find.text('Manual target and reset'), findsOneWidget);
+      expect(find.text('Manual calibration target'), findsOneWidget);
     });
   }
   testWidgets('unknown state disables the toggle and manual controls',
@@ -115,9 +115,9 @@ void main() {
                 body: NativeAscSettingWidget(
           deviceId: 'test',
           firmwareVersion: '0.18.0',
-          manualControls: Text('Manual target and reset'),
+          manualControls: Text('Manual calibration target'),
         )))));
-    expect(find.text('Manual target and reset'), findsNothing);
+    expect(find.text('Manual calibration target'), findsNothing);
     expect(tester.widget<SwitchListTile>(find.byType(SwitchListTile)).onChanged,
         isNull);
   });

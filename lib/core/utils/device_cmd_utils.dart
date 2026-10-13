@@ -71,6 +71,9 @@ class DeviceCmdUtils {
     return _buildCommand([prefixHigh, prefixLow, 0x09, 1, 1]);
   }
 
+  static Uint8List resetNativeCalibration() =>
+      _buildCommand([prefixHigh, prefixLow, 0x3a, 3, 0x52, 0x53, 0x54]);
+
   static Uint8List getNativeAsc() =>
       _buildCommand([prefixHigh, prefixLow, 0x38, 0]);
 

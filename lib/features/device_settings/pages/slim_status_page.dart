@@ -2,20 +2,13 @@ import 'package:airspothealth/core/providers/ble_device_communication_provider.d
 import 'package:airspothealth/core/providers/device_settings_provider.dart';
 import 'package:airspothealth/core/router/route_names.dart';
 import 'package:airspothealth/core/theme/app_colors.dart';
-import 'package:airspothealth/core/utils/app_utils.dart';
 import 'package:airspothealth/core/utils/device_cmd_utils.dart';
 import 'package:airspothealth/core/utils/extensions.dart';
-import 'package:airspothealth/features/device_settings/providers/ble_device_version_provider.dart';
 import 'package:airspothealth/features/device_settings/widgets/device_settings_name_widget.dart';
-import 'package:airspothealth/features/device_settings/widgets/slim_diagnostics_export.dart';
 import 'package:airspothealth/features/devices/providers/device_battery_level_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-
-/// The 0x37 diagnostic journal command only exists from Slim firmware 0.17.0
-/// onward (still beta / not yet released). Older firmware times out on it.
-const _minDiagnosticsFirmwareVersion = '0.17.0';
 
 /// Extra Single / Double press copy shown after tap.
 const _extraInfoColor = AppColors.textSecondary;
@@ -31,10 +24,6 @@ class SlimStatusPage extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final battery = ref.watch(deviceBatteryLevelProvider(deviceId));
     final settings = ref.watch(deviceSettingsProvider(deviceId));
-    final firmwareVersion = ref.watch(bleDeviceVersionProvider(deviceId));
-    final supportsDiagnostics = firmwareVersion != null &&
-        !AppUtils.isVersionGreater(
-            firmwareVersion, _minDiagnosticsFirmwareVersion);
 
     return Scaffold(
       backgroundColor: Colors.white,
@@ -214,11 +203,6 @@ class SlimStatusPage extends ConsumerWidget {
               '• While the Slim is powered on and on the charging pad, press the button five times quickly to restart it.',
             ),
           ),
-          if (supportsDiagnostics)
-            _CollapsibleSection(
-              title: 'Export diagnostics',
-              child: SlimDiagnosticsExport(deviceId: deviceId),
-            ),
         ],
       ),
     );

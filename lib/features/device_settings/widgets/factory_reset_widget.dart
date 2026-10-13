@@ -72,7 +72,7 @@ class _FactoryResetSheet extends ConsumerWidget {
             ),
             const SizedBox(height: 4),
             Text(
-              'Factory reset will erase all settings and data on the device. This action cannot be undone.',
+              'Factory reset erases device settings, saved readings, manual calibration and the sensor’s learned auto-calibration history. This action cannot be undone.',
               style: context.textTheme.bodySmall?.copyWith(
                 color: AppColors.neutralGrey,
               ),

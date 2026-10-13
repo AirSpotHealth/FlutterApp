@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:typed_data';
+import 'package:airspothealth/core/models/ble_device.dart';
 
 /// Read-only Slim journal protocol (0x37). No cached sensor data is substituted.
 class SlimDiagnostics {
@@ -15,7 +16,62 @@ class SlimDiagnostics {
     7: 'sensor_failed',
     8: 'ota_rejected',
     9: 'storage_failed',
+    10: 'i2c_failed',
+    11: 'sample_failed',
+    12: 'co2_context',
+    13: 'recovery_result',
+    14: 'factory_reset_failed',
+    15: 'sensor_power',
   };
+
+  static Map<String, Object> decodeDetail(int code, int detail) {
+    final low = detail & 65535;
+    final error = low >= 32768 ? low - 65536 : low;
+    final stage = (detail >> 16) & 255;
+    final fault = (detail >> 24) & 255;
+    switch (code) {
+      case 10:
+        return {
+          'address': '0x${fault.toRadixString(16).padLeft(2, '0')}',
+          'operation':
+              {1: 'write', 2: 'read', 3: 'write_read'}[stage] ?? 'unknown',
+          'errno': error
+        };
+      case 11:
+        return {
+          'sensorFault': fault,
+          'stage': stage == 1 ? 'compensation' : 'co2_sample',
+          'errno': error
+        };
+      case 12:
+        return {'sensorStatus': detail >> 16, 'rawCo2Ppm': error};
+      case 13:
+        return {
+          'sensorFault': fault,
+          'stage': stage == 2 ? 'recovered' : 'failed',
+          'errno': error
+        };
+      case 14:
+        return {
+          'stage': {
+                1: 'sensor_erase',
+                2: 'readings_erase',
+                3: 'settings_reset'
+              }[stage] ??
+              'unknown',
+          'errno': error
+        };
+      case 15:
+        return {
+          'batteryMillivolts': detail >> 16,
+          'charging': (low & 1) != 0,
+          'rawCo2Available': (low & 2) != 0,
+          'singleShot': (low & 4) != 0
+        };
+      default:
+        return {};
+    }
+  }
 
   static int crc32(List<int> bytes) {
     var crc = 0xffffffff;
@@ -71,15 +127,33 @@ class SlimDiagnostics {
       'sequence': data.getUint32(8),
       'uptimeSeconds': data.getUint32(12),
       'detail': data.getUint32(16),
+      if (record[1] >= 10)
+        'decoded': decodeDetail(record[1], data.getUint32(16)),
       'resetCause': data.getUint32(20),
     };
   }
 
   static Future<String> collect({
+    required BleDevice device,
+    required bool connectedAtCollectionStart,
     required Stream<List<int>> responses,
     required Future<bool> Function(List<int>) send,
     Duration timeout = const Duration(seconds: 5),
   }) async {
+    final collectionStartedAt = DateTime.now().toUtc().toIso8601String();
+    // Saved identity is app metadata, not a fresh firmware/version query.
+    final deviceDetails = {
+      'deviceId': device.deviceId,
+      'name': device.name,
+      'alias': device.alias,
+      'address': device.address,
+      'model': device.deviceModel?.name,
+      'platform': device.platform,
+      'savedFirmwareVersion':
+          device.firmwareVersion == '-.-.-' || device.firmwareVersion.isEmpty
+              ? null
+              : device.firmwareVersion,
+    };
     final records = <Map<String, Object>>[];
     final missing = <int>[];
     var head = 0;
@@ -138,6 +212,12 @@ class SlimDiagnostics {
     return const JsonEncoder.withIndent('  ').convert({
       'schema': 1,
       'exportedAt': DateTime.now().toUtc().toIso8601String(),
+      'device': deviceDetails,
+      'collection': {
+        'source': 'bluetooth',
+        'startedAt': collectionStartedAt,
+        'connectedAtStart': connectedAtCollectionStart,
+      },
       'events': records,
       'unreadableSequences': missing,
     });

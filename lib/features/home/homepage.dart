@@ -1,3 +1,5 @@
+import 'package:airspothealth/features/app_setup/providers/patch_update_provider.dart';
+import 'package:airspothealth/features/app_setup/widgets/patch_update_dialog.dart';
 import 'package:airspothealth/core/providers/app_notification_preferences_provider.dart';
 import 'package:airspothealth/core/providers/bluetooth_state_provider.dart';
 import 'package:airspothealth/core/router/route_names.dart';
@@ -27,6 +29,13 @@ class _HomePageState extends ConsumerState<HomePage> {
     // This ensures users receive FCM notifications even if they don't visit the App Setup page
     ref.read(appNotificationPreferencesProvider);
 
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      if (!mounted) return;
+      final show = await ref.read(patchUpdateProvider.notifier).checkOnLaunch();
+      if (mounted && show && ModalRoute.of(context)?.isCurrent == true) {
+        await showPatchUpdateDialog(context);
+      }
+    });
     _checkAppVersion();
     _scanForDevices();
   }

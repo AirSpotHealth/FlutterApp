@@ -1,6 +1,8 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:typed_data';
+import 'package:airspothealth/core/models/ble_device.dart';
+import 'package:airspothealth/core/models/device_model.dart';
 import 'package:airspothealth/features/device_settings/service/slim_diagnostics.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'slim_test_helpers.dart';
@@ -22,6 +24,34 @@ List<int> reply({int index = 0, int head = 1, int count = 1, int status = 0}) {
 }
 
 void main() {
+  test(
+      'sensor evidence decodes signed errors and distinguishes bus and CRC failures',
+      () {
+    expect(SlimDiagnostics.decodeDetail(10, 0x6402fffb),
+        {'address': '0x64', 'operation': 'read', 'errno': -5});
+    expect(SlimDiagnostics.decodeDetail(11, 0x4402ffb6)['errno'], -74);
+    expect(SlimDiagnostics.decodeDetail(12, 0x0084ffff),
+        {'sensorStatus': 132, 'rawCo2Ppm': -1});
+    expect(SlimDiagnostics.decodeDetail(13, 0x44020000)['stage'], 'recovered');
+    expect(
+        SlimDiagnostics.decodeDetail(14, 0x0001fffb)['stage'], 'sensor_erase');
+    expect(SlimDiagnostics.decodeDetail(15, (3700 << 16) | 3), {
+      'batteryMillivolts': 3700,
+      'charging': true,
+      'rawCo2Available': true,
+      'singleShot': false
+    });
+  });
+
+  final device = BleDevice(
+    deviceId: 'test-peripheral-id',
+    name: 'AirSpot-E368FD',
+    alias: 'Slim T',
+    address: 'test-peripheral-id',
+    platform: 'ios',
+    firmwareVersion: '0.18.5',
+    deviceModelValue: DeviceModel.airspotSlim.index,
+  );
   test('CRC uses IEEE vector and validates event metadata', () {
     expect(SlimDiagnostics.crc32(utf8.encode('123456789')), 0xcbf43926);
     final record =
@@ -47,6 +77,8 @@ void main() {
     final stream = StreamController<List<int>>.broadcast();
     final sent = <List<int>>[];
     final result = await SlimDiagnostics.collect(
+        device: device,
+        connectedAtCollectionStart: true,
         responses: stream.stream,
         send: (request) async {
           sent.add(request);
@@ -54,6 +86,21 @@ void main() {
           return true;
         });
     expect((jsonDecode(result)['events'] as List).length, 2);
+    final exported = jsonDecode(result);
+    expect(exported['device'], {
+      'deviceId': 'test-peripheral-id',
+      'name': 'AirSpot-E368FD',
+      'alias': 'Slim T',
+      'address': 'test-peripheral-id',
+      'model': 'airspotSlim',
+      'platform': 'ios',
+      'savedFirmwareVersion': '0.18.5',
+    });
+    expect(exported['collection']['source'], 'bluetooth');
+    expect(exported['collection']['connectedAtStart'], true);
+    expect(DateTime.parse(exported['collection']['startedAt']).isUtc, true);
+    // Old event firmware remains distinct from the saved device version.
+    expect(exported['events'][0]['firmware'], '0.17.0');
     expect(sent[1].sublist(5, 9), [0, 0, 0, 2]);
     expect(stream.hasListener, false);
     await stream.close();
@@ -62,6 +109,8 @@ void main() {
     final stream = StreamController<List<int>>.broadcast();
     await expectLater(
         SlimDiagnostics.collect(
+            device: device,
+            connectedAtCollectionStart: true,
             responses: stream.stream,
             send: (request) async {
               stream.add(reply(
@@ -79,6 +128,8 @@ void main() {
     final stream = StreamController<List<int>>.broadcast();
     await expectLater(
         SlimDiagnostics.collect(
+            device: device,
+            connectedAtCollectionStart: true,
             responses: stream.stream,
             send: (_) async => true,
             timeout: const Duration(milliseconds: 5)),

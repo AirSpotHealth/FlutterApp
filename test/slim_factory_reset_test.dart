@@ -4,6 +4,16 @@ import 'package:flutter_test/flutter_test.dart';
 import 'slim_test_helpers.dart';
 
 void main() {
+  test('complete factory reset requires firmware that erases sensor history',
+      () {
+    for (final version in ['0.18.8', '0.18.7', '-.-.-', '0.17.12']) {
+      expect(SlimFactoryReset.supported(version), false);
+    }
+    for (final version in ['0.18.9', '0.19.0', '1.0.0']) {
+      expect(SlimFactoryReset.supported(version), true);
+    }
+  });
+
   test('waits for successful ACK before completing and releases subscription',
       () async {
     final responses = StreamController<List<int>>.broadcast(sync: true);

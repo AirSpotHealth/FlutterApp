@@ -34,8 +34,10 @@ import 'package:airspothealth/features/device_settings/widgets/forget_device_wid
 import 'package:airspothealth/features/device_settings/widgets/live_activity_setting_widget.dart';
 import 'package:airspothealth/features/device_settings/widgets/populate_fake_data_widget.dart';
 import 'package:airspothealth/features/device_settings/widgets/power_off_device_widget.dart';
+import 'package:airspothealth/features/device_settings/widgets/restart_device_action.dart';
 import 'package:airspothealth/features/device_settings/widgets/sensor_error_widget.dart';
 import 'package:airspothealth/features/device_settings/widgets/setting_item_widget.dart';
+import 'package:airspothealth/features/device_settings/widgets/slim_diagnostics_export.dart';
 import 'package:airspothealth/features/device_settings/widgets/vibrate_setting_widget.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -180,9 +182,12 @@ class _DeviceSettingsPageState extends ConsumerState<DeviceSettingsPage> {
           // DeviceDataDownloadSettingWidget(deviceId: deviceId),
           DisconnectDeviceWidget(device: device),
           ForgetDeviceWidget(deviceId: widget.deviceId),
+          RestartDeviceWidget(deviceId: widget.deviceId),
           PowerOffDeviceWidget(deviceId: widget.deviceId),
           EraseDeviceRecordWidget(deviceId: widget.deviceId),
           FactoryResetWidget(deviceId: widget.deviceId),
+          if (device.deviceModel == DeviceModel.airspotSlim)
+            SlimDiagnosticsExport(deviceId: widget.deviceId),
           if (devMode) ..._addDevModeWidgets(ref),
         ],
       ),
@@ -220,7 +225,6 @@ class _DeviceSettingsPageState extends ConsumerState<DeviceSettingsPage> {
       // ImportCsvDataWidget(deviceId: deviceId),
       SetAscDurationWidget(deviceId: widget.deviceId),
       DeviceVariantWidget(deviceId: widget.deviceId),
-      //RestartDeviceWidget(deviceId: deviceId),
     ];
   }
 
@@ -376,21 +380,10 @@ class RestartDeviceWidget extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    return SettingItemWidget(
-      item: SettingItem(
-        title: 'Restart Device',
-        assetIcon: Assets.autoConnectSettings,
-        leadingWidget: IconBgWidget(
-          backgroundColor: Colors.deepPurpleAccent,
-          child: Icon(Icons.restart_alt, color: Colors.black),
-        ),
-        suffixWidget: const SizedBox(),
-      ),
-      onTap: () {
-        ref
-            .read(bleDeviceCommunicationProvider(deviceId).notifier)
-            .sendCommand(DeviceCmdUtils.restartDevice());
-      },
+    return RestartDeviceAction(
+      sendRestart: () => ref
+          .read(bleDeviceCommunicationProvider(deviceId).notifier)
+          .sendCommand(DeviceCmdUtils.restartDevice()),
     );
   }
 }

@@ -45,6 +45,11 @@ class _DeviceFactoryResetNotifier
           .getDeviceById(deviceId)
           ?.deviceModel;
       if (communicator.isSlimDevice || model == DeviceModel.airspotSlim) {
+        final version = ref.read(bleSavedDevicesProvider.notifier)
+            .getDeviceById(deviceId)?.firmwareVersion ?? '';
+        if (!SlimFactoryReset.supported(version)) {
+          throw StateError('Update Slim firmware to 0.18.9 or later for a complete factory reset, including sensor calibration history.');
+        }
         await SlimFactoryReset.run(
           responses: communicator.dataStream,
           send: () => communicator.sendCommand(DeviceCmdUtils.factoryReset()),

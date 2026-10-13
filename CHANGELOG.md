@@ -2,6 +2,22 @@
 
 ## Unreleased
 
+- Move Export Diagnostics into the main Slim device settings list, visible even with Dev Mode off.
+
+- Match restart, diagnostics and app-update UI to existing illustrated settings rows and AirSpot bottom sheets; move explanatory text inside the sheets.
+
+- Show available app patches, download state, restart instructions and confirmation after activation. Add manual patch checks in App Setup → App Updates; keep store releases linked to the store. Patches use the existing stable Shorebird track and installed version/build targeting.
+
+- Require Slim 0.18.9+ for a complete factory reset including internal sensor calibration history. Decode retained bus failures, sensor readings/status, power context, recovery outcomes and reset failures in diagnostic exports.
+
+- Make Slim Reset Sensor erase learned internal calibration history when auto-calibration is on, while keeping auto-calibration enabled (firmware 0.18.7+). With auto-calibration off, reset clears only the manual correction. Wait for a confirmed setting before selecting the reset.
+
+- Add Restart device to normal device settings. Reboot the MCU while keeping saved settings, calibration and readings, with confirmation and connection/update failure feedback.
+
+- Include device identity, saved firmware version and Bluetooth collection context in Slim diagnostic JSON exports; clarify that exporting requires a connection.
+
+- Fix firmware checks failing with "Invalid firmware response: created_at" when the API omits the release timestamp.
+
 - Rename the Slim guide to Button, LED and Charging Guide, keep extra Single/Double press copy in dark grey, and shorten the battery-status heading to one line.
 
 - Place the Slim LED & charging guide under CO₂ reading rate, and CO₂ Zone Settings under Notification Settings. Keep Single and Double press colour lists visible, with extra detail on tap.

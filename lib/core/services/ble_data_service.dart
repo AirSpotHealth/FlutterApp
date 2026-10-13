@@ -66,6 +66,13 @@ class BleDataService {
       }
       return null;
     }
+    if (data[2] == 0x3a && bleDevice.deviceModel == DeviceModel.airspotSlim) {
+      if (ref.exists(deviceSensorResetProvider(bleDevice.deviceId))) {
+        ref.read(deviceSensorResetProvider(bleDevice.deviceId).notifier)
+            .receiveNativeReset(data);
+      }
+      return null;
+    }
     final responseCommand = ResponseCommand.fromValue(data[2]);
     final parser = ResponseCommandParser(bleDevice);
     final deviceId = bleDevice.deviceId;

@@ -1,3 +1,6 @@
+import 'package:airspothealth/features/device_settings/models/slim_sensor_reset.dart';
+import 'package:airspothealth/features/device_settings/models/native_asc_state.dart';
+import 'package:airspothealth/features/device_settings/providers/native_asc_provider.dart';
 import 'package:airspothealth/core/models/device_model.dart';
 import 'package:airspothealth/core/models/device_settings.dart';
 import 'package:airspothealth/core/providers/ble_saved_devices_provider.dart';
@@ -117,13 +120,9 @@ class RecalibrateDevicePage extends ConsumerWidget {
               deviceId: deviceId,
               firmwareVersion:
                   ref.watch(bleDeviceProvider(deviceId)).firmwareVersion,
-              manualControls: Column(children: [
-                ManualCalibrationWidget(
-                    deviceId: deviceId,
-                    calibrationTarget: deviceSettings.recalibrationTarget),
-                const Divider(),
-                ResetSensorWidget(deviceId: deviceId),
-              ]))
+              manualControls: ManualCalibrationWidget(
+                  deviceId: deviceId,
+                  calibrationTarget: deviceSettings.recalibrationTarget))
         else
           ManualCalibrationWidget(
             deviceId: deviceId,
@@ -134,10 +133,9 @@ class RecalibrateDevicePage extends ConsumerWidget {
           AltitudePressureScalingWidget(deviceId: deviceId),
           const SizedBox(height: 8),
         ],
-        if (!isSlim) ...[
-          const Divider(),
-          ResetSensorWidget(deviceId: deviceId),
-        ],
+        // Reset remains visible in both manual and auto-calibration modes.
+        const Divider(),
+        ResetSensorWidget(deviceId: deviceId),
       ],
     );
   }
@@ -244,6 +242,19 @@ class ResetSensorWidget extends ConsumerWidget {
     final AsyncProgressValue resetSensorStatus =
         ref.watch(deviceSensorResetProvider(deviceId));
 
+    final device = ref.watch(bleDeviceProvider(deviceId));
+    String? resetUnavailable;
+    bool erasesHistory = false;
+    if (device.deviceModel == DeviceModel.airspotSlim) {
+      final asc = NativeAscState.supported(device.firmwareVersion)
+          ? ref.watch(nativeAscProvider(deviceId)).asData?.value : null;
+      try {
+        erasesHistory = SlimSensorReset.erasesHistory(device.firmwareVersion, asc);
+      } on StateError catch (error) {
+        resetUnavailable = error.message;
+      }
+    }
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       mainAxisSize: MainAxisSize.min,
@@ -256,14 +267,16 @@ class ResetSensorWidget extends ConsumerWidget {
           subtitle: Text(
             ref.watch(bleDeviceProvider(deviceId)).deviceModel ==
                     DeviceModel.airspotSlim
-                ? 'Restart the Slim sensor and clear its manual software correction. Its internal calibration history is retained.'
+                ? resetUnavailable ?? (erasesHistory
+                    ? 'Erase the sensor’s learned internal calibration history and start learning again. Auto calibration stays on.'
+                    : 'Restart the Slim sensor and clear its manual software correction. Its internal calibration history and auto-calibration setting are retained.')
                 : "If you are experiencing issues with your AirSpot's accuracy, you can reset the sensor to its factory settings. This will erase all calibration data and settings.",
             style: const TextStyle(fontSize: 12, color: Colors.black),
           ),
           contentPadding: EdgeInsets.zero,
         ),
         Button(
-          disabled: resetSensorStatus.isInProgress,
+          disabled: resetSensorStatus.isInProgress || resetUnavailable != null,
           backgroundColor: AppColors.brandColorRed,
           onPressed: () {
             if (resetSensorStatus.isInProgress) return;

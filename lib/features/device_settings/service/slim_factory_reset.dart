@@ -3,6 +3,15 @@ import 'dart:async';
 /// A GATT write only delivers the request. Local data must survive until Slim
 /// acknowledges that its history erase and settings transaction both succeeded.
 class SlimFactoryReset {
+  static bool supported(String version) {
+    final match = RegExp(r'^(\d+)\.(\d+)\.(\d+)$').firstMatch(version);
+    if (match == null) return false;
+    final major = int.parse(match[1]!);
+    final minor = int.parse(match[2]!);
+    final patch = int.parse(match[3]!);
+    return major > 0 || minor > 18 || (minor == 18 && patch >= 9);
+  }
+
   static Future<void> run({
     required Stream<List<int>> responses,
     required Future<bool> Function() send,
