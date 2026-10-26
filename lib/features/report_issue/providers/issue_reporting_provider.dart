@@ -181,7 +181,8 @@ class IssueReportingNotifier extends Notifier<IssueReportingState> {
       debugPrint('Error submitting issue: $e');
       state = state.copyWith(
         status: IssueSubmissionStatus.error,
-        errorMessage: e.toString().replaceAll('Exception: ', ''),
+        errorMessage:
+            'Your report could not be sent. Check your internet connection and try again.',
       );
     }
   }

@@ -1,3 +1,4 @@
+import 'package:airspothealth/core/widgets/button.dart';
 import 'package:airspothealth/core/providers/ble_device_communication_provider.dart';
 import 'package:airspothealth/core/providers/device_settings_provider.dart';
 import 'package:airspothealth/core/router/route_names.dart';
@@ -92,12 +93,13 @@ class SlimStatusPage extends ConsumerWidget {
                   'Choose the CO₂ levels at which your Slim’s LED changes from green to amber and from amber to red. These limits are sent to the device.',
                 ),
                 const SizedBox(height: 12),
-                OutlinedButton(
+                Button(
+                  type: ButtonType.outlined,
                   onPressed: () => context.pushNamed(
                     RouteNames.slimLedSettings,
                     pathParameters: {'deviceId': deviceId},
                   ),
-                  child: const Text('Change CO₂ zones'),
+                  label: 'Change CO₂ zones',
                 ),
               ],
             ),
@@ -181,7 +183,8 @@ class SlimStatusPage extends ConsumerWidget {
                   'When the Slim enters low-battery protection mode while on the charging pad, the LED flashes red briefly and then turns off. If it enters this mode away from the charging pad, the LED briefly fades red and then turns off.',
                 ),
                 const SizedBox(height: 12),
-                OutlinedButton.icon(
+                Button(
+                  type: ButtonType.outlined,
                   onPressed: () async {
                     await ref
                         .read(bleDeviceCommunicationProvider(deviceId).notifier)
@@ -190,8 +193,8 @@ class SlimStatusPage extends ConsumerWidget {
                       context.showSnackBar('Battery status requested');
                     }
                   },
-                  icon: const Icon(Icons.refresh),
-                  label: const Text('Refresh battery status'),
+                  prefixIcon: const Icon(Icons.refresh, size: 20),
+                  label: 'Refresh battery status',
                 ),
               ],
             ),

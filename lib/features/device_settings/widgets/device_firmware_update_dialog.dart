@@ -1,3 +1,5 @@
+import 'package:airspothealth/core/widgets/button.dart';
+import 'package:airspothealth/features/device_settings/service/firmware_update_error.dart';
 import 'package:airspothealth/core/theme/app_colors.dart';
 import 'package:airspothealth/core/utils/extensions.dart';
 import 'package:airspothealth/core/widgets/app_logo.dart';
@@ -68,7 +70,6 @@ class _DeviceFirmwareUpdateDialogState
   Widget build(BuildContext context) {
     ref.listen(dfuUpdateProvider, (oldState, newState) {
       if (newState is AsyncFailure && newState != oldState) {
-        context.showSnackBar('Failed to update firmware, ${newState.error}');
         return;
       }
 
@@ -84,7 +85,11 @@ class _DeviceFirmwareUpdateDialogState
 
     final AsyncProgressValue updateState = ref.watch(dfuUpdateProvider);
 
+    final failure = updateState is AsyncFailure
+        ? firmwareUpdateError(updateState.error)
+        : null;
     return AlertDialog.adaptive(
+      scrollable: true,
       surfaceTintColor: Colors.white,
       backgroundColor: Colors.white,
       content: Column(
@@ -94,6 +99,7 @@ class _DeviceFirmwareUpdateDialogState
             alignment: Alignment.topRight,
             child: IconButton(
               icon: const Icon(Icons.close),
+              tooltip: 'Close update',
               onPressed: () {
                 if (updateState is AsyncInProgress) {
                   context.showSnackBar('Firmware update in progress...');
@@ -144,33 +150,53 @@ class _DeviceFirmwareUpdateDialogState
             const SizedBox(height: 8),
             if (updateState.message != null)
               Text(updateState.message!, style: context.textTheme.bodySmall),
-          ] else if (remoteVersion != null &&
-              (updateState is AsyncNone || updateState is AsyncFailure))
-            ElevatedButton(
-              style: ElevatedButton.styleFrom(backgroundColor: Colors.green),
-              onPressed: () => ref
-                  .read(dfuUpdateProvider.notifier)
-                  .updateFirmware(
-                      url: remoteVersion!.downloadUrl,
-                      deviceId: deviceId,
-                      release: remoteVersion),
-              child: Text(
-                widget.currentVersion == null ? 'Update Anyway!' : 'Update Now',
-                style: TextStyle(
-                  color: Colors.white,
-                  fontWeight: FontWeight.bold,
-                ),
+          ] else ...[
+            if (updateState is AsyncFailure) ...[
+              FirmwareUpdateFailureNotice(error: updateState.error),
+              const SizedBox(height: 16),
+            ],
+            if (failure?.retryable == false)
+              Button(
+                  label: 'Close',
+                  type: ButtonType.outlined,
+                  onPressed: () => Navigator.of(context).pop())
+            else if ((remoteVersion != null || localFilePath != null) &&
+                (updateState is AsyncNone || updateState is AsyncFailure))
+              Button(
+                label:
+                    updateState is AsyncFailure ? 'Try again' : 'Start update',
+                onPressed: () =>
+                    ref.read(dfuUpdateProvider.notifier).updateFirmware(
+                          url: remoteVersion?.downloadUrl ?? localFilePath!,
+                          deviceId: deviceId,
+                          isLocal: remoteVersion == null,
+                          release: remoteVersion,
+                        ),
               ),
-            ),
-          if (updateState is AsyncFailure)
-            Flexible(
-              child: Text(
-                updateState.error.toString(),
-                style: context.textTheme.bodySmall?.copyWith(color: Colors.red),
-              ),
-            ),
+          ],
         ],
       ),
     );
+  }
+}
+
+/// Actionable update failure text; low-level details stay in the error cause.
+class FirmwareUpdateFailureNotice extends StatelessWidget {
+  const FirmwareUpdateFailureNotice({required this.error, super.key});
+  final Object error;
+  @override
+  Widget build(BuildContext context) {
+    final failure = firmwareUpdateError(error);
+    return Semantics(
+        liveRegion: true,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(failure.title, style: Theme.of(context).textTheme.titleMedium),
+            const SizedBox(height: 8),
+            Text(failure.message,
+                style: const TextStyle(color: AppColors.textSecondary)),
+          ],
+        ));
   }
 }

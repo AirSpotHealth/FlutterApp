@@ -1,0 +1,22 @@
+# Slim UI and customer error review — 27 October 2026
+
+## Changes
+
+- Shared elevated, filled, outlined and text button styles use consistent corner radius, padding and minimum 48-point targets. Main action text uses the existing darker brand blue for contrast. Disabled labels and loading semantics are explicit.
+- Slim Locate uses the shared full-width action, scrollable content, pending-request protection and success/failure feedback.
+- Native auto-calibration retry, recovery steps, older-firmware calibration erase and Slim guide actions align with their content and share the same buttons. Recovery confirmation and device-state gating remain intact.
+- Firmware update failures display a title and next steps in a scrollable dialog. Local-file updates can be retried. Unknown or already-installed outcomes direct users to reconnect/check the device rather than immediately repeating installation.
+- Slim MCUmgr `Bad state (RC: 6)` is mapped to charging guidance only in the Slim update context. Firmware uses this response for voltage below its threshold OR voltage-read failure, so the UI does not invent a battery percentage or claim a definitive low-battery diagnosis.
+- Firmware installation confirmed, previous image still active, rollback, unconfirmed startup, timeout, connection failure and incompatible file remain distinct. Original firmware errors remain attached as diagnostic causes.
+- Replaced raw exception display in customer calibration, sync/export, device details, settings resets, file selection, sign-in and issue-submission flows. Factory engineering diagnostics remain technical.
+
+## Verification
+
+- Full Flutter suite: 181 passed, one skipped. Isar-dependent tests used the existing local macOS IsarPlusCore library through `ISAR_LIBRARY_PATH`; initial runs without it failed to initialize the database test environment.
+- Analysis of changed areas and tests: no issues.
+- Added tests for 320/390/768-point layouts at double text size, locate duplicate-tap protection, calibration retry, recovery confirmation, minimum target sizes, and firmware error classification/diagnostic retention.
+- Rendered and inspected Locate, calibration retry and recovery widget previews. The test fixture uses a representative title, not a live device connection. Preview generation is optional through `SLIM_UI_PREVIEW_DIR`, `SLIM_UI_PREVIEW_FONTS`, and `SLIM_UI_PREVIEW_FONT`.
+- Firmware failure notice tested in a 320-point scrollable dialog at double text size.
+- No mobile binary was installed or published. Physical iPhone/Android interaction and actual low-battery OTA rejection remain manual acceptance checks.
+
+This pass covers the Flutter mobile app's customer flows, including shared Screen/Slim UI. It does not claim a review of the separate dashboard, map or administration websites.

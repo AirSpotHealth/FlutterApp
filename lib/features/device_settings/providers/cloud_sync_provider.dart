@@ -201,7 +201,8 @@ class CloudSyncNotifier
       state = state.copyWith(
         isLoading: false,
         statusMessage: 'Something went wrong',
-        errorMessage: e.toString(),
+        errorMessage:
+            'Could not sync your readings. Check your internet connection and try again.',
       );
       debugPrint('Sync error: $e');
     }

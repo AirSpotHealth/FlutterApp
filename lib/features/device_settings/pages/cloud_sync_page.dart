@@ -177,7 +177,9 @@ class _CloudSyncPageState extends ConsumerState<CloudSyncPage> {
                   } catch (e) {
                     if (!context.mounted) return;
                     ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(content: Text('Sign in failed: $e')),
+                      SnackBar(
+                          content: Text(
+                              'Could not sign in. Check your internet connection and try again.')),
                     );
                   }
                 },

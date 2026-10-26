@@ -1,3 +1,4 @@
+import 'package:airspothealth/core/widgets/button.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -33,15 +34,29 @@ class SlimSettlingCard extends ConsumerWidget {
           padding: EdgeInsets.all(8),
           child: Text('Checking sensor settling status…')),
       error: (e, _) => Card(
-          child: ListTile(
-              title: const Text('Settling status unavailable'),
-              subtitle: Text('$e'),
-              trailing: IconButton(
-                  tooltip: 'Retry settling status',
-                  icon: const Icon(Icons.refresh),
-                  onPressed: () => ref
-                      .read(slimSettlingProvider(deviceId).notifier)
-                      .refresh()))),
+        margin: EdgeInsets.zero,
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text('Settling status unavailable',
+                  style: Theme.of(context).textTheme.titleMedium),
+              const SizedBox(height: 8),
+              const Text(
+                  'Could not check recovery progress. Keep Slim nearby, reconnect, and try again.'),
+              const SizedBox(height: 16),
+              Button(
+                type: ButtonType.outlined,
+                prefixIcon: const Icon(Icons.refresh, size: 20),
+                label: 'Retry settling status',
+                onPressed: () =>
+                    ref.read(slimSettlingProvider(deviceId).notifier).refresh(),
+              ),
+            ],
+          ),
+        ),
+      ),
       data: (s) => !showInactive && (s.stage == 0 || s.stage == 4)
           ? const SizedBox.shrink()
           : SettlingGuidance(
@@ -115,6 +130,7 @@ class SettlingGuidance extends StatelessWidget {
     return Semantics(
         container: true,
         child: Card(
+            margin: EdgeInsets.zero,
             child: Padding(
                 padding: const EdgeInsets.all(16),
                 child: Column(
@@ -126,30 +142,35 @@ class SettlingGuidance extends StatelessWidget {
                       const SizedBox(height: 8),
                       Text(description),
                       if (canStartRecovery && (s.stage == 0 || s.stage == 4))
-                        TextButton(
-                          onPressed: () async {
-                            final start = await showDialog<bool>(
-                              context: context,
-                              builder: (context) => AlertDialog(
-                                title: const Text('Start the 12-hour check?'),
-                                content: const Text(
-                                    'Slim will enable sensor auto-calibration and track 12 hours of continuous readings. Keep it powered. Afterwards, follow the fresh-air step. Calibration history and saved readings are kept. Completion does not independently verify accuracy.'),
-                                actions: [
-                                  TextButton(
-                                      onPressed: () =>
-                                          Navigator.pop(context, false),
-                                      child: const Text('Cancel')),
-                                  TextButton(
-                                      onPressed: () =>
-                                          Navigator.pop(context, true),
-                                      child: const Text('Start check')),
-                                ],
-                              ),
-                            );
-                            if (start == true && context.mounted) onAction(3);
-                          },
-                          child: const Text('Start 12-hour check'),
-                        ),
+                        Padding(
+                            padding: const EdgeInsets.only(top: 16),
+                            child: Button(
+                              onPressed: () async {
+                                final start = await showDialog<bool>(
+                                  context: context,
+                                  builder: (context) => AlertDialog(
+                                    title:
+                                        const Text('Start the 12-hour check?'),
+                                    content: const Text(
+                                        'Slim will enable sensor auto-calibration and track 12 hours of continuous readings. Keep it powered. Afterwards, follow the fresh-air step. Calibration history and saved readings are kept. Completion does not independently verify accuracy.'),
+                                    actions: [
+                                      TextButton(
+                                          onPressed: () =>
+                                              Navigator.pop(context, false),
+                                          child: const Text('Cancel')),
+                                      TextButton(
+                                          onPressed: () =>
+                                              Navigator.pop(context, true),
+                                          child: const Text('Start check')),
+                                    ],
+                                  ),
+                                );
+                                if (start == true && context.mounted) {
+                                  onAction(3);
+                                }
+                              },
+                              label: 'Start 12-hour check',
+                            )),
                       if (s.stage == 1) ...[
                         const SizedBox(height: 12),
                         LinearProgressIndicator(
@@ -158,16 +179,19 @@ class SettlingGuidance extends StatelessWidget {
                             semanticsLabel: 'Device-reported settling progress')
                       ],
                       if (s.stage == 2)
-                        TextButton(
-                            onPressed: () => onAction(1),
-                            child: const Text('Start fresh-air step')),
+                        Padding(
+                            padding: const EdgeInsets.only(top: 16),
+                            child: Button(
+                                onPressed: () => onAction(1),
+                                label: 'Start fresh-air step')),
                       if (s.stage == 3)
-                        TextButton(
-                            onPressed: s.freshSeconds >= 600 && s.running
-                                ? () => onAction(2)
-                                : null,
-                            child: const Text(
-                                'I completed the fresh-air exposure')),
+                        Padding(
+                            padding: const EdgeInsets.only(top: 16),
+                            child: Button(
+                                onPressed: s.freshSeconds >= 600 && s.running
+                                    ? () => onAction(2)
+                                    : null,
+                                label: 'I completed the fresh-air exposure')),
                     ]))));
   }
 }

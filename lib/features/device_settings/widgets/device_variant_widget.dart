@@ -23,7 +23,7 @@ class DeviceVariantWidget extends ConsumerWidget {
           inProgress: (progress, message) =>
               CircularProgressIndicator.adaptive(),
           success: (data) => Text(data.name),
-          failure: (error) => Text(error.toString()),
+          failure: (error) => const Text('Tap to retry'),
         ),
         leadingWidget: IconBgWidget(
             backgroundColor: Colors.teal,

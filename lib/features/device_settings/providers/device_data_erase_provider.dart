@@ -1,3 +1,4 @@
+import 'package:airspothealth/core/utils/user_facing_error.dart';
 import 'package:airspothealth/core/providers/ble_device_communication_provider.dart';
 import 'package:airspothealth/core/providers/ble_saved_devices_provider.dart';
 import 'package:airspothealth/core/utils/device_cmd_utils.dart';
@@ -32,7 +33,9 @@ class _DeviceDataEraseNotifier
         .sendCommand(DeviceCmdUtils.eraseData())
         .then((_) {})
         .catchError((error) {
-      state = AsyncFailure(error.toString());
+      state = AsyncFailure(userErrorMessage(error,
+          fallback:
+              'Saved readings could not be erased. Reconnect to your device and try again.'));
 
       // wait for 1 minutes so that data can be erased
       // if the state is not updated to success, then show failure

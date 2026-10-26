@@ -141,7 +141,8 @@ class _DeviceSettingsPageState extends ConsumerState<DeviceSettingsPage> {
     final bool devMode = ref.watch(devModeProvider);
 
     if (device == null) {
-      ref.context.showSnackBar('Device with id ${widget.deviceId} not found');
+      ref.context.showSnackBar(
+          'This device is no longer saved. Add it again to open its settings.');
       context.pop();
       return const SizedBox();
     }

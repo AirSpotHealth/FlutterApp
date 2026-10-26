@@ -62,7 +62,8 @@ class _NextCalibrationDateWidgetState
           ],
         ),
       ),
-      error: (error, stack) => Text(error.toString()),
+      error: (error, stack) => const Text(
+          'Calibration schedule unavailable. Reconnect to your device and try again.'),
       loading: () => const CircularProgressIndicator(),
     );
   }

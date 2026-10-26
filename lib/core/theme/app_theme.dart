@@ -2,6 +2,13 @@ import 'package:airspothealth/core/theme/app_colors.dart';
 import 'package:flutter/material.dart';
 
 class AppTheme {
+  static final _actionShape = RoundedRectangleBorder(
+    borderRadius: BorderRadius.circular(8),
+  );
+  static const _actionPadding =
+      EdgeInsets.symmetric(horizontal: 16, vertical: 12);
+  static const _actionSize = Size(48, 48);
+
   static final _theme = ThemeData(
     primarySwatch: MaterialColor(
       // ignore: deprecated_member_use
@@ -35,9 +42,32 @@ class AppTheme {
       backgroundColor: AppColors.primaryColor,
       foregroundColor: Colors.white,
     ),
+    filledButtonTheme: FilledButtonThemeData(
+      style: FilledButton.styleFrom(
+        backgroundColor: AppColors.primaryColorDark,
+        foregroundColor: AppColors.textOnPrimary,
+        minimumSize: _actionSize,
+        padding: _actionPadding,
+        shape: _actionShape,
+      ),
+    ),
+    textButtonTheme: TextButtonThemeData(
+      style: TextButton.styleFrom(
+        foregroundColor: AppColors.primaryColorDark,
+        minimumSize: _actionSize,
+        padding: _actionPadding,
+        shape: _actionShape,
+      ),
+    ),
     elevatedButtonTheme: ElevatedButtonThemeData(
       style: ButtonStyle(
-        backgroundColor: WidgetStateProperty.all(AppColors.primaryColor),
+        minimumSize: const WidgetStatePropertyAll(_actionSize),
+        padding: const WidgetStatePropertyAll(_actionPadding),
+        elevation: const WidgetStatePropertyAll(0),
+        backgroundColor: WidgetStateProperty.resolveWith((states) =>
+            states.contains(WidgetState.disabled)
+                ? AppColors.borderPrimary
+                : AppColors.primaryColorDark),
         foregroundColor: WidgetStateProperty.all(Colors.white),
         shape: WidgetStateProperty.all(
           RoundedRectangleBorder(
@@ -48,6 +78,8 @@ class AppTheme {
     ),
     outlinedButtonTheme: OutlinedButtonThemeData(
       style: ButtonStyle(
+        minimumSize: const WidgetStatePropertyAll(_actionSize),
+        padding: const WidgetStatePropertyAll(_actionPadding),
         backgroundColor: WidgetStateProperty.all(Colors.white),
         foregroundColor: WidgetStateProperty.all(AppColors.textPrimary),
         shape: WidgetStateProperty.all(

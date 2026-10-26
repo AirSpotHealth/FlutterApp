@@ -1,3 +1,4 @@
+import 'package:airspothealth/core/utils/user_facing_error.dart';
 import 'package:airspothealth/features/device_graph/providers/device_history_data_request_provider.dart';
 import 'package:airspothealth/core/services/history_coverage_service.dart';
 import 'package:airspothealth/core/models/device_model.dart';
@@ -79,7 +80,9 @@ class _DeviceFactoryResetNotifier
       });
       state = AsyncSuccess(true);
     } catch (error) {
-      state = AsyncFailure(error.toString());
+      state = AsyncFailure(userErrorMessage(error,
+          fallback:
+              'Device settings could not be reset. Reconnect to your device and try again.'));
     }
   }
 

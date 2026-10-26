@@ -69,7 +69,11 @@ class Button extends StatelessWidget {
     return SizedBox(
       width: wrapWidth ? null : double.infinity,
       height: height,
-      child: button,
+      child: Semantics(
+        label: loading ? (label ?? 'Loading') : null,
+        liveRegion: loading,
+        child: button,
+      ),
     );
   }
 
@@ -81,12 +85,16 @@ class Button extends StatelessWidget {
           if (states.contains(WidgetState.disabled)) {
             return context.theme.colorScheme.onSurface.withValues(alpha: .12);
           }
-          return backgroundColor ?? AppColors.primaryColor;
+          return backgroundColor ?? AppColors.primaryColorDark;
         }),
       ),
       child: loading
           ? const CupertinoActivityIndicator()
-          : _buildButtonContent(context, textColor ?? AppColors.textOnPrimary),
+          : _buildButtonContent(
+              context,
+              disabled || onPressed == null
+                  ? AppColors.textSecondary
+                  : textColor ?? AppColors.textOnPrimary),
     );
   }
 
@@ -98,13 +106,18 @@ class Button extends StatelessWidget {
         side: WidgetStateProperty.all(
           BorderSide(color: backgroundColor ?? AppColors.neutralGreyLight),
         ),
-        foregroundColor: WidgetStateProperty.all(disabled || loading
-            ? AppColors.neutralGrey
-            : AppColors.textPrimary),
+        foregroundColor: WidgetStateProperty.all(
+            disabled || loading || onPressed == null
+                ? AppColors.neutralGrey
+                : AppColors.textPrimary),
       ),
       child: loading
           ? const CupertinoActivityIndicator()
-          : _buildButtonContent(context, textColor ?? AppColors.textPrimary),
+          : _buildButtonContent(
+              context,
+              disabled || onPressed == null
+                  ? AppColors.textSecondary
+                  : textColor ?? AppColors.textPrimary),
     );
   }
 
@@ -113,7 +126,11 @@ class Button extends StatelessWidget {
       onPressed: disabled || loading ? null : onPressed,
       child: loading
           ? const CupertinoActivityIndicator()
-          : _buildButtonContent(context, textColor ?? AppColors.textPrimary),
+          : _buildButtonContent(
+              context,
+              disabled || onPressed == null
+                  ? AppColors.textSecondary
+                  : textColor ?? AppColors.textPrimary),
     );
   }
 

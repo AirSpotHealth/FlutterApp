@@ -1,3 +1,5 @@
+import 'package:airspothealth/core/theme/app_colors.dart';
+import 'package:airspothealth/core/widgets/button.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:airspothealth/features/device_settings/models/native_asc_state.dart';
@@ -32,9 +34,13 @@ class NativeAscSettingWidget extends ConsumerWidget {
       SwitchListTile(
           contentPadding: EdgeInsets.zero,
           title: const Text('Auto Calibration',
-              style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold)),
+              style: TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.bold,
+                  color: AppColors.textPrimary)),
           subtitle: const Text(
-              'Let the sensor adjust its baseline automatically. It needs exposure to fresh air at least once a week.'),
+              'Let the sensor adjust its baseline automatically. It needs exposure to fresh air at least once a week.',
+              style: TextStyle(color: AppColors.textSecondary)),
           value: value?.enabled ?? false,
           onChanged: value?.verified == true && !state.isLoading
               ? (enabled) => ref
@@ -46,11 +52,16 @@ class NativeAscSettingWidget extends ConsumerWidget {
             padding: EdgeInsets.symmetric(vertical: 12),
             child: Text('Checking the sensor setting…')),
       if (state.hasError) ...[
-        Text(state.error.toString()),
-        TextButton(
+        const SizedBox(height: 12),
+        const Text(
+            'Could not confirm the sensor setting. Keep Slim nearby, reconnect, and try again.'),
+        const SizedBox(height: 12),
+        Button(
+            type: ButtonType.outlined,
+            prefixIcon: const Icon(Icons.refresh, size: 20),
             onPressed: () =>
                 ref.read(nativeAscProvider(deviceId).notifier).refresh(),
-            child: const Text('Retry')),
+            label: 'Retry'),
       ],
       if (value?.enabled == true)
         const Padding(

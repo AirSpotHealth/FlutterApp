@@ -30,7 +30,8 @@ class RecalibrateDevicePage extends ConsumerWidget {
     ref.listen<AsyncProgressValue>(recalibrationTimeProvider(deviceId),
         (_, nStatus) {
       if (nStatus is AsyncFailure) {
-        context.showSnackBar(nStatus.error.toString());
+        context.showSnackBar(
+            'Calibration could not be completed. Keep the device powered and nearby, reconnect, and try again.');
       }
       if (nStatus.isSuccess) {
         // Reset the calibration status after 5 seconds
@@ -206,8 +207,8 @@ class RecalibrateDevicePage extends ConsumerWidget {
           ),
           const SizedBox(height: 16),
           Text(
-            'Error: ${(calibrationStatus as AsyncFailure).error}',
-            style: const TextStyle(fontSize: 20),
+            'Calibration could not be confirmed. Keep the device powered, reconnect, and check its readings before trying again.',
+            style: const TextStyle(color: AppColors.textSecondary),
           ),
         ],
       ),
@@ -239,7 +240,7 @@ class ResetSensorWidget extends ConsumerWidget {
         // show an error message
         WidgetsBinding.instance.addPostFrameCallback((_) {
           context.showSnackBar(
-              'Failed to reset sensor: ${(nStatus as AsyncFailure).error}');
+              'Could not confirm the sensor restart. Reconnect and check your readings before trying again.');
         });
         return;
       }
@@ -295,7 +296,10 @@ class ResetSensorWidget extends ConsumerWidget {
               style: TextStyle(fontWeight: FontWeight.bold)),
           const Text(
               'Recovery option: erase learned calibration and manual correction. Readings may be inaccurate while the sensor settles.'),
-          TextButton(
+          const SizedBox(height: 16),
+          Button(
+              type: ButtonType.outlined,
+              textColor: AppColors.brandColorRed,
               onPressed: resetSensorStatus.isInProgress ||
                       resetUnavailable != null
                   ? null
@@ -324,7 +328,7 @@ class ResetSensorWidget extends ConsumerWidget {
                             .resetSensor(eraseCalibration: true);
                       }
                     },
-              child: const Text('Erase sensor calibration')),
+              label: 'Erase sensor calibration'),
         ],
       ],
     );

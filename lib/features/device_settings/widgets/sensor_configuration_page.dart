@@ -182,7 +182,7 @@ class SensorConfigurationPage extends ConsumerWidget {
               size: 64, color: Colors.redAccent.withValues(alpha: 0.7)),
           const SizedBox(height: 24),
           Text(
-            'Error: ${error.toString()}',
+            'Could not read the sensor settings. Reconnect to your device and try again.',
             style: const TextStyle(
               fontSize: 16,
               color: Colors.redAccent,

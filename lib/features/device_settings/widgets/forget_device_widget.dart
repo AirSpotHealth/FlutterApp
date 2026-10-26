@@ -18,6 +18,10 @@ class ForgetDeviceWidget extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     ref.listen(deviceForgetStatusProvider(deviceId), (_, forgetStatus) {
+      if (forgetStatus.hasError) {
+        context.showSnackBar(
+            'Could not remove this device. Close its settings and try again.');
+      }
       if (forgetStatus == const AsyncValue.data(true)) {
         context.showSnackBar('Device removed successfully');
         context.pop();

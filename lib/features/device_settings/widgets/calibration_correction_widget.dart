@@ -38,7 +38,7 @@ class CalibrationCorrectionWidget extends ConsumerWidget {
               CupertinoActivityIndicator()
             else if (ascDataProgress is AsyncFailure)
               Text(
-                'Failed to get ASC data: ${ascDataProgress.error}',
+                'Could not read calibration details. Reconnect to your device and try again.',
                 style: const TextStyle(color: Colors.red),
               )
             else if (ascDataProgress is AsyncSuccess) ...[

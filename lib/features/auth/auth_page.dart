@@ -20,7 +20,9 @@ class _AuthPageState extends State<AuthPage> {
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Sign in failed: $e')),
+          SnackBar(
+              content: Text(
+                  'Could not sign in. Check your internet connection and try again.')),
         );
       }
     } finally {
@@ -36,7 +38,9 @@ class _AuthPageState extends State<AuthPage> {
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Sign in failed: $e')),
+          SnackBar(
+              content: Text(
+                  'Could not sign in. Check your internet connection and try again.')),
         );
       }
     } finally {

@@ -53,7 +53,8 @@ class DeviceDataTransmissionIndicator extends ConsumerWidget {
             const Icon(Icons.error, color: Colors.white),
             const SizedBox(width: 8),
             Expanded(
-              child: Text(progress.error.toString(),
+              child: Text(
+                  'Could not sync readings. Reconnect to your device and try again.',
                   style: const TextStyle(color: Colors.white)),
             ),
             const SizedBox(width: 8),

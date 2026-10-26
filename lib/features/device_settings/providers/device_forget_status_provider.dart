@@ -29,7 +29,8 @@ class _DeviceForgetStatusNotifier
       state = const AsyncData(true);
     } catch (e) {
       state = AsyncError(
-          "An Error occured when deleting the device: $e", StackTrace.current);
+          'Could not remove this device. Close its settings and try again.',
+          StackTrace.current);
     }
   }
 }

@@ -159,7 +159,8 @@ class _DataDumpSheetWidgetState extends ConsumerState<DataDumpSheetWidget> {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       mainAxisSize: MainAxisSize.min,
       children: [
-        Text('Failed to dump device data: ${failure.error}'),
+        Text(
+            'Could not export device data. Reconnect to your device and try again.'),
         const SizedBox(height: 16),
         Button(
           wrapWidth: true,

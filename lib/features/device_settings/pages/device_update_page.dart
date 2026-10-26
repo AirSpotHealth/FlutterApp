@@ -143,7 +143,8 @@ class _DeviceUpdatePageState extends ConsumerState<DeviceUpdatePage> {
         ),
       );
     }).catchError((e) {
-      ref.context.showSnackBar('Error selecting file: $e');
+      ref.context.showSnackBar(
+          'Could not open that firmware file. Choose a file stored on your phone and try again.');
     });
   }
 }

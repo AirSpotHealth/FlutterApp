@@ -1,3 +1,4 @@
+import 'package:airspothealth/features/device_settings/service/firmware_update_error.dart';
 import 'dart:io';
 
 import 'package:airspothealth/features/device_settings/models/remote_version.dart';
@@ -94,7 +95,7 @@ class _DfuUpdateNotifier extends AutoDisposeNotifier<AsyncProgressValue> {
 
       await _uploadDfu(deviceId, filePath, release: release);
     } catch (e) {
-      state = AsyncFailure("Update failed: $e");
+      state = AsyncFailure(firmwareUpdateError(e));
     } finally {
       keepAlive.close();
     }
@@ -179,16 +180,8 @@ class _DfuUpdateNotifier extends AutoDisposeNotifier<AsyncProgressValue> {
           await SlimUpdateVerification.verify(communicator, firmware.version);
           return current;
         } catch (error) {
-          if (error is SlimDfuException || error is SlimUpdateHealthException) {
-            rethrow;
-          }
-          if (installationConfirmed) {
-            throw StateError(
-                'Firmware installation was confirmed, but app communication '
-                'could not be restored: $error');
-          }
-          throw StateError('Slim update could not be verified: $error. '
-              'If the device rejected the update for low battery, charge it and retry.');
+          throw firmwareUpdateError(error,
+              slim: true, installationConfirmed: installationConfirmed);
         }
       },
       restore: () async {
@@ -198,12 +191,8 @@ class _DfuUpdateNotifier extends AutoDisposeNotifier<AsyncProgressValue> {
               .read(bleDeviceConnectionProvider(deviceId).notifier)
               .restoreAfterUpdate();
         } catch (error) {
-          if (installationConfirmed) {
-            throw StateError(
-                'Firmware installation was confirmed, but normal app '
-                'communication could not be restored: $error');
-          }
-          rethrow;
+          throw firmwareUpdateError(error,
+              slim: true, installationConfirmed: installationConfirmed);
         }
       },
     );
@@ -253,7 +242,8 @@ class _DfuUpdateNotifier extends AutoDisposeNotifier<AsyncProgressValue> {
           state = const AsyncInProgress(0.0, message: 'Enabling DFU mode...');
         },
         onDfuAborted: (address) {
-          state = AsyncFailure('DFU aborted, update failed');
+          state =
+              AsyncFailure(firmwareUpdateError(StateError('Update cancelled')));
         },
         onDfuCompleted: (address) {
           state = const AsyncInProgress(
@@ -273,7 +263,7 @@ class _DfuUpdateNotifier extends AutoDisposeNotifier<AsyncProgressValue> {
           state = const AsyncInProgress(0.0, message: 'DFU process started...');
         },
         onError: (address, error, errorType, message) {
-          state = AsyncFailure('Update failed: $message');
+          state = AsyncFailure(firmwareUpdateError(message));
         },
       ),
     );

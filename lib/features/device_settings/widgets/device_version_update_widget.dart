@@ -19,7 +19,8 @@ class DeviceVersionUpdateWidget extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     ref.listen(firmwareRemoteVersionProvider(deviceId), (oldState, newState) {
       if (newState is AsyncError) {
-        context.showSnackBar(newState.error.toString());
+        context.showSnackBar(
+            'Could not check the firmware version. Reconnect to your device and try again.');
         return;
       }
     });
