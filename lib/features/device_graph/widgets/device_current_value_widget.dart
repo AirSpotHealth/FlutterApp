@@ -1,3 +1,5 @@
+import 'package:airspothealth/features/device_settings/widgets/sensor_preparing_notice.dart';
+import 'package:airspothealth/features/device_settings/providers/sensor_error_provider.dart';
 import 'package:airspothealth/features/device_settings/widgets/slim_settling_card.dart';
 import 'package:airspothealth/core/models/device_settings.dart';
 import 'package:airspothealth/core/models/ventilation_level.dart';
@@ -22,7 +24,10 @@ class DeviceCurrentValueWidget extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final deviceValue = ref.watch(bleDeviceCommunicationProvider(deviceId));
+    final isPreparing =
+        ref.watch(sensorErrorProvider(deviceId))?.isPreparing == true;
+    final liveValue = ref.watch(bleDeviceCommunicationProvider(deviceId));
+    final deviceValue = isPreparing ? null : liveValue;
     final powerState = ref.watch(deviceBatteryLevelProvider(deviceId));
     final DeviceSettings deviceSettings =
         ref.watch(deviceSettingsProvider(deviceId));
@@ -34,15 +39,20 @@ class DeviceCurrentValueWidget extends ConsumerWidget {
       betterThreshold: prefs.betterThreshold,
       poorThreshold: prefs.poorThreshold,
     );
-    final value = !powerState.isCharging && powerState.level == 0
+    final value = isPreparing
         ? '----'
-        : deviceValue != null
-            ? "${AppUtils.getDisplayCO2Value(deviceValue!)}"
-            : '0000';
+        : !powerState.isCharging && powerState.level == 0
+            ? '----'
+            : deviceValue != null
+                ? "${AppUtils.getDisplayCO2Value(deviceValue!)}"
+                : '0000';
 
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
+        if (isPreparing)
+          const Padding(
+              padding: EdgeInsets.all(16), child: SensorPreparingNotice()),
         SlimSettlingCard(deviceId: deviceId, compact: true),
         if (powerState.lowBatteryLockout)
           _LowBatteryLockoutBanner(isCharging: powerState.isCharging),

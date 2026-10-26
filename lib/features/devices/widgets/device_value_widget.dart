@@ -1,3 +1,4 @@
+import 'package:airspothealth/features/device_settings/providers/sensor_error_provider.dart';
 import 'package:airspothealth/core/models/device_settings.dart';
 import 'package:airspothealth/core/providers/ble_device_communication_provider.dart';
 import 'package:airspothealth/core/providers/device_settings_provider.dart';
@@ -14,7 +15,10 @@ class DeviceValueWidget extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final deviceValue = ref.watch(bleDeviceCommunicationProvider(deviceId));
+    final isPreparing =
+        ref.watch(sensorErrorProvider(deviceId))?.isPreparing == true;
+    final liveValue = ref.watch(bleDeviceCommunicationProvider(deviceId));
+    final deviceValue = isPreparing ? null : liveValue;
     final DeviceSettings deviceSettings =
         ref.watch(deviceSettingsProvider(deviceId));
 

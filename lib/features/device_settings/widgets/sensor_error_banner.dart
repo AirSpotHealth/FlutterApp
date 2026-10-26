@@ -1,3 +1,4 @@
+import 'package:airspothealth/features/device_settings/widgets/sensor_preparing_notice.dart';
 import 'package:airspothealth/core/models/sensor_error_state.dart';
 import 'package:airspothealth/features/device_settings/providers/sensor_error_provider.dart';
 import 'package:airspothealth/features/report_issue/providers/issue_reporting_provider.dart';
@@ -23,6 +24,12 @@ class SensorErrorBanner extends ConsumerWidget {
 
     if (sensorError == null) {
       return const SizedBox.shrink();
+    }
+    if (sensorError.isPreparing) {
+      return const Padding(
+        padding: EdgeInsets.symmetric(vertical: 12),
+        child: SensorPreparingNotice(),
+      );
     }
 
     return Container(

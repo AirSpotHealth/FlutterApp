@@ -20,3 +20,9 @@
 - No mobile binary was installed or published. Physical iPhone/Android interaction and actual low-battery OTA rejection remain manual acceptance checks.
 
 This pass covers the Flutter mobile app's customer flows, including shared Screen/Slim UI. It does not claim a review of the separate dashboard, map or administration websites.
+
+## Startup follow-up (firmware candidate 0.21.1)
+
+Slim status 0x40 is rendered as a neutral “Preparing sensor…” notice, not a failed sensor. Device cards and current readings suppress stale values while preparing; the live Bluetooth subscription stays active so a valid response can clear preparation. Missing values no longer receive a green CO2 colour. Real faults keep their existing error/report behavior. This status does not certify long-term accuracy or replace the 12-hour recovery procedure. Now mode requires a fresh-reading request to update its report.
+
+The full suite after this follow-up passes 184 tests, with one existing skip; analysis is clean. No physical-device test or installation was performed.

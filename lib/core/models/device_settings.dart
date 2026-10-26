@@ -269,7 +269,7 @@ class DeviceSettings {
 
   Color getValueColor(dynamic value) {
     if (value == null) {
-      return AppColors.brandColorGreen;
+      return AppColors.textSecondary;
     }
 
     if (value >= 0 && value < greenUpperLimit) {

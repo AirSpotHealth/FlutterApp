@@ -1,3 +1,4 @@
+import 'package:airspothealth/features/device_settings/widgets/sensor_preparing_notice.dart';
 import 'package:airspothealth/core/models/ble_device.dart';
 import 'package:airspothealth/core/models/device_model.dart';
 import 'package:airspothealth/core/router/route_names.dart';
@@ -370,6 +371,12 @@ class _SensorErrorRow extends ConsumerWidget {
 
     if (sensorError == null) {
       return const SizedBox.shrink();
+    }
+    if (sensorError.isPreparing) {
+      return const Padding(
+        padding: EdgeInsets.symmetric(vertical: 12),
+        child: SensorPreparingNotice(),
+      );
     }
 
     return Padding(

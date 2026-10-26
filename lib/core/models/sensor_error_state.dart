@@ -24,16 +24,18 @@ class SensorErrorState {
   });
 
   /// Whether the sensor is in an error state
-  bool get isInError => true;
+  bool get isInError => !isPreparing;
+
+  /// Slim uses 0x40 for conditioning/startup; measurements remain unavailable.
+  bool get isPreparing => isSlim && errorCode == 0x40;
 
   /// Whether recovery attempts are exhausted (max is 3)
   bool get isRecoveryExhausted => !isSlim && recoveryAttempts >= 3;
 
   /// Human-readable error message from the error code
-  String get errorMessage =>
-      isSlim && errorCode == 0
-          ? 'Sensor reading unavailable'
-          : sensorErrorMap[errorCode] ?? 'Unknown Error (code: $errorCode)';
+  String get errorMessage => isSlim && errorCode == 0
+      ? 'Sensor reading unavailable'
+      : sensorErrorMap[errorCode] ?? 'Unknown Error (code: $errorCode)';
 
   /// Guidance does not assume live recovery telemetry or erase calibration.
   String get slimRecoveryGuidance =>
