@@ -14,6 +14,11 @@ class SlimSettlingState {
     return m != null && (int.parse(m[1]!) > 0 || int.parse(m[2]!) >= 19);
   }
 
+  static bool continuousRecoverySupported(String version) {
+    final m = RegExp(r'^(\d+)\.(\d+)\.(\d+)$').firstMatch(version);
+    return m != null && (int.parse(m[1]!) > 0 || int.parse(m[2]!) >= 21);
+  }
+
   static List<int> request({int? action, int generation = 0}) {
     final bytes = [255, 170, 0x3c, action == null ? 0 : 5];
     if (action != null) {

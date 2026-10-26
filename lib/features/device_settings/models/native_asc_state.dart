@@ -1,3 +1,5 @@
+import 'slim_settling_state.dart';
+
 /// Authoritative sensor learning policy, returned by Slim firmware 0.18.0+.
 class NativeAscState {
   const NativeAscState(
@@ -23,6 +25,7 @@ class NativeAscState {
 
   static bool canCalibrate(String version, NativeAscState? state) {
     if (!RegExp(r'^\d+\.\d+\.\d+$').hasMatch(version)) return false;
+    if (SlimSettlingState.continuousRecoverySupported(version)) return false;
     if (version == '0.17.12') return false; // Fixed native-ASC experiment.
     return supported(version) ? state?.manualAllowed == true : true;
   }

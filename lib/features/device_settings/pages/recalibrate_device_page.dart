@@ -114,7 +114,11 @@ class RecalibrateDevicePage extends ConsumerWidget {
           const SizedBox(height: 8),
           const Divider(),
         ],
-        if (isSlim)
+        if (isSlim &&
+            SlimSettlingState.continuousRecoverySupported(
+                ref.watch(bleDeviceProvider(deviceId)).firmwareVersion))
+          SlimSettlingCard(deviceId: deviceId, showInactive: true)
+        else if (isSlim)
           NativeAscSettingWidget(
               deviceId: deviceId,
               firmwareVersion:
@@ -134,7 +138,10 @@ class RecalibrateDevicePage extends ConsumerWidget {
         ],
         // Reset remains visible in both manual and auto-calibration modes.
         const Divider(),
-        ResetSensorWidget(deviceId: deviceId),
+        if (!isSlim ||
+            !SlimSettlingState.continuousRecoverySupported(
+                ref.watch(bleDeviceProvider(deviceId)).firmwareVersion))
+          ResetSensorWidget(deviceId: deviceId),
       ],
     );
   }
@@ -223,8 +230,7 @@ class ResetSensorWidget extends ConsumerWidget {
       if (nStatus.isSuccess) {
         // show a success message
         WidgetsBinding.instance.addPostFrameCallback((_) {
-          context.showSnackBar(
-              'Sensor operation confirmed.');
+          context.showSnackBar('Sensor operation confirmed.');
         });
         return;
       }

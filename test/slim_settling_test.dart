@@ -23,6 +23,11 @@ void main() {
     expect(SlimSettlingState.supported('0.18.9'), false);
     expect(SlimSettlingState.supported('0.19.0'), true);
     expect(SlimSettlingState.supported('unknown'), false);
+    expect(SlimSettlingState.continuousRecoverySupported('0.20.2'), false);
+    expect(SlimSettlingState.continuousRecoverySupported('0.21.0'), true);
+    expect(SlimSettlingState.continuousRecoverySupported('unknown'), false);
+    expect(SlimSettlingState.request(action: 3, generation: 7),
+        frame(0x3c, [3, 0, 0, 0, 7]));
     final s = SlimSettlingState.fromFrame(status());
     expect(s.seconds, 120);
     expect(s.generation, 7);
@@ -120,6 +125,32 @@ void main() {
     expect(find.text('Fresh air needed'), findsOneWidget);
     await tester.tap(find.text('Fresh air needed'));
     expect(opened, true);
+    expect(tester.takeException(), null);
+  });
+  testWidgets(
+      'recovery start requires confirmation and is hidden on older firmware',
+      (tester) async {
+    int? action;
+    Future<void> show(bool enabled) => tester.pumpWidget(MaterialApp(
+        home: Scaffold(
+            body: SettlingGuidance(
+                s: const SlimSettlingState(0, false, 0, 0, 0, 0),
+                canStartRecovery: enabled,
+                onAction: (a) => action = a))));
+    await show(false);
+    expect(find.text('Start 12-hour check'), findsNothing);
+    await show(true);
+    await tester.tap(find.text('Start 12-hour check'));
+    await tester.pumpAndSettle();
+    expect(action, null);
+    await tester.tap(find.text('Cancel'));
+    await tester.pumpAndSettle();
+    expect(action, null);
+    await tester.tap(find.text('Start 12-hour check'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Start check'));
+    await tester.pumpAndSettle();
+    expect(action, 3);
     expect(tester.takeException(), null);
   });
 }

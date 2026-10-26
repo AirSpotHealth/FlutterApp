@@ -7,8 +7,8 @@ import 'package:airspothealth/features/device_graph/providers/ble_device_provide
 import '../models/slim_settling_state.dart';
 import '../providers/slim_settling_provider.dart';
 
-// Temporarily hidden for this release; retain device-owned tracking and UI for the next update.
-const showSlimSettlingGuidance = false;
+// Device owns elapsed time; phone timers never certify recovery.
+const showSlimSettlingGuidance = true;
 
 class SlimSettlingCard extends ConsumerWidget {
   const SlimSettlingCard(
@@ -46,6 +46,8 @@ class SlimSettlingCard extends ConsumerWidget {
           ? const SizedBox.shrink()
           : SettlingGuidance(
               s: s,
+              canStartRecovery: SlimSettlingState.continuousRecoverySupported(
+                  device.firmwareVersion),
               onOpenDetails: compact
                   ? () => context.pushNamed(RouteNames.deviceSettings,
                       pathParameters: {'deviceId': deviceId})
@@ -58,8 +60,13 @@ class SlimSettlingCard extends ConsumerWidget {
 
 class SettlingGuidance extends StatelessWidget {
   const SettlingGuidance(
-      {required this.s, required this.onAction, this.onOpenDetails, super.key});
+      {required this.s,
+      required this.onAction,
+      this.onOpenDetails,
+      this.canStartRecovery = false,
+      super.key});
   final SlimSettlingState s;
+  final bool canStartRecovery;
   final ValueChanged<int> onAction;
   final VoidCallback? onOpenDetails;
   String duration(int seconds) {
@@ -75,7 +82,8 @@ class SettlingGuidance extends StatelessWidget {
       3 => 'Fresh-air step',
       4 => 'Recovery guidance completed',
       5 => 'Calibration erase needs checking',
-      _ => 'No tracked calibration erase',
+      _ =>
+        canStartRecovery ? 'Check my readings' : 'No tracked calibration erase',
     };
     if (onOpenDetails != null) {
       return Card(
@@ -91,17 +99,18 @@ class SettlingGuidance extends StatelessWidget {
     }
     final description = switch (s.stage) {
       1 =>
-        '${duration(SlimSettlingState.settlingSeconds - s.seconds)} of continuous operation remaining. Readings may be inaccurate. Keep native auto-calibration on and use five-second mode in ordinary indoor air, away from heat and direct sun. A restart, sensor fault or interruption restarts this settling interval.',
+        '${duration(SlimSettlingState.settlingSeconds - s.seconds)} of continuous operation remaining. Readings may be inaccurate. Keep auto-calibration on and the Slim powered in ordinary indoor air, away from heat and direct sun. On firmware 0.21.0 or later, every reporting mode measures continuously; older firmware requires five-second mode. A restart, sensor fault or interruption restarts this settling interval.',
       2 =>
-        'The settling interval is complete. Open a window to ventilate the room with outside air for 10 minutes. Keep measuring with auto-calibration on. You do not need to take the device outdoors.',
+        'The settling interval is complete. Place Slim in fresh outside air for 10 minutes, sheltered from rain and direct sun, away from people, traffic and exhaust. Detach it from your phone and charger. A thoroughly ventilated room is an alternative, but opening a window alone does not guarantee fresh-air conditions. Keep measuring with auto-calibration on.',
       3 =>
         'Keep fresh outside air reaching the device. ${((600 - s.freshSeconds) / 60).ceil()} minutes remaining. Confirm only after the full exposure. The device cannot detect whether the air is fresh.',
       4 =>
         'You confirmed the fresh-air step. This does not certify accuracy. If readings still seem wrong, compare with a trusted meter or contact support.',
       5 =>
         'An erase was started but completion could not be confirmed. Do not assume the sensor is calibrated. Reconnect and check diagnostics before retrying.',
-      _ =>
-        'This firmware has no recorded calibration erase. This does not confirm accuracy or reconstruct resets performed on older firmware.',
+      _ => canStartRecovery
+          ? 'If readings seem wrong, run 12 hours of uninterrupted continuous measurement, followed by a separate 10-minute fresh-air step. Keep Slim powered; charge it if needed during the 12-hour stage. This preserves calibration history and does not force a particular CO₂ value.'
+          : 'This firmware has no recorded calibration erase. This does not confirm accuracy or reconstruct resets performed on older firmware.',
     };
     return Semantics(
         container: true,
@@ -116,6 +125,31 @@ class SettlingGuidance extends StatelessWidget {
                           style: Theme.of(context).textTheme.titleMedium),
                       const SizedBox(height: 8),
                       Text(description),
+                      if (canStartRecovery && (s.stage == 0 || s.stage == 4))
+                        TextButton(
+                          onPressed: () async {
+                            final start = await showDialog<bool>(
+                              context: context,
+                              builder: (context) => AlertDialog(
+                                title: const Text('Start the 12-hour check?'),
+                                content: const Text(
+                                    'Slim will enable sensor auto-calibration and track 12 hours of continuous readings. Keep it powered. Afterwards, follow the fresh-air step. Calibration history and saved readings are kept. Completion does not independently verify accuracy.'),
+                                actions: [
+                                  TextButton(
+                                      onPressed: () =>
+                                          Navigator.pop(context, false),
+                                      child: const Text('Cancel')),
+                                  TextButton(
+                                      onPressed: () =>
+                                          Navigator.pop(context, true),
+                                      child: const Text('Start check')),
+                                ],
+                              ),
+                            );
+                            if (start == true && context.mounted) onAction(3);
+                          },
+                          child: const Text('Start 12-hour check'),
+                        ),
                       if (s.stage == 1) ...[
                         const SizedBox(height: 12),
                         LinearProgressIndicator(
