@@ -26,3 +26,9 @@ This pass covers the Flutter mobile app's customer flows, including shared Scree
 Slim status 0x40 is rendered as a neutral “Preparing sensor…” notice, not a failed sensor. Device cards and current readings suppress stale values while preparing; the live Bluetooth subscription stays active so a valid response can clear preparation. Missing values no longer receive a green CO2 colour. Real faults keep their existing error/report behavior. This status does not certify long-term accuracy or replace the 12-hour recovery procedure. Now mode requires a fresh-reading request to update its report.
 
 The full suite after this follow-up passes 184 tests, with one existing skip; analysis is clean. No physical-device test or installation was performed.
+
+## Forget disconnected device
+
+Forget no longer requires an already disconnected device to complete a native Bluetooth disconnect. Active/pending connections have their listeners and reconnect timer stopped first; native cleanup is bounded and best-effort. Local removal still reports database failures. The async operation holds its provider alive, clears only this device's history provider, and the confirmation sheet waits for success or displays an error instead of closing immediately.
+
+The regression test reproduces a native disconnect failure with Bluetooth unavailable, then exercises the real forget notifier and saved-device database: local removal succeeds without a disconnect call, the other saved device remains, and the forgotten device reappears in the same scan subscription. It also covers an operation with no UI listener. Full suite: 184 passed, one skipped; changed-area analysis clean. Physical phone verification remains pending.

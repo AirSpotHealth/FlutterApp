@@ -16,21 +16,33 @@ class _DeviceForgetStatusNotifier
     return false;
   }
 
-  void forget() async {
+  bool _forgetting = false;
+
+  Future<bool> forget() async {
+    if (_forgetting) return false;
+    _forgetting = true;
+    final keepAlive = ref.keepAlive();
     try {
       state = const AsyncLoading();
 
-      await ref.read(bleDeviceConnectionProvider(arg).notifier).disconnect();
+      await ref
+          .read(bleDeviceConnectionProvider(arg).notifier)
+          .disconnectForForget();
 
       ref.read(bleSavedDevicesProvider.notifier).removeDeviceById(arg);
 
-      ref.invalidate(deviceHistoryDataRequestProvider);
+      ref.invalidate(deviceHistoryDataRequestProvider(arg));
 
       state = const AsyncData(true);
+      return true;
     } catch (e) {
       state = AsyncError(
           'Could not remove this device. Close its settings and try again.',
           StackTrace.current);
+      return false;
+    } finally {
+      _forgetting = false;
+      keepAlive.close();
     }
   }
 }

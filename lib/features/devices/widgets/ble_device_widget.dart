@@ -171,7 +171,8 @@ class BleDeviceWidget extends ConsumerWidget {
   void _showForgetDeviceSheet(WidgetRef ref, String deviceId) {
     showModalBottomSheet(
       context: ref.context,
-      builder: (context) {
+      builder: (context) => Consumer(builder: (context, sheetRef, _) {
+        final status = sheetRef.watch(deviceForgetStatusProvider(deviceId));
         return AppBottomSheet(
           child: Padding(
             padding: const EdgeInsets.all(16),
@@ -179,37 +180,33 @@ class BleDeviceWidget extends ConsumerWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               mainAxisSize: MainAxisSize.min,
               children: [
-                const Text(
-                  'Forget Device',
-                  style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
+                Text('Forget Device',
+                    style: Theme.of(context).textTheme.titleLarge),
                 const SizedBox(height: 12),
                 const Text(
-                  'Are you sure you want to forget this device?',
-                  style: TextStyle(
-                    fontSize: 16,
-                    color: AppColors.neutralGrey,
-                  ),
-                ),
-                const SizedBox(height: 12),
+                    'Remove this device and its saved readings from this phone? You can add it again later.'),
+                const SizedBox(height: 16),
+                if (status.hasError) ...[
+                  const Text('Could not remove this device. Please try again.',
+                      style: TextStyle(color: AppColors.brandColorRed)),
+                  const SizedBox(height: 12),
+                ],
                 Button(
-                  backgroundColor: Colors.red,
-                  onPressed: () {
-                    ref
+                  backgroundColor: AppColors.brandColorRed,
+                  loading: status.isLoading,
+                  label: 'Forget Device',
+                  onPressed: () async {
+                    final removed = await sheetRef
                         .read(deviceForgetStatusProvider(deviceId).notifier)
                         .forget();
-                    ref.context.pop();
+                    if (removed && context.mounted) Navigator.of(context).pop();
                   },
-                  child: const Text('Forget Device'),
                 ),
               ],
             ),
           ),
         );
-      },
+      }),
     );
   }
 

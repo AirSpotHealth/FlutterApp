@@ -194,7 +194,9 @@ class _BleDeviceConnectionNotifier
           BatteryState(null, false, lowBatteryLockout: lowBatteryLockout),
         );
     if (ref.exists(deviceHistoryDataRequestProvider(arg))) {
-      ref.read(deviceHistoryDataRequestProvider(arg).notifier).handleDisconnected();
+      ref
+          .read(deviceHistoryDataRequestProvider(arg).notifier)
+          .handleDisconnected();
     }
     _updateLiveActivityOnDisconnect();
     // Stale or missing readings must never satisfy persistence or recovery.
@@ -224,6 +226,30 @@ class _BleDeviceConnectionNotifier
         ));
 
     WidgetService().refreshDeviceList();
+  }
+
+  /// Forget is local removal. Stop reconnect callbacks even when Bluetooth is
+  /// unavailable, and never require an already disconnected device to respond.
+  Future<void> disconnectForForget() async {
+    final needsDisconnect = device.isConnected ||
+        device.isAutoConnectEnabled ||
+        _connectInFlight ||
+        isConnecting;
+    _connectTimeout?.cancel();
+    _connectInFlight = false;
+    _connectedThisAttempt = false;
+    final subscription = deviceSubscription;
+    deviceSubscription = null;
+    await subscription?.cancel();
+    state = BluetoothBondState.none;
+    if (!needsDisconnect) return;
+    try {
+      await _bleService.disconnect(device).timeout(const Duration(seconds: 5));
+    } catch (error) {
+      // The OS connection may already be gone or Bluetooth may be off. Local
+      // deletion must still complete; the listener above cannot re-add it.
+      debugPrint('Bluetooth cleanup while forgetting $arg: $error');
+    }
   }
 
   Future<void> disconnect() async {

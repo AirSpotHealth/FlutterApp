@@ -1,3 +1,7 @@
+import 'package:airspothealth/features/add_device/providers/ble_device_connection_provider.dart';
+import 'package:airspothealth/core/providers/ble_saved_devices_provider.dart';
+import 'package:airspothealth/features/device_settings/providers/device_forget_status_provider.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'dart:async';
 import 'dart:io';
 
@@ -13,6 +17,23 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:isar_plus/isar_plus.dart';
 
 final class ScanPlatform extends FlutterBluePlusPlatform {
+  final connectionChanges =
+      StreamController<BmConnectionStateResponse>.broadcast();
+  @override
+  Stream<BmConnectionStateResponse> get onConnectionStateChanged =>
+      connectionChanges.stream;
+  int disconnectCalls = 0;
+  @override
+  Future<bool> disconnect(BmDisconnectRequest request) async {
+    disconnectCalls++;
+    connectionChanges.add(BmConnectionStateResponse(
+        remoteId: request.remoteId,
+        connectionState: BmConnectionStateEnum.disconnected,
+        disconnectReasonCode: null,
+        disconnectReasonString: null));
+    throw StateError('Bluetooth is off; disconnected device cannot respond');
+  }
+
   final responses = StreamController<BmScanResponse>.broadcast();
   @override
   Stream<BmScanResponse> get onScanResponse => responses.stream;
@@ -44,6 +65,7 @@ void main() {
     await database.initialize();
     final platform = ScanPlatform();
     FlutterBluePlusPlatform.instance = platform;
+    final container = ProviderContainer();
     final results = <List<String>>[];
     StreamSubscription<List<BluetoothDevice>>? subscription;
     try {
@@ -58,14 +80,49 @@ void main() {
       await Future<void>.delayed(const Duration(milliseconds: 30));
       expect(results.last, isEmpty);
 
-      database.write((isar) => isar.bleDevices.delete('slim'));
+      // Reproduce the old prerequisite: native disconnect throws while the
+      // radio is unavailable, so awaiting it previously prevented deletion.
+      await expectLater(
+          container
+              .read(bleDeviceConnectionProvider('slim').notifier)
+              .disconnect(),
+          throwsA(isA<StateError>()));
+      expect(platform.disconnectCalls, 1);
+      platform.disconnectCalls = 0;
+
+      // Exercise the actual UI notifier, not direct database deletion. An
+      // already disconnected device must never depend on native disconnect.
+      final forgetState =
+          container.listen(deviceForgetStatusProvider('slim'), (_, __) {});
+      await container.read(deviceForgetStatusProvider('slim').future);
+      expect(
+          await container
+              .read(deviceForgetStatusProvider('slim').notifier)
+              .forget(),
+          true);
+      expect(container.read(deviceForgetStatusProvider('slim')).value, true);
+      expect(platform.disconnectCalls, 0);
+      database.read((isar) => expect(isar.bleDevices.get('slim'), isNull));
+      expect(container.read(bleSavedDevicesProvider).map((d) => d.deviceId),
+          ['screen']);
+      forgetState.close();
       platform.advertise();
       await Future<void>.delayed(const Duration(milliseconds: 30));
       expect(results.last, ['slim']);
+      // A read-only caller (or dismissed sheet) does not dispose an in-flight removal.
+      final removal = container
+          .read(deviceForgetStatusProvider('screen').notifier)
+          .forget();
+      await Future<void>.delayed(Duration.zero);
+      expect(await removal, true);
+      database.read((isar) => expect(isar.bleDevices.get('screen'), isNull));
+      expect(platform.disconnectCalls, 0);
     } finally {
+      container.dispose();
       await FlutterBluePlus.stopScan();
       await subscription?.cancel();
       await platform.responses.close();
+      await platform.connectionChanges.close();
       database.close();
       directory.deleteSync(recursive: true);
     }
