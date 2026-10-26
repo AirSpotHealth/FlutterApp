@@ -19,7 +19,7 @@ class SensorPreparingNotice extends StatelessWidget {
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Icon(Icons.hourglass_top,
+            const Icon(Icons.hourglass_empty,
                 color: AppColors.primaryColorDark, size: 24),
             const SizedBox(width: 12),
             Expanded(
