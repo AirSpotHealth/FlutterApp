@@ -1,7 +1,8 @@
 import 'dart:async';
 import 'package:airspothealth/features/device_graph/providers/ble_device_provider.dart';
 import 'package:airspothealth/features/device_settings/models/slim_sensor_reset.dart';
-import 'package:airspothealth/features/device_settings/models/native_asc_state.dart';
+import 'package:airspothealth/features/device_settings/models/slim_settling_state.dart';
+import 'package:airspothealth/features/device_settings/providers/slim_settling_provider.dart';
 import 'package:airspothealth/features/device_settings/providers/native_asc_provider.dart';
 import 'package:airspothealth/core/providers/ble_device_communication_provider.dart';
 import 'package:airspothealth/core/providers/device_settings_provider.dart';
@@ -39,19 +40,23 @@ class _DevicerSensorResetNotifier
     return AsyncNone();
   }
 
-  Future<void> resetSensor() async {
+  Future<void> resetSensor({bool eraseCalibration = false}) async {
     if (state is AsyncInProgress) return;
     final device = ref.read(bleDeviceProvider(arg));
-    try {
-      _nativeReset = device.deviceModel == DeviceModel.airspotSlim &&
-          SlimSensorReset.erasesHistory(
-              device.firmwareVersion,
-              NativeAscState.supported(device.firmwareVersion)
-                  ? ref.read(nativeAscProvider(arg)).asData?.value
-                  : null);
-    } on StateError catch (error) {
-      state = AsyncFailure(error.message);
+    _nativeReset = false;
+    if (device.deviceModel != DeviceModel.airspotSlim &&
+        device.deviceModel != DeviceModel.airspotScreen) {
+      state = const AsyncFailure(
+          'Wait for the device model to be identified before resetting.');
       return;
+    }
+    if (device.deviceModel == DeviceModel.airspotSlim) {
+      if (!SlimSettlingState.supported(device.firmwareVersion)) {
+        state = const AsyncFailure(
+            'Update Slim firmware to 0.19.0 or later for separate restart and calibration erase actions.');
+        return;
+      }
+      _nativeReset = eraseCalibration;
     }
     final generation = ++_generation;
     state = AsyncInProgress(0, message: 'Resetting sensor...');
@@ -91,6 +96,9 @@ class _DevicerSensorResetNotifier
         ? AsyncSuccess(1)
         : AsyncFailure('Internal calibration reset failed (error $error).');
     ref.read(nativeAscProvider(arg).notifier).refresh();
+    if (ref.exists(slimSettlingProvider(arg))) {
+      ref.read(slimSettlingProvider(arg).notifier).refresh();
+    }
     ref.read(sensorResetCommandSenderProvider(arg))(
         DeviceCmdUtils.getInitialData());
   }

@@ -2,6 +2,17 @@
 
 ## Unreleased
 
+- Export one CSV row per measurement with diagnostic columns; keep mode/calibration changes as event rows and import both new consolidated and older CSV formats.
+- Temporarily hide sensor-settling guidance on graph, settings and calibration screens; retain its tracking and implementation for the next update.
+
+- Include selected measurement mode in diagnostic CSV readings and timestamp successful mode changes, including changes to On-demand before another reading occurs.
+
+- Add Slim per-reading CSV diagnostics and battery columns when provided by updated firmware; keep old readings blank for unavailable fields and preserve diagnostic events on CSV import.
+
+- Slim 0.19.0: separate calibration-preserving restarts/preferences reset from an explicitly confirmed sensor calibration erase. Show device-owned continuous settling progress and a fresh-air step; unknown history and completed guidance do not certify accuracy. This supersedes the older ASC-dependent Reset Sensor behaviour below.
+
+- Fix iOS pod installation by aligning the project format with the supported Xcode 16 object version.
+
 - Move Export Diagnostics into the main Slim device settings list, visible even with Dev Mode off.
 
 - Match restart, diagnostics and app-update UI to existing illustrated settings rows and AirSpot bottom sheets; move explanatory text inside the sheets.

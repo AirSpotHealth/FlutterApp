@@ -1,3 +1,4 @@
+import 'package:airspothealth/features/device_settings/widgets/slim_settling_card.dart';
 import 'package:airspothealth/core/models/device_settings.dart';
 import 'package:airspothealth/core/models/ventilation_level.dart';
 import 'package:airspothealth/core/providers/ble_device_communication_provider.dart';
@@ -42,6 +43,7 @@ class DeviceCurrentValueWidget extends ConsumerWidget {
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
+        SlimSettlingCard(deviceId: deviceId, compact: true),
         if (powerState.lowBatteryLockout)
           _LowBatteryLockoutBanner(isCharging: powerState.isCharging),
         Card(

@@ -80,6 +80,11 @@ void main() {
         [0x0d, 32768, DeviceDataType.calibrationCorrectionOld.index, -32768],
         [0x0a, 60000, DeviceDataType.timeSync.index, 60000],
         [0x00, 40000, DeviceDataType.co2.index, 40000],
+        [0x18, 65516, DeviceDataType.rawCo2.index, -20],
+        [0x19, 65162, DeviceDataType.sampleCorrection.index, -374],
+        [0x1a, 65286, DeviceDataType.sampleTemperature.index, -250],
+        [0x1d, 72, DeviceDataType.sampleBatteryPercent.index, 72],
+        [0x20, 32768, DeviceDataType.sampleStatus.index, 32768],
         [0xff, 65535, DeviceDataType.empty.index, 65535],
       ]) {
         final bytes = model == DeviceModel.airspotSlim

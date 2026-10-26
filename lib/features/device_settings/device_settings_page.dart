@@ -1,3 +1,4 @@
+import 'package:airspothealth/features/device_settings/widgets/slim_settling_card.dart';
 import 'package:airspothealth/core/services/history_coverage_service.dart';
 import 'package:airspothealth/core/models/ble_device.dart';
 import 'package:airspothealth/core/models/device_capabilities.dart';
@@ -167,6 +168,7 @@ class _DeviceSettingsPageState extends ConsumerState<DeviceSettingsPage> {
       body: ListView(
         padding: const EdgeInsets.only(left: 16, right: 16, bottom: 16),
         children: [
+          SlimSettlingCard(deviceId: widget.deviceId),
           CloudSyncSettingWidget(deviceId: widget.deviceId),
           if (capabilities.hasAlarm())
             AlarmSettingWidget(deviceId: widget.deviceId),

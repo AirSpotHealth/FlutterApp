@@ -35,6 +35,14 @@ class SensorErrorState {
           ? 'Sensor reading unavailable'
           : sensorErrorMap[errorCode] ?? 'Unknown Error (code: $errorCode)';
 
+  /// Guidance does not assume live recovery telemetry or erase calibration.
+  String get slimRecoveryGuidance =>
+      '$errorMessage. Updated Slim firmware retries sensor recovery automatically. '
+      'If the error remains after a few minutes, choose Restart device in device settings. '
+      'Restarting keeps your readings and calibration. '
+      'If the error returns, use Report Issue for help with recovery. '
+      'Do not erase sensor calibration or open the device to fix this error.';
+
   /// Hex representation of error code
   String get errorCodeHex =>
       '0x${errorCode.toRadixString(16).padLeft(2, '0').toUpperCase()}';

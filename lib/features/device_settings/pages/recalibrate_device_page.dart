@@ -1,6 +1,5 @@
-import 'package:airspothealth/features/device_settings/models/slim_sensor_reset.dart';
-import 'package:airspothealth/features/device_settings/models/native_asc_state.dart';
-import 'package:airspothealth/features/device_settings/providers/native_asc_provider.dart';
+import 'package:airspothealth/features/device_settings/models/slim_settling_state.dart';
+import 'package:airspothealth/features/device_settings/widgets/slim_settling_card.dart';
 import 'package:airspothealth/core/models/device_model.dart';
 import 'package:airspothealth/core/models/device_settings.dart';
 import 'package:airspothealth/core/providers/ble_saved_devices_provider.dart';
@@ -224,7 +223,8 @@ class ResetSensorWidget extends ConsumerWidget {
       if (nStatus.isSuccess) {
         // show a success message
         WidgetsBinding.instance.addPostFrameCallback((_) {
-          context.showSnackBar('Sensor reset successfully');
+          context.showSnackBar(
+              'Sensor operation confirmed.');
         });
         return;
       }
@@ -243,17 +243,11 @@ class ResetSensorWidget extends ConsumerWidget {
         ref.watch(deviceSensorResetProvider(deviceId));
 
     final device = ref.watch(bleDeviceProvider(deviceId));
-    String? resetUnavailable;
-    bool erasesHistory = false;
-    if (device.deviceModel == DeviceModel.airspotSlim) {
-      final asc = NativeAscState.supported(device.firmwareVersion)
-          ? ref.watch(nativeAscProvider(deviceId)).asData?.value : null;
-      try {
-        erasesHistory = SlimSensorReset.erasesHistory(device.firmwareVersion, asc);
-      } on StateError catch (error) {
-        resetUnavailable = error.message;
-      }
-    }
+    final isSlim = device.deviceModel == DeviceModel.airspotSlim;
+    final resetUnavailable = isSlim &&
+            !SlimSettlingState.supported(device.firmwareVersion)
+        ? 'Update firmware to 0.19.0 or later for separate restart and calibration erase actions.'
+        : null;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -261,16 +255,14 @@ class ResetSensorWidget extends ConsumerWidget {
       children: [
         ListTile(
           title: Text(
-            'Reset Sensor',
+            isSlim ? 'Restart Sensor' : 'Reset Sensor',
             style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
           ),
           subtitle: Text(
-            ref.watch(bleDeviceProvider(deviceId)).deviceModel ==
-                    DeviceModel.airspotSlim
-                ? resetUnavailable ?? (erasesHistory
-                    ? 'Erase the sensor’s learned internal calibration history and start learning again. Auto calibration stays on.'
-                    : 'Restart the Slim sensor and clear its manual software correction. Its internal calibration history and auto-calibration setting are retained.')
-                : "If you are experiencing issues with your AirSpot's accuracy, you can reset the sensor to its factory settings. This will erase all calibration data and settings.",
+            isSlim
+                ? resetUnavailable ??
+                    'Restart measurements while keeping all calibration history and manual correction.'
+                : "Reset the sensor to its factory settings. This erases calibration data and settings.",
             style: const TextStyle(fontSize: 12, color: Colors.black),
           ),
           contentPadding: EdgeInsets.zero,
@@ -287,8 +279,47 @@ class ResetSensorWidget extends ConsumerWidget {
           },
           child: resetSensorStatus.isInProgress
               ? const CupertinoActivityIndicator()
-              : const Text('Reset Sensor'),
+              : Text(isSlim ? 'Restart Sensor' : 'Reset Sensor'),
         ),
+        if (isSlim) ...[
+          const SizedBox(height: 16),
+          SlimSettlingCard(deviceId: deviceId, showInactive: true),
+          const SizedBox(height: 16),
+          const Text('Erase sensor calibration',
+              style: TextStyle(fontWeight: FontWeight.bold)),
+          const Text(
+              'Recovery option: erase learned calibration and manual correction. Readings may be inaccurate while the sensor settles.'),
+          TextButton(
+              onPressed: resetSensorStatus.isInProgress ||
+                      resetUnavailable != null
+                  ? null
+                  : () async {
+                      final confirmed = await showDialog<bool>(
+                          context: context,
+                          builder: (context) => AlertDialog(
+                                  title:
+                                      const Text('Erase sensor calibration?'),
+                                  content: const Text(
+                                      'This cannot be undone. Readings may be inaccurate while the sensor settles. Native auto-calibration and five-second mode will be enabled. Saved readings are kept.'),
+                                  actions: [
+                                    TextButton(
+                                        onPressed: () =>
+                                            Navigator.pop(context, false),
+                                        child: const Text('Cancel')),
+                                    TextButton(
+                                        onPressed: () =>
+                                            Navigator.pop(context, true),
+                                        child: const Text(
+                                            'Erase sensor calibration'))
+                                  ]));
+                      if (confirmed == true && context.mounted) {
+                        ref
+                            .read(deviceSensorResetProvider(deviceId).notifier)
+                            .resetSensor(eraseCalibration: true);
+                      }
+                    },
+              child: const Text('Erase sensor calibration')),
+        ],
       ],
     );
   }

@@ -6,10 +6,10 @@ import 'slim_test_helpers.dart';
 void main() {
   test('complete factory reset requires firmware that erases sensor history',
       () {
-    for (final version in ['0.18.8', '0.18.7', '-.-.-', '0.17.12']) {
+    for (final version in ['0.18.8', '0.18.9', '0.19.0', '0.19.1', '-.-.-', '0.17.12']) {
       expect(SlimFactoryReset.supported(version), false);
     }
-    for (final version in ['0.18.9', '0.19.0', '1.0.0']) {
+    for (final version in ['0.19.2', '0.20.0', '1.0.0']) {
       expect(SlimFactoryReset.supported(version), true);
     }
   });

@@ -718,7 +718,10 @@ class ResponseCommandParser {
         // first-sync marker holds an unsigned 16-bit elapsed time.
         value: (parsedType == DeviceDataType.calibrationCorrection.index ||
                 parsedType == DeviceDataType.calibrationCorrectionOld.index ||
-                parsedType == DeviceDataType.calibrationAdjustment.index)
+                parsedType == DeviceDataType.calibrationAdjustment.index ||
+                parsedType == DeviceDataType.rawCo2.index ||
+                parsedType == DeviceDataType.sampleCorrection.index ||
+                parsedType == DeviceDataType.sampleTemperature.index)
             ? value.toSigned(16)
             : value,
         type: parsedType,

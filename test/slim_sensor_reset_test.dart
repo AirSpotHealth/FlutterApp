@@ -4,7 +4,6 @@ import 'package:airspothealth/core/models/device_model.dart';
 import 'package:airspothealth/core/utils/device_cmd_utils.dart';
 import 'package:airspothealth/features/device_graph/providers/ble_device_provider.dart';
 import 'package:airspothealth/features/device_settings/models/native_asc_state.dart';
-import 'package:airspothealth/features/device_settings/models/slim_sensor_reset.dart';
 import 'package:airspothealth/features/device_settings/providers/device_reset_sensor_provider.dart';
 import 'package:airspothealth/features/device_settings/providers/native_asc_provider.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -13,32 +12,36 @@ import 'native_asc_test.dart' show ControlledNativeAsc, response;
 import 'slim_test_helpers.dart' show frame;
 
 void main() {
-  test('reset chooses history erase only for confirmed native learning', () {
-    for (final mode in [0, 1, 2]) {
+  for (final model in [null, DeviceModel.unknown.index]) {
+    test('unidentified model $model cannot fall back to a legacy reset',
+        () async {
+      final sent = <List<int>>[];
+      final container = ProviderContainer(overrides: [
+        bleDeviceProvider('unknown').overrideWithValue(BleDevice(
+            deviceId: 'unknown',
+            name: 'AirSpot',
+            address: 'test',
+            platform: 'test',
+            firmwareVersion: '0.19.0',
+            deviceModelValue: model)),
+        sensorResetCommandSenderProvider('unknown')
+            .overrideWithValue((command) async {
+          sent.add(command);
+          return true;
+        }),
+      ]);
+      addTearDown(container.dispose);
+      await container
+          .read(deviceSensorResetProvider('unknown').notifier)
+          .resetSensor();
+      expect(sent, isEmpty);
       expect(
-          SlimSensorReset.erasesHistory(
-              '0.18.8', NativeAscState.fromFrame(response(mode))),
-          mode == 2);
-    }
-    for (final version in ['0.18.0', '0.18.6', '0.17.12', '-.-.-']) {
-      expect(
-          () => SlimSensorReset.erasesHistory(
-              version, NativeAscState.fromFrame(response(2))),
-          throwsStateError);
-    }
-    expect(
-        () => SlimSensorReset.erasesHistory('0.18.8', null), throwsStateError);
-    expect(
-        () => SlimSensorReset.erasesHistory(
-            '0.18.8', NativeAscState.fromFrame(response(2, error: -5))),
-        throwsStateError);
-    expect(SlimSensorReset.erasesHistory('0.17.7', null), false);
-    expect(DeviceCmdUtils.resetNativeCalibration(),
-        frame(0x3a, [0x52, 0x53, 0x54]));
-  });
-
-  for (final outcome in ['success', 'error', 'send-failed']) {
-    test('ASC on dispatches dedicated erase and handles $outcome', () async {
+          container.read(deviceSensorResetProvider('unknown')).isFailure, true);
+    });
+  }
+  for (final mode in [0, 1, 2]) {
+    test('ordinary restart never erases calibration in ASC mode $mode',
+        () async {
       final sent = <List<int>>[];
       final container = ProviderContainer(overrides: [
         bleDeviceProvider('slim').overrideWithValue(BleDevice(
@@ -46,7 +49,35 @@ void main() {
             name: 'Slim',
             address: 'test',
             platform: 'test',
-            firmwareVersion: '0.18.8',
+            firmwareVersion: '0.19.0',
+            deviceModelValue: DeviceModel.airspotSlim.index)),
+        nativeAscProvider.overrideWith(() => ControlledNativeAsc(
+            AsyncData(NativeAscState.fromFrame(response(mode))))),
+        sensorResetCommandSenderProvider('slim')
+            .overrideWithValue((command) async {
+          sent.add(command);
+          return true;
+        }),
+      ]);
+      addTearDown(container.dispose);
+      await container
+          .read(deviceSensorResetProvider('slim').notifier)
+          .resetSensor();
+      expect(sent.single, DeviceCmdUtils.resetSensor());
+      expect(sent.single, isNot(DeviceCmdUtils.resetNativeCalibration()));
+    });
+  }
+  for (final outcome in ['success', 'error', 'send-failed']) {
+    test('explicit erase dispatches dedicated command and handles $outcome',
+        () async {
+      final sent = <List<int>>[];
+      final container = ProviderContainer(overrides: [
+        bleDeviceProvider('slim').overrideWithValue(BleDevice(
+            deviceId: 'slim',
+            name: 'Slim',
+            address: 'test',
+            platform: 'test',
+            firmwareVersion: '0.19.0',
             deviceModelValue: DeviceModel.airspotSlim.index)),
         nativeAscProvider.overrideWith(() => ControlledNativeAsc(
             AsyncData(NativeAscState.fromFrame(response(2))))),
@@ -59,14 +90,14 @@ void main() {
       addTearDown(container.dispose);
       final provider = deviceSensorResetProvider('slim');
       final notifier = container.read(provider.notifier);
-      await notifier.resetSensor();
+      await notifier.resetSensor(eraseCalibration: true);
       expect(sent.single, DeviceCmdUtils.resetNativeCalibration());
       if (outcome == 'send-failed') {
         expect(container.read(provider).isFailure, true);
         return;
       }
       expect(container.read(provider).isInProgress, true);
-      await notifier.resetSensor();
+      await notifier.resetSensor(eraseCalibration: true);
       expect(sent.length, 1);
       notifier.setSensorResetDone(1); // Wrong command cannot acknowledge erase.
       notifier.receiveNativeReset(frame(0x3a, [0, 0])..last ^= 1);

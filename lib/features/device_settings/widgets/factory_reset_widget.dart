@@ -1,3 +1,5 @@
+import 'package:airspothealth/core/models/device_model.dart';
+import 'package:airspothealth/features/device_graph/providers/ble_device_provider.dart';
 import 'package:airspothealth/core/theme/app_colors.dart';
 import 'package:airspothealth/core/utils/assets.dart';
 import 'package:airspothealth/core/utils/extensions.dart';
@@ -49,11 +51,15 @@ class _FactoryResetSheet extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final isSlim = ref.watch(bleDeviceProvider(deviceId)).deviceModel ==
+        DeviceModel.airspotSlim;
     ref.listen(deviceFactoryResetProvider(deviceId), (_, state) {
       if (state is AsyncSuccess) {
         context.pop();
         context.pop();
-        context.showSnackBar('Device factory reset successfully');
+        context.showSnackBar(isSlim
+            ? 'Reset complete. Keep it off the charger and release the button. Wait 5 seconds, then press the button to turn it on.'
+            : 'Device factory reset successfully');
       }
     });
     final AsyncProgressValue resetProgress =
@@ -67,12 +73,16 @@ class _FactoryResetSheet extends ConsumerWidget {
           mainAxisSize: MainAxisSize.min,
           children: [
             Text(
-              'Are you sure you want to factory reset this device?',
+              isSlim
+                  ? 'Factory reset this Slim?'
+                  : 'Are you sure you want to factory reset this device?',
               style: context.textTheme.bodyMedium?.weight600,
             ),
             const SizedBox(height: 4),
             Text(
-              'Factory reset erases device settings, saved readings, manual calibration and the sensor’s learned auto-calibration history. This action cannot be undone.',
+              isSlim
+                  ? 'Remove your Slim from its charger and release its button before continuing. This erases settings, saved readings and sensor calibration. The Slim then powers off. Wait 5 seconds after completion, then press the button to turn it on. Readings may be inaccurate while the sensor settles. This cannot be undone.'
+                  : 'Factory reset erases device settings, saved readings, manual calibration and the sensor’s learned auto-calibration history. This action cannot be undone.',
               style: context.textTheme.bodySmall?.copyWith(
                 color: AppColors.neutralGrey,
               ),

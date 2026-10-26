@@ -9,7 +9,7 @@ class SlimFactoryReset {
     final major = int.parse(match[1]!);
     final minor = int.parse(match[2]!);
     final patch = int.parse(match[3]!);
-    return major > 0 || minor > 18 || (minor == 18 && patch >= 9);
+    return major > 0 || minor > 19 || (minor == 19 && patch >= 2);
   }
 
   static Future<void> run({
@@ -33,7 +33,7 @@ class SlimFactoryReset {
         acknowledged.complete();
       } else if (frame[4] == 0) {
         acknowledged.completeError(
-            StateError('Device could not complete factory reset'));
+            StateError('Factory reset did not complete. Some data may already have been erased. Keep the device off its charger with the button released, then retry. If it still fails, report the issue.'));
       }
     }, onError: (Object error, StackTrace stack) {
       if (!acknowledged.isCompleted) acknowledged.completeError(error, stack);

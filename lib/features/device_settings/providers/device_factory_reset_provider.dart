@@ -45,20 +45,27 @@ class _DeviceFactoryResetNotifier
           .getDeviceById(deviceId)
           ?.deviceModel;
       if (communicator.isSlimDevice || model == DeviceModel.airspotSlim) {
-        final version = ref.read(bleSavedDevicesProvider.notifier)
-            .getDeviceById(deviceId)?.firmwareVersion ?? '';
+        final version = ref
+                .read(bleSavedDevicesProvider.notifier)
+                .getDeviceById(deviceId)
+                ?.firmwareVersion ??
+            '';
         if (!SlimFactoryReset.supported(version)) {
-          throw StateError('Update Slim firmware to 0.18.9 or later for a complete factory reset, including sensor calibration history.');
+          throw StateError(
+              'Update Slim firmware to 0.19.2 or later for a complete factory reset and power-off.');
         }
         await SlimFactoryReset.run(
           responses: communicator.dataStream,
           send: () => communicator.sendCommand(DeviceCmdUtils.factoryReset()),
         );
-      } else {
+      } else if (model == DeviceModel.airspotScreen) {
         // Screen retains its existing write-completion reset flow.
         await ref
             .read(bleDeviceCommunicationProvider(deviceId).notifier)
             .sendCommand(DeviceCmdUtils.factoryReset());
+      } else {
+        throw StateError(
+            'Wait for the device model to be identified before resetting.');
       }
       if ((communicator.isSlimDevice || model == DeviceModel.airspotSlim) &&
           ref.exists(deviceHistoryDataRequestProvider(deviceId))) {

@@ -82,14 +82,14 @@ class DeviceGraphPage extends ConsumerWidget {
               // Left side: Stats panel
               SizedBox(
                 width: 320, // Fixed width for stats
-                child: Column(
+                child: SingleChildScrollView(
+                    child: Column(
                   children: [
                     DeviceCurrentValueWidget(deviceId: device.deviceId),
                     const SizedBox(height: 12),
                     DeviceDataAggregateCard(deviceId: device.deviceId),
-                    const Spacer(), // Push content to top
                   ],
-                ),
+                )),
               ),
               const SizedBox(width: 16),
               // Right side: Graph

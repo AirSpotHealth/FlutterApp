@@ -22,7 +22,19 @@ enum DeviceDataType {
   scaling,
   sdkError,
   faultReset,
-  empty;
+  empty,
+  rawCo2,
+  sampleCorrection,
+  sampleTemperature,
+  sampleHumidity,
+  samplePressure,
+  sampleBatteryPercent,
+  sampleBatteryMv,
+  sampleAscMode,
+  sampleStatus,
+  sampleFlags,
+  sampleQi,
+  measurementModeChange;
 
   static DeviceDataType fromByte(int byte) =>
       deviceDataByteMap[byte] ?? DeviceDataType.empty;
@@ -69,6 +81,18 @@ const deviceDataByteMap = {
   0x14: DeviceDataType.scaling,
   0x15: DeviceDataType.sdkError,
   0x16: DeviceDataType.faultReset,
+  0x18: DeviceDataType.rawCo2,
+  0x19: DeviceDataType.sampleCorrection,
+  0x1A: DeviceDataType.sampleTemperature,
+  0x1B: DeviceDataType.sampleHumidity,
+  0x1C: DeviceDataType.samplePressure,
+  0x1D: DeviceDataType.sampleBatteryPercent,
+  0x1E: DeviceDataType.sampleBatteryMv,
+  0x1F: DeviceDataType.sampleAscMode,
+  0x20: DeviceDataType.sampleStatus,
+  0x21: DeviceDataType.sampleFlags,
+  0x22: DeviceDataType.sampleQi,
+  0x23: DeviceDataType.measurementModeChange,
 };
 
 const deviceDataTypeMap = {
@@ -96,6 +120,18 @@ const deviceDataTypeMap = {
   DeviceDataType.sdkError: 'SDK Error',
   DeviceDataType.faultReset: 'Fault Reset',
   DeviceDataType.empty: '-',
+  DeviceDataType.rawCo2: 'Raw CO2',
+  DeviceDataType.sampleCorrection: 'Sample Correction',
+  DeviceDataType.sampleTemperature: 'Sample Temperature Centi C',
+  DeviceDataType.sampleHumidity: 'Sample Humidity Centi Percent',
+  DeviceDataType.samplePressure: 'Sample Pressure hPa',
+  DeviceDataType.sampleBatteryPercent: 'Sample Battery Percent',
+  DeviceDataType.sampleBatteryMv: 'Sample Battery mV',
+  DeviceDataType.sampleAscMode: 'Sample ASC Mode',
+  DeviceDataType.sampleStatus: 'Sample Sensor Status',
+  DeviceDataType.sampleFlags: 'Sample Flags',
+  DeviceDataType.sampleQi: 'Sample Qi Active',
+  DeviceDataType.measurementModeChange: 'Measurement Mode Change',
 };
 
 const sensorErrorMap = {

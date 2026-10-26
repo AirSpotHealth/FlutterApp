@@ -2,6 +2,8 @@
 
 import 'dart:io';
 
+import 'package:airspothealth/features/device_settings/service/reading_csv.dart';
+
 import 'package:airspothealth/core/models/device_data.dart';
 import 'package:airspothealth/core/models/device_data_type.dart';
 import 'package:airspothealth/core/providers/isar_service_provider.dart';
@@ -113,7 +115,8 @@ class _DeviceDataDownloadNotifier
         return isar.deviceDatas
             .where()
             .deviceIdEqualTo(deviceId)
-            .typeLessThan(DeviceDataType.empty.index)
+            .not()
+            .typeEqualTo(DeviceDataType.empty.index)
             .isLiveCo2EqualTo(false)
             .dateTimeGreaterThanOrEqualTo(lower)
             .dateTimeLessThanOrEqualTo(upper)
@@ -139,13 +142,7 @@ class _DeviceDataDownloadNotifier
   }
 
   String _generateCsvContent(List<DeviceData> deviceDatas) {
-    final headerRow = 'DateTime,Value,Type\n';
-
-    final csvRows = deviceDatas.map((data) {
-      return '"${_dateFormat.format(data.dateTime)}","${data.parsedValue}","${DeviceDataType.values[data.type].humanizedName.toUpperCase()}"';
-    }).join('\n');
-
-    return headerRow + csvRows;
+    return generateReadingCsv(deviceDatas);
   }
 
   Future<void> _saveCsvFile(String csvContent,
