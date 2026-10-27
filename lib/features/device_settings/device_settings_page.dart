@@ -1,4 +1,3 @@
-import 'models/slim_settling_state.dart';
 import 'package:airspothealth/features/device_settings/widgets/slim_settling_card.dart';
 import 'package:airspothealth/core/services/history_coverage_service.dart';
 import 'package:airspothealth/core/models/ble_device.dart';
@@ -296,8 +295,7 @@ class PowerModeSettingWidget extends ConsumerWidget {
         ref.watch(deviceSettingsProvider(deviceId)).powerMode;
 
     final device = ref.watch(bleDeviceProvider(deviceId));
-    final nativeModes = device.deviceModel == DeviceModel.airspotSlim &&
-        SlimSettlingState.nativeTestModesSupported(device.firmwareVersion);
+    final nativeModes = device.deviceModel == DeviceModel.airspotSlim;
     return SettingItemWidget(
       item: SettingItem(
         title: nativeModes

@@ -21,60 +21,46 @@ class PowerModeSettingsPage extends ConsumerWidget {
         ref.watch(deviceSettingsProvider(deviceId));
 
     final device = ref.watch(bleDeviceProvider(deviceId));
-    final nativeModes = device.deviceModel == DeviceModel.airspotSlim &&
-        SlimSettlingState.nativeTestModesSupported(device.firmwareVersion);
-    final continuous = device.deviceModel == DeviceModel.airspotSlim &&
-        SlimSettlingState.continuousRecoverySupported(device.firmwareVersion);
+    final isSlim = device.deviceModel == DeviceModel.airspotSlim;
+    final nativeModes = isSlim &&
+        SlimSettlingState.nativeTestModesSupported(device.firmwareVersion) &&
+        device.firmwareVersion != '0.22.0';
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: AppBar(
         title: DeviceSettingsNameWidget(
           deviceId: deviceId,
-          suffixText: nativeModes
-              ? 'Measurement Mode'
-              : continuous
-                  ? 'Reporting Rate'
-                  : 'Reading Rate',
+          suffixText: isSlim ? 'Measurement Mode' : 'Reading Rate',
         ),
       ),
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
           Text(
-            nativeModes
+            isSlim
                 ? 'Both modes report every 10 seconds. Single shot takes one measurement every 10 seconds. Continuous measures every second. Temperature, humidity and pressure compensation are refreshed every second in both modes. Battery life is being measured. A brief white blink every 10 seconds indicates the first hour of settling after setup or a sensor reset.'
-                : continuous
-                    ? 'Slim measures CO₂ and updates temperature, humidity and pressure compensation every second in every mode. Choose when readings are reported. Now reports only when requested. Slower reporting reduces transmission and logging, but sensing remains continuous.'
-                    : 'Choose how frequently your device takes ${Constants.co2Text} readings. More frequent updates will use more battery.',
+                : 'Choose how frequently your device takes ${Constants.co2Text} readings. More frequent updates will use more battery.',
             style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                   color: Colors.grey[600],
                 ),
           ),
           const SizedBox(height: 24),
-          if (nativeModes) ...[
-            for (final mode in [PowerMode.low, PowerMode.high]) ...[
-              _PowerModeCard(
-                title: mode == PowerMode.low ? 'Single shot' : 'Continuous',
-                updateRate: mode == PowerMode.low
-                    ? 'One measurement every 10 seconds'
-                    : 'One measurement every second',
-                batteryLife: 'Reports every 10 seconds',
-                isSelected: deviceSettings.powerMode == mode,
-                onTap: () => _updatePowerMode(
-                    ref, deviceSettings.copyWith(powerMode: mode)),
-              ),
-              const SizedBox(height: 12),
-            ],
-          ] else
+          if (isSlim)
+            SlimMeasurementModeChoices(
+              firmwareVersion: device.firmwareVersion,
+              enabled: nativeModes,
+              selectedMode: nativeModes ? deviceSettings.powerMode : null,
+              onChanged: (mode) => _updatePowerMode(
+                  ref, deviceSettings.copyWith(powerMode: mode)),
+            )
+          else
             Column(
               children: [
                 _PowerModeCard(
                   asset: Assets.powerModeOnDemand,
                   title: 'Now',
                   updateRate: 'Manual update only',
-                  batteryLife: continuous
-                      ? 'Battery life being measured'
-                      : '~14 days with 100 measurements per day',
+                  batteryLife: '~14 days with 100 measurements per day',
                   isSelected: deviceSettings.powerMode == PowerMode.onDemand,
                   onTap: () => _updatePowerMode(
                     ref,
@@ -86,9 +72,7 @@ class PowerModeSettingsPage extends ConsumerWidget {
                   asset: Assets.powerMode3min,
                   title: '3 min',
                   updateRate: 'Updates every 3 minutes',
-                  batteryLife: continuous
-                      ? 'Battery life being measured'
-                      : '~10 days on full charge',
+                  batteryLife: '~10 days on full charge',
                   isSelected: deviceSettings.powerMode == PowerMode.low,
                   onTap: () => _updatePowerMode(
                     ref,
@@ -100,9 +84,7 @@ class PowerModeSettingsPage extends ConsumerWidget {
                   asset: Assets.powerMode1min,
                   title: '1 min',
                   updateRate: 'Updates every minute',
-                  batteryLife: continuous
-                      ? 'Battery life being measured'
-                      : '~6 days on full charge',
+                  batteryLife: '~6 days on full charge',
                   isSelected: deviceSettings.powerMode == PowerMode.medium,
                   onTap: () => _updatePowerMode(
                     ref,
@@ -114,9 +96,7 @@ class PowerModeSettingsPage extends ConsumerWidget {
                   asset: Assets.powerMode5sec,
                   title: '5 sec',
                   updateRate: 'Updates every 5 seconds',
-                  batteryLife: continuous
-                      ? 'Battery life being measured'
-                      : '~12 hours on full charge',
+                  batteryLife: '~12 hours on full charge',
                   isSelected: deviceSettings.powerMode == PowerMode.high,
                   onTap: () => _updatePowerMode(
                     ref,
@@ -137,6 +117,56 @@ class PowerModeSettingsPage extends ConsumerWidget {
   }
 }
 
+/// Slim always presents the two acquisition choices. Older firmware cannot
+/// interpret those wire values correctly, so require an update before sending.
+class SlimMeasurementModeChoices extends StatelessWidget {
+  const SlimMeasurementModeChoices(
+      {super.key,
+      required this.firmwareVersion,
+      required this.enabled,
+      required this.selectedMode,
+      required this.onChanged});
+  final String firmwareVersion;
+  final bool enabled;
+  final PowerMode? selectedMode;
+  final ValueChanged<PowerMode> onChanged;
+
+  @override
+  Widget build(BuildContext context) => Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          if (!enabled) ...[
+            Text('Firmware update required',
+                style: Theme.of(context).textTheme.titleMedium),
+            const SizedBox(height: 8),
+            Text(
+                'This Slim reports firmware $firmwareVersion. Install firmware 0.22.1 or later, then reconnect to enable these modes. Your current setting has not been changed.'),
+            const SizedBox(height: 16),
+          ],
+          for (final mode in [PowerMode.low, PowerMode.high]) ...[
+            Semantics(
+              button: true,
+              enabled: enabled,
+              selected: selectedMode == mode,
+              child: Opacity(
+                opacity: enabled ? 1 : 0.55,
+                child: _PowerModeCard(
+                  title: mode == PowerMode.low ? 'Single shot' : 'Continuous',
+                  updateRate: mode == PowerMode.low
+                      ? 'One measurement every 10 seconds'
+                      : 'One measurement every second',
+                  batteryLife: 'Reports every 10 seconds',
+                  isSelected: selectedMode == mode,
+                  onTap: enabled ? () => onChanged(mode) : null,
+                ),
+              ),
+            ),
+            const SizedBox(height: 12),
+          ],
+        ],
+      );
+}
+
 class _PowerModeCard extends StatelessWidget {
   const _PowerModeCard({
     required this.onTap,
@@ -147,7 +177,7 @@ class _PowerModeCard extends StatelessWidget {
     required this.batteryLife,
   });
 
-  final VoidCallback onTap;
+  final VoidCallback? onTap;
   final bool isSelected;
   final String? asset;
   final String title;
