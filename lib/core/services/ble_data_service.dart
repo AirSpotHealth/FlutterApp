@@ -68,12 +68,17 @@ class BleDataService {
     }
     if (data[2] == 0x3a && bleDevice.deviceModel == DeviceModel.airspotSlim) {
       if (ref.exists(deviceSensorResetProvider(bleDevice.deviceId))) {
-        ref.read(deviceSensorResetProvider(bleDevice.deviceId).notifier)
+        ref
+            .read(deviceSensorResetProvider(bleDevice.deviceId).notifier)
             .receiveNativeReset(data);
       }
       return null;
     }
-    final responseCommand = ResponseCommand.fromValue(data[2]);
+    // Extension responses (including 0x3C settling and 0x3D reset ACKs)
+    // are consumed by their own dataStream subscribers. Unknown commands must
+    // not crash this shared notification listener or prevent subsequent data.
+    final responseCommand = ResponseCommand.tryFromValue(data[2]);
+    if (responseCommand == null) return null;
     final parser = ResponseCommandParser(bleDevice);
     final deviceId = bleDevice.deviceId;
 
@@ -1060,6 +1065,13 @@ enum ResponseCommand {
 
   const ResponseCommand(this.value);
   final int value;
+
+  static ResponseCommand? tryFromValue(int value) {
+    for (final command in values) {
+      if (command.value == value) return command;
+    }
+    return null;
+  }
 
   factory ResponseCommand.fromValue(int value) =>
       ResponseCommand.values.firstWhere((e) => e.value == value,

@@ -1,3 +1,5 @@
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:airspothealth/features/device_settings/models/slim_settling_state.dart';
 import 'package:airspothealth/core/models/ble_device.dart';
 import 'package:airspothealth/core/models/device_data_type.dart';
 import 'package:airspothealth/core/models/device_model.dart';
@@ -10,6 +12,36 @@ import 'package:flutter_test/flutter_test.dart';
 import 'slim_test_helpers.dart';
 
 void main() {
+  test(
+      'settling response and unknown extensions do not crash the shared parser',
+      () {
+    const hex = 'ffaa3c1601000000000000000000000000000000000000000000fc';
+    final settling = [
+      for (var i = 0; i < hex.length; i += 2)
+        int.parse(hex.substring(i, i + 2), radix: 16)
+    ];
+    expect(SlimSettlingState.fromFrame(settling).stage, 0);
+    final device = BleDevice(
+        deviceId: 'test',
+        name: 'Slim',
+        address: 'test',
+        platform: 'test',
+        firmwareVersion: '0.22.1',
+        deviceModelValue: DeviceModel.airspotSlim.index);
+    final container = ProviderContainer();
+    addTearDown(container.dispose);
+    for (final response in [
+      settling,
+      frame(0x3d, [0, 0]),
+      frame(0x7e, [0])
+    ]) {
+      final parsed = Provider<dynamic>(
+          (ref) => BleDataService.parseResponseCommand(ref, device, response));
+      expect(container.read(parsed), isNull);
+    }
+    expect(ResponseCommand.tryFromValue(0x01), ResponseCommand.co2Value);
+    expect(ResponseCommand.tryFromValue(0x20), ResponseCommand.batteryLevel);
+  });
   ResponseCommandParser parser(DeviceModel model) =>
       ResponseCommandParser(BleDevice(
           deviceId: 'test',
