@@ -1,3 +1,7 @@
+import 'package:airspothealth/core/providers/isar_service_provider.dart';
+import 'package:airspothealth/core/models/device_model.dart';
+import 'package:airspothealth/features/device_graph/providers/ble_device_provider.dart';
+import 'package:airspothealth/features/device_graph/providers/device_history_data_request_provider.dart';
 import 'package:airspothealth/features/add_device/providers/ble_device_connection_provider.dart';
 import 'package:airspothealth/core/providers/ble_saved_devices_provider.dart';
 import 'package:airspothealth/features/device_settings/providers/device_forget_status_provider.dart';
@@ -50,6 +54,20 @@ final class ScanPlatform extends FlutterBluePlusPlatform {
       }));
 }
 
+class FailingWriteService implements IsarService {
+  FailingWriteService(this.delegate);
+  final IsarService delegate;
+  Object? failure;
+  @override
+  void write(void Function(Isar) fn) {
+    if (failure != null) throw failure!;
+    delegate.write(fn);
+  }
+
+  @override
+  dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
+}
+
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
@@ -65,13 +83,22 @@ void main() {
     await database.initialize();
     final platform = ScanPlatform();
     FlutterBluePlusPlatform.instance = platform;
-    final container = ProviderContainer();
+    final writes = FailingWriteService(database);
+    final container = ProviderContainer(
+        overrides: [isarServiceProvider.overrideWithValue(writes)]);
     final results = <List<String>>[];
     StreamSubscription<List<BluetoothDevice>>? subscription;
     try {
       database.write((isar) => isar.bleDevices.putAll([
             for (final id in ['slim', 'screen'])
-              BleDevice(deviceId: id, name: id, address: id, platform: 'ios'),
+              BleDevice(
+                  deviceId: id,
+                  name: id,
+                  address: id,
+                  platform: 'ios',
+                  deviceModelValue: id == 'slim'
+                      ? DeviceModel.airspotSlim.index
+                      : DeviceModel.airspotScreen.index),
           ]));
       subscription = BLEService.instance.scanResults().listen((devices) =>
           results.add(devices.map((d) => d.remoteId.str).toList()));
@@ -92,9 +119,26 @@ void main() {
 
       // Exercise the actual UI notifier, not direct database deletion. An
       // already disconnected device must never depend on native disconnect.
+      final detail = container.listen(bleDeviceProvider('slim'), (_, __) {},
+          onError: (_, __) {});
+      final history = container.listen(
+          deviceHistoryDataRequestProvider('slim'), (_, __) {},
+          onError: (_, __) {});
       final forgetState =
           container.listen(deviceForgetStatusProvider('slim'), (_, __) {});
       await container.read(deviceForgetStatusProvider('slim').future);
+      // A genuine local write failure must retain the device and original cause.
+      final failure = StateError('test database write failure');
+      writes.failure = failure;
+      expect(
+          await container
+              .read(deviceForgetStatusProvider('slim').notifier)
+              .forget(),
+          false);
+      expect(container.read(deviceForgetStatusProvider('slim')).error,
+          same(failure));
+      database.read((isar) => expect(isar.bleDevices.get('slim'), isNotNull));
+      writes.failure = null;
       expect(
           await container
               .read(deviceForgetStatusProvider('slim').notifier)
@@ -106,6 +150,8 @@ void main() {
       expect(container.read(bleSavedDevicesProvider).map((d) => d.deviceId),
           ['screen']);
       forgetState.close();
+      detail.close();
+      history.close();
       platform.advertise();
       await Future<void>.delayed(const Duration(milliseconds: 30));
       expect(results.last, ['slim']);
