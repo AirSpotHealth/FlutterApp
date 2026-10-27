@@ -39,7 +39,7 @@ class PowerModeSettingsPage extends ConsumerWidget {
         children: [
           Text(
             isSlim
-                ? 'Both modes report every 10 seconds. Single shot takes one measurement every 10 seconds. Continuous measures every second. Temperature, humidity and pressure compensation are refreshed every second in both modes. Battery life is being measured. A brief white blink every 10 seconds indicates the first hour of settling after setup or a sensor reset.'
+                ? 'Both modes update readings every 10 seconds.'
                 : 'Choose how frequently your device takes ${Constants.co2Text} readings. More frequent updates will use more battery.',
             style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                   color: Colors.grey[600],
