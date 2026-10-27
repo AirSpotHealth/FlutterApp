@@ -1,12 +1,12 @@
+import 'dart:math' as math;
 import 'package:airspothealth/core/models/device_settings.dart';
 import 'package:airspothealth/core/theme/app_colors.dart';
 import 'package:flutter/material.dart';
 
-/// A filled sensor tile with a cut-out sample point or continuous signal.
-/// Drawn as vectors so it stays sharp without adding a font or image asset.
+/// Matches the full-bleed blue tiles and bold white circular marks of the
+/// existing reading-rate assets, with a distinct symbol for each acquisition mode.
 class SlimMeasurementIcon extends StatelessWidget {
   const SlimMeasurementIcon({super.key, this.mode, this.size = 32, this.color});
-
   final PowerMode? mode;
   final double size;
   final Color? color;
@@ -15,8 +15,7 @@ class SlimMeasurementIcon extends StatelessWidget {
   Widget build(BuildContext context) => SizedBox.square(
         dimension: size,
         child: CustomPaint(
-          painter:
-              _MeasurementPainter(mode, color ?? AppColors.primaryColorDark),
+          painter: _MeasurementPainter(mode, color ?? AppColors.primaryColor),
         ),
       );
 }
@@ -30,38 +29,55 @@ class _MeasurementPainter extends CustomPainter {
   void paint(Canvas canvas, Size size) {
     canvas.save();
     canvas.scale(size.width / 32, size.height / 32);
-    // Isolate the cut-outs so they reveal the actual row/card background.
-    canvas.saveLayer(const Rect.fromLTWH(0, 0, 32, 32), Paint());
     canvas.drawRRect(
       RRect.fromRectAndRadius(
-          const Rect.fromLTWH(2, 2, 28, 28), const Radius.circular(7)),
+          const Rect.fromLTWH(0, 0, 32, 32), const Radius.circular(4)),
       Paint()..color = color,
     );
+    final white = Paint()..color = Colors.white;
     final line = Paint()
-      ..blendMode = BlendMode.clear
+      ..color = Colors.white
       ..style = PaintingStyle.stroke
-      ..strokeWidth = 2.2
+      ..strokeWidth = 2.4
       ..strokeCap = StrokeCap.round
       ..strokeJoin = StrokeJoin.round;
-    if (mode == PowerMode.low) {
-      canvas.drawLine(const Offset(6, 16), const Offset(10, 16), line);
-      canvas.drawLine(const Offset(22, 16), const Offset(26, 16), line);
-      canvas.drawCircle(
-          const Offset(16, 16), 3, Paint()..blendMode = BlendMode.clear);
-    } else if (mode == PowerMode.high) {
+    const ring = Rect.fromLTWH(4, 4, 24, 24);
+    if (mode == PowerMode.high) {
+      // Two sweeping arrows communicate sustained acquisition.
+      for (final start in [-math.pi / 2, math.pi / 2]) {
+        const sweep = math.pi * 0.82;
+        final end = start + sweep;
+        final radial = Offset(math.cos(end), math.sin(end));
+        final tangent = Offset(-math.sin(end), math.cos(end));
+        final tip = const Offset(16, 16) + radial * 12;
+        final base = tip - tangent * 4.5;
+        canvas.drawArc(ring, start, sweep - 0.22, false, line);
+        canvas.drawPath(
+          Path()
+            ..moveTo(tip.dx, tip.dy)
+            ..lineTo((base + radial * 2.7).dx, (base + radial * 2.7).dy)
+            ..lineTo((base - radial * 2.7).dx, (base - radial * 2.7).dy)
+            ..close(),
+          white,
+        );
+      }
       final signal = Path()
-        ..moveTo(5, 17)
-        ..lineTo(8, 17)
-        ..cubicTo(10, 17, 10, 10, 12, 10)
-        ..cubicTo(14, 10, 14, 22, 16, 22)
-        ..cubicTo(18, 22, 18, 10, 20, 10)
-        ..cubicTo(22, 10, 22, 17, 24, 17)
-        ..lineTo(27, 17);
+        ..moveTo(9, 16)
+        ..cubicTo(11, 16, 11, 11, 13, 11)
+        ..cubicTo(15, 11, 15, 21, 17, 21)
+        ..cubicTo(19, 21, 19, 16, 23, 16);
       canvas.drawPath(signal, line);
     } else {
-      canvas.drawCircle(const Offset(16, 16), 4, line);
+      canvas.drawCircle(const Offset(16, 16), 12, line);
+      if (mode == PowerMode.low) {
+        canvas.drawCircle(const Offset(16, 16), 3.2, white);
+        canvas.drawLine(const Offset(7, 16), const Offset(9, 16), line);
+        canvas.drawLine(const Offset(23, 16), const Offset(25, 16), line);
+      } else {
+        canvas.drawLine(const Offset(16, 8), const Offset(16, 16), line);
+        canvas.drawLine(const Offset(16, 16), const Offset(21, 19), line);
+      }
     }
-    canvas.restore();
     canvas.restore();
   }
 
