@@ -1,3 +1,4 @@
+import '../models/slim_settling_state.dart';
 import 'package:airspothealth/core/theme/app_colors.dart';
 import 'package:airspothealth/core/widgets/button.dart';
 import 'package:flutter/material.dart';
@@ -28,6 +29,8 @@ class NativeAscSettingWidget extends ConsumerWidget {
         if (NativeAscState.canCalibrate(firmwareVersion, null)) manualControls,
       ]);
     }
+    final nativeFrc =
+        SlimSettlingState.nativeTestModesSupported(firmwareVersion);
     final state = ref.watch(nativeAscProvider(deviceId));
     final value = state.asData?.value;
     return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
@@ -63,7 +66,7 @@ class NativeAscSettingWidget extends ConsumerWidget {
                 ref.read(nativeAscProvider(deviceId).notifier).refresh(),
             label: 'Retry'),
       ],
-      if (value?.enabled == true)
+      if (value?.enabled == true && !nativeFrc)
         const Padding(
             padding: EdgeInsets.symmetric(vertical: 12),
             child: Text(
@@ -73,7 +76,13 @@ class NativeAscSettingWidget extends ConsumerWidget {
             padding: EdgeInsets.symmetric(vertical: 12),
             child: Text(
                 'Auto calibration is paused. The sensor keeps its learned baseline; manual calibration can apply a new correction.')),
-      if (value?.manualAllowed == true) manualControls,
+      if (nativeFrc)
+        const Padding(
+          padding: EdgeInsets.symmetric(vertical: 12),
+          child: Text(
+              'Sensirion auto calibration runs inside the STCC4. Forced recalibration is also available with a known, stable CO₂ reference. No AirSpot offset is added.'),
+        ),
+      if (NativeAscState.canCalibrate(firmwareVersion, value)) manualControls,
     ]);
   }
 }

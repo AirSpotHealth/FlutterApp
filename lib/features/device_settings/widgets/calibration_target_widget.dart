@@ -9,12 +9,14 @@ class CalibrationTargetWidget extends ConsumerStatefulWidget {
   const CalibrationTargetWidget({
     required this.deviceId,
     required this.calibrationTarget,
+    this.nativeFrc = false,
     super.key,
   });
 
   final String deviceId;
 
   final int calibrationTarget;
+  final bool nativeFrc;
 
   @override
   ConsumerState<CalibrationTargetWidget> createState() =>
@@ -58,12 +60,14 @@ class _CalibrationCorrectionWidgetState
       return 'Please enter a valid number';
     }
 
-    if (int.parse(value) <= 0) {
+    if (int.parse(value) < (widget.nativeFrc ? 0 : 1)) {
       return 'Please enter a positive number greater than 0';
     }
 
-    if (int.parse(value) > 1000) {
-      return 'Please enter a number less than 1000';
+    if (int.parse(value) > (widget.nativeFrc ? 32000 : 1000)) {
+      return widget.nativeFrc
+          ? 'Enter a reference from 0 to 32000 ppm'
+          : 'Please enter a number no greater than 1000';
     }
 
     return null;
@@ -132,7 +136,9 @@ class _CalibrationCorrectionWidgetState
         ),
         const SizedBox(height: 12),
         Text(
-          "You can set the CO2 level of the air where calibration takes place. If unknown, 420-450 is typical for outdoors. This value is used for manual or automatic calibration.",
+          widget.nativeFrc
+              ? 'Enter the known CO₂ concentration of your reference air in ppm. Do not guess the outdoor value. This reference is used only for forced recalibration; native ASC uses its own baseline.'
+              : "You can set the CO2 level of the air where calibration takes place. If unknown, 420-450 is typical for outdoors. This value is used for manual or automatic calibration.",
           style: context.textTheme.bodySmall,
         ),
       ],

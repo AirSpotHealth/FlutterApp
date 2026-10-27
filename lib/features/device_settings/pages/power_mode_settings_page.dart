@@ -21,6 +21,8 @@ class PowerModeSettingsPage extends ConsumerWidget {
         ref.watch(deviceSettingsProvider(deviceId));
 
     final device = ref.watch(bleDeviceProvider(deviceId));
+    final nativeModes = device.deviceModel == DeviceModel.airspotSlim &&
+        SlimSettlingState.nativeTestModesSupported(device.firmwareVersion);
     final continuous = device.deviceModel == DeviceModel.airspotSlim &&
         SlimSettlingState.continuousRecoverySupported(device.firmwareVersion);
     return Scaffold(
@@ -28,80 +30,101 @@ class PowerModeSettingsPage extends ConsumerWidget {
       appBar: AppBar(
         title: DeviceSettingsNameWidget(
           deviceId: deviceId,
-          suffixText: continuous ? 'Reporting Rate' : 'Reading Rate',
+          suffixText: nativeModes
+              ? 'Measurement Mode'
+              : continuous
+                  ? 'Reporting Rate'
+                  : 'Reading Rate',
         ),
       ),
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
           Text(
-            continuous
-                ? 'Slim measures CO₂ and updates temperature, humidity and pressure compensation every second in every mode. Choose when readings are reported. Now reports only when requested. Slower reporting reduces transmission and logging, but sensing remains continuous.'
-                : 'Choose how frequently your device takes ${Constants.co2Text} readings. More frequent updates will use more battery.',
+            nativeModes
+                ? 'Both modes report every 10 seconds. Single shot takes one measurement every 10 seconds. Continuous measures every second. Temperature, humidity and pressure compensation are refreshed for each measurement. Battery life is being measured. A brief white blink every 10 seconds indicates the first hour of settling after setup or a sensor reset.'
+                : continuous
+                    ? 'Slim measures CO₂ and updates temperature, humidity and pressure compensation every second in every mode. Choose when readings are reported. Now reports only when requested. Slower reporting reduces transmission and logging, but sensing remains continuous.'
+                    : 'Choose how frequently your device takes ${Constants.co2Text} readings. More frequent updates will use more battery.',
             style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                   color: Colors.grey[600],
                 ),
           ),
           const SizedBox(height: 24),
-          Column(
-            children: [
+          if (nativeModes) ...[
+            for (final mode in [PowerMode.low, PowerMode.high]) ...[
               _PowerModeCard(
-                asset: Assets.powerModeOnDemand,
-                title: 'Now',
-                updateRate: 'Manual update only',
-                batteryLife: continuous
-                    ? 'Battery life being measured'
-                    : '~14 days with 100 measurements per day',
-                isSelected: deviceSettings.powerMode == PowerMode.onDemand,
+                title: mode == PowerMode.low ? 'Single shot' : 'Continuous',
+                updateRate: mode == PowerMode.low
+                    ? 'One measurement every 10 seconds'
+                    : 'One measurement every second',
+                batteryLife: 'Reports every 10 seconds',
+                isSelected: deviceSettings.powerMode == mode,
                 onTap: () => _updatePowerMode(
-                  ref,
-                  deviceSettings.copyWith(powerMode: PowerMode.onDemand),
-                ),
+                    ref, deviceSettings.copyWith(powerMode: mode)),
               ),
               const SizedBox(height: 12),
-              _PowerModeCard(
-                asset: Assets.powerMode3min,
-                title: '3 min',
-                updateRate: 'Updates every 3 minutes',
-                batteryLife: continuous
-                    ? 'Battery life being measured'
-                    : '~10 days on full charge',
-                isSelected: deviceSettings.powerMode == PowerMode.low,
-                onTap: () => _updatePowerMode(
-                  ref,
-                  deviceSettings.copyWith(powerMode: PowerMode.low),
-                ),
-              ),
-              const SizedBox(height: 12),
-              _PowerModeCard(
-                asset: Assets.powerMode1min,
-                title: '1 min',
-                updateRate: 'Updates every minute',
-                batteryLife: continuous
-                    ? 'Battery life being measured'
-                    : '~6 days on full charge',
-                isSelected: deviceSettings.powerMode == PowerMode.medium,
-                onTap: () => _updatePowerMode(
-                  ref,
-                  deviceSettings.copyWith(powerMode: PowerMode.medium),
-                ),
-              ),
-              const SizedBox(height: 12),
-              _PowerModeCard(
-                asset: Assets.powerMode5sec,
-                title: '5 sec',
-                updateRate: 'Updates every 5 seconds',
-                batteryLife: continuous
-                    ? 'Battery life being measured'
-                    : '~12 hours on full charge',
-                isSelected: deviceSettings.powerMode == PowerMode.high,
-                onTap: () => _updatePowerMode(
-                  ref,
-                  deviceSettings.copyWith(powerMode: PowerMode.high),
-                ),
-              ),
             ],
-          ),
+          ] else
+            Column(
+              children: [
+                _PowerModeCard(
+                  asset: Assets.powerModeOnDemand,
+                  title: 'Now',
+                  updateRate: 'Manual update only',
+                  batteryLife: continuous
+                      ? 'Battery life being measured'
+                      : '~14 days with 100 measurements per day',
+                  isSelected: deviceSettings.powerMode == PowerMode.onDemand,
+                  onTap: () => _updatePowerMode(
+                    ref,
+                    deviceSettings.copyWith(powerMode: PowerMode.onDemand),
+                  ),
+                ),
+                const SizedBox(height: 12),
+                _PowerModeCard(
+                  asset: Assets.powerMode3min,
+                  title: '3 min',
+                  updateRate: 'Updates every 3 minutes',
+                  batteryLife: continuous
+                      ? 'Battery life being measured'
+                      : '~10 days on full charge',
+                  isSelected: deviceSettings.powerMode == PowerMode.low,
+                  onTap: () => _updatePowerMode(
+                    ref,
+                    deviceSettings.copyWith(powerMode: PowerMode.low),
+                  ),
+                ),
+                const SizedBox(height: 12),
+                _PowerModeCard(
+                  asset: Assets.powerMode1min,
+                  title: '1 min',
+                  updateRate: 'Updates every minute',
+                  batteryLife: continuous
+                      ? 'Battery life being measured'
+                      : '~6 days on full charge',
+                  isSelected: deviceSettings.powerMode == PowerMode.medium,
+                  onTap: () => _updatePowerMode(
+                    ref,
+                    deviceSettings.copyWith(powerMode: PowerMode.medium),
+                  ),
+                ),
+                const SizedBox(height: 12),
+                _PowerModeCard(
+                  asset: Assets.powerMode5sec,
+                  title: '5 sec',
+                  updateRate: 'Updates every 5 seconds',
+                  batteryLife: continuous
+                      ? 'Battery life being measured'
+                      : '~12 hours on full charge',
+                  isSelected: deviceSettings.powerMode == PowerMode.high,
+                  onTap: () => _updatePowerMode(
+                    ref,
+                    deviceSettings.copyWith(powerMode: PowerMode.high),
+                  ),
+                ),
+              ],
+            ),
         ],
       ),
     );
@@ -118,7 +141,7 @@ class _PowerModeCard extends StatelessWidget {
   const _PowerModeCard({
     required this.onTap,
     required this.isSelected,
-    required this.asset,
+    this.asset,
     required this.title,
     required this.updateRate,
     required this.batteryLife,
@@ -126,7 +149,7 @@ class _PowerModeCard extends StatelessWidget {
 
   final VoidCallback onTap;
   final bool isSelected;
-  final String asset;
+  final String? asset;
   final String title;
   final String updateRate;
   final String batteryLife;
@@ -157,28 +180,31 @@ class _PowerModeCard extends StatelessWidget {
         padding: const EdgeInsets.all(16),
         child: Row(
           children: [
-            Container(
-              width: 48,
-              height: 48,
-              padding: const EdgeInsets.all(8),
-              decoration: BoxDecoration(
-                color: isSelected
-                    ? AppColors.primaryColorDark.withValues(alpha: 0.1)
-                    : Colors.grey.shade50,
-                borderRadius: BorderRadius.circular(12),
+            if (asset != null)
+              Container(
+                width: 48,
+                height: 48,
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: isSelected
+                      ? AppColors.primaryColorDark.withValues(alpha: 0.1)
+                      : Colors.grey.shade50,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Image.asset(
+                  asset!,
+                  width: 32,
+                  height: 32,
+                ),
               ),
-              child: Image.asset(
-                asset,
-                width: 32,
-                height: 32,
-              ),
-            ),
-            const SizedBox(width: 16),
+            if (asset != null) const SizedBox(width: 16),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Row(
+                  Wrap(
+                    spacing: 8,
+                    runSpacing: 4,
                     children: [
                       Text(
                         title,
@@ -190,7 +216,6 @@ class _PowerModeCard extends StatelessWidget {
                               : Colors.black87,
                         ),
                       ),
-                      const SizedBox(width: 8),
                       if (isSelected)
                         Container(
                           padding: const EdgeInsets.symmetric(

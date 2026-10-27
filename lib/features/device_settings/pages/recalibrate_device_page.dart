@@ -116,6 +116,8 @@ class RecalibrateDevicePage extends ConsumerWidget {
           const Divider(),
         ],
         if (isSlim &&
+            !SlimSettlingState.nativeTestModesSupported(
+                ref.watch(bleDeviceProvider(deviceId)).firmwareVersion) &&
             SlimSettlingState.continuousRecoverySupported(
                 ref.watch(bleDeviceProvider(deviceId)).firmwareVersion))
           SlimSettlingCard(deviceId: deviceId, showInactive: true)
@@ -125,6 +127,8 @@ class RecalibrateDevicePage extends ConsumerWidget {
               firmwareVersion:
                   ref.watch(bleDeviceProvider(deviceId)).firmwareVersion,
               manualControls: ManualCalibrationWidget(
+                  nativeFrc: SlimSettlingState.nativeTestModesSupported(
+                      ref.watch(bleDeviceProvider(deviceId)).firmwareVersion),
                   deviceId: deviceId,
                   calibrationTarget: deviceSettings.recalibrationTarget))
         else

@@ -29,7 +29,7 @@ class _RecalibrationTimeNotifier
                 ? ref.read(nativeAscProvider(arg)).asData?.value
                 : null)) {
       state = const AsyncFailure(
-          'Turn off auto calibration and confirm the sensor setting first.');
+          'Confirm the sensor calibration setting before starting. Reconnect and retry if it cannot be verified.');
       return;
     }
     if (ref.read(bleDeviceConnectionProvider(arg)) !=

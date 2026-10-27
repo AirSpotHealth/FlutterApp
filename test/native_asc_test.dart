@@ -51,6 +51,19 @@ void main() {
     expect(NativeAscState.canCalibrate('garbage', null), false);
     expect(NativeAscState.canCalibrate('0.17.12', null), false);
     expect(NativeAscState.canCalibrate('0.18.0', null), false);
+    expect(
+        NativeAscState.canCalibrate(
+            '0.21.2', NativeAscState.fromFrame(response(2))),
+        false);
+    expect(
+        NativeAscState.canCalibrate(
+            '0.22.0', NativeAscState.fromFrame(response(2))),
+        true);
+    expect(NativeAscState.canCalibrate('0.22.0', null), false);
+    expect(
+        NativeAscState.canCalibrate(
+            '0.22.0', NativeAscState.fromFrame(response(2, error: -5))),
+        false);
     expect(NativeAscState.canCalibrate('0.17.7', null), true);
     expect(NativeAscState.fromFrame(response(2)).manualAllowed, false);
     expect(NativeAscState.fromFrame(response(1)).manualAllowed, true);
@@ -72,6 +85,24 @@ void main() {
       expect(() => NativeAscState.fromFrame(frame), throwsFormatException);
     }
     expect(NativeAscState.fromFrame(response(1, error: -16)).error, -16);
+  });
+  testWidgets('native FRC remains available with ASC on in 0.22',
+      (tester) async {
+    final notifier =
+        ControlledNativeAsc(AsyncData(NativeAscState.fromFrame(response(2))));
+    await tester.pumpWidget(ProviderScope(
+        overrides: [nativeAscProvider.overrideWith(() => notifier)],
+        child: const MaterialApp(
+            home: Scaffold(
+                body: SingleChildScrollView(
+                    child: NativeAscSettingWidget(
+                        deviceId: 'test',
+                        firmwareVersion: '0.22.0',
+                        manualControls: Text('Native FRC controls')))))));
+    expect(find.text('Native FRC controls'), findsOneWidget);
+    expect(
+        find.textContaining('Manual calibration is unavailable'), findsNothing);
+    expect(tester.takeException(), isNull);
   });
   for (final mode in [0, 1, 2]) {
     testWidgets(

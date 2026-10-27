@@ -25,6 +25,9 @@ class NativeAscState {
 
   static bool canCalibrate(String version, NativeAscState? state) {
     if (!RegExp(r'^\d+\.\d+\.\d+$').hasMatch(version)) return false;
+    if (SlimSettlingState.nativeTestModesSupported(version)) {
+      return state?.verified == true && state?.error == 0;
+    }
     if (SlimSettlingState.continuousRecoverySupported(version)) return false;
     if (version == '0.17.12') return false; // Fixed native-ASC experiment.
     return supported(version) ? state?.manualAllowed == true : true;

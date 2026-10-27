@@ -1,3 +1,4 @@
+import 'models/slim_settling_state.dart';
 import 'package:airspothealth/features/device_settings/widgets/slim_settling_card.dart';
 import 'package:airspothealth/core/services/history_coverage_service.dart';
 import 'package:airspothealth/core/models/ble_device.dart';
@@ -294,10 +295,16 @@ class PowerModeSettingWidget extends ConsumerWidget {
     final PowerMode powerMode =
         ref.watch(deviceSettingsProvider(deviceId)).powerMode;
 
+    final device = ref.watch(bleDeviceProvider(deviceId));
+    final nativeModes = device.deviceModel == DeviceModel.airspotSlim &&
+        SlimSettlingState.nativeTestModesSupported(device.firmwareVersion);
     return SettingItemWidget(
       item: SettingItem(
-        title: '${Constants.co2Text} reading rate',
-        assetIcon: powerMode.assetIcon,
+        title: nativeModes
+            ? '${Constants.co2Text} measurement mode'
+            : '${Constants.co2Text} reading rate',
+        assetIcon: nativeModes ? null : powerMode.assetIcon,
+        leadingWidget: nativeModes ? const Icon(Icons.tune) : null,
         route: RouteNames.powerModeSettings,
       ),
       onTap: () {
