@@ -139,6 +139,10 @@ class DeviceCmdUtils {
     return _buildCommand([prefixHigh, prefixLow, 5, 1, 3]);
   }
 
+  static Uint8List setPowerSingleShotSleep() {
+    return _buildCommand([prefixHigh, prefixLow, 5, 1, 4]);
+  }
+
   // ======= Bluetooth Commands =======
   static Uint8List openBluetooth() {
     return _buildCommand([prefixHigh, prefixLow, 6, 1, 1]);

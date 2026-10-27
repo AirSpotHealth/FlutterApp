@@ -39,7 +39,7 @@ class PowerModeSettingsPage extends ConsumerWidget {
         children: [
           Text(
             isSlim
-                ? 'Both modes update readings every 10 seconds.'
+                ? 'Readings update every 10 seconds in all modes.'
                 : 'Choose how frequently your device takes ${Constants.co2Text} readings. More frequent updates will use more battery.',
             style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                   color: Colors.grey[600],
@@ -118,7 +118,7 @@ class PowerModeSettingsPage extends ConsumerWidget {
   }
 }
 
-/// Slim always presents the two acquisition choices. Older firmware cannot
+/// Slim presents acquisition choices supported by its firmware. Older firmware cannot
 /// interpret those wire values correctly, so require an update before sending.
 class SlimMeasurementModeChoices extends StatelessWidget {
   const SlimMeasurementModeChoices(
@@ -132,6 +132,11 @@ class SlimMeasurementModeChoices extends StatelessWidget {
   final PowerMode? selectedMode;
   final ValueChanged<PowerMode> onChanged;
 
+  bool _modeEnabled(PowerMode mode) =>
+      enabled &&
+      (mode != PowerMode.singleShotSleep ||
+          SlimSettlingState.sleepModeSupported(firmwareVersion));
+
   @override
   Widget build(BuildContext context) => Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -141,25 +146,39 @@ class SlimMeasurementModeChoices extends StatelessWidget {
                 style: Theme.of(context).textTheme.titleMedium),
             const SizedBox(height: 8),
             Text(
-                'This Slim reports firmware $firmwareVersion. Install firmware 0.22.1 or later, then reconnect to enable these modes. Your current setting has not been changed.'),
+                'This Slim reports firmware $firmwareVersion. Install firmware 0.22.7 or later, then reconnect to enable all three modes. Your current setting has not been changed.'),
             const SizedBox(height: 16),
           ],
-          for (final mode in [PowerMode.low, PowerMode.high]) ...[
+          for (final mode in [
+            PowerMode.high,
+            PowerMode.low,
+            PowerMode.singleShotSleep
+          ]) ...[
             Semantics(
               button: true,
-              enabled: enabled,
+              enabled: _modeEnabled(mode),
               selected: selectedMode == mode,
               child: Opacity(
-                opacity: enabled ? 1 : 0.55,
+                opacity: _modeEnabled(mode) ? 1 : 0.55,
                 child: _PowerModeCard(
                   leading: SlimMeasurementIcon(mode: mode),
-                  title: mode == PowerMode.low ? 'Single shot' : 'Continuous',
-                  updateRate: mode == PowerMode.low
-                      ? 'One measurement every 10 seconds'
-                      : 'One measurement every second',
-                  batteryLife: 'Reports every 10 seconds',
+                  title: switch (mode) {
+                    PowerMode.high => 'Continuous',
+                    PowerMode.singleShotSleep => 'Single shot with sleep',
+                    _ => 'Single shot',
+                  },
+                  updateRate: mode == PowerMode.high
+                      ? 'Measures every second'
+                      : 'Measures every 10 seconds',
+                  batteryLife: mode == PowerMode.singleShotSleep
+                      ? (SlimSettlingState.sleepModeSupported(firmwareVersion)
+                          ? 'Sleeps between updates'
+                          : 'Requires firmware 0.22.7 or later')
+                      : (mode == PowerMode.low
+                          ? 'Sensor stays awake'
+                          : 'Reports every 10 seconds'),
                   isSelected: selectedMode == mode,
-                  onTap: enabled ? () => onChanged(mode) : null,
+                  onTap: _modeEnabled(mode) ? () => onChanged(mode) : null,
                 ),
               ),
             ),

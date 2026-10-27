@@ -23,6 +23,17 @@ void main() {
         row(DeviceDataType.sampleFlags, flags, at: at),
         row(DeviceDataType.sampleQi, 1, at: at),
       ];
+  test('Native sleep mode remains distinct from legacy reading rates', () {
+    final csv = generateReadingCsv([
+      ...sample(flags: 512 | 32 | (4 << 6) | 7),
+      row(DeviceDataType.measurementModeChange, 0x104),
+    ]);
+    expect(csv, contains('Single shot with sleep'));
+    expect(csv, contains('Measurement mode changed to Single shot with sleep'));
+    expect(csv, isNot(contains('On-demand')));
+    final legacy = generateReadingCsv(sample(flags: 32 | (2 << 6) | 7));
+    expect(legacy, contains('Mid (1 min)'));
+  });
   test('twelve internal records become exactly one complete measurement row',
       () {
     final csv = generateReadingCsv(sample().reversed.toList());

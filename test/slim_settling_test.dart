@@ -21,6 +21,11 @@ void main() {
 
   test('firmware capability and strict status validation', () {
     expect(SlimSettlingState.supported('0.18.9'), false);
+    expect(SlimSettlingState.sleepModeSupported('0.22.6'), false);
+    expect(SlimSettlingState.sleepModeSupported('0.22.7'), true);
+    expect(SlimSettlingState.sleepModeSupported('0.23.0'), true);
+    expect(SlimSettlingState.sleepModeSupported('1.0.0'), true);
+    expect(SlimSettlingState.sleepModeSupported('unknown'), false);
     expect(SlimSettlingState.nativeTestModesSupported('0.21.2'), false);
     expect(SlimSettlingState.nativeTestModesSupported('0.22.0'), true);
     expect(SlimSettlingState.nativeTestModesSupported('unknown'), false);

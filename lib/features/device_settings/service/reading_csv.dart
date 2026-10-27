@@ -14,6 +14,11 @@ const _measurementModes = {
   2: 'Mid (1 min)',
   3: 'High (5 sec)'
 };
+const _nativeMeasurementModes = {
+  1: 'Single shot',
+  3: 'Continuous',
+  4: 'Single shot with sleep'
+};
 final _dateFormat = DateFormat('yyyy-MM-dd-HH-mm-ss');
 const _headers = [
   'DateTime',
@@ -101,7 +106,9 @@ String generateReadingCsv(List<DeviceData> records) {
       row['Event Value'] = event.value;
       row['Details'] = event.parsedValue;
       if (type == DeviceDataType.measurementModeChange) {
-        row['Measurement Mode'] = _label(_measurementModes, event.value);
+        row['Measurement Mode'] = event.value & 0x100 != 0
+            ? _label(_nativeMeasurementModes, event.value & 0xff)
+            : _label(_measurementModes, event.value);
         row['Details'] =
             'Measurement mode changed to ${row['Measurement Mode']}';
       }
@@ -155,10 +162,13 @@ String generateReadingCsv(List<DeviceData> records) {
       row['Sample Accepted'] = validFlags & 4 != 0 ? 1 : 0;
       row['Conditioning Complete'] = validFlags & 8 != 0 ? 1 : 0;
       row['Sensor Operation'] =
-          validFlags & 16 != 0 ? 'Continuous' : 'Single shot';
+          validFlags & 512 != 0 && ((validFlags >> 6) & 7) == 4
+              ? 'Single shot with sleep'
+              : (validFlags & 16 != 0 ? 'Continuous' : 'Single shot');
       if (validFlags & 32 != 0) {
-        row['Measurement Mode'] =
-            _label(_measurementModes, (validFlags >> 6) & 3);
+        row['Measurement Mode'] = validFlags & 512 != 0
+            ? _label(_nativeMeasurementModes, (validFlags >> 6) & 7)
+            : _label(_measurementModes, (validFlags >> 6) & 3);
       }
     }
     if (co2.length > 1) {

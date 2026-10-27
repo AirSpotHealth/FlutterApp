@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Add Continuous, Single shot, and Single shot with sleep choices for Slim. Sleep requires firmware 0.22.7; all modes report every ten seconds. Match the existing settings cards and distinguish each mode in CSV exports without relabelling legacy history.
+
 - Export one CSV row per measurement with diagnostic columns; keep mode/calibration changes as event rows and import both new consolidated and older CSV formats.
 - Temporarily hide sensor-settling guidance on graph, settings and calibration screens; retain its tracking and implementation for the next update.
 

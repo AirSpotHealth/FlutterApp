@@ -32,7 +32,13 @@ final DeviceSettingsSchema = IsarGeneratedSchema(
       IsarPropertySchema(
         name: 'powerMode',
         type: IsarType.byte,
-        enumMap: {"onDemand": 0, "low": 1, "medium": 2, "high": 3},
+        enumMap: {
+          "onDemand": 0,
+          "low": 1,
+          "medium": 2,
+          "high": 3,
+          "singleShotSleep": 4
+        },
       ),
       IsarPropertySchema(
         name: 'continuosScreenEnabled',
@@ -958,6 +964,7 @@ const _deviceSettingsPowerMode = {
   1: PowerMode.low,
   2: PowerMode.medium,
   3: PowerMode.high,
+  4: PowerMode.singleShotSleep,
 };
 const _deviceSettingsUiMode = {
   0: UIMode.graph,

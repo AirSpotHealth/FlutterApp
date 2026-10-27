@@ -454,7 +454,8 @@ enum PowerMode {
   onDemand,
   low,
   medium,
-  high;
+  high,
+  singleShotSleep;
 
   String get name {
     switch (this) {
@@ -466,6 +467,8 @@ enum PowerMode {
         return '1 Min';
       case PowerMode.high:
         return '5 Sec';
+      case PowerMode.singleShotSleep:
+        return 'Single shot with sleep';
     }
   }
 
@@ -479,6 +482,8 @@ enum PowerMode {
         return DeviceCmdUtils.setPowerMed();
       case PowerMode.high:
         return DeviceCmdUtils.setPowerHi();
+      case PowerMode.singleShotSleep:
+        return DeviceCmdUtils.setPowerSingleShotSleep();
     }
   }
 
@@ -492,6 +497,8 @@ enum PowerMode {
         return PowerMode.medium;
       case 3:
         return PowerMode.high;
+      case 4:
+        return PowerMode.singleShotSleep;
       default:
         return PowerMode.onDemand;
     }
@@ -507,6 +514,8 @@ enum PowerMode {
         return Assets.powerMode1min;
       case PowerMode.high:
         return Assets.powerMode5sec;
+      case PowerMode.singleShotSleep:
+        return Assets.powerModeOnDemand;
     }
   }
 }

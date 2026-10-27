@@ -42,7 +42,14 @@ class _MeasurementPainter extends CustomPainter {
       ..strokeCap = StrokeCap.round
       ..strokeJoin = StrokeJoin.round;
     const ring = Rect.fromLTWH(4, 4, 24, 24);
-    if (mode == PowerMode.high) {
+    if (mode == PowerMode.singleShotSleep) {
+      // Solid crescent, using the same blue tile and white mark as other modes.
+      final moon = Path.combine(
+          PathOperation.difference,
+          Path()..addOval(const Rect.fromLTWH(5, 5, 22, 22)),
+          Path()..addOval(const Rect.fromLTWH(12, 1, 20, 20)));
+      canvas.drawPath(moon, white);
+    } else if (mode == PowerMode.high) {
       // Two sweeping arrows communicate sustained acquisition.
       for (final start in [-math.pi / 2, math.pi / 2]) {
         const sweep = math.pi * 0.82;
