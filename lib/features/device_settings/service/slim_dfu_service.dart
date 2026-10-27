@@ -120,17 +120,20 @@ class SlimDfuService {
         // upload/validation errors must still fail immediately.
         if (!rebootRequested) rethrow;
       }
-      onStatus('Waiting for startup checks and firmware confirmation...');
-      final deadline = DateTime.now().add(confirmationTimeout);
+      onStatus('Restarting Slim and checking its sensors…');
+      final verificationClock = Stopwatch()..start();
       var sawTargetActive = false;
       ImageSlot? lastActive;
       final previous =
           before?.where((slot) => slot.image == 0 && slot.active).firstOrNull;
       do {
+        var readSucceeded = false;
+        final remaining = confirmationTimeout - verificationClock.elapsed;
+        final readBudget =
+            Duration(milliseconds: remaining.inMilliseconds.clamp(1, 20000));
         try {
-          final slots = await manager
-              .readImageList()
-              .timeout(const Duration(seconds: 20));
+          final slots = await manager.readImageList().timeout(readBudget);
+          readSucceeded = true;
           lastActive = slots
               ?.where((slot) => slot.image == 0 && slot.active)
               .firstOrNull;
@@ -144,9 +147,31 @@ class SlimDfuService {
           // BLE may disappear during image swap, startup, or rollback.
           // A failed read is never proof of success.
           debugPrint("Slim post-reboot image check: $error");
+          onStatus('Reconnecting to Slim… Keep it powered and nearby.');
         }
-        await Future<void>.delayed(pollInterval);
-      } while (DateTime.now().isBefore(deadline));
+        if (readSucceeded) {
+          // Once the trial was observed, a confirmed previous image proves
+          // rollback. Do not make the customer wait out the remaining timer.
+          if (sawTargetActive &&
+              lastActive?.confirmed == true &&
+              previous != null &&
+              listEquals(lastActive!.hash, previous.hash) &&
+              !listEquals(lastActive.hash, firmware.hash)) {
+            throw const SlimDfuException(SlimDfuFailure.rolledBack);
+          }
+          final secondsLeft =
+              (confirmationTimeout - verificationClock.elapsed).inSeconds;
+          onStatus(lastActive != null &&
+                  listEquals(lastActive.hash, firmware.hash)
+              ? 'Checking Slim’s sensors… ${secondsLeft.clamp(0, confirmationTimeout.inSeconds)} seconds remaining.'
+              : 'Waiting for Slim to restart… Keep it powered and nearby.');
+        }
+        final waitBudget = confirmationTimeout - verificationClock.elapsed;
+        if (waitBudget > Duration.zero) {
+          await Future<void>.delayed(
+              pollInterval < waitBudget ? pollInterval : waitBudget);
+        }
+      } while (verificationClock.elapsed < confirmationTimeout);
       final previousActive = lastActive != null &&
           previous != null &&
           listEquals(lastActive.hash, previous.hash) &&

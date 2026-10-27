@@ -35,6 +35,7 @@ class FakeManager implements FirmwareUpdateManager {
   Future<List<ImageSlot>?> readImageList() async {
     if (uploads == 0) return before;
     verificationReads++;
+    if (outcome == 'read-hangs') return Completer<List<ImageSlot>?>().future;
     if (verificationResults.isNotEmpty) {
       final next = verificationResults.removeAt(0);
       if (next is List<ImageSlot>) return next;
@@ -188,10 +189,29 @@ void main() {
             onProgress: (_) {},
             onStatus: (_) {},
             factory: FakeFactory(manager),
-            confirmationTimeout: const Duration(milliseconds: 5),
+            confirmationTimeout: const Duration(seconds: 150),
             pollInterval: Duration.zero),
         throwsA(isA<SlimDfuException>()
             .having((e) => e.failure, 'failure', SlimDfuFailure.rolledBack)));
+    expect(manager.verificationReads, 2);
+  });
+  test('a hung image read cannot extend the verification deadline', () async {
+    final manager = FakeManager()..outcome = 'read-hangs';
+    final clock = Stopwatch()..start();
+    await expectLater(
+        SlimDfuService.upload(
+            deviceId: 'test',
+            firmware: firmware,
+            onProgress: (_) {},
+            onStatus: (_) {},
+            factory: FakeFactory(manager),
+            confirmationTimeout: const Duration(milliseconds: 20),
+            pollInterval: const Duration(seconds: 2)),
+        throwsA(isA<SlimDfuException>()
+            .having((e) => e.failure, 'failure', SlimDfuFailure.unavailable)));
+    expect(clock.elapsed, lessThan(const Duration(seconds: 1)));
+    expect(manager.verificationReads, 1);
+    expect(manager.killed, true);
   });
   test('previous image without observed trial does not claim rollback',
       () async {
