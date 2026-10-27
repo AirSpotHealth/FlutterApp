@@ -1,3 +1,4 @@
+import '../widgets/slim_measurement_icon.dart';
 import 'package:airspothealth/core/models/device_model.dart';
 import 'package:airspothealth/features/device_graph/providers/ble_device_provider.dart';
 import '../models/slim_settling_state.dart';
@@ -151,6 +152,7 @@ class SlimMeasurementModeChoices extends StatelessWidget {
               child: Opacity(
                 opacity: enabled ? 1 : 0.55,
                 child: _PowerModeCard(
+                  leading: SlimMeasurementIcon(mode: mode),
                   title: mode == PowerMode.low ? 'Single shot' : 'Continuous',
                   updateRate: mode == PowerMode.low
                       ? 'One measurement every 10 seconds'
@@ -172,6 +174,7 @@ class _PowerModeCard extends StatelessWidget {
     required this.onTap,
     required this.isSelected,
     this.asset,
+    this.leading,
     required this.title,
     required this.updateRate,
     required this.batteryLife,
@@ -180,6 +183,7 @@ class _PowerModeCard extends StatelessWidget {
   final VoidCallback? onTap;
   final bool isSelected;
   final String? asset;
+  final Widget? leading;
   final String title;
   final String updateRate;
   final String batteryLife;
@@ -210,7 +214,7 @@ class _PowerModeCard extends StatelessWidget {
         padding: const EdgeInsets.all(16),
         child: Row(
           children: [
-            if (asset != null)
+            if (asset != null || leading != null)
               Container(
                 width: 48,
                 height: 48,
@@ -221,13 +225,14 @@ class _PowerModeCard extends StatelessWidget {
                       : Colors.grey.shade50,
                   borderRadius: BorderRadius.circular(12),
                 ),
-                child: Image.asset(
-                  asset!,
-                  width: 32,
-                  height: 32,
-                ),
+                child: leading ??
+                    Image.asset(
+                      asset!,
+                      width: 32,
+                      height: 32,
+                    ),
               ),
-            if (asset != null) const SizedBox(width: 16),
+            if (asset != null || leading != null) const SizedBox(width: 16),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
