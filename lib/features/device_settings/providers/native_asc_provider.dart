@@ -39,11 +39,6 @@ class NativeAscNotifier
   }
 
   Future<void> refresh() => _send(DeviceCmdUtils.getNativeAsc());
-  Future<void> setEnabled(bool enabled) async {
-    if (state.isLoading || state.asData?.value.verified != true) return;
-    await _send(DeviceCmdUtils.setNativeAsc(enabled));
-  }
-
   Future<void> _send(List<int> command) async {
     if (ref.read(bleDeviceConnectionProvider(arg)) !=
         BluetoothBondState.bonded) {

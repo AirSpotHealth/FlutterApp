@@ -120,7 +120,7 @@ class RecalibrateDevicePage extends ConsumerWidget {
                 ref.watch(bleDeviceProvider(deviceId)).firmwareVersion) &&
             SlimSettlingState.continuousRecoverySupported(
                 ref.watch(bleDeviceProvider(deviceId)).firmwareVersion))
-          SlimSettlingCard(deviceId: deviceId, showInactive: true)
+          SlimSettlingCard(deviceId: deviceId, showInactive: false)
         else if (isSlim)
           NativeAscSettingWidget(
               deviceId: deviceId,
@@ -294,7 +294,7 @@ class ResetSensorWidget extends ConsumerWidget {
         ),
         if (isSlim) ...[
           const SizedBox(height: 16),
-          SlimSettlingCard(deviceId: deviceId, showInactive: true),
+          SlimSettlingCard(deviceId: deviceId, showInactive: false),
           const SizedBox(height: 16),
           const Text('Erase sensor calibration',
               style: TextStyle(fontWeight: FontWeight.bold)),
@@ -314,7 +314,7 @@ class ResetSensorWidget extends ConsumerWidget {
                                   title:
                                       const Text('Erase sensor calibration?'),
                                   content: const Text(
-                                      'This cannot be undone. Readings may be inaccurate while the sensor settles. Native auto-calibration and five-second mode will be enabled. Saved readings are kept.'),
+                                      'This cannot be undone. Readings may be inaccurate while the sensor settles. Auto-calibration and continuous measurement will be enabled. Your saved readings are kept.'),
                                   actions: [
                                     TextButton(
                                         onPressed: () =>

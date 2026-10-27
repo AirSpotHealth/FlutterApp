@@ -25,7 +25,8 @@ class SlimSettlingCard extends ConsumerWidget {
     if (!showSlimSettlingGuidance) return const SizedBox.shrink();
     final device = ref.watch(bleDeviceProvider(deviceId));
     if (device.deviceModel != DeviceModel.airspotSlim ||
-        !SlimSettlingState.supported(device.firmwareVersion)) {
+        !SlimSettlingState.supported(device.firmwareVersion) ||
+        SlimSettlingState.nativeTestModesSupported(device.firmwareVersion)) {
       return const SizedBox.shrink();
     }
     final value = ref.watch(slimSettlingProvider(deviceId));
@@ -96,9 +97,8 @@ class SettlingGuidance extends StatelessWidget {
       2 => 'Fresh air needed',
       3 => 'Fresh-air step',
       4 => 'Recovery guidance completed',
-      5 => 'Calibration erase needs checking',
-      _ =>
-        canStartRecovery ? 'Check my readings' : 'No tracked calibration erase',
+      5 => 'Sensor reset needs checking',
+      _ => 'Check my readings',
     };
     if (onOpenDetails != null) {
       return Card(
@@ -122,10 +122,10 @@ class SettlingGuidance extends StatelessWidget {
       4 =>
         'You confirmed the fresh-air step. This does not certify accuracy. If readings still seem wrong, compare with a trusted meter or contact support.',
       5 =>
-        'An erase was started but completion could not be confirmed. Do not assume the sensor is calibrated. Reconnect and check diagnostics before retrying.',
+        'The sensor reset could not be confirmed. Reconnect and try again, or contact support.',
       _ => canStartRecovery
           ? 'If readings seem wrong, run 12 hours of uninterrupted continuous measurement, followed by a separate 10-minute fresh-air step. Keep Slim powered; charge it if needed during the 12-hour stage. This preserves calibration history and does not force a particular CO₂ value.'
-          : 'This firmware has no recorded calibration erase. This does not confirm accuracy or reconstruct resets performed on older firmware.',
+          : 'If readings seem incorrect, check that the device has settled and compare it with a trusted meter. Contact support if the problem continues.',
     };
     return Semantics(
         container: true,

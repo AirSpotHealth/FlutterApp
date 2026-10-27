@@ -100,56 +100,53 @@ void main() {
                         firmwareVersion: '0.22.0',
                         manualControls: Text('Native FRC controls')))))));
     expect(find.text('Native FRC controls'), findsOneWidget);
+    expect(find.textContaining('at least once a week'), findsOneWidget);
     expect(
         find.textContaining('Manual calibration is unavailable'), findsNothing);
     expect(tester.takeException(), isNull);
   });
   for (final mode in [0, 1, 2]) {
-    testWidgets(
-        'manual controls visibility follows confirmed sensor mode $mode',
+    testWidgets('read-only auto-calibration status for mode $mode',
         (tester) async {
       final notifier = ControlledNativeAsc(
           AsyncData(NativeAscState.fromFrame(response(mode))));
       await tester.pumpWidget(ProviderScope(
-          overrides: [
-            nativeAscProvider.overrideWith(() => notifier),
-          ],
+          overrides: [nativeAscProvider.overrideWith(() => notifier)],
           child: const MaterialApp(
               home: Scaffold(
-                  body: NativeAscSettingWidget(
-            deviceId: 'test',
-            firmwareVersion: '0.18.0',
-            manualControls: Text('Manual calibration target'),
-          )))));
-      expect(find.text('Manual calibration target'),
-          mode == 2 ? findsNothing : findsOneWidget);
-      expect(tester.widget<SwitchListTile>(find.byType(SwitchListTile)).value,
-          mode == 2);
-      // A subsequent failed response hides the controls; a successful off read restores them.
+                  body: SingleChildScrollView(
+                      child: NativeAscSettingWidget(
+                          deviceId: 'test',
+                          firmwareVersion: '0.22.4',
+                          manualControls:
+                              Text('Forced recalibration controls')))))));
+      expect(find.byType(SwitchListTile), findsNothing);
+      expect(find.byType(Switch), findsNothing);
+      expect(find.text('Forced recalibration controls'),
+          mode == 2 ? findsOneWidget : findsNothing);
+      expect(find.textContaining('Sensirion'), findsNothing);
       notifier.receive(response(mode, error: -5));
       await tester.pump();
-      expect(find.text('Manual calibration target'), findsNothing);
-      notifier.receive(response(1));
-      await tester.pump();
-      expect(find.text('Manual calibration target'), findsOneWidget);
+      expect(find.text('Forced recalibration controls'), findsNothing);
+      expect(find.text('Retry'), findsOneWidget);
+      expect(tester.takeException(), isNull);
     });
   }
-  testWidgets('unknown state disables the toggle and manual controls',
+  testWidgets('unknown state does not claim enabled or expose controls',
       (tester) async {
     await tester.pumpWidget(ProviderScope(
         overrides: [
           nativeAscProvider
-              .overrideWith(() => ControlledNativeAsc(const AsyncLoading())),
+              .overrideWith(() => ControlledNativeAsc(const AsyncLoading()))
         ],
         child: const MaterialApp(
             home: Scaffold(
                 body: NativeAscSettingWidget(
-          deviceId: 'test',
-          firmwareVersion: '0.18.0',
-          manualControls: Text('Manual calibration target'),
-        )))));
-    expect(find.text('Manual calibration target'), findsNothing);
-    expect(tester.widget<SwitchListTile>(find.byType(SwitchListTile)).onChanged,
-        isNull);
+                    deviceId: 'test',
+                    firmwareVersion: '0.22.4',
+                    manualControls: Text('Forced recalibration controls'))))));
+    expect(find.text('Forced recalibration controls'), findsNothing);
+    expect(find.byType(SwitchListTile), findsNothing);
+    expect(find.textContaining('Checking auto-calibration'), findsOneWidget);
   });
 }

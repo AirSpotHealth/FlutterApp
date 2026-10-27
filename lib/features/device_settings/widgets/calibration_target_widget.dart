@@ -93,7 +93,9 @@ class _CalibrationCorrectionWidgetState
               child: TextFormField(
                 controller: calibrationValueController,
                 decoration: InputDecoration(
-                  labelText: 'Calibration Target',
+                  labelText: widget.nativeFrc
+                      ? 'Reference CO₂ (ppm)'
+                      : 'Calibration Target',
                   labelStyle: context.textTheme.bodyMedium?.copyWith(
                     color: context.theme.colorScheme.onSurface,
                   ),
@@ -117,7 +119,7 @@ class _CalibrationCorrectionWidgetState
                       wrapWidth: true,
                       height: 40,
                       onPressed: _submitTarget,
-                      label: 'SET',
+                      label: widget.nativeFrc ? 'Set' : 'SET',
                     ),
                   ),
                 ),
@@ -131,13 +133,13 @@ class _CalibrationCorrectionWidgetState
                 textInputAction: TextInputAction.done,
               ),
             ),
-            const SizedBox(width: 12),
+            if (!widget.nativeFrc) const SizedBox(width: 12),
           ],
         ),
         const SizedBox(height: 12),
         Text(
           widget.nativeFrc
-              ? 'Enter the known CO₂ concentration of your reference air in ppm. Do not guess the outdoor value. This reference is used only for forced recalibration; native ASC uses its own baseline.'
+              ? 'Enter the known CO₂ concentration of your reference air in ppm. Do not guess the outdoor value. This reference is used only for forced recalibration.'
               : "You can set the CO2 level of the air where calibration takes place. If unknown, 420-450 is typical for outdoors. This value is used for manual or automatic calibration.",
           style: context.textTheme.bodySmall,
         ),

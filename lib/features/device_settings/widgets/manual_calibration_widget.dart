@@ -29,15 +29,14 @@ class ManualCalibrationWidget extends ConsumerWidget {
         children: [
           ListTile(
             title: Text(
-                nativeFrc
-                    ? 'Sensirion Forced Recalibration'
-                    : 'Manual Calibration',
-                style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold)),
+                nativeFrc ? 'Forced recalibration' : 'Manual Calibration',
+                style: context.textTheme.bodyMedium
+                    ?.copyWith(fontWeight: FontWeight.w600)),
             subtitle: Text(
               nativeFrc
-                  ? 'Use a known CO₂ reference and wait for CO₂, temperature and humidity to stabilise. Set the reference below, then start. Slim will measure continuously for 60 seconds, apply native FRC and restore your selected mode. Keep conditions stable throughout. This does not replace initial sensor settling.'
+                  ? 'Use air with a known CO₂ concentration. Let the readings, temperature and humidity stabilise, then enter the reference value below. Keep conditions stable during the 60-second recalibration. Auto-calibration stays on, and your measurement mode is restored afterwards.'
                   : 'To calibrate this AirSpot, place the device outdoors for at least 5 minutes, away from any people or CO2 sources, then tap the icon below. See full manual for details.',
-              style: TextStyle(fontSize: 12, color: Colors.black),
+              style: context.textTheme.bodySmall,
             ),
             contentPadding: EdgeInsets.zero,
           ),

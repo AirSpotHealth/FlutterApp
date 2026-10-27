@@ -1,3 +1,4 @@
+import 'package:airspothealth/features/device_settings/widgets/initial_settling_notice.dart';
 import 'package:airspothealth/features/device_settings/widgets/sensor_preparing_notice.dart';
 import 'package:airspothealth/features/device_settings/providers/sensor_error_provider.dart';
 import 'package:airspothealth/features/device_settings/widgets/slim_settling_card.dart';
@@ -53,6 +54,9 @@ class DeviceCurrentValueWidget extends ConsumerWidget {
         if (isPreparing)
           const Padding(
               padding: EdgeInsets.all(16), child: SensorPreparingNotice()),
+        Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            child: InitialSettlingNotice(deviceId: deviceId)),
         SlimSettlingCard(deviceId: deviceId, compact: true),
         if (powerState.lowBatteryLockout)
           _LowBatteryLockoutBanner(isCharging: powerState.isCharging),

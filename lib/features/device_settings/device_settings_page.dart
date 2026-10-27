@@ -1,3 +1,4 @@
+import 'package:airspothealth/features/device_settings/widgets/initial_settling_notice.dart';
 import 'models/slim_settling_state.dart';
 import 'widgets/slim_measurement_icon.dart';
 import 'package:airspothealth/features/device_settings/widgets/slim_settling_card.dart';
@@ -171,7 +172,8 @@ class _DeviceSettingsPageState extends ConsumerState<DeviceSettingsPage> {
       body: ListView(
         padding: const EdgeInsets.only(left: 16, right: 16, bottom: 16),
         children: [
-          SlimSettlingCard(deviceId: widget.deviceId, showInactive: true),
+          InitialSettlingNotice(deviceId: widget.deviceId),
+          SlimSettlingCard(deviceId: widget.deviceId, showInactive: false),
           CloudSyncSettingWidget(deviceId: widget.deviceId),
           if (capabilities.hasAlarm())
             AlarmSettingWidget(deviceId: widget.deviceId),

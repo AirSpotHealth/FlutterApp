@@ -1,3 +1,4 @@
+import 'initial_settling_provider.dart';
 import 'dart:async';
 import 'package:airspothealth/features/device_graph/providers/ble_device_provider.dart';
 import 'package:airspothealth/features/device_settings/models/slim_sensor_reset.dart';
@@ -96,6 +97,7 @@ class _DevicerSensorResetNotifier
         ? AsyncSuccess(1)
         : AsyncFailure('Internal calibration reset failed (error $error).');
     ref.read(nativeAscProvider(arg).notifier).refresh();
+    ref.invalidate(initialSettlingProvider(arg));
     if (ref.exists(slimSettlingProvider(arg))) {
       ref.read(slimSettlingProvider(arg).notifier).refresh();
     }

@@ -1,3 +1,5 @@
+import 'package:airspothealth/features/device_settings/widgets/initial_settling_notice.dart';
+import 'package:airspothealth/features/device_settings/widgets/manual_calibration_widget.dart';
 import 'dart:async';
 import 'dart:io';
 import 'dart:ui' as ui;
@@ -25,6 +27,12 @@ class RetryAsc extends NativeAscNotifier {
     retries++;
     state = const AsyncLoading();
   }
+}
+
+class EnabledAsc extends NativeAscNotifier {
+  @override
+  AsyncValue<NativeAscState> build(String arg) => const AsyncData(
+      NativeAscState(mode: 2, verified: true, error: 0, sensorStatus: 4));
 }
 
 void main() {
@@ -160,9 +168,35 @@ void main() {
     await tester.tap(find.text('Retry'));
     await tester.pump();
     expect(notifier.retries, 1);
-    expect(find.text('Checking the sensor setting…'), findsOneWidget);
+    expect(find.text('Checking auto-calibration…'), findsOneWidget);
     expect(find.text('Manual controls'), findsNothing);
     expect(tester.takeException(), null);
+  });
+
+  testWidgets('production calibration wording and layout', (tester) async {
+    await show(
+        tester,
+        ProviderScope(
+            overrides: [nativeAscProvider.overrideWith(EnabledAsc.new)],
+            child: const SingleChildScrollView(
+                padding: EdgeInsets.all(16),
+                child: Column(children: [
+                  InitialSettlingBanner(remainingSeconds: 3540),
+                  SizedBox(height: 16),
+                  NativeAscSettingWidget(
+                      deviceId: 'test',
+                      firmwareVersion: '0.22.4',
+                      manualControls: ManualCalibrationWidget(
+                          deviceId: 'test',
+                          calibrationTarget: 420,
+                          nativeFrc: true)),
+                ]))));
+    expect(find.text('Forced recalibration'), findsOneWidget);
+    expect(find.textContaining('at least once a week'), findsOneWidget);
+    expect(find.textContaining('Sensirion'), findsNothing);
+    expect(find.byType(SwitchListTile), findsNothing);
+    expect(tester.takeException(), isNull);
+    await preview(tester, 'slim-calibration-and-settling');
   });
 
   testWidgets(

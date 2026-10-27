@@ -1,3 +1,4 @@
+import 'package:airspothealth/features/device_settings/widgets/initial_settling_notice.dart';
 import 'package:airspothealth/features/device_settings/widgets/sensor_preparing_notice.dart';
 import 'package:airspothealth/core/models/ble_device.dart';
 import 'package:airspothealth/core/models/device_model.dart';
@@ -88,6 +89,7 @@ class BleDeviceWidget extends ConsumerWidget {
                   const SizedBox(width: 8),
                 ],
               ),
+              InitialSettlingNotice(deviceId: bleDevice.deviceId),
               // Show sensor error row if error is detected
               _SensorErrorRow(
                 deviceId: bleDevice.deviceId,
