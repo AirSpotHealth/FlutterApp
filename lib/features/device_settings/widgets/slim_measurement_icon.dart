@@ -2,7 +2,7 @@ import 'package:airspothealth/core/models/device_settings.dart';
 import 'package:airspothealth/core/theme/app_colors.dart';
 import 'package:flutter/material.dart';
 
-/// A small sensor window: one sampled point or an uninterrupted signal.
+/// A filled sensor tile with a cut-out sample point or continuous signal.
 /// Drawn as vectors so it stays sharp without adding a font or image asset.
 class SlimMeasurementIcon extends StatelessWidget {
   const SlimMeasurementIcon({super.key, this.mode, this.size = 32, this.color});
@@ -30,41 +30,24 @@ class _MeasurementPainter extends CustomPainter {
   void paint(Canvas canvas, Size size) {
     canvas.save();
     canvas.scale(size.width / 32, size.height / 32);
+    // Isolate the cut-outs so they reveal the actual row/card background.
+    canvas.saveLayer(const Rect.fromLTWH(0, 0, 32, 32), Paint());
+    canvas.drawRRect(
+      RRect.fromRectAndRadius(
+          const Rect.fromLTWH(2, 2, 28, 28), const Radius.circular(7)),
+      Paint()..color = color,
+    );
     final line = Paint()
-      ..color = color
+      ..blendMode = BlendMode.clear
       ..style = PaintingStyle.stroke
-      ..strokeWidth = 1.8
+      ..strokeWidth = 2.2
       ..strokeCap = StrokeCap.round
       ..strokeJoin = StrokeJoin.round;
-    // Open corners give the mark an instrument-panel silhouette.
-    for (final path in [
-      Path()
-        ..moveTo(3, 10)
-        ..lineTo(3, 6)
-        ..quadraticBezierTo(3, 3, 6, 3)
-        ..lineTo(10, 3),
-      Path()
-        ..moveTo(22, 3)
-        ..lineTo(26, 3)
-        ..quadraticBezierTo(29, 3, 29, 6)
-        ..lineTo(29, 10),
-      Path()
-        ..moveTo(29, 22)
-        ..lineTo(29, 26)
-        ..quadraticBezierTo(29, 29, 26, 29)
-        ..lineTo(22, 29),
-      Path()
-        ..moveTo(10, 29)
-        ..lineTo(6, 29)
-        ..quadraticBezierTo(3, 29, 3, 26)
-        ..lineTo(3, 22),
-    ]) {
-      canvas.drawPath(path, line);
-    }
     if (mode == PowerMode.low) {
       canvas.drawLine(const Offset(6, 16), const Offset(10, 16), line);
       canvas.drawLine(const Offset(22, 16), const Offset(26, 16), line);
-      canvas.drawCircle(const Offset(16, 16), 3, Paint()..color = color);
+      canvas.drawCircle(
+          const Offset(16, 16), 3, Paint()..blendMode = BlendMode.clear);
     } else if (mode == PowerMode.high) {
       final signal = Path()
         ..moveTo(5, 17)
@@ -78,6 +61,7 @@ class _MeasurementPainter extends CustomPainter {
     } else {
       canvas.drawCircle(const Offset(16, 16), 4, line);
     }
+    canvas.restore();
     canvas.restore();
   }
 
