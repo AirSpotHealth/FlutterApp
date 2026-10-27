@@ -17,20 +17,32 @@ class IsarService {
   /// Singleton instance of [IsarService].
   static final IsarService _instance = IsarService._();
 
+  // Allow headroom for copy-on-write transactions when removing large histories.
+  // This is a ceiling, not an up-front disk allocation.
+  static const maxSizeMiB = 512;
+  static const compactCondition = CompactCondition(
+    minFileSize: 64 * 1024 * 1024,
+    minBytes: 32 * 1024 * 1024,
+    minRatio: 2,
+  );
+  static final schemas = [
+    BleDeviceSchema,
+    DeviceDataSchema,
+    DeviceSettingsSchema,
+    NotificationPreferencesSchema,
+    VentilationEventSchema,
+    HistoryCoverageSchema,
+  ];
+
   late final Isar _isar;
 
   /// Initializes the Isar instance.
   Future<void> initialize() async {
     final dir = await getApplicationDocumentsDirectory();
     _isar = Isar.open(
-      schemas: [
-        BleDeviceSchema,
-        DeviceDataSchema,
-        DeviceSettingsSchema,
-        NotificationPreferencesSchema,
-        VentilationEventSchema,
-        HistoryCoverageSchema,
-      ],
+      schemas: schemas,
+      maxSizeMiB: maxSizeMiB,
+      compactOnLaunch: compactCondition,
       directory: dir.path,
     );
   }

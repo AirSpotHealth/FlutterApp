@@ -189,7 +189,7 @@ class BleDeviceWidget extends ConsumerWidget {
                     'Remove this device and its saved readings from this phone? You can add it again later.'),
                 const SizedBox(height: 16),
                 if (status.hasError) ...[
-                  const Text('Could not remove this device. Please try again.',
+                  Text(forgetDeviceErrorMessage(status.error),
                       style: TextStyle(color: AppColors.brandColorRed)),
                   const SizedBox(height: 12),
                 ],

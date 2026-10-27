@@ -1,4 +1,6 @@
 import 'dart:async';
+import 'package:isar_plus/isar_plus.dart';
+import 'package:airspothealth/core/services/ble_communicator_service.dart';
 import 'package:flutter/foundation.dart';
 
 import 'package:airspothealth/core/providers/ble_saved_devices_provider.dart';
@@ -31,8 +33,9 @@ class _DeviceForgetStatusNotifier
           .read(bleDeviceConnectionProvider(arg).notifier)
           .disconnectForForget();
 
+      BleCommunicatorService.instance.communicator(arg).reset();
       stage = 'removing saved device data';
-      ref.read(bleSavedDevicesProvider.notifier).removeDeviceById(arg);
+      await ref.read(bleSavedDevicesProvider.notifier).removeDeviceById(arg);
 
       stage = 'clearing history state';
       ref.invalidate(deviceHistoryDataRequestProvider(arg));
@@ -49,4 +52,11 @@ class _DeviceForgetStatusNotifier
       keepAlive.close();
     }
   }
+}
+
+String forgetDeviceErrorMessage(Object? error) {
+  if (error is DatabaseFullError) {
+    return 'AirSpot’s local data storage is full. Close and reopen the app, then try removing this device again. If it still fails, contact support.';
+  }
+  return 'Could not finish removing this device. Please try again.';
 }

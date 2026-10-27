@@ -1,9 +1,8 @@
+import 'package:airspothealth/core/services/device_removal_service.dart';
 import 'package:airspothealth/features/device_graph/providers/device_history_data_request_provider.dart';
 import 'package:airspothealth/core/services/history_coverage_service.dart';
 import 'package:airspothealth/core/models/ble_device.dart';
-import 'package:airspothealth/core/models/device_data.dart';
 import 'package:airspothealth/core/models/device_model.dart';
-import 'package:airspothealth/core/models/device_settings.dart';
 import 'package:airspothealth/core/providers/ble_device_communication_provider.dart';
 import 'package:airspothealth/core/providers/isar_service_provider.dart';
 import 'package:airspothealth/core/services/isar_service.dart';
@@ -73,23 +72,16 @@ class _BleSavedDevicesNotifier extends Notifier<List<BleDevice>> {
     debugPrint('Device $deviceId model updated to $model');
   }
 
-  void removeDeviceById(String deviceId) {
+  Future<void> removeDeviceById(String deviceId) async {
     // check if device exists
     if (!state.any((d) => d.deviceId == deviceId)) {
       return;
     }
 
-    if (state.firstWhere((d) => d.deviceId == deviceId).deviceModel ==
-            DeviceModel.airspotSlim &&
-        ref.exists(deviceHistoryDataRequestProvider(deviceId))) {
+    if (ref.exists(deviceHistoryDataRequestProvider(deviceId))) {
       ref.read(deviceHistoryDataRequestProvider(deviceId).notifier).clear();
     }
-    ref.read(isarServiceProvider).write((isar) {
-      isar.bleDevices.delete(deviceId);
-      isar.deviceSettings.where().deviceIdEqualTo(deviceId).deleteAll();
-      isar.deviceDatas.where().deviceIdEqualTo(deviceId).deleteAll();
-      HistoryCoverageService.clearDevice(isar, deviceId);
-    });
+    await DeviceRemovalService(ref.read(isarServiceProvider)).remove(deviceId);
 
     state = state.where((d) => d.deviceId != deviceId).toList();
 
